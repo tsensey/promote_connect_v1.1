@@ -1,0 +1,44 @@
+import type { Metadata } from 'next';
+import { Fraunces, Manrope } from 'next/font/google';
+import { AuthProvider } from '@/lib/auth/context';
+import { Toaster } from '@/components/ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import './globals.css';
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  variable: '--font-sans',
+});
+
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-heading',
+});
+
+export const metadata: Metadata = {
+  title: {
+    default: 'PROMOTE-CONNECT',
+    template: '%s | PROMOTE-CONNECT',
+  },
+  description: 'Plateforme digitale de networking pour salons professionnels PROMOTE'
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html
+      lang="fr"
+      data-scroll-behavior="smooth"
+      className={cn(manrope.variable, fraunces.variable)}
+    >
+      <body className="min-h-screen bg-background text-foreground">
+        <TooltipProvider>
+          <AuthProvider>
+            {children}
+            <Toaster richColors position="top-right" />
+          </AuthProvider>
+        </TooltipProvider>
+      </body>
+    </html>
+  );
+}

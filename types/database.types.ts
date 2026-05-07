@@ -1,0 +1,411 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
+export interface Database {
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string;
+          full_name: string | null;
+          company: string | null;
+          role: string | null;
+          sector: string | null;
+          country: string | null;
+          pavillon: string | null;
+          avatar_url: string | null;
+          subscription_status: string | null;
+          subscription_ends_at: string | null;
+          stripe_customer_id: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id: string;
+          full_name?: string | null;
+          company?: string | null;
+          role?: string | null;
+          sector?: string | null;
+          country?: string | null;
+          pavillon?: string | null;
+          avatar_url?: string | null;
+          subscription_status?: string | null;
+          subscription_ends_at?: string | null;
+          stripe_customer_id?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          full_name?: string | null;
+          company?: string | null;
+          role?: string | null;
+          sector?: string | null;
+          country?: string | null;
+          pavillon?: string | null;
+          avatar_url?: string | null;
+          subscription_status?: string | null;
+          subscription_ends_at?: string | null;
+          stripe_customer_id?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      exposants: {
+        Row: {
+          id: string;
+          profile_id: string | null;
+          nom: string;
+          description: string | null;
+          secteur: string | null;
+          pavillon: string | null;
+          stand: string | null;
+          pays: string | null;
+          website: string | null;
+          logo_url: string | null;
+          is_featured: boolean;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          profile_id?: string | null;
+          nom: string;
+          description?: string | null;
+          secteur?: string | null;
+          pavillon?: string | null;
+          stand?: string | null;
+          pays?: string | null;
+          website?: string | null;
+          logo_url?: string | null;
+          is_featured?: boolean;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          profile_id?: string | null;
+          nom?: string;
+          description?: string | null;
+          secteur?: string | null;
+          pavillon?: string | null;
+          stand?: string | null;
+          pays?: string | null;
+          website?: string | null;
+          logo_url?: string | null;
+          is_featured?: boolean;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      produits: {
+        Row: {
+          id: string;
+          exposant_id: string | null;
+          nom: string;
+          description: string | null;
+          categorie: string | null;
+          image_url: string | null;
+          prix_indicatif: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          exposant_id?: string | null;
+          nom: string;
+          description?: string | null;
+          categorie?: string | null;
+          image_url?: string | null;
+          prix_indicatif?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          exposant_id?: string | null;
+          nom?: string;
+          description?: string | null;
+          categorie?: string | null;
+          image_url?: string | null;
+          prix_indicatif?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      conversations: {
+        Row: {
+          id: string;
+          participant_a: string | null;
+          participant_b: string | null;
+          last_message_at: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          participant_a?: string | null;
+          participant_b?: string | null;
+          last_message_at?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          participant_a?: string | null;
+          participant_b?: string | null;
+          last_message_at?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      messages: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          sender_id: string;
+          content: string;
+          is_read: boolean;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          conversation_id: string;
+          sender_id: string;
+          content: string;
+          is_read?: boolean;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          conversation_id?: string;
+          sender_id?: string;
+          content?: string;
+          is_read?: boolean;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      evenements: {
+        Row: {
+          id: string;
+          titre: string;
+          description: string | null;
+          pavillon: string | null;
+          salle: string | null;
+          starts_at: string;
+          ends_at: string;
+          type: string | null;
+          speakers: Json | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          titre: string;
+          description?: string | null;
+          pavillon?: string | null;
+          salle?: string | null;
+          starts_at: string;
+          ends_at: string;
+          type?: string | null;
+          speakers?: Json | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          titre?: string;
+          description?: string | null;
+          pavillon?: string | null;
+          salle?: string | null;
+          starts_at?: string;
+          ends_at?: string;
+          type?: string | null;
+          speakers?: Json | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      rendez_vous: {
+        Row: {
+          id: string;
+          demandeur_id: string | null;
+          destinataire_id: string | null;
+          starts_at: string;
+          ends_at: string;
+          status: string | null;
+          notes: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          demandeur_id?: string | null;
+          destinataire_id?: string | null;
+          starts_at: string;
+          ends_at: string;
+          status?: string | null;
+          notes?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          demandeur_id?: string | null;
+          destinataire_id?: string | null;
+          starts_at?: string;
+          ends_at?: string;
+          status?: string | null;
+          notes?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      subscriptions: {
+        Row: {
+          id: string;
+          profile_id: string | null;
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
+          status: string | null;
+          current_period_end: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          profile_id?: string | null;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          status?: string | null;
+          current_period_end?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          profile_id?: string | null;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          status?: string | null;
+          current_period_end?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      support_tickets: {
+        Row: {
+          id: string;
+          profile_id: string | null;
+          subject: string;
+          description: string | null;
+          status: string | null;
+          priority: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          profile_id?: string | null;
+          subject: string;
+          description?: string | null;
+          status?: string | null;
+          priority?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          profile_id?: string | null;
+          subject?: string;
+          description?: string | null;
+          status?: string | null;
+          priority?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      support_messages: {
+        Row: {
+          id: string;
+          ticket_id: string | null;
+          sender_id: string | null;
+          content: string;
+          is_admin: boolean;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          ticket_id?: string | null;
+          sender_id?: string | null;
+          content: string;
+          is_admin?: boolean;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          ticket_id?: string | null;
+          sender_id?: string | null;
+          content?: string;
+          is_admin?: boolean;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      newsletter_subscriptions: {
+        Row: {
+          id: string;
+          profile_id: string | null;
+          email: string;
+          sectors: string[] | null;
+          frequency: string | null;
+          is_active: boolean;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          profile_id?: string | null;
+          email: string;
+          sectors?: string[] | null;
+          frequency?: string | null;
+          is_active?: boolean;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          profile_id?: string | null;
+          email?: string;
+          sectors?: string[] | null;
+          frequency?: string | null;
+          is_active?: boolean;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      newsletter_editions: {
+        Row: {
+          id: string;
+          titre: string;
+          contenu: string | null;
+          sent_at: string | null;
+          recipient_count: number | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          titre: string;
+          contenu?: string | null;
+          sent_at?: string | null;
+          recipient_count?: number | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          titre?: string;
+          contenu?: string | null;
+          sent_at?: string | null;
+          recipient_count?: number | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+    };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
+  };
+}
