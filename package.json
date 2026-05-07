@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
-    "db:seed": "node scripts/seed.js"
+    "db:seed": "node scripts/seed.js",
+    "db:reset-seed": "node scripts/seed.js --clean"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -42,6 +43,7 @@
     "dotenv": "^17.4.2",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.5",
+    "pg": "^8.20.0",
     "postcss": "^8.4.35",
     "tailwindcss": "^4.2.4",
     "typescript": "^5.6.2",

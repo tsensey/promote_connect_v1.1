@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 const supportHighlights = [
   'Acces reserve a la communaute PROMOTE',
   'Historique reseau et messagerie securisee',
-  'Activation des modules selon abonnement',
+  'Comptes crees uniquement par l administrateur',
 ];
 
 function LoginPageContent() {
@@ -27,8 +27,7 @@ function LoginPageContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const registered = searchParams.get('registered') === '1';
-  const subscriptionRequired = searchParams.get('subscription') === 'required';
+  const adminOnly = searchParams.get('admin_only') === '1';
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -77,10 +76,10 @@ function LoginPageContent() {
               Connexion
             </div>
             <CardTitle className="text-3xl leading-tight text-foreground">
-              Reprendre votre activite reseau
+              Acceder a votre espace PROMOTE-CONNECT
             </CardTitle>
             <p className="max-w-lg text-sm leading-7 text-muted-foreground">
-              Connectez-vous pour retrouver vos conversations, vos rendez-vous B2B et votre espace PROMOTE-CONNECT.
+              Connectez-vous avec les identifiants transmis par l administrateur pour acceder a toutes les fonctionnalites de la plateforme.
             </p>
           </div>
         </div>
@@ -95,18 +94,10 @@ function LoginPageContent() {
       </CardHeader>
 
       <CardContent className="space-y-5 px-5 pb-5 sm:px-7">
-        {registered && (
-          <Alert className="rounded-2xl border-primary/20 bg-primary/6">
-            <AlertDescription>
-              Votre compte a bien ete cree. Connectez-vous pour poursuivre votre parcours PROMOTE-CONNECT.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {subscriptionRequired && (
+        {adminOnly && (
           <Alert className="rounded-2xl border-amber-200 bg-amber-50 text-amber-900">
             <AlertDescription>
-              Votre abonnement doit etre actif pour acceder aux modules reseau, agenda et messagerie.
+              La creation de compte est reservee a l administrateur. Contactez l equipe PROMOTE pour recevoir vos identifiants par email.
             </AlertDescription>
           </Alert>
         )}
@@ -173,19 +164,14 @@ function LoginPageContent() {
       </CardContent>
 
       <CardFooter className="flex flex-col gap-4 border-t border-border/70 px-5 py-5 sm:px-7">
-        <div className="flex w-full flex-col gap-2 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
-          <p className="text-sm text-muted-foreground">
-            Pas encore de compte ?
-          </p>
-          <Link href="/register" className="text-sm font-semibold text-primary hover:underline">
-            Creer un compte
-          </Link>
+        <div className="w-full rounded-2xl border border-border/70 bg-muted/35 px-4 py-3 text-center text-sm text-muted-foreground">
+          Aucun compte ne peut etre cree depuis cette page. Les acces sont provisionnes par l administrateur PROMOTE-CONNECT.
         </div>
         <Link
           href="mailto:support@promote-connect.com"
           className="w-full rounded-2xl border border-border/70 bg-white px-4 py-3 text-center text-sm font-medium text-foreground transition hover:border-primary/25 hover:text-primary"
         >
-          Contacter le support pour un acces
+          Contacter le support pour recevoir un acces
         </Link>
       </CardFooter>
     </div>

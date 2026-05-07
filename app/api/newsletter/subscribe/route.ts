@@ -19,11 +19,17 @@ export async function POST(request: Request) {
 
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.split('Bearer ')[1];
-      const supabase = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '', {
-        global: { headers: { Authorization: `Bearer ${token}` } },
-      });
+      const supabase = createClient(
+        supabaseUrl,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+        {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+        }
+      );
 
-      const { data: { user } } = await supabase.auth.getUser(token);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser(token);
       if (user) profileId = user.id;
     }
 
@@ -74,7 +80,7 @@ export async function POST(request: Request) {
           </p>
           <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
           <p style="color: #94a3b8; font-size: 12px;">
-            PROMOTE-CONNECT — 12 mois de networking apres le salon
+            PROMOTE-CONNECT - communaute professionnelle du salon
           </p>
         </div>
       `,
@@ -83,10 +89,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Subscribed successfully' });
   } catch (error) {
     console.error('Newsletter subscription error:', error);
-    return NextResponse.json(
-      { error: 'Failed to subscribe' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to subscribe' }, { status: 500 });
   }
 }
 
@@ -106,9 +109,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ message: 'Unsubscribed successfully' });
   } catch (error) {
     console.error('Newsletter unsubscribe error:', error);
-    return NextResponse.json(
-      { error: 'Failed to unsubscribe' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to unsubscribe' }, { status: 500 });
   }
 }

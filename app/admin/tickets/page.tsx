@@ -127,7 +127,7 @@ export default function AdminTicketsPage() {
         </p>
         <h1 className="text-4xl text-foreground">Tickets en cours</h1>
         <p className="max-w-3xl text-base leading-7 text-muted-foreground">
-          Suivez les demandes des abonnes, priorisez les cas sensibles et faites avancer le support depuis le back-office.
+          Suivez les demandes des utilisateurs, priorisez les cas sensibles et faites avancer le support depuis le back-office.
         </p>
       </div>
 

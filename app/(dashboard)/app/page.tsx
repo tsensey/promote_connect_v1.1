@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   BriefcaseBusiness,
@@ -11,14 +11,14 @@ import {
   Sparkles,
   TrendingUp,
   Users,
-} from 'lucide-react';
-import { useAuth } from '@/lib/auth/context';
-import { supabaseClient } from '@/lib/supabase/client';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { buttonVariants } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { useAuth } from "@/lib/auth/context";
+import { supabaseClient } from "@/lib/supabase/client";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface DashboardStats {
   networkSize: number;
@@ -68,9 +68,9 @@ interface DashboardData {
 }
 
 const quickActions = [
-  { label: 'Explorer l annuaire', href: '/annuaire' },
-  { label: 'Ouvrir la messagerie', href: '/chat' },
-  { label: 'Consulter l agenda', href: '/agenda' },
+  { label: "Explorer l annuaire", href: "/annuaire" },
+  { label: "Ouvrir la messagerie", href: "/chat" },
+  { label: "Consulter l agenda", href: "/agenda" },
 ];
 
 export default function DashboardHome() {
@@ -88,18 +88,18 @@ export default function DashboardHome() {
 
       let exposantSnapshot: ExposantSnapshot | null = null;
 
-      if (profile.role === 'exposant') {
+      if (profile.role === "exposant") {
         const { data: exposant } = await supabaseClient
-          .from('exposants')
-          .select('id, nom, secteur')
-          .eq('profile_id', user.id)
+          .from("exposants")
+          .select("id, nom, secteur")
+          .eq("profile_id", user.id)
           .single();
 
         if (exposant) {
           const { count } = await supabaseClient
-            .from('produits')
-            .select('id', { count: 'exact', head: true })
-            .eq('exposant_id', exposant.id);
+            .from("produits")
+            .select("id", { count: "exact", head: true })
+            .eq("exposant_id", exposant.id);
 
           exposantSnapshot = {
             id: exposant.id,
@@ -110,36 +110,44 @@ export default function DashboardHome() {
         }
       }
 
-      const [networkRes, conversationsRes, eventsRes, spotlightRes, upcomingRes, conversationsListRes] =
-        await Promise.all([
-          supabaseClient.from('exposants').select('id', { count: 'exact', head: true }),
-          supabaseClient
-            .from('conversations')
-            .select('id', { count: 'exact', head: true })
-            .or(`participant_a.eq.${user.id},participant_b.eq.${user.id}`),
-          supabaseClient
-            .from('evenements')
-            .select('id', { count: 'exact', head: true })
-            .gte('starts_at', new Date().toISOString()),
-          supabaseClient
-            .from('exposants')
-            .select('id, nom, description, secteur, pays, pavillon, is_featured')
-            .order('is_featured', { ascending: false })
-            .order('created_at', { ascending: false })
-            .limit(4),
-          supabaseClient
-            .from('evenements')
-            .select('id, titre, type, pavillon, starts_at')
-            .gte('starts_at', new Date().toISOString())
-            .order('starts_at', { ascending: true })
-            .limit(5),
-          supabaseClient
-            .from('conversations')
-            .select('*')
-            .or(`participant_a.eq.${user.id},participant_b.eq.${user.id}`)
-            .order('last_message_at', { ascending: false })
-            .limit(4),
-        ]);
+      const [
+        networkRes,
+        conversationsRes,
+        eventsRes,
+        spotlightRes,
+        upcomingRes,
+        conversationsListRes,
+      ] = await Promise.all([
+        supabaseClient
+          .from("exposants")
+          .select("id", { count: "exact", head: true }),
+        supabaseClient
+          .from("conversations")
+          .select("id", { count: "exact", head: true })
+          .or(`participant_a.eq.${user.id},participant_b.eq.${user.id}`),
+        supabaseClient
+          .from("evenements")
+          .select("id", { count: "exact", head: true })
+          .gte("starts_at", new Date().toISOString()),
+        supabaseClient
+          .from("exposants")
+          .select("id, nom, description, secteur, pays, pavillon, is_featured")
+          .order("is_featured", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(4),
+        supabaseClient
+          .from("evenements")
+          .select("id, titre, type, pavillon, starts_at")
+          .gte("starts_at", new Date().toISOString())
+          .order("starts_at", { ascending: true })
+          .limit(5),
+        supabaseClient
+          .from("conversations")
+          .select("*")
+          .or(`participant_a.eq.${user.id},participant_b.eq.${user.id}`)
+          .order("last_message_at", { ascending: false })
+          .limit(4),
+      ]);
 
       const recentConversations: RecentConversation[] = [];
 
@@ -153,26 +161,28 @@ export default function DashboardHome() {
           continue;
         }
 
-        const [{ data: otherProfile }, { data: lastMessage }] = await Promise.all([
-          supabaseClient
-            .from('profiles')
-            .select('full_name')
-            .eq('id', otherId)
-            .single(),
-          supabaseClient
-            .from('messages')
-            .select('content, created_at')
-            .eq('conversation_id', conversation.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single(),
-        ]);
+        const [{ data: otherProfile }, { data: lastMessage }] =
+          await Promise.all([
+            supabaseClient
+              .from("profiles")
+              .select("full_name")
+              .eq("id", otherId)
+              .single(),
+            supabaseClient
+              .from("messages")
+              .select("content, created_at")
+              .eq("conversation_id", conversation.id)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .single(),
+          ]);
 
         recentConversations.push({
           id: conversation.id,
-          other_name: otherProfile?.full_name || 'Contact PROMOTE',
+          other_name: otherProfile?.full_name || "Contact PROMOTE",
           last_message: lastMessage?.content || null,
-          last_message_at: lastMessage?.created_at || conversation.last_message_at,
+          last_message_at:
+            lastMessage?.created_at || conversation.last_message_at,
         });
       }
 
@@ -213,15 +223,7 @@ export default function DashboardHome() {
     );
   }
 
-  const roleLabel = profile.role === 'exposant' ? 'Exposant' : 'Visiteur';
-  const expiresAt = profile.subscription_ends_at
-    ? new Date(profile.subscription_ends_at).toLocaleDateString('fr-FR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      })
-    : null;
-
+  const roleLabel = profile.role === "exposant" ? "Exposant" : "Visiteur";
   return (
     <div className="shell-grid">
       <section className="space-y-6">
@@ -230,13 +232,13 @@ export default function DashboardHome() {
           <CardContent className="-mt-10 space-y-5 p-6">
             <Avatar className="size-20 border-4 border-white shadow-lg">
               <AvatarFallback className="bg-white text-xl font-semibold text-primary">
-                {profile.full_name?.charAt(0).toUpperCase() || '?'}
+                {profile.full_name?.charAt(0).toUpperCase() || "?"}
               </AvatarFallback>
             </Avatar>
             <div>
               <h2 className="text-2xl text-foreground">{profile.full_name}</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {profile.company || 'Participant PROMOTE-CONNECT'}
+                {profile.company || "Participant PROMOTE-CONNECT"}
               </p>
             </div>
 
@@ -249,16 +251,8 @@ export default function DashboardHome() {
               </div>
               <div className="flex items-center justify-between rounded-2xl bg-muted/65 px-4 py-3">
                 <span className="text-muted-foreground">Statut acces</span>
-                <span className="font-medium text-foreground">
-                  {profile.subscription_status === 'active' ? 'Actif' : 'Compte gere'}
-                </span>
+                <span className="font-medium text-foreground">Actif</span>
               </div>
-              {expiresAt && (
-                <div className="flex items-center justify-between rounded-2xl bg-muted/65 px-4 py-3">
-                  <span className="text-muted-foreground">Fin d acces</span>
-                  <span className="font-medium text-foreground">{expiresAt}</span>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
@@ -269,7 +263,9 @@ export default function DashboardHome() {
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary/70">
                 Raccourcis
               </p>
-              <h3 className="mt-2 text-2xl text-foreground">Vos actions du jour</h3>
+              <h3 className="mt-2 text-2xl text-foreground">
+                Vos actions du jour
+              </h3>
             </div>
             <div className="space-y-2">
               {quickActions.map((action) => (
@@ -277,8 +273,8 @@ export default function DashboardHome() {
                   key={action.href}
                   href={action.href}
                   className={cn(
-                    buttonVariants({ variant: 'outline' }),
-                    'w-full justify-between rounded-2xl bg-white/80'
+                    buttonVariants({ variant: "outline" }),
+                    "w-full justify-between rounded-2xl bg-white/80",
                   )}
                 >
                   {action.label}
@@ -301,31 +297,57 @@ export default function DashboardHome() {
                 </Badge>
                 <div>
                   <h1 className="text-4xl text-foreground">
-                    Bonjour, {profile.full_name?.split(' ')[0] || 'participant'}.
+                    Bonjour, {profile.full_name?.split(" ")[0] || "participant"}
+                    .
                   </h1>
                   <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
-                    Retrouvez ici vos conversations, les prochains rendez-vous et les
-                    exposants a suivre pour prolonger la dynamique du salon toute
-                    l&apos;annee.
+                    Retrouvez ici vos conversations, les prochains rendez-vous
+                    et les exposants a suivre pour prolonger la dynamique du
+                    salon toute l&apos;annee.
                   </p>
                 </div>
               </div>
               <div className="rounded-3xl border border-primary/12 bg-primary/6 px-5 py-4 text-sm">
-                <p className="font-semibold text-primary">Compte supervise par l&apos;admin</p>
+                <p className="font-semibold text-primary">
+                  Compte supervise par l&apos;admin
+                </p>
                 <p className="mt-1 text-muted-foreground">
-                  Creation des acces, activation et suivi centralises.
+                  Creation des acces et diffusion des identifiants centralisees.
                 </p>
               </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <MetricCard icon={Users} label="Exposants disponibles" value={data.stats.networkSize} tone="blue" />
-              <MetricCard icon={MessageSquare} label="Conversations ouvertes" value={data.stats.conversationCount} tone="emerald" />
-              <MetricCard icon={CalendarDays} label="Evenements a venir" value={data.stats.upcomingCount} tone="amber" />
+              <MetricCard
+                icon={Users}
+                label="Exposants disponibles"
+                value={data.stats.networkSize}
+                tone="blue"
+              />
+              <MetricCard
+                icon={MessageSquare}
+                label="Conversations ouvertes"
+                value={data.stats.conversationCount}
+                tone="emerald"
+              />
+              <MetricCard
+                icon={CalendarDays}
+                label="Evenements a venir"
+                value={data.stats.upcomingCount}
+                tone="amber"
+              />
               <MetricCard
                 icon={BriefcaseBusiness}
-                label={profile.role === 'exposant' ? 'Produits publies' : 'Espace business'}
-                value={profile.role === 'exposant' ? data.stats.productCount : data.stats.networkSize}
+                label={
+                  profile.role === "exposant"
+                    ? "Produits publies"
+                    : "Espace business"
+                }
+                value={
+                  profile.role === "exposant"
+                    ? data.stats.productCount
+                    : data.stats.networkSize
+                }
                 tone="violet"
               />
             </div>
@@ -339,9 +361,17 @@ export default function DashboardHome() {
                 <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary/70">
                   Opportunites
                 </p>
-                <h2 className="mt-2 text-3xl text-foreground">Exposants a suivre</h2>
+                <h2 className="mt-2 text-3xl text-foreground">
+                  Exposants a suivre
+                </h2>
               </div>
-              <Link href="/annuaire" className={cn(buttonVariants({ variant: 'ghost' }), 'rounded-full')}>
+              <Link
+                href="/annuaire"
+                className={cn(
+                  buttonVariants({ variant: "ghost" }),
+                  "rounded-full",
+                )}
+              >
                 Voir tout
                 <ArrowRight className="size-4" />
               </Link>
@@ -356,9 +386,11 @@ export default function DashboardHome() {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h3 className="text-xl text-foreground">{exposant.nom}</h3>
+                      <h3 className="text-xl text-foreground">
+                        {exposant.nom}
+                      </h3>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {exposant.secteur || 'Secteur non renseigne'}
+                        {exposant.secteur || "Secteur non renseigne"}
                       </p>
                     </div>
                     {exposant.is_featured && (
@@ -369,12 +401,14 @@ export default function DashboardHome() {
                   </div>
                   <p className="line-clamp-3 text-sm leading-6 text-muted-foreground">
                     {exposant.description ||
-                      'Nouvelle presence entreprise sur PROMOTE-CONNECT. Ouvrez la fiche pour voir les produits, la societe et les contacts.'}
+                      "Nouvelle presence entreprise sur PROMOTE-CONNECT. Ouvrez la fiche pour voir les produits, la societe et les contacts."}
                   </p>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">
-                      {exposant.pays || 'International'}
-                      {exposant.pavillon ? ` - Pavillon ${exposant.pavillon}` : ''}
+                      {exposant.pays || "International"}
+                      {exposant.pavillon
+                        ? ` - Pavillon ${exposant.pavillon}`
+                        : ""}
                     </span>
                     <span className="font-medium text-primary">Consulter</span>
                   </div>
@@ -391,9 +425,17 @@ export default function DashboardHome() {
                 <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary/70">
                   Messagerie
                 </p>
-                <h2 className="mt-2 text-3xl text-foreground">Conversations recentes</h2>
+                <h2 className="mt-2 text-3xl text-foreground">
+                  Conversations recentes
+                </h2>
               </div>
-              <Link href="/chat" className={cn(buttonVariants({ variant: 'ghost' }), 'rounded-full')}>
+              <Link
+                href="/chat"
+                className={cn(
+                  buttonVariants({ variant: "ghost" }),
+                  "rounded-full",
+                )}
+              >
                 Ouvrir le chat
                 <ArrowRight className="size-4" />
               </Link>
@@ -402,8 +444,8 @@ export default function DashboardHome() {
             <div className="space-y-3">
               {data.recentConversations.length === 0 ? (
                 <div className="surface-subtle p-5 text-sm text-muted-foreground">
-                  Aucune conversation pour le moment. Lancez un premier contact depuis
-                  l&apos;annuaire exposants.
+                  Aucune conversation pour le moment. Lancez un premier contact
+                  depuis l&apos;annuaire exposants.
                 </div>
               ) : (
                 data.recentConversations.map((conversation) => (
@@ -419,18 +461,22 @@ export default function DashboardHome() {
                     </Avatar>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-3">
-                        <p className="truncate text-sm font-semibold text-foreground">{conversation.other_name}</p>
+                        <p className="truncate text-sm font-semibold text-foreground">
+                          {conversation.other_name}
+                        </p>
                         {conversation.last_message_at && (
                           <span className="shrink-0 text-xs text-muted-foreground">
-                            {new Date(conversation.last_message_at).toLocaleDateString('fr-FR', {
-                              day: 'numeric',
-                              month: 'short',
+                            {new Date(
+                              conversation.last_message_at,
+                            ).toLocaleDateString("fr-FR", {
+                              day: "numeric",
+                              month: "short",
                             })}
                           </span>
                         )}
                       </div>
                       <p className="mt-1 truncate text-sm text-muted-foreground">
-                        {conversation.last_message || 'Conversation ouverte'}
+                        {conversation.last_message || "Conversation ouverte"}
                       </p>
                     </div>
                   </Link>
@@ -448,13 +494,15 @@ export default function DashboardHome() {
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary/70">
                 Agenda
               </p>
-              <h2 className="mt-2 text-3xl text-foreground">Prochains rendez-vous</h2>
+              <h2 className="mt-2 text-3xl text-foreground">
+                Prochains rendez-vous
+              </h2>
             </div>
             <div className="space-y-3">
               {data.upcomingEvents.length === 0 ? (
                 <div className="surface-subtle p-5 text-sm text-muted-foreground">
-                  Aucun evenement programme. L&apos;administration publiera les prochains
-                  temps forts ici.
+                  Aucun evenement programme. L&apos;administration publiera les
+                  prochains temps forts ici.
                 </div>
               ) : (
                 data.upcomingEvents.map((event) => (
@@ -465,24 +513,34 @@ export default function DashboardHome() {
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-foreground">{event.titre}</p>
+                        <p className="text-sm font-semibold text-foreground">
+                          {event.titre}
+                        </p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {event.type || 'Session'}
-                          {event.pavillon ? ` - Pavillon ${event.pavillon}` : ''}
+                          {event.type || "Session"}
+                          {event.pavillon
+                            ? ` - Pavillon ${event.pavillon}`
+                            : ""}
                         </p>
                       </div>
                       <div className="text-right text-xs text-muted-foreground">
                         <p>
-                          {new Date(event.starts_at).toLocaleDateString('fr-FR', {
-                            day: 'numeric',
-                            month: 'short',
-                          })}
+                          {new Date(event.starts_at).toLocaleDateString(
+                            "fr-FR",
+                            {
+                              day: "numeric",
+                              month: "short",
+                            },
+                          )}
                         </p>
                         <p>
-                          {new Date(event.starts_at).toLocaleTimeString('fr-FR', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
+                          {new Date(event.starts_at).toLocaleTimeString(
+                            "fr-FR",
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )}
                         </p>
                       </div>
                     </div>
@@ -500,18 +558,20 @@ export default function DashboardHome() {
                 Focus business
               </p>
               <h2 className="mt-2 text-3xl text-foreground">
-                {profile.role === 'exposant' ? 'Votre vitrine' : 'Votre presence'}
+                {profile.role === "exposant"
+                  ? "Votre vitrine"
+                  : "Votre presence"}
               </h2>
             </div>
 
-            {profile.role === 'exposant' && data.exposantSnapshot ? (
+            {profile.role === "exposant" && data.exposantSnapshot ? (
               <div className="surface-subtle space-y-4 p-5">
                 <div>
                   <p className="text-lg font-semibold text-foreground">
                     {data.exposantSnapshot.nom}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {data.exposantSnapshot.secteur || 'Secteur non renseigne'}
+                    {data.exposantSnapshot.secteur || "Secteur non renseigne"}
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -532,7 +592,13 @@ export default function DashboardHome() {
                     </p>
                   </div>
                 </div>
-                <Link href="/vitrine/mes-produits" className={cn(buttonVariants({ variant: 'default' }), 'w-full rounded-2xl')}>
+                <Link
+                  href="/vitrine/mes-produits"
+                  className={cn(
+                    buttonVariants({ variant: "default" }),
+                    "w-full rounded-2xl",
+                  )}
+                >
                   Gerer ma vitrine
                 </Link>
               </div>
@@ -541,14 +607,22 @@ export default function DashboardHome() {
                 <div className="flex items-start gap-3">
                   <TrendingUp className="mt-0.5 size-5 text-primary" />
                   <div>
-                    <p className="font-semibold text-foreground">Reseau en croissance</p>
+                    <p className="font-semibold text-foreground">
+                      Reseau en croissance
+                    </p>
                     <p className="text-sm leading-6 text-muted-foreground">
-                      {data.stats.networkSize} exposants sont deja accessibles pour vos prises
-                      de contact et vos rendez-vous B2B.
+                      {data.stats.networkSize} exposants sont deja accessibles
+                      pour vos prises de contact et vos rendez-vous B2B.
                     </p>
                   </div>
                 </div>
-                <Link href="/annuaire" className={cn(buttonVariants({ variant: 'outline' }), 'w-full rounded-2xl bg-white/85')}>
+                <Link
+                  href="/annuaire"
+                  className={cn(
+                    buttonVariants({ variant: "outline" }),
+                    "w-full rounded-2xl bg-white/85",
+                  )}
+                >
                   Trouver des exposants
                 </Link>
               </div>
@@ -565,7 +639,8 @@ export default function DashboardHome() {
                   Rappel
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Tous les acces sont crees par l&apos;administrateur et envoyes par email.
+                  Tous les acces sont crees par l&apos;administrateur et envoyes
+                  par email.
                 </p>
               </div>
             </div>
@@ -585,13 +660,13 @@ function MetricCard({
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: number;
-  tone: 'blue' | 'emerald' | 'amber' | 'violet';
+  tone: "blue" | "emerald" | "amber" | "violet";
 }) {
   const styles = {
-    blue: 'bg-blue-50 text-blue-700',
-    emerald: 'bg-emerald-50 text-emerald-700',
-    amber: 'bg-amber-50 text-amber-700',
-    violet: 'bg-violet-50 text-violet-700',
+    blue: "bg-blue-50 text-blue-700",
+    emerald: "bg-emerald-50 text-emerald-700",
+    amber: "bg-amber-50 text-amber-700",
+    violet: "bg-violet-50 text-violet-700",
   };
 
   return (
@@ -601,7 +676,9 @@ function MetricCard({
           <p className="text-sm text-muted-foreground">{label}</p>
           <p className="mt-2 text-3xl font-semibold text-foreground">{value}</p>
         </div>
-        <div className={`flex size-12 items-center justify-center rounded-2xl ${styles[tone]}`}>
+        <div
+          className={`flex size-12 items-center justify-center rounded-2xl ${styles[tone]}`}
+        >
           <Icon className="size-5" />
         </div>
       </div>

@@ -402,6 +402,128 @@ export interface Database {
         };
         Relationships: [];
       };
+      posts: {
+        Row: {
+          id: string;
+          author_id: string;
+          content: string;
+          type: string;
+          category: string | null;
+          image_url: string | null;
+          attachment_url: string | null;
+          likes_count: number;
+          comments_count: number;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          author_id: string;
+          content: string;
+          type?: string;
+          category?: string | null;
+          image_url?: string | null;
+          attachment_url?: string | null;
+          likes_count?: number;
+          comments_count?: number;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          author_id?: string;
+          content?: string;
+          type?: string;
+          category?: string | null;
+          image_url?: string | null;
+          attachment_url?: string | null;
+          likes_count?: number;
+          comments_count?: number;
+          created_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'posts_author_id_fkey';
+            columns: ['author_id'];
+            isRelationOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      post_likes: {
+        Row: {
+          id: string;
+          post_id: string;
+          user_id: string;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          post_id: string;
+          user_id: string;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          post_id?: string;
+          user_id?: string;
+          created_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'post_likes_post_id_fkey';
+            columns: ['post_id'];
+            isRelationOneToOne: false;
+            referencedRelation: 'posts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_likes_user_id_fkey';
+            columns: ['user_id'];
+            isRelationOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      post_comments: {
+        Row: {
+          id: string;
+          post_id: string;
+          author_id: string;
+          content: string;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          post_id: string;
+          author_id: string;
+          content: string;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          post_id?: string;
+          author_id?: string;
+          content?: string;
+          created_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'post_comments_post_id_fkey';
+            columns: ['post_id'];
+            isRelationOneToOne: false;
+            referencedRelation: 'posts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_comments_author_id_fkey';
+            columns: ['author_id'];
+            isRelationOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

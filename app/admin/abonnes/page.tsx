@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Search, Shield, Users } from 'lucide-react';
 import { supabaseClient } from '@/lib/supabase/client';
-import { Search, Users, TrendingUp, Clock, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -16,124 +15,76 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-interface Subscriber {
+interface AccessRow {
   id: string;
   full_name: string | null;
   company: string | null;
   role: string | null;
-  subscription_status: string | null;
-  subscription_ends_at: string | null;
   created_at: string | null;
 }
 
-export default function AdminAbonnesPage() {
-  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function AdminAccessPage() {
+  const [accounts, setAccounts] = useState<AccessRow[]>([]);
   const [search, setSearch] = useState('');
-  const [stats, setStats] = useState({ total: 0, active: 0, expired: 0, trial: 0 });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchSubscribers = async () => {
-      setLoading(true);
-      const { data: profiles } = await supabaseClient.from('profiles').select('*').order('created_at', { ascending: false });
-      if (profiles) {
-        setSubscribers(profiles);
-        setStats({
-          total: profiles.length,
-          active: profiles.filter((p) => p.subscription_status === 'active').length,
-          expired: profiles.filter((p) => p.subscription_status === 'expired').length,
-          trial: profiles.filter((p) => p.subscription_status === 'trial').length,
-        });
-      }
+    const loadAccounts = async () => {
+      const { data } = await supabaseClient
+        .from('profiles')
+        .select('id, full_name, company, role, created_at')
+        .order('created_at', { ascending: false });
+
+      setAccounts((data || []) as AccessRow[]);
       setLoading(false);
     };
-    fetchSubscribers();
+
+    void loadAccounts();
   }, []);
 
-  const filtered = subscribers.filter((sub) => sub.full_name?.toLowerCase().includes(search.toLowerCase()) || sub.company?.toLowerCase().includes(search.toLowerCase()));
+  const filteredAccounts = useMemo(() => {
+    const query = search.toLowerCase();
+    return accounts.filter((account) =>
+      `${account.full_name || ''} ${account.company || ''} ${account.role || ''}`
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [accounts, search]);
 
-  const getStatusBadge = (status: string | null) => {
-    switch (status) {
-      case 'active': return <Badge className="bg-green-100 text-green-700 border-0"><TrendingUp className="mr-1 h-3 w-3" />Actif</Badge>;
-      case 'trial': return <Badge className="bg-blue-100 text-blue-700 border-0"><Clock className="mr-1 h-3 w-3" />Essai</Badge>;
-      case 'expired': return <Badge variant="destructive"><AlertCircle className="mr-1 h-3 w-3" />Expiré</Badge>;
-      default: return <Badge variant="secondary">-</Badge>;
-    }
-  };
+  const stats = useMemo(
+    () => ({
+      total: accounts.length,
+      admins: accounts.filter((account) => account.role === 'admin').length,
+      members: accounts.filter((account) => account.role !== 'admin').length,
+    }),
+    [accounts]
+  );
 
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Administration des abonnes</CardTitle>
-          <p className="text-sm text-muted-foreground">Suivez les abonnements, les statuts et les acces des membres.</p>
+          <CardTitle>Vue globale des acces</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Le systeme d abonnement est desactive. Tous les comptes listes ici sont actives pour la plateforme.
+          </p>
         </CardHeader>
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                <Users className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50">
-                <TrendingUp className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-green-600">Actifs</p>
-                <p className="text-2xl font-bold text-green-900">{stats.active}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
-                <Clock className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-blue-600">Essai</p>
-                <p className="text-2xl font-bold text-blue-900">{stats.trial}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-50">
-                <AlertCircle className="h-5 w-5 text-red-600" />
-              </div>
-              <div>
-                <p className="text-sm text-red-600">Expirés</p>
-                <p className="text-2xl font-bold text-red-900">{stats.expired}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard title="Comptes" value={stats.total} icon={Users} />
+        <StatCard title="Administrateurs" value={stats.admins} icon={Shield} />
+        <StatCard title="Membres" value={stats.members} icon={Users} />
       </div>
 
       <Card>
         <CardContent className="p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              type="search"
-              placeholder="Rechercher un abonne..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Rechercher un compte..."
               className="pl-10"
             />
           </div>
@@ -144,14 +95,14 @@ export default function AdminAbonnesPage() {
               <TableHead>Utilisateur</TableHead>
               <TableHead>Entreprise</TableHead>
               <TableHead>Role</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead>Expiration</TableHead>
+              <TableHead>Acces</TableHead>
+              <TableHead>Creation</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
                   <TableCell><div className="h-5 w-32 animate-pulse rounded bg-muted" /></TableCell>
                   <TableCell><div className="h-5 w-24 animate-pulse rounded bg-muted" /></TableCell>
                   <TableCell><div className="h-5 w-16 animate-pulse rounded bg-muted" /></TableCell>
@@ -159,30 +110,60 @@ export default function AdminAbonnesPage() {
                   <TableCell><div className="h-5 w-20 animate-pulse rounded bg-muted" /></TableCell>
                 </TableRow>
               ))
-            ) : filtered.length > 0 ? (
-              filtered.map((sub) => (
-                <TableRow key={sub.id}>
-                  <TableCell className="font-medium text-slate-900">{sub.full_name || '-'}</TableCell>
-                  <TableCell className="text-sm text-slate-600">{sub.company || '-'}</TableCell>
+            ) : filteredAccounts.length > 0 ? (
+              filteredAccounts.map((account) => (
+                <TableRow key={account.id}>
+                  <TableCell className="font-medium text-slate-900">{account.full_name || '-'}</TableCell>
+                  <TableCell className="text-sm text-slate-600">{account.company || '-'}</TableCell>
                   <TableCell>
-                    <Badge variant={sub.role === 'exposant' ? 'default' : 'secondary'}>
-                      {sub.role || '-'}
+                    <Badge variant="secondary" className="rounded-full">
+                      {account.role || 'visiteur'}
                     </Badge>
                   </TableCell>
-                  <TableCell>{getStatusBadge(sub.subscription_status)}</TableCell>
+                  <TableCell>
+                    <Badge className="rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+                      Actif
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-sm text-slate-600">
-                    {sub.subscription_ends_at ? new Date(sub.subscription_ends_at).toLocaleDateString('fr-FR') : '-'}
+                    {account.created_at ? new Date(account.created_at).toLocaleDateString('fr-FR') : '-'}
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">Aucun abonne trouve</TableCell>
+                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
+                  Aucun compte trouve
+                </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </Card>
     </div>
+  );
+}
+
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+}: {
+  title: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string }>;
+}) {
+  return (
+    <Card>
+      <CardContent className="flex items-center gap-3 p-5">
+        <div className="flex size-11 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+          <Icon className="size-5" />
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">{title}</p>
+          <p className="text-2xl font-semibold text-foreground">{value}</p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

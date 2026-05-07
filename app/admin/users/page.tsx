@@ -51,8 +51,6 @@ interface UserRow {
   sector: string | null;
   country: string | null;
   pavillon: string | null;
-  subscription_status: string | null;
-  subscription_ends_at: string | null;
   created_at: string;
 }
 
@@ -124,7 +122,6 @@ export default function AdminUsersPage() {
     email: string;
     password: string;
     emailSent: boolean;
-    subscriptionEndsAt: string;
   } | null>(null);
   const [form, setForm] = useState({
     full_name: '',
@@ -151,9 +148,9 @@ export default function AdminUsersPage() {
   const stats = useMemo(
     () => ({
       total: users.length,
+      admins: users.filter((user) => user.role === 'admin').length,
       exposants: users.filter((user) => user.role === 'exposant').length,
       visiteurs: users.filter((user) => user.role === 'visiteur').length,
-      actifs: users.filter((user) => user.subscription_status === 'active').length,
     }),
     [users]
   );
@@ -186,7 +183,11 @@ export default function AdminUsersPage() {
   }, [token]);
 
   useEffect(() => {
-    void fetchUsers();
+    const timer = window.setTimeout(() => {
+      void fetchUsers();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [fetchUsers]);
 
   async function handleCreate() {
@@ -223,7 +224,6 @@ export default function AdminUsersPage() {
         email: form.email,
         password: payload.temporary_password,
         emailSent: payload.email_sent,
-        subscriptionEndsAt: payload.subscription_ends_at,
       });
 
       setForm({
@@ -303,8 +303,8 @@ export default function AdminUsersPage() {
           </p>
           <h1 className="text-4xl text-foreground">Utilisateurs geres par l&apos;admin</h1>
           <p className="max-w-3xl text-base leading-7 text-muted-foreground">
-            Creation de comptes, activation de l&apos;acces 12 mois et envoi des
-            identifiants de connexion aux exposants et visiteurs.
+            Creation de comptes, envoi des identifiants de connexion et
+            attribution des roles pour toute la plateforme.
           </p>
         </div>
         <Button onClick={() => setShowCreateDialog(true)} className="rounded-2xl">
@@ -315,9 +315,9 @@ export default function AdminUsersPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total comptes" value={stats.total} icon={Users} tone="blue" />
+        <StatCard label="Administrateurs" value={stats.admins} icon={UserPlus} tone="amber" />
         <StatCard label="Exposants" value={stats.exposants} icon={Building2} tone="violet" />
         <StatCard label="Visiteurs" value={stats.visiteurs} icon={Globe2} tone="emerald" />
-        <StatCard label="Acces actifs" value={stats.actifs} icon={UserPlus} tone="amber" />
       </div>
 
       {lastInvite && (
@@ -337,16 +337,10 @@ export default function AdminUsersPage() {
                   : 'Aucun email n a pu etre envoye. Partagez ces identifiants manuellement.'}
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <Badge variant="secondary" className="rounded-full">
-                Actif jusqu&apos;au{' '}
-                {new Date(lastInvite.subscriptionEndsAt).toLocaleDateString('fr-FR')}
-              </Badge>
-              <Button variant="outline" onClick={copyInvite} className="rounded-2xl bg-white/80">
-                <Copy className="mr-2 size-4" />
-                Copier les acces
-              </Button>
-            </div>
+            <Button variant="outline" onClick={copyInvite} className="rounded-2xl bg-white/80">
+              <Copy className="mr-2 size-4" />
+              Copier les acces
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -404,8 +398,8 @@ export default function AdminUsersPage() {
                 <TableRow>
                   <TableHead>Utilisateur</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>Acces</TableHead>
-                  <TableHead>Expiration</TableHead>
+                  <TableHead>Profil</TableHead>
+                  <TableHead>Creation</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -434,21 +428,13 @@ export default function AdminUsersPage() {
                         {user.role || 'visiteur'}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <Badge
-                        className={
-                          user.subscription_status === 'active'
-                            ? 'rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-100'
-                            : 'rounded-full bg-slate-100 text-slate-700 hover:bg-slate-100'
-                        }
-                      >
-                        {user.subscription_status === 'active' ? 'Actif' : 'A verifier'}
-                      </Badge>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {user.role === 'exposant'
+                        ? `Pavillon ${user.pavillon || '-'}`
+                        : user.company || 'Compte utilisateur'}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {user.subscription_ends_at
-                        ? new Date(user.subscription_ends_at).toLocaleDateString('fr-FR')
-                        : '-'}
+                      {new Date(user.created_at).toLocaleDateString('fr-FR')}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -484,8 +470,7 @@ export default function AdminUsersPage() {
           <DialogHeader>
             <DialogTitle>Creer un compte utilisateur</DialogTitle>
             <DialogDescription>
-              Le participant recevra ses acces par email et son compte sera active
-              pour 12 mois.
+              Le participant recevra ses acces par email et pourra utiliser toute la plateforme.
             </DialogDescription>
           </DialogHeader>
 

@@ -3,12 +3,12 @@
 
 -- Create test profiles (users)
 INSERT INTO profiles (id, full_name, company, role, sector, country, pavillon, subscription_status, subscription_ends_at) VALUES
-  ('550e8400-e29b-41d4-a716-446655440001'::uuid, 'Alice Martin', 'TechCorp', 'exposant', 'Technology', 'France', 'A1', 'active', NOW() + INTERVAL '12 months'),
-  ('550e8400-e29b-41d4-a716-446655440002'::uuid, 'Bob Johnson', 'GreenEnergy', 'exposant', 'Energy', 'Germany', 'B2', 'active', NOW() + INTERVAL '12 months'),
-  ('550e8400-e29b-41d4-a716-446655440003'::uuid, 'Claire Dupont', 'Fashion Plus', 'exposant', 'Fashion', 'France', 'C3', 'active', NOW() + INTERVAL '12 months'),
-  ('550e8400-e29b-41d4-a716-446655440004'::uuid, 'David Chen', 'MediCare', 'exposant', 'Healthcare', 'Belgium', 'D4', 'active', NOW() + INTERVAL '12 months'),
-  ('550e8400-e29b-41d4-a716-446655440005'::uuid, 'Emma Wilson', 'BuildCo', 'exposant', 'Construction', 'Netherlands', 'E5', 'active', NOW() + INTERVAL '12 months'),
-  ('550e8400-e29b-41d4-a716-446655440006'::uuid, 'Visitor User', 'Import Corp', 'visiteur', 'General', 'France', NULL, 'active', NOW() + INTERVAL '12 months');
+  ('550e8400-e29b-41d4-a716-446655440001'::uuid, 'Alice Martin', 'TechCorp', 'exposant', 'Technology', 'France', 'A1', 'active', NULL),
+  ('550e8400-e29b-41d4-a716-446655440002'::uuid, 'Bob Johnson', 'GreenEnergy', 'exposant', 'Energy', 'Germany', 'B2', 'active', NULL),
+  ('550e8400-e29b-41d4-a716-446655440003'::uuid, 'Claire Dupont', 'Fashion Plus', 'exposant', 'Fashion', 'France', 'C3', 'active', NULL),
+  ('550e8400-e29b-41d4-a716-446655440004'::uuid, 'David Chen', 'MediCare', 'exposant', 'Healthcare', 'Belgium', 'D4', 'active', NULL),
+  ('550e8400-e29b-41d4-a716-446655440005'::uuid, 'Emma Wilson', 'BuildCo', 'exposant', 'Construction', 'Netherlands', 'E5', 'active', NULL),
+  ('550e8400-e29b-41d4-a716-446655440006'::uuid, 'Visitor User', 'Import Corp', 'visiteur', 'General', 'France', NULL, 'active', NULL);
 
 -- Create exposants (exhibitors)
 INSERT INTO exposants (id, profile_id, nom, description, secteur, pavillon, stand, pays, website, logo_url, is_featured) VALUES
@@ -51,6 +51,4 @@ INSERT INTO messages (id, conversation_id, sender_id, content, is_read) VALUES
   (gen_random_uuid(), (SELECT id FROM conversations LIMIT 1), '550e8400-e29b-41d4-a716-446655440002'::uuid, 'Oui, absolument ! On pourrait discuter de nos solutions cloud pour optimiser nos opérations.', true),
   (gen_random_uuid(), (SELECT id FROM conversations LIMIT 1), '550e8400-e29b-41d4-a716-446655440001'::uuid, 'Parfait ! Je vous propose un RDV demain à 14h ?', true);
 
--- Create a subscription (Stripe)
-INSERT INTO subscriptions (id, profile_id, stripe_customer_id, stripe_subscription_id, status, current_period_end) VALUES
-  (gen_random_uuid(), '550e8400-e29b-41d4-a716-446655440001'::uuid, 'cus_test_001', 'sub_test_001', 'active', NOW() + INTERVAL '12 months');
+-- Abonnements desactives: aucun enregistrement Stripe a inserer.

@@ -124,7 +124,7 @@ export default function AdminNewsletterPage() {
         </p>
         <h1 className="text-4xl text-foreground">Composer et archiver les editions</h1>
         <p className="max-w-3xl text-base leading-7 text-muted-foreground">
-          Diffusez les actualites PROMOTE-CONNECT, segmentees par secteurs si besoin, et conservez l historique dans l espace abonne.
+          Diffusez les actualites PROMOTE-CONNECT, segmentees par secteurs si besoin, et conservez l historique dans l espace membre.
         </p>
       </div>
 

@@ -13,8 +13,8 @@ const trustPoints = [
   },
   {
     icon: CalendarDays,
-    title: "Suivi 12 mois",
-    copy: "Gardez votre dynamique post-salon avec agenda, vitrine et opportunites business.",
+    title: "Acces administre",
+    copy: "Recevez vos identifiants par email et retrouvez agenda, vitrine et opportunites business dans un meme espace.",
   },
 ];
 
@@ -83,7 +83,7 @@ export default function AuthLayout({
                   PROMOTE-CONNECT
                 </p>
                 <h1 className="mt-2 text-3xl leading-tight text-foreground">
-                  Connexion simple, reseau actif toute l annee.
+                  Connexion simple, acces pilote par l administrateur.
                 </h1>
               </div>
               <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">

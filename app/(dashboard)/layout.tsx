@@ -55,7 +55,6 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
         user={{
           name: profile?.full_name || user.email?.split('@')[0] || 'Participant',
           company: profile?.company || undefined,
-          subscription: profile?.subscription_status,
         }}
         onSignOut={handleSignOut}
       />
@@ -73,7 +72,6 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
               user={{
                 name: profile?.full_name || user.email?.split('@')[0] || 'Participant',
                 company: profile?.company || undefined,
-                subscription: profile?.subscription_status,
               }}
               onSignOut={handleSignOut}
               mobile

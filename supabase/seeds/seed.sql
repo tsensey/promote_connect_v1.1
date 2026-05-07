@@ -1,3 +1,54 @@
+truncate table
+  public.support_messages,
+  public.messages,
+  public.rendez_vous,
+  public.produits,
+  public.conversations,
+  public.newsletter_subscriptions,
+  public.newsletter_editions,
+  public.support_tickets,
+  public.subscriptions,
+  public.exposants,
+  public.evenements,
+  public.profiles
+restart identity cascade;
+
+delete from auth.identities
+where user_id in (
+  '550e8400-e29b-41d4-a716-446655440000'::uuid,
+  '550e8400-e29b-41d4-a716-446655440001'::uuid,
+  '550e8400-e29b-41d4-a716-446655440002'::uuid,
+  '550e8400-e29b-41d4-a716-446655440003'::uuid,
+  '550e8400-e29b-41d4-a716-446655440004'::uuid
+);
+
+delete from auth.sessions
+where user_id in (
+  '550e8400-e29b-41d4-a716-446655440000'::uuid,
+  '550e8400-e29b-41d4-a716-446655440001'::uuid,
+  '550e8400-e29b-41d4-a716-446655440002'::uuid,
+  '550e8400-e29b-41d4-a716-446655440003'::uuid,
+  '550e8400-e29b-41d4-a716-446655440004'::uuid
+);
+
+delete from auth.refresh_tokens
+where user_id in (
+  '550e8400-e29b-41d4-a716-446655440000',
+  '550e8400-e29b-41d4-a716-446655440001',
+  '550e8400-e29b-41d4-a716-446655440002',
+  '550e8400-e29b-41d4-a716-446655440003',
+  '550e8400-e29b-41d4-a716-446655440004'
+);
+
+delete from auth.users
+where id in (
+  '550e8400-e29b-41d4-a716-446655440000'::uuid,
+  '550e8400-e29b-41d4-a716-446655440001'::uuid,
+  '550e8400-e29b-41d4-a716-446655440002'::uuid,
+  '550e8400-e29b-41d4-a716-446655440003'::uuid,
+  '550e8400-e29b-41d4-a716-446655440004'::uuid
+);
+
 -- PROMOTE-CONNECT seed data
 -- Execute from the Supabase SQL editor with sufficient privileges.
 
@@ -79,6 +130,68 @@ begin
   on conflict (id) do nothing;
 end $$;
 
+insert into auth.identities (
+  id,
+  user_id,
+  identity_data,
+  provider,
+  provider_id,
+  last_sign_in_at,
+  created_at,
+  updated_at
+)
+values
+  (
+    '550e8400-e29b-41d4-a716-446655440000'::uuid,
+    '550e8400-e29b-41d4-a716-446655440000'::uuid,
+    '{"sub":"550e8400-e29b-41d4-a716-446655440000","email":"admin@promote-connect.com","email_verified":true,"phone_verified":false}'::jsonb,
+    'email',
+    '550e8400-e29b-41d4-a716-446655440000',
+    now(),
+    now(),
+    now()
+  ),
+  (
+    '550e8400-e29b-41d4-a716-446655440001'::uuid,
+    '550e8400-e29b-41d4-a716-446655440001'::uuid,
+    '{"sub":"550e8400-e29b-41d4-a716-446655440001","email":"alice@techcorp.com","email_verified":true,"phone_verified":false}'::jsonb,
+    'email',
+    '550e8400-e29b-41d4-a716-446655440001',
+    now(),
+    now(),
+    now()
+  ),
+  (
+    '550e8400-e29b-41d4-a716-446655440002'::uuid,
+    '550e8400-e29b-41d4-a716-446655440002'::uuid,
+    '{"sub":"550e8400-e29b-41d4-a716-446655440002","email":"bob@greenenergy.com","email_verified":true,"phone_verified":false}'::jsonb,
+    'email',
+    '550e8400-e29b-41d4-a716-446655440002',
+    now(),
+    now(),
+    now()
+  ),
+  (
+    '550e8400-e29b-41d4-a716-446655440003'::uuid,
+    '550e8400-e29b-41d4-a716-446655440003'::uuid,
+    '{"sub":"550e8400-e29b-41d4-a716-446655440003","email":"claire@fashionplus.com","email_verified":true,"phone_verified":false}'::jsonb,
+    'email',
+    '550e8400-e29b-41d4-a716-446655440003',
+    now(),
+    now(),
+    now()
+  ),
+  (
+    '550e8400-e29b-41d4-a716-446655440004'::uuid,
+    '550e8400-e29b-41d4-a716-446655440004'::uuid,
+    '{"sub":"550e8400-e29b-41d4-a716-446655440004","email":"visitor@promote-connect.com","email_verified":true,"phone_verified":false}'::jsonb,
+    'email',
+    '550e8400-e29b-41d4-a716-446655440004',
+    now(),
+    now(),
+    now()
+  );
+
 insert into profiles (
   id,
   full_name,
@@ -100,7 +213,7 @@ values
     'Cameroun',
     null,
     'active',
-    now() + interval '12 months'
+    null
   ),
   (
     '550e8400-e29b-41d4-a716-446655440001'::uuid,
@@ -111,7 +224,7 @@ values
     'France',
     'A',
     'active',
-    now() + interval '12 months'
+    null
   ),
   (
     '550e8400-e29b-41d4-a716-446655440002'::uuid,
@@ -122,7 +235,7 @@ values
     'Germany',
     'B',
     'active',
-    now() + interval '12 months'
+    null
   ),
   (
     '550e8400-e29b-41d4-a716-446655440003'::uuid,
@@ -133,7 +246,7 @@ values
     'France',
     'C',
     'active',
-    now() + interval '12 months'
+    null
   ),
   (
     '550e8400-e29b-41d4-a716-446655440004'::uuid,
@@ -144,7 +257,7 @@ values
     'France',
     null,
     'active',
-    now() + interval '12 months'
+    null
   )
 on conflict (id) do update
 set
@@ -315,24 +428,13 @@ where not exists (
 insert into support_tickets (profile_id, subject, description, status, priority)
 select
   '550e8400-e29b-41d4-a716-446655440004'::uuid,
-  'Activation de mon abonnement',
-  'Je souhaite verifier la duree de mon acces et mes modules actifs.',
+  'Confirmation de mon acces',
+  'Je souhaite verifier que mon acces a bien ete active et recevoir un rappel des modules disponibles.',
   'open',
   'medium'
 where not exists (
   select 1
   from support_tickets
   where profile_id = '550e8400-e29b-41d4-a716-446655440004'::uuid
-    and subject = 'Activation de mon abonnement'
-);
-
-insert into subscriptions (profile_id, stripe_customer_id, stripe_subscription_id, status, current_period_end)
-select
-  '550e8400-e29b-41d4-a716-446655440001'::uuid,
-  'cus_seed_alice',
-  'sub_seed_alice',
-  'active',
-  now() + interval '12 months'
-where not exists (
-  select 1 from subscriptions where stripe_subscription_id = 'sub_seed_alice'
+    and subject = 'Confirmation de mon acces'
 );

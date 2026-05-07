@@ -44,7 +44,7 @@ export async function GET(request: Request) {
   const supabase = createAdminClient();
   const { data: users, error } = await supabase
     .from('profiles')
-    .select('id, full_name, company, role, sector, country, pavillon, subscription_status, subscription_ends_at, created_at')
+    .select('id, full_name, company, role, sector, country, pavillon, created_at')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -80,8 +80,6 @@ export async function POST(request: Request) {
   }
 
   const password = generatePassword();
-  const accessEndsAt = new Date();
-  accessEndsAt.setMonth(accessEndsAt.getMonth() + 12);
 
   const supabaseAdmin = createAdminClient();
 
@@ -131,7 +129,7 @@ export async function POST(request: Request) {
       country: country || null,
       pavillon: pavillon || null,
       subscription_status: 'active',
-      subscription_ends_at: accessEndsAt.toISOString(),
+      subscription_ends_at: null,
     });
 
   if (profileError) {
@@ -186,7 +184,6 @@ export async function POST(request: Request) {
           email,
           password,
           role,
-          accessEndsAt,
         }),
       });
 
@@ -201,7 +198,6 @@ export async function POST(request: Request) {
     user_id: userId,
     email_sent: emailSent,
     temporary_password: password,
-    subscription_ends_at: accessEndsAt.toISOString(),
   });
 }
 
@@ -248,20 +244,13 @@ function buildCredentialsHtml({
   email,
   password,
   role,
-  accessEndsAt,
 }: {
   fullName: string;
   email: string;
   password: string;
   role: string;
-  accessEndsAt: Date;
 }) {
   const loginUrl = `${appUrl}/login`;
-  const expiresLabel = accessEndsAt.toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
 
   return `
     <div style="margin:0;background:#eef4ff;padding:32px 16px;font-family:Arial,sans-serif;color:#172554">
@@ -298,7 +287,7 @@ function buildCredentialsHtml({
               ${role === 'admin' ? 'Administrateur' : role === 'exposant' ? 'Exposant' : 'Visiteur'}
             </p>
             <p style="margin:0;font-size:14px;color:#475569">
-              Acces actif jusqu au <strong>${expiresLabel}</strong>.
+              Votre compte dispose d un acces complet a la plateforme.
             </p>
           </div>
 

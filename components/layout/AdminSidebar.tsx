@@ -43,7 +43,7 @@ const ADMIN_NAV: AdminNavSection[] = [
   {
     title: 'Operationnel',
     items: [
-      { label: 'Abonnes', href: '/admin/abonnes', icon: Shield },
+      { label: 'Acces', href: '/admin/abonnes', icon: Shield },
       { label: 'Produits', href: '/admin/exposants', icon: Store },
       { label: 'Newsletter', href: '/admin/newsletter', icon: Megaphone },
       { label: 'Tickets', href: '/admin/tickets', icon: Ticket },
@@ -115,7 +115,7 @@ export function AdminSidebar({
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-white">Console admin</p>
                 <p className="truncate text-xs text-white/55">
-                  Comptes, acces, activation et suivi
+                  Comptes, acces et suivi
                 </p>
               </div>
             )}

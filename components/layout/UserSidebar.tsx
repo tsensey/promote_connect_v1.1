@@ -7,13 +7,13 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  CreditCard,
   LifeBuoy,
   Mail,
   MessageSquare,
   Newspaper,
   Sparkles,
   Users,
+  Rss,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -36,6 +36,7 @@ const VISITOR_SECTIONS: NavSection[] = [
   {
     title: 'Plateforme',
     items: [
+      { label: 'Fil d actualites', href: '/feed', icon: Rss, badge: 'Nouveau' },
       { label: 'Accueil', href: '/app', icon: Newspaper },
       { label: 'Reseau', href: '/annuaire', icon: Users },
       { label: 'Messages', href: '/chat', icon: MessageSquare, badge: 'Live' },
@@ -46,7 +47,6 @@ const VISITOR_SECTIONS: NavSection[] = [
     title: 'Compte',
     items: [
       { label: 'Newsletter', href: '/newsletter', icon: Mail },
-      { label: 'Abonnement', href: '/abonnement', icon: CreditCard },
       { label: 'Support', href: '/support', icon: LifeBuoy },
     ],
   },
@@ -56,6 +56,7 @@ const EXHIBITOR_SECTIONS: NavSection[] = [
   {
     title: 'Plateforme',
     items: [
+      { label: 'Fil d actualites', href: '/feed', icon: Rss, badge: 'Nouveau' },
       { label: 'Accueil', href: '/app', icon: Newspaper },
       { label: 'Reseau', href: '/annuaire', icon: Users },
       { label: 'Messages', href: '/chat', icon: MessageSquare, badge: 'Live' },
@@ -73,7 +74,6 @@ const EXHIBITOR_SECTIONS: NavSection[] = [
     title: 'Compte',
     items: [
       { label: 'Newsletter', href: '/newsletter', icon: Mail },
-      { label: 'Abonnement', href: '/abonnement', icon: CreditCard },
       { label: 'Support', href: '/support', icon: LifeBuoy },
     ],
   },
@@ -94,7 +94,7 @@ export function UserSidebar({
   role: 'exposant' | 'visiteur';
   collapsed: boolean;
   onToggle: () => void;
-  user: { name: string; company?: string; avatar?: string; subscription?: string | null } | null;
+  user: { name: string; company?: string; avatar?: string } | null;
   onSignOut: () => void;
   mobile?: boolean;
 }) {
@@ -110,9 +110,9 @@ export function UserSidebar({
         !mobile && (collapsed ? 'w-24' : 'w-72')
       )}
     >
-      <div className="flex items-center justify-between border-b border-sidebar-border px-4 py-5">
+      <div className="flex items-center justify-between border-b border-sidebar-border px-4 py-3">
         <Link href="/app" className="flex min-w-0 items-center gap-3">
-          <div className="brand-gradient flex size-11 items-center justify-center rounded-2xl text-lg font-semibold text-white shadow-lg shadow-primary/20">
+          <div className="brand-gradient flex size-10 items-center justify-center rounded-xl text-lg font-semibold text-white shadow-lg shadow-primary/20">
             P
           </div>
           {!collapsed && (
@@ -120,7 +120,7 @@ export function UserSidebar({
               <p className="truncate text-sm font-semibold uppercase tracking-[0.24em] text-primary/70">
                 Promote
               </p>
-              <p className="-mt-0.5 truncate text-lg text-sidebar-foreground">Connect</p>
+              <p className="-mt-0.5 truncate text-md text-sidebar-foreground">Connect</p>
             </div>
           )}
         </Link>
@@ -139,9 +139,9 @@ export function UserSidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-5">
-        <div className={cn('mb-6 rounded-3xl border border-primary/10 bg-primary/6 p-4', collapsed && 'px-2')}>
+        <div className={cn('mb-6 rounded-xl border border-primary/10 bg-primary/6 p-2', collapsed && 'px-2')}>
           <div className="flex items-center gap-3">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white text-sm font-semibold text-primary shadow-sm">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-sm font-semibold text-primary shadow-sm">
               {user?.name?.charAt(0).toUpperCase() || '?'}
             </div>
             {!collapsed && (
@@ -180,7 +180,7 @@ export function UserSidebar({
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        'group flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all',
+                        'group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all',
                         active
                           ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
                           : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground'
@@ -215,28 +215,16 @@ export function UserSidebar({
       </div>
 
       <div className="border-t border-sidebar-border p-3">
-        <div className={cn('rounded-3xl border border-border/70 bg-white/75 p-3', collapsed && 'p-2')}>
-          {!collapsed && (
-            <div className="mb-3">
-              <p className="text-sm font-semibold text-sidebar-foreground">Session active</p>
-              <p className="text-xs text-muted-foreground">
-                {user?.subscription === 'active'
-                  ? 'Abonnement en cours'
-                  : 'Compte gere par l administration'}
-              </p>
-            </div>
-          )}
           <div className={cn('flex gap-2', collapsed ? 'flex-col' : 'items-center')}>
             <Button
               type="button"
               variant="outline"
-              className={cn('flex-1 rounded-2xl', collapsed && 'px-0')}
+              className={cn('flex-1 rounded-xl', collapsed && 'px-0')}
               onClick={onSignOut}
             >
               {collapsed ? <ChevronRight className="size-4 rotate-180" /> : 'Deconnexion'}
             </Button>
           </div>
-        </div>
       </div>
     </aside>
   );

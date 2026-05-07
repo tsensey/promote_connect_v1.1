@@ -1,10 +1,17 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { Bell, CalendarDays, ChevronDown, Menu, MessageSquare, Search } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useRouter } from "next/navigation";
+import {
+  Bell,
+  CalendarDays,
+  ChevronDown,
+  Menu,
+  MessageSquare,
+  Search,
+} from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,8 +19,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 
 export function UserTopbar({
   onToggleSidebar,
@@ -29,9 +36,14 @@ export function UserTopbar({
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-xl">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 xl:px-8">
+      <div className="mx-auto flex h-20  items-center justify-between gap-4 px-4 sm:px-6 xl:px-8">
         <div className="flex min-w-0 items-center gap-3">
-          <Button variant="ghost" size="icon-sm" onClick={onToggleSidebar} className="xl:hidden">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onToggleSidebar}
+            className="xl:hidden"
+          >
             <Menu className="size-4" />
           </Button>
 
@@ -40,9 +52,14 @@ export function UserTopbar({
               Reseau professionnel
             </p>
             <div className="mt-1 flex items-center gap-2">
-              <h1 className="truncate text-2xl text-foreground">PROMOTE-CONNECT</h1>
-              <Badge variant="secondary" className="hidden rounded-full sm:inline-flex">
-                {user?.role === 'exposant' ? 'Exposant' : 'Visiteur'}
+              <h1 className="truncate text-2xl text-foreground">
+                PROMOTE-CONNECT
+              </h1>
+              <Badge
+                variant="secondary"
+                className="hidden rounded-full sm:inline-flex"
+              >
+                {user?.role === "exposant" ? "Exposant" : "Visiteur"}
               </Badge>
             </div>
           </div>
@@ -64,7 +81,7 @@ export function UserTopbar({
             variant="ghost"
             size="icon-sm"
             className="hidden rounded-full sm:inline-flex"
-            onClick={() => router.push('/chat')}
+            onClick={() => router.push("/chat")}
           >
             <MessageSquare className="size-4" />
           </Button>
@@ -72,26 +89,39 @@ export function UserTopbar({
             variant="ghost"
             size="icon-sm"
             className="hidden rounded-full sm:inline-flex"
-            onClick={() => router.push('/agenda')}
+            onClick={() => router.push("/agenda")}
           >
             <CalendarDays className="size-4" />
           </Button>
-          <Button variant="ghost" size="icon-sm" className="relative rounded-full">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="relative rounded-full"
+          >
             <Bell className="size-4" />
             <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-primary" />
           </Button>
 
           <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" className="h-auto rounded-full px-2 py-1.5" />}>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  className="h-auto rounded-full px-2 py-1.5"
+                />
+              }
+            >
               <Avatar className="size-10 border border-border/70">
                 <AvatarFallback className="bg-primary/10 font-semibold text-primary">
-                  {user?.name?.charAt(0).toUpperCase() || '?'}
+                  {user?.name?.charAt(0).toUpperCase() || "?"}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden text-left sm:block">
-                <p className="max-w-[10rem] truncate text-sm font-semibold">{user?.name}</p>
+                <p className="max-w-[10rem] truncate text-sm font-semibold">
+                  {user?.name}
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  {user?.role === 'exposant' ? 'Exposant' : 'Visiteur'}
+                  {user?.role === "exposant" ? "Exposant" : "Visiteur"}
                 </p>
               </div>
               <ChevronDown className="hidden size-4 text-muted-foreground sm:block" />
@@ -104,11 +134,17 @@ export function UserTopbar({
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push('/app')}>Accueil</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push('/support')}>Support</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push('/abonnement')}>Abonnement</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/app")}>
+                Accueil
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/support")}>
+                Support
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onSignOut} className="text-destructive">
+              <DropdownMenuItem
+                onClick={onSignOut}
+                className="text-destructive"
+              >
                 Deconnexion
               </DropdownMenuItem>
             </DropdownMenuContent>

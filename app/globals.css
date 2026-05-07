@@ -238,6 +238,6 @@
   }
 
   .shell-grid {
-    @apply mx-auto grid w-full max-w-7xl gap-6 xl:grid-cols-[280px_minmax(0,1fr)_320px];
+    @apply grid w-full gap-6 xl:grid-cols-[280px_minmax(0,1fr)_320px];
   }
 }

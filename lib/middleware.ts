@@ -3,16 +3,9 @@ import { NextResponse, type NextRequest } from 'next/server'
 import type { Database } from '@/types/database.types'
 
 const PUBLIC_ROUTES = new Set(['/', '/login', '/register'])
-const SUBSCRIPTION_EXCEPTION_PREFIXES = ['/abonnement', '/support']
 
 function isPublicRoute(pathname: string) {
   return PUBLIC_ROUTES.has(pathname)
-}
-
-function isSubscriptionException(pathname: string) {
-  return SUBSCRIPTION_EXCEPTION_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-  )
 }
 
 export async function updateSession(request: NextRequest) {
@@ -57,15 +50,9 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, subscription_status')
-    .eq('id', user.id)
-    .single()
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
 
   const isAdmin = profile?.role === 'admin'
-  const hasActiveSubscription =
-    profile?.subscription_status === 'active' || profile?.subscription_status === 'trial'
 
   if (pathname === '/login' || pathname === '/register') {
     const url = request.nextUrl.clone()
@@ -77,13 +64,6 @@ export async function updateSession(request: NextRequest) {
   if (pathname.startsWith('/admin') && !isAdmin) {
     const url = request.nextUrl.clone()
     url.pathname = '/app'
-    return NextResponse.redirect(url)
-  }
-
-  if (!isAdmin && !isPublicRoute(pathname) && !isSubscriptionException(pathname) && !hasActiveSubscription) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/abonnement'
-    url.searchParams.set('subscription', 'required')
     return NextResponse.redirect(url)
   }
 

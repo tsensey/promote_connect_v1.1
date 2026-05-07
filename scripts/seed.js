@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { createClient } = require('@supabase/supabase-js');
-const WebSocket = require('ws');
 require('dotenv').config({ path: '.env.local' });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -13,10 +12,14 @@ if (!supabaseUrl || !supabaseServiceKey) {
 }
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-  realtime: {
-    transport: WebSocket,
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
   },
 });
+
+const shouldClean =
+  process.argv.includes('--clean') || process.env.CLEAN_DATABASE === 'true';
 
 const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL || 'admin@promote-connect.com';
 const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || 'Admin@2026!secure';
@@ -32,7 +35,6 @@ const USERS = [
     sector: null,
     country: 'Cameroun',
     pavillon: null,
-    subscription_status: 'active',
   },
   {
     email: 'alice@techcorp.com',
@@ -43,7 +45,6 @@ const USERS = [
     sector: 'Technology',
     country: 'France',
     pavillon: 'A',
-    subscription_status: 'active',
   },
   {
     email: 'bob@greenenergy.com',
@@ -54,7 +55,6 @@ const USERS = [
     sector: 'Energy',
     country: 'Germany',
     pavillon: 'B',
-    subscription_status: 'active',
   },
   {
     email: 'claire@fashionplus.com',
@@ -65,7 +65,6 @@ const USERS = [
     sector: 'Fashion',
     country: 'France',
     pavillon: 'C',
-    subscription_status: 'active',
   },
   {
     email: 'david@medicare.com',
@@ -76,7 +75,6 @@ const USERS = [
     sector: 'Healthcare',
     country: 'Belgium',
     pavillon: 'D',
-    subscription_status: 'active',
   },
   {
     email: 'emma@buildco.com',
@@ -87,7 +85,6 @@ const USERS = [
     sector: 'Construction',
     country: 'Netherlands',
     pavillon: 'E',
-    subscription_status: 'active',
   },
   {
     email: 'visitor@promote-connect.com',
@@ -98,7 +95,6 @@ const USERS = [
     sector: 'Commerce',
     country: 'France',
     pavillon: null,
-    subscription_status: 'active',
   },
   {
     email: 'sophie@import-export.com',
@@ -109,7 +105,6 @@ const USERS = [
     sector: 'Logistique & Transport',
     country: 'Cameroun',
     pavillon: null,
-    subscription_status: 'trial',
   },
 ];
 
@@ -299,6 +294,21 @@ const EVENTS = [
   },
 ];
 
+const CLEAN_TABLES = [
+  'support_messages',
+  'messages',
+  'rendez_vous',
+  'produits',
+  'conversations',
+  'newsletter_subscriptions',
+  'newsletter_editions',
+  'support_tickets',
+  'subscriptions',
+  'exposants',
+  'evenements',
+  'profiles',
+];
+
 async function listAllUsers() {
   const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
   if (error) {
@@ -312,12 +322,39 @@ async function findUserByEmail(email) {
   return users.find((user) => user.email?.toLowerCase() === email.toLowerCase()) || null;
 }
 
+async function deleteAllRows(table) {
+  const { error } = await supabase.from(table).delete().not('id', 'is', null);
+  if (error) {
+    throw new Error(`${table}: ${error.message}`);
+  }
+}
+
+async function cleanupDatabase() {
+  console.log('Cleaning public tables...');
+
+  for (const table of CLEAN_TABLES) {
+    await deleteAllRows(table);
+    console.log(`  cleared: ${table}`);
+  }
+
+  console.log('Cleaning auth users...');
+  const users = await listAllUsers();
+  for (const user of users) {
+    const { error } = await supabase.auth.admin.deleteUser(user.id);
+    if (error) {
+      throw error;
+    }
+    console.log(`  deleted auth user: ${user.email || user.id}`);
+  }
+}
+
 async function ensureAuthUser(userConfig) {
   const existingUser = await findUserByEmail(userConfig.email);
 
   if (existingUser) {
-    await supabase.auth.admin.updateUserById(existingUser.id, {
+    const { error } = await supabase.auth.admin.updateUserById(existingUser.id, {
       password: userConfig.password,
+      email_confirm: true,
       user_metadata: {
         full_name: userConfig.full_name,
         role: userConfig.role,
@@ -325,10 +362,15 @@ async function ensureAuthUser(userConfig) {
         sector: userConfig.sector,
         country: userConfig.country,
         pavillon: userConfig.pavillon,
+        invited_by_admin: userConfig.role !== 'admin',
       },
-      email_confirm: true,
     });
-    return existingUser;
+
+    if (error) {
+      throw error;
+    }
+
+    return { id: existingUser.id, email: existingUser.email };
   }
 
   const { data, error } = await supabase.auth.admin.createUser({
@@ -342,6 +384,7 @@ async function ensureAuthUser(userConfig) {
       sector: userConfig.sector,
       country: userConfig.country,
       pavillon: userConfig.pavillon,
+      invited_by_admin: userConfig.role !== 'admin',
     },
   });
 
@@ -353,8 +396,6 @@ async function ensureAuthUser(userConfig) {
 }
 
 async function upsertProfile(userId, userConfig) {
-  const accessEndsAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
-
   const { error } = await supabase.from('profiles').upsert({
     id: userId,
     full_name: userConfig.full_name,
@@ -363,8 +404,8 @@ async function upsertProfile(userId, userConfig) {
     sector: userConfig.sector,
     country: userConfig.country,
     pavillon: userConfig.pavillon,
-    subscription_status: userConfig.subscription_status,
-    subscription_ends_at: accessEndsAt,
+    subscription_status: 'active',
+    subscription_ends_at: null,
   });
 
   if (error) {
@@ -476,11 +517,14 @@ async function ensureConversation(usersByEmail) {
   const participants = [alice.id, bob.id].sort();
   const { data: conversation, error: conversationError } = await supabase
     .from('conversations')
-    .upsert({
-      participant_a: participants[0],
-      participant_b: participants[1],
-      last_message_at: new Date().toISOString(),
-    }, { onConflict: 'participant_a,participant_b' })
+    .upsert(
+      {
+        participant_a: participants[0],
+        participant_b: participants[1],
+        last_message_at: new Date().toISOString(),
+      },
+      { onConflict: 'participant_a,participant_b' }
+    )
     .select()
     .single();
 
@@ -521,40 +565,11 @@ async function ensureConversation(usersByEmail) {
   }
 }
 
-async function ensureSubscription(usersByEmail) {
-  const alice = usersByEmail.get('alice@techcorp.com');
-  if (!alice) {
-    return;
-  }
-
-  const { data: existing } = await supabase
-    .from('subscriptions')
-    .select('id')
-    .eq('profile_id', alice.id)
-    .maybeSingle();
-
-  const payload = {
-    profile_id: alice.id,
-    stripe_customer_id: 'cus_seed_alice',
-    stripe_subscription_id: 'sub_seed_alice',
-    status: 'active',
-    current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-  };
-
-  if (existing?.id) {
-    const { error } = await supabase.from('subscriptions').update(payload).eq('id', existing.id);
-    if (error) throw error;
-  } else {
-    const { error } = await supabase.from('subscriptions').insert(payload);
-    if (error) throw error;
-  }
-}
-
 async function ensureNewsletterData(usersByEmail) {
   const alice = usersByEmail.get('alice@techcorp.com');
   const visitor = usersByEmail.get('visitor@promote-connect.com');
 
-  const subscriptions = [
+  const recipients = [
     {
       profile_id: alice?.id || null,
       email: 'alice@techcorp.com',
@@ -569,30 +584,30 @@ async function ensureNewsletterData(usersByEmail) {
     },
   ];
 
-  for (const subscription of subscriptions) {
+  for (const recipient of recipients) {
     const { data: existing } = await supabase
       .from('newsletter_subscriptions')
       .select('id')
-      .eq('email', subscription.email)
+      .eq('email', recipient.email)
       .maybeSingle();
 
     if (existing?.id) {
       const { error } = await supabase
         .from('newsletter_subscriptions')
         .update({
-          profile_id: subscription.profile_id,
-          sectors: subscription.sectors,
-          frequency: subscription.frequency,
+          profile_id: recipient.profile_id,
+          sectors: recipient.sectors,
+          frequency: recipient.frequency,
           is_active: true,
         })
         .eq('id', existing.id);
       if (error) throw error;
     } else {
       const { error } = await supabase.from('newsletter_subscriptions').insert({
-        profile_id: subscription.profile_id,
-        email: subscription.email,
-        sectors: subscription.sectors,
-        frequency: subscription.frequency,
+        profile_id: recipient.profile_id,
+        email: recipient.email,
+        sectors: recipient.sectors,
+        frequency: recipient.frequency,
         is_active: true,
       });
       if (error) throw error;
@@ -611,7 +626,7 @@ async function ensureNewsletterData(usersByEmail) {
       contenu:
         'Retrouvez les nouveaux exposants, les opportunites business de la semaine et les prochains rendez-vous du reseau.',
       sent_at: new Date().toISOString(),
-      recipient_count: subscriptions.length,
+      recipient_count: recipients.length,
     });
     if (error) throw error;
   }
@@ -625,11 +640,13 @@ async function ensureSupportData(usersByEmail) {
     return;
   }
 
+  const ticketSubject = 'Confirmation de mon acces';
+
   const { data: ticket } = await supabase
     .from('support_tickets')
     .select('id')
     .eq('profile_id', visitor.id)
-    .eq('subject', 'Activation de mon abonnement')
+    .eq('subject', ticketSubject)
     .maybeSingle();
 
   let ticketId = ticket?.id;
@@ -639,8 +656,8 @@ async function ensureSupportData(usersByEmail) {
       .from('support_tickets')
       .insert({
         profile_id: visitor.id,
-        subject: 'Activation de mon abonnement',
-        description: 'Je souhaite verifier la duree de mon acces et mes modules actifs.',
+        subject: ticketSubject,
+        description: 'Je souhaite verifier que mon acces a bien ete active et recevoir un rappel des modules disponibles.',
         status: 'open',
         priority: 'medium',
       })
@@ -661,13 +678,13 @@ async function ensureSupportData(usersByEmail) {
       {
         ticket_id: ticketId,
         sender_id: visitor.id,
-        content: 'Bonjour, pouvez-vous confirmer la date de fin de mon acces ?',
+        content: 'Bonjour, pouvez-vous confirmer que mon acces est bien actif ?',
         is_admin: false,
       },
       {
         ticket_id: ticketId,
         sender_id: admin.id,
-        content: 'Bonjour, votre acces est bien provisionne pour une duree de 12 mois.',
+        content: 'Bonjour, votre compte est actif et vous avez acces a l ensemble de la plateforme.',
         is_admin: true,
       },
     ]);
@@ -680,6 +697,10 @@ async function seed() {
   console.log('========================================');
   console.log('  PROMOTE-CONNECT Seed');
   console.log('========================================');
+
+  if (shouldClean) {
+    await cleanupDatabase();
+  }
 
   const usersByEmail = new Map();
 
@@ -702,7 +723,6 @@ async function seed() {
   }
 
   await ensureConversation(usersByEmail);
-  await ensureSubscription(usersByEmail);
   await ensureNewsletterData(usersByEmail);
   await ensureSupportData(usersByEmail);
 

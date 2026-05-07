@@ -20,19 +20,15 @@ interface FaqItem {
 const FAQ_DATA: FaqItem[] = [
   {
     question: 'Comment acceder a mon espace PROMOTE-CONNECT ?',
-    answer: 'Connectez-vous avec les memes identifiants utilises lors de votre inscription au salon. Si vous avez oublie votre mot de passe, utilisez le lien "Mot de passe oublie" sur la page de connexion.',
+    answer: 'Connectez-vous avec les identifiants envoyes par l administrateur PROMOTE-CONNECT. Si vous n avez rien recu, contactez le support pour qu un acces vous soit reprovisionne.',
   },
   {
     question: 'Combien de temps dure mon acces ?',
-    answer: 'Votre acces est valable 12 mois apres la fin du salon. Vous pouvez consulter votre date d expiration dans la page Abonnement.',
+    answer: 'Les comptes provisionnes par l administrateur ont acces a l ensemble de la plateforme tant qu ils restent actifs dans l administration.',
   },
   {
     question: 'Comment contacter un exposant ?',
     answer: 'Rendez-vous dans l Annuaire, selectionnez un exposant et cliquez sur "Contacter". Une conversation privee sera creee automatiquement.',
-  },
-  {
-    question: 'Comment gerer mon abonnement ?',
-    answer: 'Allez dans la page Abonnement. Vous pouvez souscrire, renouveler ou gerer votre paiement via Stripe.',
   },
   {
     question: 'Comment recevoir la newsletter ?',
@@ -46,7 +42,7 @@ const FAQ_DATA: FaqItem[] = [
 
 export default function SupportPage() {
   const router = useRouter();
-  const { tickets, loading, error, createTicket } = useSupportTickets();
+  const { tickets, createTicket } = useSupportTickets();
   const [activeTab, setActiveTab] = useState<'chat' | 'tickets' | 'faq'>('faq');
   const [showNewTicket, setShowNewTicket] = useState(false);
   const [ticketForm, setTicketForm] = useState({ subject: '', description: '', priority: 'medium' });
@@ -152,7 +148,7 @@ export default function SupportPage() {
               <FaqAccordion key={index} item={faq} />
             ))}
             {filteredFaqs.length === 0 && (
-              <p className="text-center text-muted-foreground py-6">Aucun resultat pour "{faqSearch}"</p>
+              <p className="text-center text-muted-foreground py-6">Aucun resultat pour &quot;{faqSearch}&quot;</p>
             )}
           </div>
         </Card>
