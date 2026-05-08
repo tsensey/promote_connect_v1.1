@@ -168,7 +168,7 @@ export default function AdminNewsletterPage() {
               />
             </div>
 
-            <Button onClick={handleSend} disabled={sending} className="w-full rounded-2xl">
+            <Button onClick={handleSend} disabled={sending} className="w-full rounded-xl">
               {sending ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
@@ -192,7 +192,7 @@ export default function AdminNewsletterPage() {
             {loading ? (
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, index) => (
-                  <div key={index} className="h-24 animate-pulse rounded-2xl bg-muted" />
+                  <div key={index} className="h-24 animate-pulse rounded-xl bg-muted" />
                 ))}
               </div>
             ) : editions.length === 0 ? (

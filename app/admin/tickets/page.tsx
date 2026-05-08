@@ -31,16 +31,16 @@ const statusLabels: Record<string, string> = {
 };
 
 const statusClasses: Record<string, string> = {
-  open: 'bg-emerald-100 text-emerald-700',
-  in_progress: 'bg-blue-100 text-blue-700',
-  resolved: 'bg-slate-100 text-slate-700',
-  closed: 'bg-slate-200 text-slate-700',
+  open: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+  in_progress: 'bg-blue-500/15 text-blue-700 dark:text-blue-300',
+  resolved: 'bg-muted text-muted-foreground',
+  closed: 'bg-muted text-muted-foreground/60',
 };
 
 const priorityClasses: Record<string, string> = {
-  low: 'bg-slate-100 text-slate-700',
-  medium: 'bg-amber-100 text-amber-700',
-  high: 'bg-red-100 text-red-700',
+  low: 'bg-muted text-muted-foreground',
+  medium: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
+  high: 'bg-red-500/15 text-red-700 dark:text-red-300',
 };
 
 export default function AdminTicketsPage() {
@@ -145,7 +145,7 @@ export default function AdminTicketsPage() {
           {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 6 }).map((_, index) => (
-                <div key={index} className="h-28 animate-pulse rounded-2xl bg-muted" />
+                <div key={index} className="h-28 animate-pulse rounded-xl bg-muted" />
               ))}
             </div>
           ) : tickets.length === 0 ? (

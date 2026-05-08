@@ -82,7 +82,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
       <div
         className={cn(
-          'transition-all duration-300 xl:ml-72',
+          'transition-[margin-left] duration-300 ease-in-out xl:ml-64',
           collapsed && 'xl:ml-24'
         )}
       >

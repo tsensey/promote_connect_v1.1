@@ -12,10 +12,15 @@ export interface EnrichedConversation extends Conversation {
   unread_count: number;
 }
 
+export interface EnrichedMessage extends Message {
+  author: Pick<Profile, 'id' | 'full_name' | 'avatar_url' | 'role'> | null;
+}
+
 export function useConversations() {
   const [conversations, setConversations] = useState<EnrichedConversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -25,6 +30,7 @@ export function useConversations() {
         const { data: session } = await supabaseClient.auth.getSession();
         const myId = session?.session?.user?.id;
         if (!myId) return;
+        if (mounted) setMyUserId(myId);
 
         const { data, error } = await supabaseClient
           .from('conversations')
@@ -37,7 +43,6 @@ export function useConversations() {
           .order('last_message_at', { ascending: false });
 
         if (error) throw error;
-
         if (!mounted) return;
 
         const convs = (data || []) as (Conversation & {
@@ -109,23 +114,17 @@ export function useConversations() {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'conversations' },
-        () => {
-          fetchConversations();
-        }
+        () => { fetchConversations(); }
       )
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'conversations' },
-        () => {
-          fetchConversations();
-        }
+        () => { fetchConversations(); }
       )
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
-        () => {
-          fetchConversations();
-        }
+        () => { fetchConversations(); }
       )
       .subscribe();
 
@@ -135,14 +134,15 @@ export function useConversations() {
     };
   }, []);
 
-  return { conversations, loading, error };
+  return { conversations, loading, error, myUserId };
 }
 
 export function useMessages(conversationId: string) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<EnrichedMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const myUserIdRef = useState<string | null>(null);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [otherUser, setOtherUser] = useState<Profile | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -151,18 +151,39 @@ export function useMessages(conversationId: string) {
       try {
         const { data: session } = await supabaseClient.auth.getSession();
         if (!mounted) return;
-        if (session?.session?.user?.id) {
-          myUserIdRef[1](session.session.user.id);
+        const myId = session?.session?.user?.id;
+        if (myId) setMyUserId(myId);
+
+        const { data: convData } = await supabaseClient
+          .from('conversations')
+          .select(`
+            *,
+            participant_a:participant_a(*),
+            participant_b:participant_b(*)
+          `)
+          .eq('id', conversationId)
+          .single();
+
+        if (convData && mounted) {
+          const conv = convData as Conversation & {
+            participant_a: Profile | null;
+            participant_b: Profile | null;
+          };
+          const other = conv.participant_a?.id === myId ? conv.participant_b : conv.participant_a;
+          setOtherUser(other);
         }
 
         const { data, error } = await supabaseClient
           .from('messages')
-          .select('*')
+          .select(`
+            *,
+            author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role)
+          `)
           .eq('conversation_id', conversationId)
           .order('created_at', { ascending: true });
 
         if (error) throw error;
-        if (mounted) setMessages(data || []);
+        if (mounted) setMessages((data || []) as EnrichedMessage[]);
       } catch (err) {
         if (mounted) setError(err instanceof Error ? err : new Error('Unknown error'));
       } finally {
@@ -176,18 +197,40 @@ export function useMessages(conversationId: string) {
       .channel(`messages-${conversationId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },
-        (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message]);
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        async (payload) => {
+          const newMsg = payload.new as Message;
+          const { data: author } = await supabaseClient
+            .from('profiles')
+            .select('id, full_name, avatar_url, role')
+            .eq('id', newMsg.sender_id)
+            .single();
+
+          setMessages((prev) => [
+            ...prev,
+            { ...newMsg, author } as EnrichedMessage,
+          ]);
         }
       )
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
         (payload) => {
           setMessages((prev) =>
             prev.map((msg) =>
-              msg.id === payload.new.id ? (payload.new as Message) : msg
+              msg.id === payload.new.id
+                ? { ...(payload.new as Message), author: msg.author }
+                : msg
             )
           );
         }
@@ -220,18 +263,14 @@ export function useMessages(conversationId: string) {
       const { data: session } = await supabaseClient.auth.getSession();
       if (!session?.session?.user) return;
 
-      const { error } = await supabaseClient
-        .from('messages')
-        .insert({
-          conversation_id: conversationId,
-          sender_id: session.session.user.id,
-          content: content.trim(),
-          is_read: false,
-        });
+      const { error } = await supabaseClient.from('messages').insert({
+        conversation_id: conversationId,
+        sender_id: session.session.user.id,
+        content: content.trim(),
+        is_read: false,
+      });
 
-      if (error) {
-        console.error('Failed to send message:', error);
-      }
+      if (error) return;
 
       await supabaseClient
         .from('conversations')
@@ -241,7 +280,15 @@ export function useMessages(conversationId: string) {
     [conversationId]
   );
 
-  return { messages, loading, error, sendMessage, markAsRead, myUserId: myUserIdRef[0] };
+  return {
+    messages,
+    loading,
+    error,
+    sendMessage,
+    markAsRead,
+    myUserId,
+    otherUser,
+  };
 }
 
 export async function createConversation(otherUserId: string) {

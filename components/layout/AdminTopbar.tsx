@@ -1,9 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Bell, ChevronDown, Menu, Search, Shield } from 'lucide-react';
+import { Bell, ChevronDown, Menu } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,7 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
+import { ModeToggle } from '@/components/ui/mode-toggle';
+import { AdminBreadcrumb } from '@/components/ui/breadcrumb-nav';
 
 export function AdminTopbar({
   onToggleSidebar,
@@ -28,76 +28,55 @@ export function AdminTopbar({
   const router = useRouter();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-xl">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 xl:px-8">
+    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-14 items-center justify-between gap-4 px-4 sm:px-6 xl:px-8">
         <div className="flex min-w-0 items-center gap-3">
           <Button variant="ghost" size="icon-sm" onClick={onToggleSidebar} className="xl:hidden">
             <Menu className="size-4" />
           </Button>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-600/80">
-              Administration
-            </p>
-            <div className="mt-1 flex items-center gap-2">
-              <h1 className="truncate text-2xl text-foreground">Gestion des acces</h1>
-              <Badge variant="secondary" className="hidden rounded-full sm:inline-flex">
-                <Shield className="mr-1 size-3.5" />
-                Admin
-              </Badge>
-            </div>
-          </div>
+          <AdminBreadcrumb className="hidden min-w-0 sm:flex" />
         </div>
 
-        <div className="hidden flex-1 justify-center lg:flex">
-          <div className="relative w-full max-w-xl">
-            <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Rechercher un utilisateur, un compte, un salon..."
-              className="h-12 rounded-full border-white/70 bg-white/90 pl-11 shadow-sm"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <ModeToggle />
           <Button
             variant="ghost"
-            size="sm"
-            className="hidden rounded-full sm:inline-flex"
-            onClick={() => router.push('/admin/users')}
+            size="icon-sm"
+            className="relative rounded-full text-muted-foreground hover:text-foreground"
           >
-            Comptes
-          </Button>
-          <Button variant="ghost" size="icon-sm" className="relative rounded-full">
             <Bell className="size-4" />
-            <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-amber-500" />
+            <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-amber-500 ring-1 ring-background" />
           </Button>
 
           <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" className="h-auto rounded-full px-2 py-1.5" />}>
-              <Avatar className="size-10 border border-border/70">
-                <AvatarFallback className="bg-amber-500/15 font-semibold text-amber-700">
+            <DropdownMenuTrigger render={<Button variant="ghost" className="h-auto rounded-full px-2 py-1" />}>
+              <Avatar className="size-7 border border-border/60">
+                <AvatarFallback className="bg-amber-500/15 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
                   {user?.name?.charAt(0).toUpperCase() || 'A'}
                 </AvatarFallback>
               </Avatar>
-              <div className="hidden text-left sm:block">
-                <p className="max-w-[10rem] truncate text-sm font-semibold">{user?.name}</p>
-                <p className="text-xs text-muted-foreground">Administrateur</p>
+              <div className="hidden text-left md:block">
+                <p className="max-w-[8rem] truncate text-sm font-medium text-foreground">{user?.name}</p>
+                <p className="text-[11px] text-muted-foreground">Administrateur</p>
               </div>
-              <ChevronDown className="hidden size-4 text-muted-foreground sm:block" />
+              <ChevronDown className="hidden size-3.5 text-muted-foreground md:block" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 rounded-2xl">
-              <DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-56 rounded-xl p-1">
+              <DropdownMenuLabel className="px-3 py-2">
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold">{user?.name}</p>
+                  <p className="text-sm font-semibold text-foreground">{user?.name}</p>
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push('/admin')}>Dashboard</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push('/admin/users')}>Utilisateurs</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/admin')} className="rounded-lg">
+                Dashboard
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/admin/users')} className="rounded-lg">
+                Utilisateurs
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onSignOut} className="text-destructive">
+              <DropdownMenuItem onClick={onSignOut} className="rounded-lg text-destructive focus:text-destructive">
                 Deconnexion
               </DropdownMenuItem>
             </DropdownMenuContent>

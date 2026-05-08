@@ -4,12 +4,14 @@ import { useState, useRef, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTicketMessages } from '@/hooks/useSupport';
-import { ArrowLeft, Send, Clock, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Send, Clock, AlertCircle, Ticket } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 const STATUS_LABELS: Record<string, string> = {
   open: 'Ouvert',
@@ -18,11 +20,11 @@ const STATUS_LABELS: Record<string, string> = {
   closed: 'Ferme',
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  open: 'bg-green-100 text-green-700',
-  in_progress: 'bg-blue-100 text-blue-700',
-  resolved: 'bg-slate-100 text-slate-600',
-  closed: 'bg-slate-100 text-slate-500',
+const STATUS_STYLES: Record<string, string> = {
+  open: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  in_progress: 'bg-blue-50 text-blue-700 border-blue-200',
+  resolved: 'bg-muted text-muted-foreground border-border/60',
+  closed: 'bg-muted text-muted-foreground border-border/60',
 };
 
 const PRIORITY_LABELS: Record<string, string> = {
@@ -31,17 +33,18 @@ const PRIORITY_LABELS: Record<string, string> = {
   high: 'Haute',
 };
 
-const PRIORITY_COLORS: Record<string, string> = {
-  low: 'bg-slate-100 text-slate-600',
-  medium: 'bg-yellow-100 text-yellow-700',
-  high: 'bg-red-100 text-red-700',
+const PRIORITY_STYLES: Record<string, string> = {
+  low: 'bg-muted text-muted-foreground border-border/60',
+  medium: 'bg-amber-50 text-amber-700 border-amber-200',
+  high: 'bg-red-50 text-red-700 border-red-200',
 };
 
 export default function TicketDetailPage() {
   const params = useParams();
   const router = useRouter();
   const ticketId = params.ticketId as string;
-  const { messages, ticket, loading, error, sendMessage } = useTicketMessages(ticketId);
+  const { messages, ticket, loading, error, sendMessage } =
+    useTicketMessages(ticketId);
   const [content, setContent] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -57,7 +60,7 @@ export default function TicketDetailPage() {
       await sendMessage(content);
       setContent('');
     } catch {
-      toast.error('Erreur lors de l envoi du message');
+      toast.error("Erreur lors de l'envoi du message");
     } finally {
       setSending(false);
     }
@@ -72,107 +75,159 @@ export default function TicketDetailPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-50 px-6 py-10 sm:px-10">
-        <div className="mx-auto max-w-3xl space-y-6">
-          <div className="h-12 rounded-2xl bg-slate-200 animate-pulse w-32" />
-          <div className="h-24 rounded-2xl bg-slate-200 animate-pulse" />
-          <div className="space-y-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className={`h-16 rounded-2xl bg-slate-200 animate-pulse ${i % 2 === 0 ? 'ml-12' : 'mr-12'}`} />
-            ))}
-          </div>
+      <div className="space-y-6">
+        <div className="surface-panel h-8 w-32 animate-pulse rounded-xl" />
+        <div className="surface-panel h-28 animate-pulse rounded-xl border-0" />
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className={`h-16 animate-pulse rounded-xl bg-muted/80 ${i % 2 === 0 ? 'ml-12' : 'mr-12'}`}
+            />
+          ))}
         </div>
-      </main>
+      </div>
     );
   }
 
   if (error || !ticket) {
     return (
-      <main className="min-h-screen bg-slate-50 px-6 py-10 sm:px-10">
-        <div className="mx-auto max-w-3xl">
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
-            <AlertCircle className="mx-auto h-10 w-10 text-red-400 mb-3" />
-            <p className="text-red-600">Impossible de charger ce ticket.</p>
-            <Link href="/support" className="mt-3 inline-flex text-sm text-blue-600 underline">
-              Retour au support
-            </Link>
+      <Card className="surface-panel border-0">
+        <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
+          <AlertCircle className="size-16 text-destructive/30" />
+          <div>
+            <p className="text-xl font-heading font-semibold text-foreground">
+              Impossible de charger ce ticket
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Le ticket n&apos;existe pas ou vous n&apos;y avez pas acces.
+            </p>
           </div>
-        </div>
-      </main>
+          <Link href="/support">
+            <Button variant="outline" className="rounded-xl">
+              <ArrowLeft className="mr-2 size-4" />
+              Retour au support
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10 sm:px-10">
-      <div className="mx-auto max-w-3xl space-y-6">
-        <div>
-          <Link href="/support" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-4">
-            <ArrowLeft className="h-4 w-4" />
-            Retour au support
-          </Link>
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div>
-                <h1 className="text-2xl font-semibold text-slate-900">{ticket.subject}</h1>
-                {ticket.description && (
-                  <p className="mt-2 text-sm text-slate-600">{ticket.description}</p>
-                )}
+    <div className="space-y-6">
+      <Link
+        href="/support"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="size-4" />
+        Retour au support
+      </Link>
+
+      <Card className="surface-panel overflow-hidden border-0">
+        <div className="brand-gradient px-6 py-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-sm text-white/70">
+                <Ticket className="size-4" />
+                <span>Ticket #{ticketId.slice(0, 8)}</span>
               </div>
-              <div className="flex gap-2 flex-shrink-0">
-                <Badge className={STATUS_COLORS[ticket.status || 'open']}>
-                  {STATUS_LABELS[ticket.status || 'open']}
-                </Badge>
-                <Badge className={PRIORITY_COLORS[ticket.priority || 'medium']}>
-                  {PRIORITY_LABELS[ticket.priority || 'medium']}
-                </Badge>
-              </div>
+              <h1 className="mt-1 text-2xl font-heading font-semibold text-white">
+                {ticket.subject}
+              </h1>
             </div>
-            <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
-              <Clock className="h-3 w-3" />
-              Cree le {new Date(ticket.created_at || '').toLocaleDateString('fr-FR')} a{' '}
-              {new Date(ticket.created_at || '').toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+            <div className="flex flex-wrap gap-2">
+              <Badge
+                className={cn(
+                  'rounded-full border text-xs font-medium',
+                  PRIORITY_STYLES[ticket.priority || 'medium'],
+                )}
+              >
+                {PRIORITY_LABELS[ticket.priority || 'medium']}
+              </Badge>
+              <Badge
+                className={cn(
+                  'rounded-full border text-xs font-medium',
+                  STATUS_STYLES[ticket.status || 'open'],
+                )}
+              >
+                {STATUS_LABELS[ticket.status || 'open']}
+              </Badge>
             </div>
           </div>
         </div>
 
-        <div className="rounded-3xl bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-500 mb-4">
-            Conversation ({messages.length} message{messages.length !== 1 ? 's' : ''})
+        <CardContent className="p-5">
+          {ticket.description && (
+            <p className="text-sm leading-7 text-muted-foreground">
+              {ticket.description}
+            </p>
+          )}
+          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+            <Clock className="size-3.5" />
+            Cree le{' '}
+            {new Date(ticket.created_at || '').toLocaleDateString('fr-FR')} a{' '}
+            {new Date(ticket.created_at || '').toLocaleTimeString('fr-FR', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="surface-panel border-0">
+        <CardContent className="p-5">
+          <h2 className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground/70">
+            Conversation ({messages.length} message
+            {messages.length !== 1 ? 's' : ''})
           </h2>
 
           {messages.length === 0 ? (
-            <div className="py-8 text-center text-sm text-slate-500">
-              Aucun message pour le moment. Posez votre question ci-dessous.
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <Send className="size-10 text-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground">
+                Aucun message pour le moment. Posez votre question ci-dessous.
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`flex items-start gap-3 ${msg.is_admin ? '' : 'flex-row-reverse'}`}
+                  className={`flex items-start gap-3 ${
+                    msg.is_admin ? '' : 'flex-row-reverse'
+                  }`}
                 >
-                  <Avatar className="h-8 w-8 flex-shrink-0">
+                  <Avatar className="size-9 shrink-0 border border-border/50">
                     <AvatarFallback
-                      className={`text-xs font-medium ${
-                        msg.is_admin ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'
-                      }`}
+                      className={cn(
+                        'text-xs font-medium',
+                        msg.is_admin
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-muted text-muted-foreground',
+                      )}
                     >
                       {msg.is_admin ? 'S' : 'V'}
                     </AvatarFallback>
                   </Avatar>
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                    className={`max-w-[85%] rounded-xl px-4 py-3 sm:max-w-[70%] ${
                       msg.is_admin
-                        ? 'bg-blue-50 text-blue-900'
-                        : 'bg-slate-100 text-slate-900'
+                        ? 'bg-primary/5 text-foreground ring-1 ring-primary/10'
+                        : 'bg-muted/70 text-foreground'
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                    <p className="mt-1 text-xs opacity-60">
-                      {new Date(msg.created_at || '').toLocaleTimeString('fr-FR', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                      {msg.content}
+                    </p>
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      {new Date(msg.created_at || '').toLocaleTimeString(
+                        'fr-FR',
+                        {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        },
+                      )}
                     </p>
                   </div>
                 </div>
@@ -188,23 +243,29 @@ export default function TicketDetailPage() {
               onChange={(e) => setContent(e.target.value)}
               onKeyDown={handleKeyDown}
               rows={2}
-              className="flex-1 resize-none"
+              className="flex-1 resize-none rounded-xl border-border/60 bg-muted/50 focus:bg-white"
             />
             <Button
               onClick={handleSend}
-              disabled={!content.trim() || sending || ticket.status === 'closed'}
-              className="self-end"
+              disabled={
+                !content.trim() || sending || ticket.status === 'closed'
+              }
+              className="shrink-0 self-end rounded-xl"
             >
-              <Send className="h-4 w-4" />
+              <Send className="mr-2 size-4" />
+              Envoyer
             </Button>
           </div>
           {ticket.status === 'closed' && (
-            <p className="mt-2 text-xs text-slate-400 text-center">
+            <div className="mt-3 flex items-center gap-2 rounded-xl bg-muted/50 px-4 py-3 text-xs text-muted-foreground">
+              <AlertCircle className="size-3.5" />
               Ce ticket est ferme. Vous ne pouvez plus envoyer de messages.
-            </p>
+            </div>
           )}
-        </div>
-      </div>
-    </main>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
+
+

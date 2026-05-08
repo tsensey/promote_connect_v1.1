@@ -38,7 +38,7 @@ export default function AdminLayoutWrapper({ children }: { children: React.React
       <div className="flex min-h-screen items-center justify-center">
         <div className="surface-panel flex items-center gap-3 px-6 py-5">
           <div className="size-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Chargement de l'administration...</p>
+          <p className="text-sm text-muted-foreground">Chargement de l&apos;administration...</p>
         </div>
       </div>
     );
@@ -52,9 +52,9 @@ export default function AdminLayoutWrapper({ children }: { children: React.React
       />
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/55 xl:hidden" onClick={() => setMobileOpen(false)}>
+          <div className="fixed inset-0 z-50 bg-sidebar/80 xl:hidden" onClick={() => setMobileOpen(false)}>
           <div
-            className="h-full w-[86%] max-w-sm bg-slate-950"
+            className="h-full w-[86%] max-w-sm bg-sidebar"
             onClick={(event) => event.stopPropagation()}
           >
             <AdminSidebar collapsed={false} onToggle={() => setMobileOpen(false)} mobile />
@@ -64,7 +64,7 @@ export default function AdminLayoutWrapper({ children }: { children: React.React
 
       <div
         className={cn(
-          'transition-all duration-300 xl:ml-72',
+          'transition-[margin-left] duration-300 ease-in-out xl:ml-64',
           collapsed && 'xl:ml-24'
         )}
       >

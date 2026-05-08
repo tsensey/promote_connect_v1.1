@@ -413,6 +413,8 @@ export interface Database {
           attachment_url: string | null;
           likes_count: number;
           comments_count: number;
+          shares_count: number;
+          reposts_count: number;
           created_at: string | null;
         };
         Insert: {
@@ -425,6 +427,8 @@ export interface Database {
           attachment_url?: string | null;
           likes_count?: number;
           comments_count?: number;
+          shares_count?: number;
+          reposts_count?: number;
           created_at?: string | null;
         };
         Update: {
@@ -437,6 +441,8 @@ export interface Database {
           attachment_url?: string | null;
           likes_count?: number;
           comments_count?: number;
+          shares_count?: number;
+          reposts_count?: number;
           created_at?: string | null;
         };
         Relationships: [
@@ -518,6 +524,45 @@ export interface Database {
           {
             foreignKeyName: 'post_comments_author_id_fkey';
             columns: ['author_id'];
+            isRelationOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      post_shares: {
+        Row: {
+          id: string;
+          post_id: string;
+          user_id: string;
+          type: string;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          post_id: string;
+          user_id: string;
+          type?: string;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          post_id?: string;
+          user_id?: string;
+          type?: string;
+          created_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'post_shares_post_id_fkey';
+            columns: ['post_id'];
+            isRelationOneToOne: false;
+            referencedRelation: 'posts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_shares_user_id_fkey';
+            columns: ['user_id'];
             isRelationOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];

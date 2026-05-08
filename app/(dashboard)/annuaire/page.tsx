@@ -2,16 +2,30 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useExposants } from '@/hooks/useExposants';
 import { supabaseClient } from '@/lib/supabase/client';
-import { Search, Filter, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  MessageSquare,
+  SlidersHorizontal,
+  Building2,
+  MapPin,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function AnnuairePage() {
   const router = useRouter();
@@ -70,7 +84,10 @@ export default function AnnuairePage() {
       const [a, b] = [myId, exposant.profile_id].sort();
       const { data: conv, error: convError } = await supabaseClient
         .from('conversations')
-        .upsert({ participant_a: a, participant_b: b }, { onConflict: 'participant_a,participant_b' })
+        .upsert(
+          { participant_a: a, participant_b: b },
+          { onConflict: 'participant_a,participant_b' },
+        )
         .select()
         .single();
 
@@ -84,192 +101,291 @@ export default function AnnuairePage() {
   };
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Annuaire des exposants</CardTitle>
-          <CardDescription>Recherchez et filtrez les exposants PROMOTE par secteur, pavillon, pays et type d activite.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Rechercher un exposant..."
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-                className="pl-9"
-              />
-            </div>
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-3xl font-heading text-foreground">
+          Annuaire des exposants
+        </h1>
+        <p className="max-w-2xl text-base leading-7 text-muted-foreground">
+          Recherchez et filtrez les exposants PROMOTE par secteur, pavillon,
+          pays et type d&apos;activite.
+        </p>
+      </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-                className="gap-1.5"
-              >
-                <Filter className="h-3.5 w-3.5" />
-                Filtres
-                {activeFiltersCount > 0 && (
-                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-                    {activeFiltersCount}
-                  </Badge>
-                )}
-              </Button>
-
-              {hasFilters && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearFilters}
-                  className="text-muted-foreground"
-                >
-                  Reinitialiser
-                </Button>
-              )}
-            </div>
-
-            {showFilters && (
-              <div className="grid gap-3 sm:grid-cols-3 rounded-lg border border-border bg-muted/50 p-3">
-                <Select value={secteur} onValueChange={(v) => { setSecteur(v ?? ''); setPage(0); }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Tous les secteurs" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Tous les secteurs</SelectItem>
-                    {filterOptions.secteurs.map((s) => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={pavillon} onValueChange={(v) => { setPavillon(v ?? ''); setPage(0); }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Tous les pavillons" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Tous les pavillons</SelectItem>
-                    {filterOptions.pavillons.map((p) => (
-                      <SelectItem key={p} value={p}>{p}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={pays} onValueChange={(v) => { setPays(v ?? ''); setPage(0); }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Tous les pays" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Tous les pays</SelectItem>
-                    {filterOptions.pays.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+      <Card className="surface-panel border-0">
+        <CardContent className="space-y-4 p-5">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Rechercher un exposant par nom, secteur ou pays..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(0);
+              }}
+              className="h-11 rounded-xl border-border/70 bg-white/90 pl-11 shadow-sm"
+            />
           </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+              className="gap-1.5 rounded-full"
+            >
+              <SlidersHorizontal className="size-3.5" />
+              Filtres
+              {activeFiltersCount > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="ml-0.5 h-5 rounded-full px-1.5 text-[10px]"
+                >
+                  {activeFiltersCount}
+                </Badge>
+              )}
+            </Button>
+
+            {hasFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="gap-1 rounded-full text-xs text-muted-foreground"
+              >
+                <X className="size-3" />
+                Reinitialiser
+              </Button>
+            )}
+
+            <span className="ml-auto text-sm text-muted-foreground">
+              {loading
+                ? 'Recherche...'
+                : `${totalCount} resultat${totalCount !== 1 ? 's' : ''}`}
+            </span>
+          </div>
+
+          {showFilters && (
+            <div className="grid gap-3 rounded-xl border border-border/60 bg-muted/50 p-4 sm:grid-cols-3">
+              <Select
+                value={secteur}
+                onValueChange={(v) => {
+                  setSecteur(v ?? '');
+                  setPage(0);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Tous les secteurs" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Tous les secteurs</SelectItem>
+                  {filterOptions.secteurs.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={pavillon}
+                onValueChange={(v) => {
+                  setPavillon(v ?? '');
+                  setPage(0);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Tous les pavillons" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Tous les pavillons</SelectItem>
+                  {filterOptions.pavillons.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={pays}
+                onValueChange={(v) => {
+                  setPays(v ?? '');
+                  setPage(0);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Tous les pays" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Tous les pays</SelectItem>
+                  {filterOptions.pays.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      <section>
-        <p className="mb-3 text-sm text-muted-foreground">
-          {loading
-            ? 'Recherche...'
-            : totalCount
-              ? `${totalCount} resultat${totalCount !== 1 ? 's' : ''} (page ${page + 1}/${totalPages})`
-              : `${exposants.length} resultat${exposants.length !== 1 ? 's' : ''}`}
-        </p>
-
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {loading ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <Card key={i}>
-                <CardContent className="pt-4">
-                  <div className="h-5 w-1/2 animate-pulse rounded-md bg-muted" />
-                  <div className="mt-2 h-4 w-full animate-pulse rounded-md bg-muted" />
-                  <div className="mt-2 h-4 w-2/3 animate-pulse rounded-md bg-muted" />
-                </CardContent>
-              </Card>
-            ))
-          ) : error ? (
-            <div className="col-span-full rounded-lg bg-destructive/10 p-4 text-sm text-destructive">Erreur : {error.message}</div>
-          ) : exposants.length > 0 ? (
-            exposants.map((exposant) => (
-              <Card key={exposant.id} className="transition hover:shadow-md">
-                <CardContent className="pt-4">
-                  <div className="flex items-start justify-between">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="surface-panel border-0 overflow-hidden">
+              <CardContent className="space-y-4 p-5">
+                <div className="h-5 w-1/2 animate-pulse rounded-lg bg-muted" />
+                <div className="h-4 w-full animate-pulse rounded-lg bg-muted" />
+                <div className="h-4 w-2/3 animate-pulse rounded-lg bg-muted" />
+                <div className="flex gap-2">
+                  <div className="h-7 w-16 animate-pulse rounded-full bg-muted" />
+                  <div className="h-7 w-20 animate-pulse rounded-full bg-muted" />
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : error ? (
+          <div className="col-span-full rounded-xl border border-destructive/20 bg-destructive/5 p-6 text-center text-sm text-destructive">
+            Erreur : {error.message}
+          </div>
+        ) : exposants.length > 0 ? (
+          exposants.map((exposant) => (
+            <Card
+              key={exposant.id}
+              className="surface-panel group border-0 overflow-hidden transition-all hover:shadow-lg"
+            >
+              <CardContent className="space-y-4 p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-base font-semibold text-primary">
+                      {exposant.nom.charAt(0).toUpperCase()}
+                    </div>
                     <div>
-                      <h2 className="text-base font-semibold">{exposant.nom}</h2>
+                      <h2 className="text-base font-semibold text-foreground group-hover:text-primary">
+                        {exposant.nom}
+                      </h2>
                       {exposant.is_featured && (
-                        <Badge variant="default" className="mt-1">
+                        <Badge
+                          variant="default"
+                          className="mt-0.5 rounded-full bg-primary/10 px-2 py-0 text-[10px] text-primary hover:bg-primary/15"
+                        >
                           En vedette
                         </Badge>
                       )}
                     </div>
                   </div>
-                  <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{exposant.description || 'Pas de description'}</p>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {exposant.secteur && <Badge variant="outline">{exposant.secteur}</Badge>}
-                    {exposant.pavillon && <Badge variant="outline">Pavillon {exposant.pavillon}</Badge>}
-                    {exposant.pays && <Badge variant="outline">{exposant.pays}</Badge>}
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <Button size="sm" className="gap-1.5" onClick={() => router.push(`/annuaire/${exposant.id}`)}>
-                      Voir fiche
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleContact(exposant.id)}
-                      disabled={contactingId === exposant.id}
-                      className="gap-1.5"
-                    >
-                      <MessageSquare className="h-3.5 w-3.5" />
-                      {contactingId === exposant.id ? '...' : 'Contacter'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <div className="col-span-full rounded-lg bg-muted/50 p-8 text-center">
-              <p className="text-base font-medium">Aucun resultat</p>
-              <p className="mt-1 text-sm text-muted-foreground">Essayez de modifier vos filtres de recherche.</p>
-            </div>
-          )}
-        </div>
+                </div>
 
-        {totalPages > 1 && (
-          <div className="mt-4 flex items-center justify-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              disabled={page === 0}
-              className="gap-1"
-            >
-              <ChevronLeft className="h-3.5 w-3.5" />
-              Precedent
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Page {page + 1} sur {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              disabled={page >= totalPages - 1}
-              className="gap-1"
-            >
-              Suivant
-              <ChevronRight className="h-3.5 w-3.5" />
-            </Button>
+                <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
+                  {exposant.description || 'Pas de description'}
+                </p>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {exposant.secteur && (
+                    <Badge
+                      variant="outline"
+                      className="rounded-full border-border/60 text-xs"
+                    >
+                      <Building2 className="mr-1 size-3" />
+                      {exposant.secteur}
+                    </Badge>
+                  )}
+                  {exposant.pavillon && (
+                    <Badge
+                      variant="outline"
+                      className="rounded-full border-border/60 text-xs"
+                    >
+                      Pavillon {exposant.pavillon}
+                    </Badge>
+                  )}
+                  {exposant.pays && (
+                    <Badge
+                      variant="outline"
+                      className="rounded-full border-border/60 text-xs"
+                    >
+                      <MapPin className="mr-1 size-3" />
+                      {exposant.pays}
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Button
+                    size="sm"
+                    className="rounded-xl"
+                    onClick={() => router.push(`/annuaire/${exposant.id}`)}
+                  >
+                    Voir fiche
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleContact(exposant.id)}
+                    disabled={contactingId === exposant.id}
+                    className="gap-1.5 rounded-xl"
+                  >
+                    <MessageSquare className="size-3.5" />
+                    {contactingId === exposant.id ? '...' : 'Contacter'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <div className="col-span-full">
+            <div className="surface-panel flex flex-col items-center gap-3 border-0 py-12 text-center">
+              <Building2 className="size-12 text-muted-foreground/40" />
+              <p className="text-base font-medium text-foreground">
+                Aucun resultat
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Essayez de modifier vos filtres de recherche.
+              </p>
+            </div>
           </div>
         )}
-      </section>
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="gap-1 rounded-xl"
+          >
+            <ChevronLeft className="size-3.5" />
+            Precedent
+          </Button>
+          <div className="flex items-center gap-2">
+            {Array.from({ length: totalPages }, (_, i) => (
+              <Button
+                key={i}
+                variant={page === i ? 'default' : 'outline'}
+                size="xs"
+                className="min-w-[2rem] rounded-xl"
+                onClick={() => setPage(i)}
+              >
+                {i + 1}
+              </Button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+            className="gap-1 rounded-xl"
+          >
+            Suivant
+            <ChevronRight className="size-3.5" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

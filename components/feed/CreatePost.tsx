@@ -2,13 +2,14 @@ import { useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/lib/auth/context';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Image, Send, X } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Image, Send, X, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { useFeed } from '@/hooks/useFeed';
 
 interface CreatePostProps {
   onSubmit: ReturnType<typeof useFeed>['createPost'];
+  onUpload: ReturnType<typeof useFeed>['uploadImage'];
 }
 
 const POST_TYPES = [
@@ -19,15 +20,61 @@ const POST_TYPES = [
   { value: 'evenement', label: 'Evenement' },
 ];
 
-export function CreatePost({ onSubmit }: CreatePostProps) {
+const TYPE_COLORS: Record<string, string> = {
+  general: 'bg-muted-foreground/20 text-muted-foreground',
+  annonce: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+  actualite: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+  offre: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
+  evenement: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+};
+
+export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
   const { profile } = useAuth();
   const [content, setContent] = useState('');
   const [postType, setPostType] = useState('general');
-  const [imageUrl, setImageUrl] = useState('');
-  const [showImageInput, setShowImageInput] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = useCallback((file: File | null) => {
+    setError(null);
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image trop volumineuse (max 5 Mo)');
+      return;
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Format non supporte (JPEG, PNG, WebP, GIF)');
+      return;
+    }
+
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    handleFileSelect(file);
+  }, [handleFileSelect]);
+
+  const handleRemoveImage = useCallback(() => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }, []);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -35,22 +82,37 @@ export function CreatePost({ onSubmit }: CreatePostProps) {
       if (!content.trim() || submitting) return;
 
       setSubmitting(true);
-      const result = await onSubmit(
-        content,
-        postType,
-        postType !== 'general' ? POST_TYPES.find((t) => t.value === postType)?.label : undefined,
-        imageUrl || undefined
-      );
+      setError(null);
 
-      if (result && !result.error) {
-        setContent('');
-        setImageUrl('');
-        setShowImageInput(false);
-        setIsExpanded(false);
+      try {
+        let imageUrl: string | null = null;
+
+        if (imageFile) {
+          setUploading(true);
+          imageUrl = await onUpload(imageFile);
+          setUploading(false);
+        }
+
+        const result = await onSubmit(
+          content,
+          postType,
+          postType !== 'general' ? POST_TYPES.find((t) => t.value === postType)?.label : undefined,
+          imageUrl ?? undefined
+        );
+
+        if (result && !result.error) {
+          setContent('');
+          setImageFile(null);
+          setImagePreview(null);
+          setIsExpanded(false);
+        }
+      } catch {
+        setError("Erreur lors de la publication");
+      } finally {
+        setSubmitting(false);
       }
-      setSubmitting(false);
     },
-    [content, postType, imageUrl, submitting, onSubmit]
+    [content, postType, imageFile, submitting, onSubmit, onUpload]
   );
 
   const handleExpand = () => {
@@ -60,17 +122,13 @@ export function CreatePost({ onSubmit }: CreatePostProps) {
 
   const handleCancel = () => {
     setContent('');
-    setImageUrl('');
-    setShowImageInput(false);
+    setImageFile(null);
+    setImagePreview(null);
     setIsExpanded(false);
   };
 
   const initials = profile?.full_name
-    ? profile.full_name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
+    ? profile.full_name.split(' ').map((n) => n[0]).join('').toUpperCase()
     : '?';
 
   return (
@@ -79,87 +137,95 @@ export function CreatePost({ onSubmit }: CreatePostProps) {
         <form onSubmit={handleSubmit}>
           <div className="flex gap-3">
             <Avatar className="h-10 w-10 shrink-0">
-              <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
-                {initials}
-              </AvatarFallback>
+              {profile?.avatar_url ? (
+                <AvatarImage src={profile.avatar_url} />
+              ) : (
+                <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+                  {initials}
+                </AvatarFallback>
+              )}
             </Avatar>
             <div className="flex-1 space-y-3">
               {!isExpanded ? (
                 <button
                   type="button"
                   onClick={handleExpand}
-                  className="w-full rounded-xl border border-border bg-muted px-4 py-3 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/80"
+                  className="w-full rounded-xl border border-border bg-muted/50 px-4 py-3 text-left text-sm text-muted-foreground transition-all hover:bg-muted/80 hover:border-primary/30"
                 >
                   Partagez une actualite, une annonce ou une opportunite...
                 </button>
               ) : (
                 <>
-                  <Textarea
+                  <textarea
                     ref={textareaRef}
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     placeholder="De quoi voulez-vous parler ?"
-                    className="min-h-[120px] resize-none border-none bg-transparent p-0 text-base placeholder:text-muted-foreground focus-visible:ring-0"
+                    className="min-h-[120px] w-full resize-none rounded-lg border-0 bg-transparent p-0 text-base placeholder:text-muted-foreground/60 focus:outline-none focus:ring-0"
+                    style={{ letterSpacing: 'var(--tracking-normal)' }}
                   />
 
-                  {showImageInput && (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="url"
-                        value={imageUrl}
-                        onChange={(e) => setImageUrl(e.target.value)}
-                        placeholder="URL de l'image..."
-                        className="flex-1 rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none focus:border-primary"
+                  {imagePreview && (
+                    <div className="relative overflow-hidden rounded-xl border border-border bg-muted/30">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="max-h-64 w-full object-contain"
                       />
                       <Button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => {
-                          setShowImageInput(false);
-                          setImageUrl('');
-                        }}
+                        variant="destructive"
+                        size="icon-xs"
+                        className="absolute right-2 top-2"
+                        onClick={handleRemoveImage}
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   )}
 
-                  {imageUrl && (
-                    <div className="relative overflow-hidden rounded-lg border border-border">
-                      <img
-                        src={imageUrl}
-                        alt="Preview"
-                        className="h-48 w-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    </div>
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={cn(
+                      'flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-3 text-sm transition-colors',
+                      dragOver
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50 hover:bg-muted/30'
+                    )}
+                  >
+                    <Image className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">
+                      {imageFile ? imageFile.name : 'Ajouter une image (glisser-deposer ou cliquer)'}
+                    </span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="hidden"
+                      onChange={(e) => handleFileSelect(e.target.files?.[0] || null)}
+                    />
+                  </div>
+
+                  {error && (
+                    <p className="text-xs text-destructive">{error}</p>
                   )}
 
                   <div className="flex items-center justify-between border-t border-border pt-3">
                     <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1.5 text-muted-foreground"
-                        onClick={() => setShowImageInput(!showImageInput)}
-                      >
-                        <Image className="h-4 w-4" />
-                        <span className="text-xs">Image</span>
-                      </Button>
                       <select
                         value={postType}
                         onChange={(e) => setPostType(e.target.value)}
-                        className="rounded-lg border border-border bg-muted px-2 py-1.5 text-xs text-muted-foreground outline-none focus:border-primary"
+                        className={cn(
+                          'rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium outline-none transition-colors focus:border-primary',
+                          TYPE_COLORS[postType],
+                          'bg-muted/50'
+                        )}
                       >
                         {POST_TYPES.map((t) => (
-                          <option key={t.value} value={t.value}>
-                            {t.label}
-                          </option>
+                          <option key={t.value} value={t.value}>{t.label}</option>
                         ))}
                       </select>
                     </div>
@@ -177,8 +243,12 @@ export function CreatePost({ onSubmit }: CreatePostProps) {
                         size="sm"
                         disabled={!content.trim() || submitting}
                       >
-                        <Send className="mr-1.5 h-3.5 w-3.5" />
-                        Publier
+                        {submitting ? (
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Send className="mr-1.5 h-3.5 w-3.5" />
+                        )}
+                        {uploading ? 'Upload...' : 'Publier'}
                       </Button>
                     </div>
                   </div>

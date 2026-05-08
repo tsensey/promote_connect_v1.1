@@ -6,6 +6,7 @@ import {
   BarChart3,
   CalendarDays,
   ChevronLeft,
+  ChevronRight,
   Megaphone,
   Shield,
   Store,
@@ -55,6 +56,30 @@ function isActive(pathname: string, href: string) {
   return pathname === href || (href !== '/admin' && pathname.startsWith(href));
 }
 
+function LabelText({
+  collapsed,
+  children,
+  className,
+}: {
+  collapsed: boolean;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        'overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-in-out',
+        collapsed
+          ? 'max-w-0 opacity-0 delay-0'
+          : 'max-w-56 opacity-100 delay-150',
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function AdminSidebar({
   collapsed,
   onToggle,
@@ -70,67 +95,65 @@ export function AdminSidebar({
     <aside
       className={cn(
         mobile
-          ? 'flex h-full w-full flex-col border-r border-white/10 bg-slate-950 text-white'
-          : 'fixed inset-y-0 left-0 z-50 hidden border-r border-sidebar-border bg-slate-950/95 text-white backdrop-blur xl:flex xl:flex-col',
-        !mobile && (collapsed ? 'w-24' : 'w-72')
+          ? 'flex h-full w-full flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground'
+          : 'fixed inset-y-0 left-0 z-50 hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground xl:flex xl:flex-col',
+        !mobile && 'transition-[width] duration-300 ease-in-out',
+        !mobile && (collapsed ? 'w-24' : 'w-64')
       )}
     >
-      <div className="flex items-center justify-between border-b border-white/10 px-4 py-5">
+      <div className="flex items-center justify-between border-b border-sidebar-border px-4 py-4">
         <Link href="/admin" className="flex min-w-0 items-center gap-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-300">
-            <Shield className="size-5" />
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-300">
+            <Shield className="size-4" />
           </div>
-          {!collapsed && (
+          <LabelText collapsed={collapsed}>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold uppercase tracking-[0.24em] text-white/45">
+              <p className="truncate text-[10px] font-bold uppercase tracking-[0.24em] text-sidebar-foreground/40">
                 Admin
               </p>
-              <p className="-mt-0.5 truncate text-lg text-white">PROMOTE-CONNECT</p>
+              <p className="-mt-0.5 truncate text-sm font-bold text-sidebar-foreground">PROMOTE-CONNECT</p>
             </div>
-          )}
+          </LabelText>
         </Link>
         <Button
           type="button"
           variant="ghost"
           size="icon-sm"
           onClick={onToggle}
-          className={cn(
-            mobile
-              ? 'inline-flex text-white/70 hover:bg-white/10 hover:text-white'
-              : 'hidden text-white/70 hover:bg-white/10 hover:text-white xl:inline-flex',
-            collapsed && 'rotate-180'
-          )}
+          className="shrink-0 text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
         >
-          <ChevronLeft className="size-4" />
+          {collapsed ? (
+            <ChevronRight className="size-3.5 transition-transform duration-300" />
+          ) : (
+            <ChevronLeft className="size-3.5 transition-transform duration-300" />
+          )}
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-5">
-        <div className={cn('mb-6 rounded-3xl border border-white/10 bg-white/5 p-4', collapsed && 'px-2')}>
-          <div className="flex items-center gap-3">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-sm font-semibold text-amber-300">
+      <div className="flex-1 overflow-y-auto px-3 py-4">
+        <div className="mb-5 rounded-xl border border-sidebar-border bg-sidebar-accent/50 p-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-xs font-semibold text-amber-600 dark:text-amber-300">
               A
             </div>
-            {!collapsed && (
+            <LabelText collapsed={collapsed}>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-white">Console admin</p>
-                <p className="truncate text-xs text-white/55">
-                  Comptes, acces et suivi
-                </p>
+                <p className="truncate text-xs font-semibold text-sidebar-foreground">Console admin</p>
+                <p className="truncate text-[11px] text-sidebar-foreground/50">Comptes, acces et suivi</p>
               </div>
-            )}
+            </LabelText>
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           {ADMIN_NAV.map((section) => (
             <div key={section.title}>
-              {!collapsed && (
-                <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.22em] text-white/40">
+              <LabelText collapsed={collapsed} className="mb-1.5 !delay-0">
+                <p className="truncate px-3 text-[10px] font-bold uppercase tracking-[0.22em] text-sidebar-foreground/35">
                   {section.title}
                 </p>
-              )}
-              <nav className="space-y-1.5">
+              </LabelText>
+              <nav className="space-y-0.5">
                 {section.items.map((item) => {
                   const Icon = item.icon;
                   const active = isActive(pathname, item.href);
@@ -140,31 +163,29 @@ export function AdminSidebar({
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        'group flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all',
+                        'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
                         active
-                          ? 'bg-white text-slate-950 shadow-lg shadow-black/20'
-                          : 'text-white/72 hover:bg-white/8 hover:text-white'
+                          ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm'
+                          : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground'
                       )}
                     >
                       <Icon className="size-4 shrink-0" />
-                      {!collapsed && (
-                        <>
-                          <span className="flex-1 truncate">{item.label}</span>
-                          {item.badge && (
-                            <Badge
-                              variant={active ? 'secondary' : 'outline'}
-                              className={cn(
-                                'rounded-full border-white/15 px-2 text-[10px]',
-                                active
-                                  ? 'bg-slate-950/10 text-slate-950'
-                                  : 'border-white/10 text-white/60'
-                              )}
-                            >
-                              {item.badge}
-                            </Badge>
-                          )}
-                        </>
-                      )}
+                      <LabelText collapsed={collapsed} className="flex items-center gap-2">
+                        <span className="truncate">{item.label}</span>
+                        {item.badge && (
+                          <Badge
+                            variant={active ? 'secondary' : 'outline'}
+                            className={cn(
+                              'rounded-full px-1.5 py-px text-[9px] font-semibold shrink-0',
+                              active
+                                ? 'bg-sidebar-primary-foreground/15 text-sidebar-primary-foreground'
+                                : 'border-sidebar-border text-sidebar-foreground/50'
+                            )}
+                          >
+                            {item.badge}
+                          </Badge>
+                        )}
+                      </LabelText>
                     </Link>
                   );
                 })}
@@ -174,15 +195,13 @@ export function AdminSidebar({
         </div>
       </div>
 
-      <div className="border-t border-white/10 p-3">
+      <div className="border-t border-sidebar-border p-3">
         <Link
           href="/app"
-          className={cn(
-            'flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white',
-            !collapsed && 'justify-start'
-          )}
+          className="flex items-center justify-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent/50 px-3 py-2 text-xs font-medium text-sidebar-foreground/70 transition hover:bg-sidebar-accent hover:text-sidebar-foreground"
         >
-          {!collapsed ? 'Retour a la plateforme' : 'App'}
+          <Shield className="size-3.5 shrink-0" />
+          <LabelText collapsed={collapsed}>Retour a la plateforme</LabelText>
         </Link>
       </div>
     </aside>

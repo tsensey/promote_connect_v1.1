@@ -307,7 +307,7 @@ export default function AdminUsersPage() {
             attribution des roles pour toute la plateforme.
           </p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)} className="rounded-2xl">
+        <Button onClick={() => setShowCreateDialog(true)} className="rounded-xl">
           <UserPlus className="mr-2 size-4" />
           Creer un compte
         </Button>
@@ -337,7 +337,7 @@ export default function AdminUsersPage() {
                   : 'Aucun email n a pu etre envoye. Partagez ces identifiants manuellement.'}
               </p>
             </div>
-            <Button variant="outline" onClick={copyInvite} className="rounded-2xl bg-white/80">
+            <Button variant="outline" onClick={copyInvite} className="rounded-xl bg-white/80">
               <Copy className="mr-2 size-4" />
               Copier les acces
             </Button>
@@ -384,7 +384,7 @@ export default function AdminUsersPage() {
           {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 6 }).map((_, index) => (
-                <div key={index} className="h-16 animate-pulse rounded-2xl bg-muted" />
+                <div key={index} className="h-16 animate-pulse rounded-xl bg-muted" />
               ))}
             </div>
           ) : filteredUsers.length === 0 ? (
@@ -441,7 +441,7 @@ export default function AdminUsersPage() {
                         <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" className="rounded-full" />}>
                           <MoreVertical className="size-4" />
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-2xl">
+                        <DropdownMenuContent align="end" className="rounded-xl">
                           <DropdownMenuItem
                             onClick={() => handleDelete(user.id)}
                             className="text-destructive"
@@ -513,7 +513,7 @@ export default function AdminUsersPage() {
                 <Button
                   type="button"
                   variant={form.role === 'visiteur' ? 'default' : 'outline'}
-                  className="rounded-2xl"
+                  className="rounded-xl"
                   onClick={() =>
                     setForm({
                       ...form,
@@ -530,7 +530,7 @@ export default function AdminUsersPage() {
                 <Button
                   type="button"
                   variant={form.role === 'exposant' ? 'default' : 'outline'}
-                  className="rounded-2xl"
+                  className="rounded-xl"
                   onClick={() =>
                     setForm({
                       ...form,
@@ -553,7 +553,7 @@ export default function AdminUsersPage() {
                       id="sector"
                       value={form.sector}
                       onChange={(event) => setForm({ ...form, sector: event.target.value })}
-                      className="flex h-10 w-full rounded-2xl border border-border bg-background px-3 text-sm shadow-sm"
+                      className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
                     >
                       <option value="">Selectionner</option>
                       {SECTORS.map((sector) => (
@@ -569,7 +569,7 @@ export default function AdminUsersPage() {
                       id="country"
                       value={form.country}
                       onChange={(event) => setForm({ ...form, country: event.target.value })}
-                      className="flex h-10 w-full rounded-2xl border border-border bg-background px-3 text-sm shadow-sm"
+                      className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
                     >
                       <option value="">Selectionner</option>
                       {COUNTRIES.map((country) => (
@@ -606,12 +606,12 @@ export default function AdminUsersPage() {
             <Button
               type="button"
               variant="outline"
-              className="rounded-2xl"
+              className="rounded-xl"
               onClick={() => setShowCreateDialog(false)}
             >
               Annuler
             </Button>
-            <Button type="button" className="rounded-2xl" disabled={creating} onClick={handleCreate}>
+            <Button type="button" className="rounded-xl" disabled={creating} onClick={handleCreate}>
               {creating ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
@@ -643,23 +643,21 @@ function StatCard({
   tone: 'blue' | 'emerald' | 'violet' | 'amber';
 }) {
   const toneClasses = {
-    blue: 'bg-blue-50 text-blue-700',
-    emerald: 'bg-emerald-50 text-emerald-700',
-    violet: 'bg-violet-50 text-violet-700',
-    amber: 'bg-amber-50 text-amber-700',
+    blue: 'bg-blue-500/10 text-blue-700 dark:text-blue-300',
+    emerald: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+    violet: 'bg-violet-500/10 text-violet-700 dark:text-violet-300',
+    amber: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
   };
 
   return (
-    <Card className="surface-panel border-0">
-      <CardContent className="flex items-center justify-between p-5">
-        <div>
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="mt-2 text-3xl font-semibold text-foreground">{value}</p>
-        </div>
-        <div className={`flex size-12 items-center justify-center rounded-2xl ${toneClasses[tone]}`}>
-          <Icon className="size-5" />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="surface-panel flex items-center justify-between p-5">
+      <div>
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className="mt-2 text-3xl font-semibold text-foreground">{value}</p>
+      </div>
+      <div className={`flex size-12 items-center justify-center rounded-xl ${toneClasses[tone]}`}>
+        <Icon className="size-5" />
+      </div>
+    </div>
   );
 }

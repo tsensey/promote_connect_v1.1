@@ -263,7 +263,7 @@ export default function ManageProductsPage() {
             </p>
           </div>
           <Link href="/app">
-            <Button className="rounded-2xl">
+            <Button className="rounded-xl">
               Retour a l accueil
               <ArrowRight className="size-4" />
             </Button>
@@ -296,7 +296,7 @@ export default function ManageProductsPage() {
         </div>
         {exposant && (
           <Link href={`/vitrine/${exposant.id}`}>
-            <Button variant="outline" className="rounded-2xl bg-white/85">
+            <Button variant="outline" className="rounded-xl bg-white/85">
               Voir ma vitrine publique
             </Button>
           </Link>
@@ -365,7 +365,7 @@ export default function ManageProductsPage() {
             </Field>
           </div>
 
-          <Button onClick={saveShowcase} disabled={savingShowcase} className="rounded-2xl">
+          <Button onClick={saveShowcase} disabled={savingShowcase} className="rounded-xl">
             {savingShowcase ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" />
@@ -415,7 +415,7 @@ export default function ManageProductsPage() {
             </Field>
 
             <div className="flex flex-wrap gap-3">
-              <Button onClick={saveProduct} disabled={savingProduct || !exposant} className="rounded-2xl">
+              <Button onClick={saveProduct} disabled={savingProduct || !exposant} className="rounded-xl">
                 {savingProduct ? (
                   <>
                     <Loader2 className="mr-2 size-4 animate-spin" />
@@ -429,7 +429,7 @@ export default function ManageProductsPage() {
                 )}
               </Button>
               {productForm.id && (
-                <Button variant="outline" className="rounded-2xl" onClick={() => setProductForm(emptyProductForm)}>
+                <Button variant="outline" className="rounded-xl" onClick={() => setProductForm(emptyProductForm)}>
                   Annuler l edition
                 </Button>
               )}

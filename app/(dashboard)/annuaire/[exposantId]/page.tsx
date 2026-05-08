@@ -5,7 +5,20 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 import { createConversation } from '@/hooks/useChat';
-import { ArrowLeft, Globe, MapPin, Building2, MessageSquare, Star, Package } from 'lucide-react';
+import {
+  ArrowLeft,
+  Globe,
+  MapPin,
+  Building2,
+  MessageSquare,
+  Star,
+  Package,
+  ExternalLink,
+} from 'lucide-react';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import type { Database } from '@/types/database.types';
 
 type Exposant = Database['public']['Tables']['exposants']['Row'];
@@ -55,21 +68,35 @@ export default function ExposantDetailPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="rounded-3xl bg-white p-8 shadow-sm">
-          <div className="h-8 w-1/3 animate-pulse rounded-lg bg-slate-200" />
-        </div>
+        <div className="surface-panel h-8 w-48 animate-pulse rounded-xl" />
+        <div className="surface-panel h-64 animate-pulse border-0" />
+        <div className="surface-panel h-48 animate-pulse border-0" />
       </div>
     );
   }
 
   if (!exposant) {
     return (
-      <div className="rounded-3xl bg-white p-12 text-center shadow-sm">
-        <h1 className="text-xl font-semibold text-slate-900">Exposant non trouve</h1>
-        <Link href="/annuaire" className="mt-4 inline-block text-blue-600 underline">
-          Retour a l'annuaire
-        </Link>
-      </div>
+      <Card className="surface-panel border-0 py-0">
+        <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
+          <Building2 className="size-16 text-muted-foreground/30" />
+          <div>
+            <h1 className="text-2xl font-heading text-foreground">
+              Exposant non trouve
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Cet exposant n&apos;existe pas ou a ete retire.
+            </p>
+          </div>
+          <Link
+            href="/annuaire"
+            className={cn(buttonVariants({ variant: 'outline' }), 'rounded-xl')}
+          >
+            <ArrowLeft className="mr-2 size-4" />
+            Retour a l&apos;annuaire
+          </Link>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -77,112 +104,170 @@ export default function ExposantDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Link href="/annuaire" className="inline-flex items-center gap-2 text-sm text-slate-600 transition hover:text-slate-900">
-        <ArrowLeft className="h-4 w-4" />
-        Retour a l'annuaire
+      <Link
+        href="/annuaire"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="size-4" />
+        Retour a l&apos;annuaire
       </Link>
 
-      <section className="rounded-3xl bg-white p-8 shadow-sm">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-semibold text-slate-900">{exposant.nom}</h1>
-              {exposant.is_featured && (
-                <span className="flex items-center gap-1 rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-700">
-                  <Star className="h-3 w-3" />
-                  En vedette
-                </span>
-              )}
-            </div>
-            <p className="mt-3 text-slate-600">{exposant.description}</p>
-          </div>
-          <button
-            onClick={handleContact}
-            disabled={contacting || !exposant.profile_id}
-            className="flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <MessageSquare className="h-4 w-4" />
-            {contacting ? '...' : 'Contacter'}
-          </button>
-        </div>
-
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          {exposant.secteur && (
-            <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-4">
-              <Building2 className="h-5 w-5 text-slate-400" />
-              <div>
-                <p className="text-xs text-slate-500">Secteur</p>
-                <p className="font-medium text-slate-900">{exposant.secteur}</p>
+      <Card className="surface-panel overflow-hidden border-0 py-0">
+        <div className="brand-gradient px-6 py-8">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex size-16 items-center justify-center rounded-xl bg-white/20 text-2xl font-bold text-white shadow-lg backdrop-blur-sm">
+                {exposant.nom.charAt(0).toUpperCase()}
               </div>
-            </div>
-          )}
-          {exposant.pays && (
-            <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-4">
-              <MapPin className="h-5 w-5 text-slate-400" />
-              <div>
-                <p className="text-xs text-slate-500">Pays</p>
-                <p className="font-medium text-slate-900">{exposant.pays}</p>
-              </div>
-            </div>
-          )}
-          {(exposant.pavillon || exposant.stand) && (
-            <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-4">
-              <MapPin className="h-5 w-5 text-slate-400" />
-              <div>
-                <p className="text-xs text-slate-500">Localisation</p>
-                <p className="font-medium text-slate-900">
-                  Pavillon {exposant.pavillon}{exposant.stand && ` — Stand ${exposant.stand}`}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {profile?.full_name && (
-          <div className="mt-4 text-sm text-slate-500">
-            Contact: <span className="font-medium text-slate-700">{profile.full_name}</span>
-            {profile.company && ` — ${profile.company}`}
-          </div>
-        )}
-
-        {exposant.website && (
-          <a
-            href={exposant.website}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-2 inline-flex items-center gap-2 text-sm text-blue-600 underline underline-offset-2"
-          >
-            <Globe className="h-4 w-4" />
-            {exposant.website.replace(/^https?:\/\//, '')}
-          </a>
-        )}
-      </section>
-
-      {produits.length > 0 && (
-        <section className="rounded-3xl bg-white p-8 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Produits et services ({produits.length})
-          </h2>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {produits.map((prod) => (
-              <div key={prod.id} className="rounded-2xl border border-slate-200 p-5">
-                <h3 className="font-semibold text-slate-900">{prod.nom}</h3>
-                {prod.description && <p className="mt-2 text-sm text-slate-600">{prod.description}</p>}
-                <div className="mt-3 flex items-center justify-between">
-                  {prod.categorie && (
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">
-                      {prod.categorie}
-                    </span>
-                  )}
-                  {prod.prix_indicatif && (
-                    <span className="font-semibold text-slate-900">{prod.prix_indicatif}</span>
+              <div className="text-white">
+                <div className="flex items-center gap-3">
+                  <h1 className="text-3xl font-heading font-semibold">
+                    {exposant.nom}
+                  </h1>
+                  {exposant.is_featured && (
+                    <Badge className="rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30">
+                      <Star className="mr-1 size-3" />
+                      En vedette
+                    </Badge>
                   )}
                 </div>
+                {profile?.full_name && (
+                  <p className="mt-1 text-sm text-white/80">
+                    Contact : {profile.full_name}
+                    {profile?.company && ` — ${profile.company}`}
+                  </p>
+                )}
               </div>
-            ))}
+            </div>
+            <Button
+              onClick={handleContact}
+              disabled={contacting || !exposant.profile_id}
+              className="rounded-xl bg-white text-primary shadow-lg hover:bg-white/90"
+            >
+              <MessageSquare className="mr-2 size-4" />
+              {contacting ? '...' : 'Contacter'}
+            </Button>
           </div>
-        </section>
+        </div>
+
+        <CardContent className="space-y-6 p-6">
+          <p className="text-base leading-7 text-muted-foreground">
+            {exposant.description || 'Aucune description disponible.'}
+          </p>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {exposant.secteur && (
+              <div className="rounded-xl border border-border/60 bg-muted/40 p-4">
+                <Building2 className="mb-2 size-5 text-primary" />
+                <p className="text-xs text-muted-foreground">Secteur</p>
+                <p className="mt-0.5 font-medium text-foreground">
+                  {exposant.secteur}
+                </p>
+              </div>
+            )}
+            {exposant.pays && (
+              <div className="rounded-xl border border-border/60 bg-muted/40 p-4">
+                <MapPin className="mb-2 size-5 text-primary" />
+                <p className="text-xs text-muted-foreground">Pays</p>
+                <p className="mt-0.5 font-medium text-foreground">
+                  {exposant.pays}
+                </p>
+              </div>
+            )}
+            {(exposant.pavillon || exposant.stand) && (
+              <div className="rounded-xl border border-border/60 bg-muted/40 p-4">
+                <MapPin className="mb-2 size-5 text-primary" />
+                <p className="text-xs text-muted-foreground">Localisation</p>
+                <p className="mt-0.5 font-medium text-foreground">
+                  Pavillon {exposant.pavillon}
+                  {exposant.stand && ` — Stand ${exposant.stand}`}
+                </p>
+              </div>
+            )}
+            {exposant.website && (
+              <div className="rounded-xl border border-border/60 bg-muted/40 p-4">
+                <Globe className="mb-2 size-5 text-primary" />
+                <p className="text-xs text-muted-foreground">Site web</p>
+                <a
+                  href={exposant.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-0.5 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                >
+                  {exposant.website.replace(/^https?:\/\//, '').slice(0, 25)}
+                  <ExternalLink className="size-3" />
+                </a>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {produits.length > 0 && (
+        <Card className="surface-panel border-0">
+          <CardContent className="space-y-5 p-6">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+                <Package className="size-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">
+                  Catalogue
+                </p>
+                <h2 className="text-2xl font-heading text-foreground">
+                  Produits et services ({produits.length})
+                </h2>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {produits.map((prod) => (
+                <div
+                  key={prod.id}
+                  className="rounded-xl border border-border/60 bg-white/80 p-5 transition-all hover:border-primary/20 hover:shadow-md"
+                >
+                  <h3 className="font-heading text-lg font-semibold text-foreground">
+                    {prod.nom}
+                  </h3>
+                  {prod.description && (
+                    <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">
+                      {prod.description}
+                    </p>
+                  )}
+                  <div className="mt-4 flex items-center justify-between">
+                    {prod.categorie && (
+                      <Badge
+                        variant="secondary"
+                        className="rounded-full text-xs"
+                      >
+                        {prod.categorie}
+                      </Badge>
+                    )}
+                    {prod.prix_indicatif && (
+                      <span className="font-bold text-foreground">
+                        {prod.prix_indicatif}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {produits.length === 0 && (
+        <Card className="surface-panel border-0">
+          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+            <Package className="size-12 text-muted-foreground/30" />
+            <p className="text-base font-medium text-foreground">
+              Aucun produit ou service publie
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Cet exposant n&apos;a pas encore ajoute de produits a sa vitrine.
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

@@ -4,10 +4,20 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
-import { ArrowLeft, Globe, MapPin, Building2, MessageSquare, Tag } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import {
+  ArrowLeft,
+  Globe,
+  MapPin,
+  Building2,
+  MessageSquare,
+  Tag,
+  Package,
+  ExternalLink,
+} from 'lucide-react';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import type { Database } from '@/types/database.types';
 
 type Exposant = Database['public']['Tables']['exposants']['Row'];
@@ -45,106 +55,192 @@ export default function VitrineExposantPage() {
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <Card className="p-4 rounded-lg">
-          <div className="h-8 w-1/3 animate-pulse rounded-md bg-muted" />
-        </Card>
+      <div className="space-y-6">
+        <div className="surface-panel h-8 w-48 animate-pulse rounded-xl" />
+        <div className="surface-panel h-48 animate-pulse border-0" />
+        <div className="surface-panel h-64 animate-pulse border-0" />
       </div>
     );
   }
 
   if (!exposant) {
     return (
-      <Card className="p-6 rounded-lg text-center">
-        <h1 className="text-xl font-semibold text-slate-900">Exposant non trouve</h1>
-        <Link href="/vitrine" className="mt-3 inline-block text-blue-600 underline">
-          Retour a la vitrine
-        </Link>
+      <Card className="surface-panel border-0 py-0">
+        <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
+          <Package className="size-16 text-muted-foreground/30" />
+          <div>
+            <h1 className="text-2xl font-heading text-foreground">
+              Exposant non trouve
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Cet exposant n&apos;existe pas ou a ete retire.
+            </p>
+          </div>
+          <Link
+            href="/vitrine"
+            className={cn(buttonVariants({ variant: 'outline' }), 'rounded-xl')}
+          >
+            <ArrowLeft className="mr-2 size-4" />
+            Retour a la vitrine
+          </Link>
+        </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <Link href="/vitrine" className="inline-flex items-center gap-2 text-sm text-muted-foreground transition hover:text-slate-900">
-        <ArrowLeft className="h-4 w-4" />
+    <div className="space-y-6">
+      <Link
+        href="/vitrine"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="size-4" />
         Retour a la vitrine
       </Link>
 
-      <Card className="p-4 rounded-lg">
-        <h1 className="text-2xl font-semibold text-slate-900">{exposant.nom}</h1>
-        <p className="mt-2 text-muted-foreground">{exposant.description}</p>
-
-        <div className="mt-4 flex flex-wrap gap-3 text-sm">
-          {exposant.secteur && (
-            <Badge variant="secondary" className="gap-1.5">
-              <Building2 className="h-3 w-3" />
-              {exposant.secteur}
-            </Badge>
-          )}
-          {exposant.pays && (
-            <Badge variant="secondary" className="gap-1.5">
-              <MapPin className="h-3 w-3" />
-              {exposant.pays}
-            </Badge>
-          )}
-          {exposant.website && (
-            <a
-              href={exposant.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm text-blue-600 underline underline-offset-2"
-            >
-              <Globe className="h-3 w-3" />
-              Site web
-            </a>
-          )}
-        </div>
-      </Card>
-
-      <Card className="p-4 rounded-lg">
-        <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
-          <Tag className="h-5 w-5" />
-          Produits et services ({produits.length})
-        </h2>
-
-        {produits.length === 0 ? (
-          <p className="mt-3 text-muted-foreground">Aucun produit ou service publie.</p>
-        ) : (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {produits.map((prod) => (
-              <Card key={prod.id} className="p-4 rounded-lg">
-                <h3 className="font-semibold text-slate-900">{prod.nom}</h3>
-                {prod.description && (
-                  <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{prod.description}</p>
-                )}
-                <div className="mt-3 flex items-center justify-between">
-                  {prod.categorie && (
-                    <Badge variant="secondary" className="text-xs">
-                      {prod.categorie}
-                    </Badge>
-                  )}
-                  {prod.prix_indicatif && (
-                    <span className="font-bold text-slate-900">{prod.prix_indicatif}</span>
-                  )}
-                </div>
-              </Card>
-            ))}
+      <Card className="surface-panel overflow-hidden border-0 py-0">
+        <div className="brand-gradient px-6 py-8">
+          <div className="flex items-center gap-4">
+            <div className="flex size-16 items-center justify-center rounded-xl bg-white/20 text-2xl font-bold text-white shadow-lg backdrop-blur-sm">
+              {exposant.nom.charAt(0).toUpperCase()}
+            </div>
+            <div className="text-white">
+              <h1 className="text-3xl font-heading font-semibold">
+                {exposant.nom}
+              </h1>
+              <p className="mt-1 text-sm text-white/80">
+                {exposant.description || 'Vitrine PROMOTE-CONNECT'}
+              </p>
+            </div>
           </div>
-        )}
+        </div>
+
+        <CardContent className="space-y-5 p-6">
+          <div className="flex flex-wrap gap-3">
+            {exposant.secteur && (
+              <Badge
+                variant="outline"
+                className="gap-1.5 rounded-full border-border/70 text-xs"
+              >
+                <Building2 className="size-3" />
+                {exposant.secteur}
+              </Badge>
+            )}
+            {exposant.pays && (
+              <Badge
+                variant="outline"
+                className="gap-1.5 rounded-full border-border/70 text-xs"
+              >
+                <MapPin className="size-3" />
+                {exposant.pays}
+              </Badge>
+            )}
+            {exposant.pavillon && (
+              <Badge
+                variant="outline"
+                className="gap-1.5 rounded-full border-border/70 text-xs"
+              >
+                Pavillon {exposant.pavillon}
+              </Badge>
+            )}
+            {exposant.website && (
+              <a
+                href={exposant.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+              >
+                <Globe className="size-3" />
+                Site web
+                <ExternalLink className="size-3" />
+              </a>
+            )}
+          </div>
+        </CardContent>
       </Card>
 
-      <Card className="p-4 rounded-lg">
-        <h2 className="text-xl font-semibold text-slate-900">Interesse par cet exposant ?</h2>
-        <p className="mt-2 text-muted-foreground">
-          Contactez-le directement via le chat PROMOTE-CONNECT pour discuter de vos besoins.
-        </p>
-        <Link href={`/annuaire/${exposantId}`}>
-          <Button className="mt-3">
-            <MessageSquare className="mr-2 h-4 w-4" />
-            Voir la fiche complete
-          </Button>
-        </Link>
+      <Card className="surface-panel border-0">
+        <CardContent className="space-y-5 p-6">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+              <Tag className="size-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">
+                Catalogue
+              </p>
+              <h2 className="text-2xl font-heading text-foreground">
+                Produits et services ({produits.length})
+              </h2>
+            </div>
+          </div>
+
+          {produits.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-12 text-center">
+              <Package className="size-12 text-muted-foreground/30" />
+              <p className="text-base font-medium text-foreground">
+                Aucun produit ou service publie
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Cet exposant n&apos;a pas encore ajoute de produits a sa
+                vitrine.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {produits.map((prod) => (
+                <div
+                  key={prod.id}
+                  className="rounded-xl border border-border/60 bg-white/80 p-5 transition-all hover:border-primary/20 hover:shadow-md"
+                >
+                  <h3 className="font-heading text-lg font-semibold text-foreground">
+                    {prod.nom}
+                  </h3>
+                  {prod.description && (
+                    <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">
+                      {prod.description}
+                    </p>
+                  )}
+                  <div className="mt-4 flex items-center justify-between">
+                    {prod.categorie && (
+                      <Badge
+                        variant="secondary"
+                        className="rounded-full text-xs"
+                      >
+                        {prod.categorie}
+                      </Badge>
+                    )}
+                    {prod.prix_indicatif && (
+                      <span className="font-bold text-foreground">
+                        {prod.prix_indicatif}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="surface-panel border-0">
+        <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-heading font-semibold text-foreground">
+              Interesse par cet exposant ?
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Contactez-le directement via le chat PROMOTE-CONNECT pour
+              discuter de vos besoins.
+            </p>
+          </div>
+          <Link href={`/annuaire/${exposantId}`}>
+            <Button className="rounded-xl whitespace-nowrap">
+              <MessageSquare className="mr-2 size-4" />
+              Voir la fiche complete
+            </Button>
+          </Link>
+        </CardContent>
       </Card>
     </div>
   );

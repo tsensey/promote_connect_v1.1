@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
 import type { Database } from '@/types/database.types';
 
@@ -7,6 +7,7 @@ type PostInsert = Database['public']['Tables']['posts']['Insert'];
 type PostCommentRow = Database['public']['Tables']['post_comments']['Row'];
 type PostCommentInsert = Database['public']['Tables']['post_comments']['Insert'];
 type PostLikeInsert = Database['public']['Tables']['post_likes']['Insert'];
+type PostShareInsert = Database['public']['Tables']['post_shares']['Insert'];
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 
 type PostWithAuthor = PostRow & {
@@ -15,6 +16,8 @@ type PostWithAuthor = PostRow & {
 
 type Post = PostWithAuthor & {
   is_liked: boolean;
+  is_shared: boolean;
+  is_reposted: boolean;
 };
 
 type Comment = PostCommentRow & {
@@ -26,7 +29,7 @@ export function useFeed(limit = 20) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [hasMore, setHasMore] = useState(true);
-  const myUserIdRef = useRef<string | null>(null);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
 
   const fetchPosts = useCallback(
     async (cursor?: string) => {
@@ -34,7 +37,7 @@ export function useFeed(limit = 20) {
         const { data: session } = await supabaseClient.auth.getSession();
         const myId = session?.session?.user?.id;
         if (!myId) return;
-        myUserIdRef.current = myId;
+        setMyUserId(myId);
 
         let query = supabaseClient
           .from('posts')
@@ -52,18 +55,38 @@ export function useFeed(limit = 20) {
         const { data, error } = await query;
         if (error) throw error;
 
-        const likesQuery = supabaseClient
-          .from('post_likes')
-          .select('post_id')
-          .in('post_id', (data || []).map((p: PostWithAuthor) => p.id))
-          .eq('user_id', myId);
+        const postIds = (data || []).map((p: PostWithAuthor) => p.id);
 
-        const [{ data: likes }] = await Promise.all([likesQuery]);
-        const likedPostIds = new Set((likes || []).map((l: { post_id: string }) => l.post_id));
+        const [likesResult, sharesResult] = await Promise.all([
+          supabaseClient
+            .from('post_likes')
+            .select('post_id')
+            .in('post_id', postIds)
+            .eq('user_id', myId),
+          supabaseClient
+            .from('post_shares')
+            .select('post_id, type')
+            .in('post_id', postIds)
+            .eq('user_id', myId),
+        ]);
+
+        const likedPostIds = new Set((likesResult.data || []).map((l: { post_id: string }) => l.post_id));
+        const sharedPostIds = new Set(
+          (sharesResult.data || [])
+            .filter((s: { type: string }) => s.type === 'share')
+            .map((s: { post_id: string }) => s.post_id)
+        );
+        const repostedPostIds = new Set(
+          (sharesResult.data || [])
+            .filter((s: { type: string }) => s.type === 'repost')
+            .map((s: { post_id: string }) => s.post_id)
+        );
 
         const enriched = (data || []).map((post: PostWithAuthor) => ({
           ...post,
           is_liked: likedPostIds.has(post.id),
+          is_shared: sharedPostIds.has(post.id),
+          is_reposted: repostedPostIds.has(post.id),
         }));
 
         if (!cursor) {
@@ -90,23 +113,17 @@ export function useFeed(limit = 20) {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'posts' },
-        () => {
-          fetchPosts();
-        }
+        () => { fetchPosts(); }
       )
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'post_likes' },
-        () => {
-          fetchPosts();
-        }
+        () => { fetchPosts(); }
       )
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'post_likes' },
-        () => {
-          fetchPosts();
-        }
+        () => { fetchPosts(); }
       )
       .subscribe();
 
@@ -123,8 +140,24 @@ export function useFeed(limit = 20) {
     }
   }, [hasMore, loading, posts, fetchPosts]);
 
+  const uploadImage = useCallback(async (file: File): Promise<string | null> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch('/api/feed/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || "Erreur lors de l'upload");
+    }
+    return data.url;
+  }, []);
+
   const createPost = useCallback(
-    async (content: string, type = 'general', category?: string, imageUrl?: string) => {
+    async (content: string, type = 'general', category?: string, imageUrl?: string | null) => {
       const { data: session } = await supabaseClient.auth.getSession();
       const myId = session?.session?.user?.id;
       if (!myId) return { error: new Error('Not authenticated') };
@@ -169,6 +202,14 @@ export function useFeed(limit = 20) {
 
     const isLiked = post.is_liked;
 
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? { ...p, is_liked: !isLiked, likes_count: Math.max(0, p.likes_count + (isLiked ? -1 : 1)) }
+          : p
+      )
+    );
+
     if (isLiked) {
       await supabaseClient
         .from('post_likes')
@@ -178,34 +219,98 @@ export function useFeed(limit = 20) {
 
       await supabaseClient
         .from('posts')
-        .update({ likes_count: Math.max(0, post.likes_count - 1) })
+        .update({ likes_count: Math.max(0, (post.likes_count || 0) - 1) })
         .eq('id', postId);
-
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId
-            ? { ...p, is_liked: false, likes_count: Math.max(0, p.likes_count - 1) }
-            : p
-        )
-      );
     } else {
-      const likeData: PostLikeInsert = {
-        post_id: postId,
-        user_id: myId,
-      };
-
+      const likeData: PostLikeInsert = { post_id: postId, user_id: myId };
       await supabaseClient.from('post_likes').insert(likeData);
 
       await supabaseClient
         .from('posts')
-        .update({ likes_count: post.likes_count + 1 })
+        .update({ likes_count: (post.likes_count || 0) + 1 })
         .eq('id', postId);
+    }
+  }, [posts]);
 
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId ? { ...p, is_liked: true, likes_count: p.likes_count + 1 } : p
-        )
-      );
+  const toggleShare = useCallback(async (postId: string) => {
+    const { data: session } = await supabaseClient.auth.getSession();
+    const myId = session?.session?.user?.id;
+    if (!myId) return;
+
+    const post = posts.find((p) => p.id === postId);
+    if (!post) return;
+
+    const isShared = post.is_shared;
+
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? { ...p, is_shared: !isShared, shares_count: Math.max(0, p.shares_count + (isShared ? -1 : 1)) }
+          : p
+      )
+    );
+
+    if (isShared) {
+      await supabaseClient
+        .from('post_shares')
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', myId)
+        .eq('type', 'share');
+
+      await supabaseClient
+        .from('posts')
+        .update({ shares_count: Math.max(0, (post.shares_count || 0) - 1) })
+        .eq('id', postId);
+    } else {
+      const shareData: PostShareInsert = { post_id: postId, user_id: myId, type: 'share' };
+      await supabaseClient.from('post_shares').insert(shareData);
+
+      await supabaseClient
+        .from('posts')
+        .update({ shares_count: (post.shares_count || 0) + 1 })
+        .eq('id', postId);
+    }
+  }, [posts]);
+
+  const toggleRepost = useCallback(async (postId: string) => {
+    const { data: session } = await supabaseClient.auth.getSession();
+    const myId = session?.session?.user?.id;
+    if (!myId) return;
+
+    const post = posts.find((p) => p.id === postId);
+    if (!post) return;
+
+    const isReposted = post.is_reposted;
+
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? { ...p, is_reposted: !isReposted, reposts_count: Math.max(0, p.reposts_count + (isReposted ? -1 : 1)) }
+          : p
+      )
+    );
+
+    if (isReposted) {
+      await supabaseClient
+        .from('post_shares')
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', myId)
+        .eq('type', 'repost');
+
+      await supabaseClient
+        .from('posts')
+        .update({ reposts_count: Math.max(0, (post.reposts_count || 0) - 1) })
+        .eq('id', postId);
+    } else {
+      const repostData: PostShareInsert = { post_id: postId, user_id: myId, type: 'repost' };
+      await supabaseClient.from('post_shares').insert(repostData);
+
+      await supabaseClient
+        .from('posts')
+        .update({ reposts_count: (post.reposts_count || 0) + 1 })
+        .eq('id', postId);
     }
   }, [posts]);
 
@@ -220,7 +325,6 @@ export function useFeed(limit = 20) {
       .order('created_at', { ascending: true });
 
     if (error) throw error;
-
     return (data || []) as Comment[];
   }, []);
 
@@ -273,8 +377,11 @@ export function useFeed(limit = 20) {
     createPost,
     deletePost,
     toggleLike,
+    toggleShare,
+    toggleRepost,
     getComments,
     addComment,
-    myUserId: myUserIdRef.current,
+    uploadImage,
+    myUserId,
   };
 }
