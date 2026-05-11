@@ -19,6 +19,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
 interface NavItem {
   label: string;
@@ -137,8 +138,13 @@ export function UserSidebar({
     >
       <div className="flex items-center justify-between border-b border-sidebar-border px-4 py-3.5">
         <Link href="/app" className="flex min-w-0 items-center gap-2.5">
-          <div className="brand-gradient flex size-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold text-white shadow-sm shadow-primary/20">
-            P
+          <div className="relative size-8 shrink-0 overflow-hidden rounded-lg shadow-sm shadow-primary/20 bg-primary/5">
+            <Image
+              src="/logo-promote.png"
+              alt="Logo"
+              fill
+              className="object-cover"
+            />
           </div>
           <LabelText collapsed={collapsed}>
             <div className="min-w-0">

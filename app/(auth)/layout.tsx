@@ -28,8 +28,7 @@ export default function AuthLayout({
       <div className="relative mx-auto grid min-h-screen w-full md:grid-cols-2">
         <section className="hidden min-h-full overflow-hidden md:flex">
           <div className="brand-gradient relative flex flex-1 flex-col justify-between overflow-hidden p-10 xl:p-12">
-            <div className="absolute right-0 top-0 size-[30rem] translate-x-1/3 -translate-y-1/3 rounded-full bg-white/5" />
-            <div className="absolute bottom-0 left-0 size-64 translate-x-[-20%] translate-y-1/4 rounded-full bg-white/5" />
+
 
             <div className="relative space-y-8">
               <div className="inline-flex w-fit items-center gap-3 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">

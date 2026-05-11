@@ -224,14 +224,12 @@ export default function DashboardHome() {
     <div className="grid gap-6 ">
       <section className="space-y-6">
         <Card className="surface-panel overflow-hidden border-0 py-0">
-          <div className="brand-gradient relative overflow-hidden px-6 pb-12 pt-8">
-            <div className="absolute right-0 top-0 size-64 translate-x-16 -translate-y-16 rounded-full bg-white/5" />
-            <div className="absolute bottom-0 left-1/3 size-32 translate-y-8 rounded-full bg-white/5" />
+          <div className="brand-gradient relative px-6 pb-12 pt-8">
             <Badge className="mb-4 inline-flex rounded-full bg-white/15 text-white backdrop-blur-sm hover:bg-white/20">
               <Sparkles className="mr-1 size-3.5" />
               Hub de networking PROMOTE
             </Badge>
-            <h1 className="text-3xl font-heading text-white sm:text-4xl">
+            <h1 className="text-3xl font-heading font-extrabold text-white sm:text-4xl">
               Bonjour, {firstName}.
             </h1>
             <p className="mt-3 max-w-xl text-base text-white/80">
@@ -444,7 +442,7 @@ export default function DashboardHome() {
                 </AvatarFallback>
               </Avatar>
               <div className="text-white">
-                <p className="text-lg font-heading font-semibold">{profile.full_name}</p>
+                <p className="text-lg font-heading font-bold">{profile.full_name}</p>
                 <p className="text-sm text-white/80">
                   {profile.company || "Participant PROMOTE-CONNECT"}
                 </p>
@@ -467,7 +465,7 @@ export default function DashboardHome() {
             </div>
 
             <div className="rounded-xl border border-primary/10 bg-primary/[0.04] px-4 py-3">
-              <p className="text-xs font-semibold text-primary">
+              <p className="text-xs font-bold text-primary">
                 Compte supervise par l&apos;admin
               </p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">
@@ -652,17 +650,17 @@ function MetricCard({
   tone: "blue" | "emerald" | "amber" | "violet";
 }) {
   const styles = {
-    blue: "from-blue-500/20 to-blue-600/10 text-blue-700",
-    emerald: "from-emerald-500/20 to-emerald-600/10 text-emerald-700",
-    amber: "from-amber-500/20 to-amber-600/10 text-amber-700",
-    violet: "from-violet-500/20 to-violet-600/10 text-violet-700",
+    blue: "bg-blue-100 text-blue-700",
+    emerald: "bg-emerald-100 text-emerald-700",
+    amber: "bg-amber-100 text-amber-700",
+    violet: "bg-violet-100 text-violet-700",
   };
 
   const bgStyles = {
-    blue: "bg-gradient-to-br",
-    emerald: "bg-gradient-to-br",
-    amber: "bg-gradient-to-br",
-    violet: "bg-gradient-to-br",
+    blue: "bg-blue-50",
+    emerald: "bg-emerald-50",
+    amber: "bg-amber-50",
+    violet: "bg-violet-50",
   };
 
   return (
@@ -672,7 +670,7 @@ function MetricCard({
           <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
             {label}
           </p>
-          <p className="mt-1.5 text-3xl font-bold tracking-tight text-foreground">
+          <p className="text-2xl font-heading font-bold text-foreground">
             {value}
           </p>
         </div>

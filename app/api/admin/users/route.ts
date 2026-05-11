@@ -255,7 +255,7 @@ function buildCredentialsHtml({
   return `
     <div style="margin:0;background:#eef4ff;padding:32px 16px;font-family:Arial,sans-serif;color:#172554">
       <div style="max-width:620px;margin:0 auto;background:#ffffff;border-radius:28px;overflow:hidden;box-shadow:0 30px 80px rgba(15,23,42,0.12)">
-        <div style="padding:36px;background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 48%,#0f172a 100%);color:#ffffff">
+        <div style="padding:36px;background:#2563eb;color:#ffffff">
           <p style="margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;opacity:0.78">
             PROMOTE-CONNECT
           </p>

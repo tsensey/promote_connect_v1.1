@@ -10,6 +10,7 @@ import {
   KeyRound,
   Mail,
   ShieldCheck,
+  CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/context';
 import { supabaseClient } from '@/lib/supabase/client';
@@ -18,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import Image from 'next/image';
 
 const supportHighlights = [
   'Acces reserve a la communaute PROMOTE',
@@ -80,27 +82,40 @@ function LoginPageContent() {
   return (
     <Card className="surface-panel w-full max-w-lg border-0 shadow-xl">
       <CardContent className="space-y-6 p-6 sm:p-8">
+        <div className="flex justify-center mb-4">
+          <Image
+            src="/logo-promote.png"
+            alt="PROMOTE-CONNECT Logo"
+            width={120}
+            height={40}
+            className="h-10 w-auto object-contain"
+          />
+        </div>
         <div className="space-y-3">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/[0.04] px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary/75">
             <ShieldCheck className="size-3.5" />
             Connexion
           </div>
-          <h1 className="font-heading text-2xl leading-tight text-foreground sm:text-3xl">
-            Acceder a votre espace PROMOTE-CONNECT
+          <h1 className="font-heading text-3xl font-extrabold leading-tight tracking-tighter text-foreground sm:text-4xl">
+            Espace PROMOTE-CONNECT
           </h1>
-          <p className="max-w-lg text-sm leading-7 text-muted-foreground">
-            Connectez-vous avec les identifiants transmis par l administrateur
-            pour acceder a toutes les fonctionnalites de la plateforme.
+          <p className="text-sm text-muted-foreground">
+            Connectez-vous pour acceder a votre espace protege.
           </p>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="space-y-4 py-2">
           {supportHighlights.map((item) => (
             <div
               key={item}
-              className="surface-subtle px-3 py-3 text-xs leading-5 text-muted-foreground"
+              className="flex items-center gap-3"
             >
-              {item}
+              <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <CheckCircle2 className="size-4" />
+              </div>
+              <span className="text-base font-extrabold tracking-tight text-foreground sm:text-lg">
+                {item}
+              </span>
             </div>
           ))}
         </div>
@@ -174,10 +189,7 @@ function LoginPageContent() {
             </div>
           </div>
 
-          <div className="surface-subtle px-4 py-3 text-sm text-muted-foreground">
-            Les comptes admin sont rediriges automatiquement vers le back-office
-            apres authentification.
-          </div>
+
 
           <Button
             type="submit"
@@ -192,9 +204,8 @@ function LoginPageContent() {
       </CardContent>
 
       <CardFooter className="flex flex-col gap-3 border-t border-border/60 px-6 pb-6 pt-5 sm:px-8">
-        <div className="w-full rounded-2xl border border-border/60 bg-muted/40 px-4 py-3 text-center text-sm text-muted-foreground">
-          Aucun compte ne peut etre cree depuis cette page. Les acces sont
-          provisionnes par l administrateur PROMOTE-CONNECT.
+        <div className="w-full text-center text-xs text-muted-foreground">
+          Acces provisionnes par l administrateur.
         </div>
         <Link
           href="mailto:support@promote-connect.com"

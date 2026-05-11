@@ -23,7 +23,7 @@ export default function CredentialsEmail({
       {/* Header */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+          background: '#4f46e5',
           borderRadius: '16px 16px 0 0',
           padding: '32px',
           textAlign: 'center',

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Fraunces, Manrope } from 'next/font/google';
+import { Manrope } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import { AuthProvider } from '@/lib/auth/context';
 import { Toaster } from '@/components/ui/sonner';
@@ -12,10 +12,7 @@ const manrope = Manrope({
   variable: '--font-sans',
 });
 
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  variable: '--font-heading',
-});
+
 
 export const metadata: Metadata = {
   title: {
@@ -31,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="fr"
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={cn(manrope.variable, fraunces.variable)}
+      className={cn(manrope.variable)}
     >
       <body className="min-h-screen bg-background text-foreground">
         <ThemeProvider
