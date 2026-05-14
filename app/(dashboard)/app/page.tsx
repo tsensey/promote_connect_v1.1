@@ -200,18 +200,33 @@ export default function DashboardHome() {
 
   if (loading || !data || !profile) {
     return (
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px] xl:grid-cols-[280px_1fr_320px]">
-        <div className="space-y-6">
-          <div className="surface-panel h-48 animate-pulse" />
-          <div className="surface-panel h-72 animate-pulse" />
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px]">
+        <div className="space-y-6 flex min-w-0 flex-col">
+          {/* Welcome card skeleton */}
+          <div className="surface-panel overflow-hidden border-0 p-0 animate-pulse">
+            <div className="h-44 bg-muted/60" />
+            <div className="relative -mt-6 space-y-5 p-6">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-24 rounded-xl border border-border/60 bg-background" />
+                ))}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-[52px] rounded-xl border border-border/60 bg-background" />
+                ))}
+              </div>
+            </div>
+          </div>
+          {/* Exposants skeleton */}
+          <div className="surface-panel h-[380px] animate-pulse" />
+          {/* Conversations skeleton */}
+          <div className="surface-panel h-[380px] animate-pulse" />
         </div>
-        <div className="space-y-6">
-          <div className="surface-panel h-72 animate-pulse" />
-          <div className="surface-panel h-64 animate-pulse" />
-        </div>
-        <div className="hidden xl:block space-y-6">
-          <div className="surface-panel h-80 animate-pulse" />
-          <div className="surface-panel h-60 animate-pulse" />
+        <div className="space-y-6 flex min-w-0 flex-col">
+          <div className="surface-panel h-[280px] animate-pulse" />
+          <div className="surface-panel h-[380px] animate-pulse" />
+          <div className="surface-panel h-[260px] animate-pulse" />
         </div>
       </div>
     );
@@ -221,8 +236,8 @@ export default function DashboardHome() {
   const firstName = profile.full_name?.split(" ")[0] || "participant";
 
   return (
-    <div className="grid gap-6 ">
-      <section className="space-y-6">
+    <div className="grid gap-6 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px]">
+      <section className="space-y-6 flex min-w-0 flex-col">
         <Card className="surface-panel overflow-hidden border-0 py-0">
           <div className="brand-gradient relative px-6 pb-12 pt-8">
             <Badge className="mb-4 inline-flex rounded-full bg-white/15 text-white backdrop-blur-sm hover:bg-white/20">
@@ -432,7 +447,7 @@ export default function DashboardHome() {
         </Card>
       </section>
 
-      <section className="space-y-6">
+      <section className="space-y-6 flex min-w-0 flex-col">
         <Card className="surface-panel overflow-hidden border-0 py-0">
           <div className="brand-gradient px-6 py-5">
             <div className="flex items-center gap-3">
