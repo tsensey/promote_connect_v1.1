@@ -57,9 +57,9 @@ const EXHIBITOR_SECTIONS: NavSection[] = [
   {
     title: 'Plateforme',
     items: [
-      { label: "Fil d'actualites", href: '/feed', icon: Rss, badge: 'Nouveau' },
+      { label: "Fil d'actualités", href: '/feed', icon: Rss, badge: 'Nouveau' },
       { label: 'Accueil', href: '/app', icon: LayoutDashboard },
-      { label: 'Reseau', href: '/annuaire', icon: Users },
+      { label: 'Réseau', href: '/annuaire', icon: Users },
       { label: 'Messages', href: '/chat', icon: MessageSquare, badge: 'Live' },
       { label: 'Agenda', href: '/agenda', icon: CalendarDays },
     ],
@@ -67,8 +67,8 @@ const EXHIBITOR_SECTIONS: NavSection[] = [
   {
     title: 'Business',
     items: [
-      { label: 'Ma vitrine', href: '/vitrine', icon: BriefcaseBusiness },
-      { label: 'Mes produits', href: '/vitrine/mes-produits', icon: Sparkles },
+      { label: 'Catalogue produits', href: '/vitrine', icon: BriefcaseBusiness },
+      { label: 'Gérer ma vitrine', href: '/exposant/ma-vitrine', icon: Sparkles },
     ],
   },
   {

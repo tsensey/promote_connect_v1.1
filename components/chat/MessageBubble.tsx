@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Check, CheckCheck } from 'lucide-react';
 import type { EnrichedMessage } from '@/hooks/useChat';
 
 interface MessageBubbleProps {
@@ -47,6 +48,16 @@ export function MessageBubble({ message, isMine, showAvatar }: MessageBubbleProp
               : 'bg-muted/80 text-foreground rounded-bl-md ring-1 ring-border/30'
           }`}
         >
+          {message.attachment_url && (
+            <div className="mb-2 overflow-hidden rounded-lg">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={message.attachment_url}
+                alt="Attachment"
+                className="max-h-60 w-auto object-cover"
+              />
+            </div>
+          )}
           {message.content}
         </div>
 
@@ -57,9 +68,9 @@ export function MessageBubble({ message, isMine, showAvatar }: MessageBubbleProp
           {isMine && (
             <span className="text-[10px]">
               {message.is_read ? (
-                <span className="text-blue-500">Lu</span>
+                <CheckCheck className="size-3 text-blue-500" />
               ) : (
-                <span className="text-muted-foreground/40">Envoye</span>
+                <Check className="size-3 text-muted-foreground/60" />
               )}
             </span>
           )}

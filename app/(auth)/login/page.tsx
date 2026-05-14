@@ -9,23 +9,16 @@ import {
   EyeOff,
   KeyRound,
   Mail,
-  ShieldCheck,
-  CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/context';
 import { supabaseClient } from '@/lib/supabase/client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Image from 'next/image';
 
-const supportHighlights = [
-  'Acces reserve a la communaute PROMOTE',
-  'Historique reseau et messagerie securisee',
-  'Comptes crees uniquement par l administrateur',
-];
+
 
 function LoginPageContent() {
   const router = useRouter();
@@ -80,9 +73,8 @@ function LoginPageContent() {
   };
 
   return (
-    <Card className="surface-panel w-full max-w-lg border-0 shadow-xl">
-      <CardContent className="space-y-6 p-6 sm:p-8">
-        <div className="flex justify-center mb-4">
+    <div className="w-full max-w-md mx-auto space-y-8">
+        <div className="flex justify-center mb-6">
           <Image
             src="/logo-promote.png"
             alt="PROMOTE-CONNECT Logo"
@@ -91,34 +83,16 @@ function LoginPageContent() {
             className="h-10 w-auto object-contain"
           />
         </div>
-        <div className="space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/[0.04] px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary/75">
-            <ShieldCheck className="size-3.5" />
-            Connexion
-          </div>
-          <h1 className="font-heading text-3xl font-extrabold leading-tight tracking-tighter text-foreground sm:text-4xl">
-            Espace PROMOTE-CONNECT
+        <div className="space-y-2 text-center">
+          <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
+            Bienvenue
           </h1>
           <p className="text-sm text-muted-foreground">
-            Connectez-vous pour acceder a votre espace protege.
+            Connectez-vous à votre espace personnel
           </p>
         </div>
 
-        <div className="space-y-4 py-2">
-          {supportHighlights.map((item) => (
-            <div
-              key={item}
-              className="flex items-center gap-3"
-            >
-              <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <CheckCircle2 className="size-4" />
-              </div>
-              <span className="text-base font-extrabold tracking-tight text-foreground sm:text-lg">
-                {item}
-              </span>
-            </div>
-          ))}
-        </div>
+
 
         {adminOnly && (
           <Alert className="rounded-2xl border-amber-200 bg-amber-50 text-amber-900">
@@ -147,7 +121,7 @@ function LoginPageContent() {
                 onChange={(event) => setEmail(event.target.value)}
                 required
                 placeholder="prenom.nom@entreprise.com"
-                className="h-12 rounded-2xl border-border/70 bg-background pl-11"
+                className="pl-11"
               />
             </div>
           </div>
@@ -168,7 +142,7 @@ function LoginPageContent() {
                 onChange={(event) => setPassword(event.target.value)}
                 required
                 placeholder="Votre mot de passe temporaire ou personnel"
-                className="h-12 rounded-2xl border-border/70 bg-background pl-11 pr-12"
+                className="pl-11 pr-12"
               />
               <button
                 type="button"
@@ -195,45 +169,40 @@ function LoginPageContent() {
             type="submit"
             disabled={loading}
             size="lg"
-            className="h-12 w-full rounded-2xl text-sm"
+            className="w-full"
           >
             {loading ? 'Connexion en cours...' : 'Se connecter'}
             {!loading && <ArrowRight className="size-4" />}
           </Button>
         </form>
-      </CardContent>
-
-      <CardFooter className="flex flex-col gap-3 border-t border-border/60 px-6 pb-6 pt-5 sm:px-8">
-        <div className="w-full text-center text-xs text-muted-foreground">
-          Acces provisionnes par l administrateur.
+        <div className="flex flex-col gap-3 pt-2">
+          <Link
+            href="mailto:support@promote-connect.com"
+            className="text-center text-sm font-medium text-muted-foreground transition hover:text-primary"
+          >
+            {`Pas d'accès ? Contacter le support`}
+          </Link>
         </div>
-        <Link
-          href="mailto:support@promote-connect.com"
-          className="w-full rounded-2xl border border-border/60 bg-white/80 px-4 py-3 text-center text-sm font-medium text-foreground transition hover:border-primary/30 hover:text-primary"
-        >
-          Contacter le support pour recevoir un acces
-        </Link>
-      </CardFooter>
-    </Card>
+    </div>
   );
 }
 
 function LoginSkeleton() {
   return (
-    <Card className="surface-panel w-full max-w-lg border-0">
-      <CardContent className="space-y-6 p-6 sm:p-8">
-        <div className="h-6 w-32 animate-pulse rounded-2xl bg-muted" />
-        <div className="h-10 w-3/4 animate-pulse rounded-2xl bg-muted" />
-        <div className="grid gap-2 sm:grid-cols-3">
-          <div className="h-14 animate-pulse rounded-2xl bg-muted" />
-          <div className="h-14 animate-pulse rounded-2xl bg-muted" />
-          <div className="h-14 animate-pulse rounded-2xl bg-muted" />
-        </div>
+    <div className="w-full max-w-md mx-auto space-y-8">
+      <div className="flex justify-center mb-6">
+        <div className="h-10 w-32 animate-pulse rounded bg-muted" />
+      </div>
+      <div className="space-y-2 text-center">
+        <div className="h-8 w-48 animate-pulse rounded bg-muted mx-auto" />
+        <div className="h-4 w-64 animate-pulse rounded bg-muted mx-auto" />
+      </div>
+      <div className="space-y-5">
         <div className="h-12 animate-pulse rounded-2xl bg-muted" />
         <div className="h-12 animate-pulse rounded-2xl bg-muted" />
         <div className="h-12 animate-pulse rounded-2xl bg-muted" />
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 

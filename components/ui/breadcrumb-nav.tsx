@@ -24,11 +24,11 @@ const ADMIN_MAP: Record<string, Omit<Crumb, 'href'>> = {
 const USER_MAP: Record<string, Omit<Crumb, 'href'>> = {
   '/app': { label: 'Accueil' },
   '/feed': { label: "Fil d'actualites" },
-  '/annuaire': { label: 'Reseau' },
+  '/annuaire': { label: 'Annuaire' },
   '/chat': { label: 'Messages' },
   '/agenda': { label: 'Agenda' },
-  '/vitrine': { label: 'Ma vitrine' },
-  '/vitrine/mes-produits': { label: 'Mes produits' },
+  '/vitrine': { label: 'Catalogue produits' },
+  '/exposant/ma-vitrine': { label: 'Gérer ma vitrine' },
   '/newsletter': { label: 'Newsletter' },
   '/support': { label: 'Support' },
   '/abonnement': { label: 'Abonnement' },
@@ -64,15 +64,15 @@ function buildUserCrumbs(pathname: string): Crumb[] {
   }
 
   if (pathname.startsWith('/annuaire/')) {
-    crumbs.push({ label: 'Reseau', href: '/annuaire' }, { label: 'Fiche exposant' });
+    crumbs.push({ label: 'Annuaire', href: '/annuaire' }, { label: 'Fiche exposant' });
     return crumbs;
   }
   if (pathname.startsWith('/chat/')) {
     crumbs.push({ label: 'Messages', href: '/chat' }, { label: 'Conversation' });
     return crumbs;
   }
-  if (pathname.startsWith('/vitrine/') && pathname !== '/vitrine/mes-produits') {
-    crumbs.push({ label: 'Business', href: '/vitrine' }, { label: 'Vitrine exposant' });
+  if (pathname.startsWith('/exposant/')) {
+    crumbs.push({ label: 'Business', href: '/vitrine' }, { label: 'Gérer ma vitrine' });
     return crumbs;
   }
   if (pathname.startsWith('/support/')) {
@@ -84,13 +84,13 @@ function buildUserCrumbs(pathname: string): Crumb[] {
 }
 
 function getSection(pathname: string): string | null {
-  if (pathname.startsWith('/vitrine') || pathname === '/vitrine/mes-produits') return 'Business';
+  if (pathname.startsWith('/vitrine') || pathname.startsWith('/exposant')) return 'Business';
   if (['/newsletter', '/support', '/abonnement'].some((p) => pathname === p)) return 'Compte';
   return null;
 }
 
 function getSectionHref(pathname: string): string | undefined {
-  if (pathname.startsWith('/vitrine')) return '/vitrine';
+  if (pathname.startsWith('/vitrine') || pathname.startsWith('/exposant')) return '/vitrine';
   if (pathname === '/newsletter' || pathname === '/support' || pathname === '/abonnement') return undefined;
   return undefined;
 }

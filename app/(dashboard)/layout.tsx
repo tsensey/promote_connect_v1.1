@@ -97,7 +97,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
           onSignOut={handleSignOut}
         />
 
-        <main className="px-4 pb-8 pt-6 sm:px-6 xl:px-8">{children}</main>
+        <main className="px-4 pt-6 sm:px-6 xl:px-8">{children}</main>
       </div>
     </div>
   );

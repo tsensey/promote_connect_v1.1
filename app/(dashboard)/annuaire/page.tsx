@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useDeferredValue, useEffect } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useExposants } from '@/hooks/useExposants';
+import { useAuth } from '@/lib/auth/context';
 import { supabaseClient } from '@/lib/supabase/client';
 import {
   Search,
@@ -28,18 +29,37 @@ import {
 } from '@/components/ui/select';
 
 export default function AnnuairePage() {
+  const { user } = useAuth();
   const router = useRouter();
-  const [search, setSearch] = useState('');
-  const [secteur, setSecteur] = useState('');
-  const [pavillon, setPavillon] = useState('');
-  const [pays, setPays] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [page, setPage] = useState(0);
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  const [search, setSearch] = useState(searchParams.get('q') || '');
+  const [secteur, setSecteur] = useState(searchParams.get('secteur') || '');
+  const [pavillon, setPavillon] = useState(searchParams.get('pavillon') || '');
+  const [pays, setPays] = useState(searchParams.get('pays') || '');
+  const [showFilters, setShowFilters] = useState(
+    !!(searchParams.get('secteur') || searchParams.get('pavillon') || searchParams.get('pays'))
+  );
+  const [page, setPage] = useState(Number(searchParams.get('page')) || 0);
   const [contactingId, setContactingId] = useState<string | null>(null);
   const pageSize = 20;
 
+  const deferredSearch = useDeferredValue(search);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (deferredSearch) params.set('q', deferredSearch);
+    if (secteur) params.set('secteur', secteur);
+    if (pavillon) params.set('pavillon', pavillon);
+    if (pays) params.set('pays', pays);
+    if (page > 0) params.set('page', page.toString());
+    
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [deferredSearch, secteur, pavillon, pays, page, pathname, router]);
+
   const { exposants, loading, error, filterOptions, totalCount } = useExposants({
-    search,
+    search: deferredSearch,
     secteur,
     pavillon,
     pays,
@@ -267,14 +287,24 @@ export default function AnnuairePage() {
                       <h2 className="text-base font-semibold text-foreground group-hover:text-primary">
                         {exposant.nom}
                       </h2>
-                      {exposant.is_featured && (
-                        <Badge
-                          variant="default"
-                          className="mt-0.5 rounded-full bg-primary/10 px-2 py-0 text-[10px] text-primary hover:bg-primary/15"
-                        >
-                          En vedette
-                        </Badge>
-                      )}
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {exposant.is_featured && (
+                          <Badge
+                            variant="outline"
+                            className="rounded-full bg-amber-50 px-2 py-0 text-[10px] text-amber-700 border-amber-200"
+                          >
+                            En vedette
+                          </Badge>
+                        )}
+                        {exposant.profile_id === user?.id && (
+                          <Badge
+                            variant="outline"
+                            className="rounded-full bg-emerald-50 px-2 py-0 text-[10px] text-emerald-700 border-emerald-200"
+                          >
+                            Votre stand
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -320,16 +350,18 @@ export default function AnnuairePage() {
                   >
                     Voir fiche
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleContact(exposant.id)}
-                    disabled={contactingId === exposant.id}
-                    className="gap-1.5 rounded-xl"
-                  >
-                    <MessageSquare className="size-3.5" />
-                    {contactingId === exposant.id ? '...' : 'Contacter'}
-                  </Button>
+                  {exposant.profile_id !== user?.id && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleContact(exposant.id)}
+                      disabled={contactingId === exposant.id}
+                      className="gap-1.5 rounded-xl"
+                    >
+                      <MessageSquare className="size-3.5" />
+                      {contactingId === exposant.id ? '...' : 'Contacter'}
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>

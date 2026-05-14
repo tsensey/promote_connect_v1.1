@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useEvenements, useRendezVous } from "@/hooks/useAgenda";
+import { useAuth } from "@/lib/auth/context";
 import { supabaseClient } from "@/lib/supabase/client";
 import {
   Calendar,
@@ -60,13 +61,10 @@ export default function AgendaPage() {
   const [eventFilter, setEventFilter] = useState<string>("all");
   const [rdvFilter, setRdvFilter] = useState<string>("all");
   const [eventSearch, setEventSearch] = useState("");
-  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const { user } = useAuth();
+  const myUserId = user?.id;
 
-  useEffect(() => {
-    supabaseClient.auth.getSession().then(({ data }) => {
-      setMyUserId(data?.session?.user?.id ?? null);
-    });
-  }, []);
+
 
   const filteredEvenements = useMemo(() => {
     return evenements
@@ -157,10 +155,10 @@ export default function AgendaPage() {
         <Tabs defaultValue="programme" className={"flex flex-col"}>
           <TabsList className="rounded-xl bg-muted/80 p-1">
             <TabsTrigger value="programme" className="rounded-xl">
-              Programme
+              Programme du Salon
             </TabsTrigger>
             <TabsTrigger value="rdvs" className="rounded-xl">
-              Mes rendez-vous
+              Mon planning B2B
             </TabsTrigger>
           </TabsList>
 
@@ -352,7 +350,12 @@ export default function AgendaPage() {
                 {filteredRdvs.map((rdv) => (
                   <div
                     key={rdv.id}
-                    className="surface-panel group border-0 rounded-xl transition-all hover:shadow-lg"
+                    className={cn(
+                      "surface-panel group border rounded-xl transition-all hover:shadow-lg",
+                      rdv.status === "pending" && rdv.destinataire_id === myUserId
+                        ? "border-amber-300/60 bg-amber-50/50 shadow-amber-100/50"
+                        : "border-border/40"
+                    )}
                   >
                     <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-4">
@@ -416,30 +419,30 @@ export default function AgendaPage() {
 
                         {rdv.status === "pending" &&
                           rdv.destinataire_id === myUserId && (
-                            <div className="flex gap-1.5">
+                            <div className="flex gap-2">
                               <Button
-                                size="icon"
+                                size="sm"
                                 variant="outline"
-                                className="size-8 rounded-full border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700"
+                                className="rounded-xl border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700"
                                 onClick={() => {
                                   updateRdvStatus(rdv.id, "confirmed").then(
                                     () => toast.success("RDV confirme"),
                                   );
                                 }}
                               >
-                                <Check className="size-4" />
+                                <Check className="mr-1 size-4" /> Accepter
                               </Button>
                               <Button
-                                size="icon"
+                                size="sm"
                                 variant="outline"
-                                className="size-8 rounded-full border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700"
+                                className="rounded-xl border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700"
                                 onClick={() => {
                                   cancelRdv(rdv.id).then(() =>
                                     toast.info("RDV annule"),
                                   );
                                 }}
                               >
-                                <X className="size-4" />
+                                <X className="mr-1 size-4" /> Refuser
                               </Button>
                             </div>
                           )}

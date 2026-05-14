@@ -73,30 +73,7 @@ export default function AuthLayout({
         </section>
 
         <section className="flex min-h-full w-full flex-col justify-center">
-          <div className="surface-panel m-4 border-0 lg:hidden">
-            <div className="flex items-start justify-between gap-4 p-1">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary/70">
-                  PROMOTE-CONNECT
-                </p>
-                <h1 className="mt-2 font-heading text-2xl leading-tight text-foreground">
-                  Connexion simple, acces pilote par l administrateur.
-                </h1>
-              </div>
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              {trustPoints.map((point) => (
-                <div key={point.title} className="surface-subtle p-3">
-                  <p className="text-sm font-semibold text-foreground">
-                    {point.title}
-                  </p>
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    {point.copy}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
+
 
           <div className="flex w-full items-center justify-center p-6 sm:p-8">
             {children}

@@ -143,17 +143,21 @@ export function useMessages(conversationId: string) {
   const [error, setError] = useState<Error | null>(null);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [otherUser, setOtherUser] = useState<Profile | null>(null);
+  const [typingUser, setTypingUser] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
+    let channel: any = null;
+    let presenceChannel: any = null;
 
-    const fetchMessages = async () => {
+    const setup = async () => {
       try {
         const { data: session } = await supabaseClient.auth.getSession();
         if (!mounted) return;
         const myId = session?.session?.user?.id;
         if (myId) setMyUserId(myId);
 
+        let other: Profile | null = null;
         const { data: convData } = await supabaseClient
           .from('conversations')
           .select(`
@@ -169,7 +173,7 @@ export function useMessages(conversationId: string) {
             participant_a: Profile | null;
             participant_b: Profile | null;
           };
-          const other = conv.participant_a?.id === myId ? conv.participant_b : conv.participant_a;
+          other = conv.participant_a?.id === myId ? conv.participant_b : conv.participant_a;
           setOtherUser(other);
         }
 
@@ -184,6 +188,75 @@ export function useMessages(conversationId: string) {
 
         if (error) throw error;
         if (mounted) setMessages((data || []) as EnrichedMessage[]);
+
+        if (!mounted) return;
+
+        channel = supabaseClient
+          .channel(`messages-${conversationId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'messages',
+              filter: `conversation_id=eq.${conversationId}`,
+            },
+            async (payload) => {
+              const newMsg = payload.new as Message;
+              const { data: author } = await supabaseClient
+                .from('profiles')
+                .select('id, full_name, avatar_url, role')
+                .eq('id', newMsg.sender_id)
+                .single();
+
+              setMessages((prev) => [
+                ...prev,
+                { ...newMsg, author } as EnrichedMessage,
+              ]);
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'messages',
+              filter: `conversation_id=eq.${conversationId}`,
+            },
+            (payload) => {
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === payload.new.id
+                    ? { ...(payload.new as Message), author: msg.author }
+                    : msg
+                )
+              );
+            }
+          )
+          .subscribe();
+
+        presenceChannel = supabaseClient.channel(`presence-${conversationId}`, {
+          config: { presence: { key: myId || 'anon' } }
+        });
+
+        presenceChannel
+          .on('presence', { event: 'sync' }, () => {
+            const state = presenceChannel.presenceState<{ typing: boolean; userId: string }>();
+            let isTyping = false;
+            for (const key of Object.keys(state)) {
+              if (state[key][0]?.typing && state[key][0]?.userId !== myId) {
+                isTyping = true;
+                break;
+              }
+            }
+            setTypingUser(isTyping ? other?.id || 'typing' : null);
+          })
+          .subscribe(async (status: string) => {
+            if (status === 'SUBSCRIBED' && myId) {
+              await presenceChannel.track({ typing: false, userId: myId });
+            }
+          });
+
       } catch (err) {
         if (mounted) setError(err instanceof Error ? err : new Error('Unknown error'));
       } finally {
@@ -191,55 +264,12 @@ export function useMessages(conversationId: string) {
       }
     };
 
-    fetchMessages();
-
-    const channel = supabaseClient
-      .channel(`messages-${conversationId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        async (payload) => {
-          const newMsg = payload.new as Message;
-          const { data: author } = await supabaseClient
-            .from('profiles')
-            .select('id, full_name, avatar_url, role')
-            .eq('id', newMsg.sender_id)
-            .single();
-
-          setMessages((prev) => [
-            ...prev,
-            { ...newMsg, author } as EnrichedMessage,
-          ]);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        (payload) => {
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === payload.new.id
-                ? { ...(payload.new as Message), author: msg.author }
-                : msg
-            )
-          );
-        }
-      )
-      .subscribe();
+    setup();
 
     return () => {
       mounted = false;
-      supabaseClient.removeChannel(channel);
+      if (channel) supabaseClient.removeChannel(channel);
+      if (presenceChannel) supabaseClient.removeChannel(presenceChannel);
     };
   }, [conversationId]);
 
@@ -257,8 +287,8 @@ export function useMessages(conversationId: string) {
   }, [conversationId]);
 
   const sendMessage = useCallback(
-    async (content: string) => {
-      if (!content.trim()) return;
+    async (content: string, attachmentUrl?: string) => {
+      if (!content.trim() && !attachmentUrl) return;
 
       const { data: session } = await supabaseClient.auth.getSession();
       if (!session?.session?.user) return;
@@ -267,6 +297,7 @@ export function useMessages(conversationId: string) {
         conversation_id: conversationId,
         sender_id: session.session.user.id,
         content: content.trim(),
+        attachment_url: attachmentUrl || null,
         is_read: false,
       });
 
@@ -280,6 +311,17 @@ export function useMessages(conversationId: string) {
     [conversationId]
   );
 
+  const sendTypingEvent = useCallback(
+    async (isTyping: boolean) => {
+      if (!myUserId) return;
+      const channel = supabaseClient.getChannels().find((c) => c.topic === `realtime:presence-${conversationId}`);
+      if (channel) {
+        await channel.track({ typing: isTyping, userId: myUserId });
+      }
+    },
+    [conversationId, myUserId]
+  );
+
   return {
     messages,
     loading,
@@ -288,6 +330,8 @@ export function useMessages(conversationId: string) {
     markAsRead,
     myUserId,
     otherUser,
+    typingUser,
+    sendTypingEvent,
   };
 }
 

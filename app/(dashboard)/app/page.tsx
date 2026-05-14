@@ -71,10 +71,10 @@ interface DashboardData {
   exposantSnapshot: ExposantSnapshot | null;
 }
 
-const quickActions = [
-  { label: "Explorer l annuaire", href: "/annuaire", icon: Users },
-  { label: "Ouvrir la messagerie", href: "/chat", icon: MessageSquare },
-  { label: "Consulter l agenda", href: "/agenda", icon: CalendarDays },
+const getQuickActions = (role: string) => [
+  { label: role === "exposant" ? "Prospecter (Annuaire)" : "Explorer l annuaire", href: "/annuaire", icon: Users },
+  { label: role === "exposant" ? "Gerer mes leads" : "Ouvrir la messagerie", href: "/chat", icon: MessageSquare },
+  { label: role === "exposant" ? "Mon planning B2B" : "Consulter l agenda", href: "/agenda", icon: CalendarDays },
 ];
 
 export default function DashboardHome() {
@@ -242,32 +242,32 @@ export default function DashboardHome() {
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <MetricCard
                 icon={Users}
-                label="Exposants disponibles"
+                label={profile.role === "exposant" ? "Reseau exposants" : "Exposants disponibles"}
                 value={data.stats.networkSize}
                 tone="blue"
               />
               <MetricCard
                 icon={MessageSquare}
-                label="Conversations ouvertes"
+                label={profile.role === "exposant" ? "Contacts & Leads" : "Conversations ouvertes"}
                 value={data.stats.conversationCount}
                 tone="emerald"
               />
               <MetricCard
                 icon={CalendarDays}
-                label="Evenements a venir"
+                label={profile.role === "exposant" ? "Rendez-vous B2B" : "Evenements a venir"}
                 value={data.stats.upcomingCount}
                 tone="amber"
               />
               <MetricCard
                 icon={BriefcaseBusiness}
-                label={profile.role === "exposant" ? "Produits publies" : "Espace business"}
+                label={profile.role === "exposant" ? "Produits en vitrine" : "Espace business"}
                 value={profile.role === "exposant" ? data.stats.productCount : data.stats.networkSize}
                 tone="violet"
               />
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              {quickActions.map((action) => (
+              {getQuickActions(profile.role || "visiteur").map((action) => (
                 <Link
                   key={action.href}
                   href={action.href}
@@ -577,10 +577,10 @@ export default function DashboardHome() {
                     </div>
                   </div>
                   <Link
-                    href="/vitrine/mes-produits"
+                    href="/exposant/ma-vitrine"
                     className={cn(
                       buttonVariants({ variant: "default" }),
-                      "w-full rounded-xl",
+                      "w-full rounded-xl bg-gradient-to-r from-primary to-primary/80 shadow-md transition-all hover:shadow-lg",
                     )}
                   >
                     <Eye className="size-4" />

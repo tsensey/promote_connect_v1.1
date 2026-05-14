@@ -33,10 +33,10 @@ export default function FeedPage() {
     myUserId,
   } = useFeed();
 
-  const totalLikes = posts.reduce((acc, p) => acc + p.likes_count, 0);
-  const totalComments = posts.reduce((acc, p) => acc + p.comments_count, 0);
-  const totalShares = posts.reduce((acc, p) => acc + p.shares_count, 0);
-  const totalReposts = posts.reduce((acc, p) => acc + p.reposts_count, 0);
+  const totalLikes = posts.reduce((acc, p) => acc + (p.likes_count ?? 0), 0);
+  const totalComments = posts.reduce((acc, p) => acc + (p.comments_count ?? 0), 0);
+  const totalShares = posts.reduce((acc, p) => acc + (p.shares_count ?? 0), 0);
+  const totalReposts = posts.reduce((acc, p) => acc + (p.reposts_count ?? 0), 0);
   const myPosts = posts.filter((p) => p.author_id === myUserId).length;
 
   return (
@@ -44,7 +44,7 @@ export default function FeedPage() {
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="hidden space-y-4 lg:col-span-3 lg:block">
           <div className="sticky top-20 space-y-4">
-            <Card className="border-border/60">
+            <Card className="border-border/60 p-0">
               <CardContent className="p-4">
                 <div className="mb-4 flex items-center gap-2">
                   <Rss className="size-4 text-primary" />
@@ -77,7 +77,7 @@ export default function FeedPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/60">
+            <Card className="border-border/60 p-0">
               <CardContent className="p-4">
                 <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground/70">
                   Types de publication
@@ -105,7 +105,7 @@ export default function FeedPage() {
           <CreatePost onSubmit={createPost} onUpload={uploadImage} />
 
           {loading && posts.length === 0 ? (
-            <Card className="border-border/60">
+            <Card className="border-border/60 p-0">
               <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
                 <Loader2 className="size-8 animate-spin text-primary" />
                 <p className="text-sm text-muted-foreground">
@@ -114,7 +114,7 @@ export default function FeedPage() {
               </CardContent>
             </Card>
           ) : posts.length === 0 ? (
-            <Card className="border-border/60">
+            <Card className="border-border/60 p-0">
               <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
                   <Sparkles className="size-8 text-muted-foreground/40" />
@@ -142,7 +142,7 @@ export default function FeedPage() {
                   onRepost={() => toggleRepost(post.id)}
                   onDelete={() => deletePost(post.id)}
                   onGetComments={() => getComments(post.id)}
-                  onAddComment={(content) => addComment(post.id, content)}
+                  onAddComment={(content, parentCommentId) => addComment(post.id, content, parentCommentId)}
                 />
               ))}
 
@@ -165,7 +165,7 @@ export default function FeedPage() {
 
         <div className="hidden space-y-4 lg:col-span-3 lg:block">
           <div className="sticky top-20 space-y-4">
-            <Card className="border-border/60">
+            <Card className="border-border/60 p-0">
               <CardContent className="p-4">
                 <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground/70">
                   Conseils de publication
@@ -186,7 +186,7 @@ export default function FeedPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/60">
+            <Card className="border-border/60 p-0">
               <CardContent className="p-4">
                 <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground/70">
                   A propos

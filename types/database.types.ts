@@ -60,12 +60,25 @@ export interface Database {
           profile_id: string | null;
           nom: string;
           description: string | null;
+          long_description: string | null;
           secteur: string | null;
           pavillon: string | null;
           stand: string | null;
           pays: string | null;
           website: string | null;
           logo_url: string | null;
+          cover_url: string | null;
+          brochure_url: string | null;
+          video_url: string | null;
+          email_contact: string | null;
+          phone_contact: string | null;
+          facebook_url: string | null;
+          linkedin_url: string | null;
+          twitter_url: string | null;
+          instagram_url: string | null;
+          chiffre_affaires: string | null;
+          annee_creation: string | null;
+          nombre_employes: string | null;
           is_featured: boolean;
           created_at: string | null;
         };
@@ -74,12 +87,25 @@ export interface Database {
           profile_id?: string | null;
           nom: string;
           description?: string | null;
+          long_description?: string | null;
           secteur?: string | null;
           pavillon?: string | null;
           stand?: string | null;
           pays?: string | null;
           website?: string | null;
           logo_url?: string | null;
+          cover_url?: string | null;
+          brochure_url?: string | null;
+          video_url?: string | null;
+          email_contact?: string | null;
+          phone_contact?: string | null;
+          facebook_url?: string | null;
+          linkedin_url?: string | null;
+          twitter_url?: string | null;
+          instagram_url?: string | null;
+          chiffre_affaires?: string | null;
+          annee_creation?: string | null;
+          nombre_employes?: string | null;
           is_featured?: boolean;
           created_at?: string | null;
         };
@@ -88,16 +114,65 @@ export interface Database {
           profile_id?: string | null;
           nom?: string;
           description?: string | null;
+          long_description?: string | null;
           secteur?: string | null;
           pavillon?: string | null;
           stand?: string | null;
           pays?: string | null;
           website?: string | null;
           logo_url?: string | null;
+          cover_url?: string | null;
+          brochure_url?: string | null;
+          video_url?: string | null;
+          email_contact?: string | null;
+          phone_contact?: string | null;
+          facebook_url?: string | null;
+          linkedin_url?: string | null;
+          twitter_url?: string | null;
+          instagram_url?: string | null;
+          chiffre_affaires?: string | null;
+          annee_creation?: string | null;
+          nombre_employes?: string | null;
           is_featured?: boolean;
           created_at?: string | null;
         };
         Relationships: [];
+      };
+      exposant_views: {
+        Row: {
+          id: string;
+          exposant_id: string | null;
+          viewer_id: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          exposant_id?: string | null;
+          viewer_id?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          exposant_id?: string | null;
+          viewer_id?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'exposant_views_exposant_id_fkey';
+            columns: ['exposant_id'];
+            isRelationOneToOne: false;
+            referencedRelation: 'exposants';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'exposant_views_viewer_id_fkey';
+            columns: ['viewer_id'];
+            isRelationOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          }
+        ];
       };
       produits: {
         Row: {
@@ -162,6 +237,7 @@ export interface Database {
           conversation_id: string;
           sender_id: string;
           content: string;
+          attachment_url: string | null;
           is_read: boolean;
           created_at: string | null;
         };
@@ -170,6 +246,7 @@ export interface Database {
           conversation_id: string;
           sender_id: string;
           content: string;
+          attachment_url?: string | null;
           is_read?: boolean;
           created_at?: string | null;
         };
@@ -178,6 +255,7 @@ export interface Database {
           conversation_id?: string;
           sender_id?: string;
           content?: string;
+          attachment_url?: string | null;
           is_read?: boolean;
           created_at?: string | null;
         };
@@ -497,6 +575,8 @@ export interface Database {
           post_id: string;
           author_id: string;
           content: string;
+          parent_comment_id: string | null;
+          likes_count: number;
           created_at: string | null;
         };
         Insert: {
@@ -504,6 +584,8 @@ export interface Database {
           post_id: string;
           author_id: string;
           content: string;
+          parent_comment_id?: string | null;
+          likes_count?: number;
           created_at?: string | null;
         };
         Update: {
@@ -511,6 +593,8 @@ export interface Database {
           post_id?: string;
           author_id?: string;
           content?: string;
+          parent_comment_id?: string | null;
+          likes_count?: number;
           created_at?: string | null;
         };
         Relationships: [
