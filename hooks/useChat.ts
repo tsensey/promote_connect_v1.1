@@ -6,16 +6,103 @@ type Conversation = Database['public']['Tables']['conversations']['Row'];
 type Message = Database['public']['Tables']['messages']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
+export type ProductAttachment = {
+  id: string;
+  nom: string;
+  image_url: string | null;
+  prix_indicatif: string | null;
+  exposant_nom: string;
+  exposant_id: string;
+};
+
 export interface EnrichedConversation extends Conversation {
   other_user: Profile | null;
+  /** Nom de l'exposant lié au profil (si role = 'exposant') */
+  other_exposant_nom: string | null;
+  other_exposant_logo: string | null;
   last_message_content: string | null;
   unread_count: number;
 }
 
 export interface EnrichedMessage extends Message {
   author: Pick<Profile, 'id' | 'full_name' | 'avatar_url' | 'role'> | null;
+  /** Message cité (réponse) */
+  reply_to: Pick<EnrichedMessage, 'id' | 'content' | 'author' | 'attachment_type'> | null;
 }
 
+// ─── Contacts unifiés (exposants + visiteurs) pour le panneau "Nouveau chat" ──
+export interface ChatContact {
+  profile_id: string;
+  display_name: string;
+  company: string | null;
+  avatar_url: string | null;
+  role: string | null;
+  /** Présent uniquement si role = 'exposant' */
+  exposant_id: string | null;
+  exposant_logo: string | null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// useContacts — charge tous les profils contactables (exposants + visiteurs)
+// ─────────────────────────────────────────────────────────────────────────────
+export function useContacts() {
+  const [contacts, setContacts] = useState<ChatContact[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data: session } = await supabaseClient.auth.getSession();
+      const myId = session?.session?.user?.id;
+      if (myId) setMyUserId(myId);
+
+      // 1. Charger tous les profils sauf le mien
+      const { data: profiles } = await supabaseClient
+        .from('profiles')
+        .select('id, full_name, company, avatar_url, role')
+        .neq('id', myId ?? '')
+        .in('role', ['exposant', 'visiteur']);
+
+      if (!profiles) return;
+
+      // 2. Charger les exposants pour enrichir les profils exposant
+      const { data: exposants } = await supabaseClient
+        .from('exposants')
+        .select('id, profile_id, nom, logo_url');
+
+      const exposantByProfile = new Map<string, { id: string; nom: string; logo_url: string | null }>();
+      for (const exp of exposants ?? []) {
+        if (exp.profile_id) {
+          exposantByProfile.set(exp.profile_id, { id: exp.id, nom: exp.nom, logo_url: exp.logo_url });
+        }
+      }
+
+      const result: ChatContact[] = profiles.map((p) => {
+        const exp = exposantByProfile.get(p.id);
+        return {
+          profile_id: p.id,
+          display_name: p.full_name ?? 'Utilisateur',
+          company: exp ? exp.nom : p.company,
+          avatar_url: exp ? exp.logo_url : p.avatar_url,
+          role: p.role,
+          exposant_id: exp ? exp.id : null,
+          exposant_logo: exp ? exp.logo_url : null,
+        };
+      });
+
+      setContacts(result);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { contacts, loading, myUserId, load };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// useConversations
+// ─────────────────────────────────────────────────────────────────────────────
 export function useConversations() {
   const [conversations, setConversations] = useState<EnrichedConversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,12 +137,34 @@ export function useConversations() {
           participant_b: Profile | null;
         })[];
 
-        const enriched: EnrichedConversation[] = convs.map((conv) => ({
-          ...conv,
-          other_user: conv.participant_a?.id === myId ? conv.participant_b : conv.participant_a,
-          last_message_content: null,
-          unread_count: 0,
-        }));
+        // Récupérer les exposants liés aux profils "other"
+        const otherIds = convs.map((c) =>
+          c.participant_a?.id === myId ? c.participant_b?.id : c.participant_a?.id
+        ).filter(Boolean) as string[];
+
+        let exposantMap = new Map<string, { nom: string; logo_url: string | null }>();
+        if (otherIds.length > 0) {
+          const { data: exps } = await supabaseClient
+            .from('exposants')
+            .select('profile_id, nom, logo_url')
+            .in('profile_id', otherIds);
+          for (const e of exps ?? []) {
+            if (e.profile_id) exposantMap.set(e.profile_id, { nom: e.nom, logo_url: e.logo_url });
+          }
+        }
+
+        const enriched: EnrichedConversation[] = convs.map((conv) => {
+          const otherUser = conv.participant_a?.id === myId ? conv.participant_b : conv.participant_a;
+          const exp = otherUser?.id ? exposantMap.get(otherUser.id) : undefined;
+          return {
+            ...conv,
+            other_user: otherUser,
+            other_exposant_nom: exp?.nom ?? null,
+            other_exposant_logo: exp?.logo_url ?? null,
+            last_message_content: null,
+            unread_count: 0,
+          };
+        });
 
         if (enriched.length > 0) {
           const convIds = enriched.map((c) => c.id);
@@ -63,7 +172,7 @@ export function useConversations() {
           const [{ data: lastMessages }, { data: unreadCounts }] = await Promise.all([
             supabaseClient
               .from('messages')
-              .select('conversation_id, content, sender_id, created_at')
+              .select('conversation_id, content, sender_id, created_at, attachment_type, product_attachment')
               .in('conversation_id', convIds)
               .order('created_at', { ascending: false }),
 
@@ -81,7 +190,12 @@ export function useConversations() {
           if (lastMessages) {
             for (const msg of lastMessages) {
               if (!lastMsgByConv.has(msg.conversation_id)) {
-                lastMsgByConv.set(msg.conversation_id, msg.content);
+                // Résumé lisible pour le dernier message
+                let preview = msg.content;
+                if (!preview && msg.attachment_type === 'image') preview = '📷 Photo';
+                else if (!preview && msg.attachment_type === 'document') preview = '📄 Document';
+                else if (msg.product_attachment) preview = `🏷️ ${(msg.product_attachment as ProductAttachment).nom}`;
+                lastMsgByConv.set(msg.conversation_id, preview || '');
               }
             }
           }
@@ -111,21 +225,9 @@ export function useConversations() {
 
     const channel = supabaseClient
       .channel('conversations-changes')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'conversations' },
-        () => { fetchConversations(); }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'conversations' },
-        () => { fetchConversations(); }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        () => { fetchConversations(); }
-      )
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations' }, () => { fetchConversations(); })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations' }, () => { fetchConversations(); })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => { fetchConversations(); })
       .subscribe();
 
     return () => {
@@ -137,18 +239,22 @@ export function useConversations() {
   return { conversations, loading, error, myUserId };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// useMessages
+// ─────────────────────────────────────────────────────────────────────────────
 export function useMessages(conversationId: string) {
   const [messages, setMessages] = useState<EnrichedMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [otherUser, setOtherUser] = useState<Profile | null>(null);
+  const [otherExposant, setOtherExposant] = useState<{ nom: string; logo_url: string | null } | null>(null);
   const [typingUser, setTypingUser] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
-    let channel: any = null;
-    let presenceChannel: any = null;
+    let channel: ReturnType<typeof supabaseClient.channel> | null = null;
+    let presenceChannel: ReturnType<typeof supabaseClient.channel> | null = null;
 
     const setup = async () => {
       try {
@@ -157,14 +263,11 @@ export function useMessages(conversationId: string) {
         const myId = session?.session?.user?.id;
         if (myId) setMyUserId(myId);
 
+        // Charger la conversation + participants
         let other: Profile | null = null;
         const { data: convData } = await supabaseClient
           .from('conversations')
-          .select(`
-            *,
-            participant_a:participant_a(*),
-            participant_b:participant_b(*)
-          `)
+          .select(`*, participant_a:participant_a(*), participant_b:participant_b(*)`)
           .eq('id', conversationId)
           .single();
 
@@ -175,22 +278,59 @@ export function useMessages(conversationId: string) {
           };
           other = conv.participant_a?.id === myId ? conv.participant_b : conv.participant_a;
           setOtherUser(other);
+
+          // Enrichir avec les données exposant si applicable
+          if (other?.id) {
+            const { data: expData } = await supabaseClient
+              .from('exposants')
+              .select('nom, logo_url')
+              .eq('profile_id', other.id)
+              .maybeSingle();
+            if (expData && mounted) setOtherExposant(expData);
+          }
         }
 
-        const { data, error } = await supabaseClient
-          .from('messages')
-          .select(`
-            *,
-            author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role)
-          `)
-          .eq('conversation_id', conversationId)
-          .order('created_at', { ascending: true });
+        // Charger les messages avec auteur + message cité (avec fallback si colonnes absentes)
+        let fetchedMessages: EnrichedMessage[] = [];
+        try {
+          const { data: enrichedData, error: enrichedError } = await supabaseClient
+            .from('messages')
+            .select(`
+              *,
+              author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role),
+              reply_to:reply_to_id(
+                id, content, attachment_type,
+                author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role)
+              )
+            `)
+            .eq('conversation_id', conversationId)
+            .order('created_at', { ascending: true });
 
-        if (error) throw error;
-        if (mounted) setMessages((data || []) as EnrichedMessage[]);
+          if (enrichedError) throw enrichedError;
+          fetchedMessages = (enrichedData || []) as unknown as EnrichedMessage[];
+        } catch {
+          // Fallback : query sans reply_to (colonne pas encore migrée)
+          const { data: basicData, error: basicError } = await supabaseClient
+            .from('messages')
+            .select(`
+              *,
+              author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role)
+            `)
+            .eq('conversation_id', conversationId)
+            .order('created_at', { ascending: true });
+
+          if (basicError) throw basicError;
+          fetchedMessages = ((basicData || []) as unknown as EnrichedMessage[]).map((m) => ({
+            ...m,
+            reply_to: null,
+          }));
+        }
+
+        if (mounted) setMessages(fetchedMessages);
 
         if (!mounted) return;
 
+        // Realtime — nouveaux messages
         channel = supabaseClient
           .channel(`messages-${conversationId}`)
           .on(
@@ -203,16 +343,34 @@ export function useMessages(conversationId: string) {
             },
             async (payload) => {
               const newMsg = payload.new as Message;
-              const { data: author } = await supabaseClient
-                .from('profiles')
-                .select('id, full_name, avatar_url, role')
-                .eq('id', newMsg.sender_id)
-                .single();
+              // Essayer d'abord avec reply_to enrichi, fallback si non disponible
+              let fullMsg: EnrichedMessage | null = null;
+              try {
+                const { data: enriched } = await supabaseClient
+                  .from('messages')
+                  .select(`
+                    *,
+                    author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role),
+                    reply_to:reply_to_id(
+                      id, content, attachment_type,
+                      author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role)
+                    )
+                  `)
+                  .eq('id', newMsg.id)
+                  .single();
+                if (enriched) fullMsg = enriched as unknown as EnrichedMessage;
+              } catch {
+                const { data: basic } = await supabaseClient
+                  .from('messages')
+                  .select(`*, author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role)`)
+                  .eq('id', newMsg.id)
+                  .single();
+                if (basic) fullMsg = { ...(basic as unknown as EnrichedMessage), reply_to: null };
+              }
 
-              setMessages((prev) => [
-                ...prev,
-                { ...newMsg, author } as EnrichedMessage,
-              ]);
+              if (fullMsg) {
+                setMessages((prev) => [...prev, fullMsg!]);
+              }
             }
           )
           .on(
@@ -227,7 +385,7 @@ export function useMessages(conversationId: string) {
               setMessages((prev) =>
                 prev.map((msg) =>
                   msg.id === payload.new.id
-                    ? { ...(payload.new as Message), author: msg.author }
+                    ? { ...(payload.new as Message), author: msg.author, reply_to: msg.reply_to } as EnrichedMessage
                     : msg
                 )
               );
@@ -235,13 +393,14 @@ export function useMessages(conversationId: string) {
           )
           .subscribe();
 
+        // Presence — indicateur de saisie
         presenceChannel = supabaseClient.channel(`presence-${conversationId}`, {
-          config: { presence: { key: myId || 'anon' } }
+          config: { presence: { key: myId || 'anon' } },
         });
 
         presenceChannel
           .on('presence', { event: 'sync' }, () => {
-            const state = presenceChannel.presenceState<{ typing: boolean; userId: string }>();
+            const state = presenceChannel!.presenceState<{ typing: boolean; userId: string }>();
             let isTyping = false;
             for (const key of Object.keys(state)) {
               if (state[key][0]?.typing && state[key][0]?.userId !== myId) {
@@ -253,7 +412,7 @@ export function useMessages(conversationId: string) {
           })
           .subscribe(async (status: string) => {
             if (status === 'SUBSCRIBED' && myId) {
-              await presenceChannel.track({ typing: false, userId: myId });
+              await presenceChannel!.track({ typing: false, userId: myId });
             }
           });
 
@@ -286,18 +445,53 @@ export function useMessages(conversationId: string) {
       .eq('is_read', false);
   }, [conversationId]);
 
+  // ── sendMessage : texte + fichier (upload Storage) + réponse + produit ──
   const sendMessage = useCallback(
-    async (content: string, attachmentUrl?: string) => {
-      if (!content.trim() && !attachmentUrl) return;
+    async (opts: {
+      content: string;
+      file?: File | null;
+      replyToId?: string | null;
+      productAttachment?: ProductAttachment | null;
+    }) => {
+      const { content, file, replyToId, productAttachment } = opts;
+      if (!content.trim() && !file && !productAttachment) return;
 
       const { data: session } = await supabaseClient.auth.getSession();
       if (!session?.session?.user) return;
+      const myId = session.session.user.id;
+
+      let attachmentUrl: string | null = null;
+      let attachmentType: 'image' | 'document' | 'product' | null = null;
+
+      // Upload fichier vers Supabase Storage
+      if (file) {
+        const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+        const isImage = ['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext);
+        attachmentType = isImage ? 'image' : 'document';
+
+        const filePath = `${conversationId}/${myId}-${Date.now()}.${ext}`;
+        const { data: uploadData, error: uploadError } = await supabaseClient.storage
+          .from('chat_media')
+          .upload(filePath, file, { upsert: false });
+
+        if (!uploadError && uploadData) {
+          const { data: urlData } = supabaseClient.storage
+            .from('chat_media')
+            .getPublicUrl(uploadData.path);
+          attachmentUrl = urlData.publicUrl;
+        }
+      } else if (productAttachment) {
+        attachmentType = 'product';
+      }
 
       const { error } = await supabaseClient.from('messages').insert({
         conversation_id: conversationId,
-        sender_id: session.session.user.id,
+        sender_id: myId,
         content: content.trim(),
-        attachment_url: attachmentUrl || null,
+        attachment_url: attachmentUrl,
+        attachment_type: attachmentType,
+        reply_to_id: replyToId ?? null,
+        product_attachment: productAttachment ?? null,
         is_read: false,
       });
 
@@ -314,9 +508,9 @@ export function useMessages(conversationId: string) {
   const sendTypingEvent = useCallback(
     async (isTyping: boolean) => {
       if (!myUserId) return;
-      const channel = supabaseClient.getChannels().find((c) => c.topic === `realtime:presence-${conversationId}`);
-      if (channel) {
-        await channel.track({ typing: isTyping, userId: myUserId });
+      const ch = supabaseClient.getChannels().find((c) => c.topic === `realtime:presence-${conversationId}`);
+      if (ch) {
+        await ch.track({ typing: isTyping, userId: myUserId });
       }
     },
     [conversationId, myUserId]
@@ -330,11 +524,15 @@ export function useMessages(conversationId: string) {
     markAsRead,
     myUserId,
     otherUser,
+    otherExposant,
     typingUser,
     sendTypingEvent,
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// createConversation
+// ─────────────────────────────────────────────────────────────────────────────
 export async function createConversation(otherUserId: string) {
   const { data: session } = await supabaseClient.auth.getSession();
   if (!session?.session?.user) return { error: new Error('Not authenticated') };

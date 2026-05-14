@@ -110,23 +110,24 @@ export default function VitrineExposantPage() {
     loadData();
   }, [exposantId]);
 
-  const handleContact = async (productName?: string) => {
+  const handleContact = async (product?: { id: string; nom: string; image_url: string | null; prix_indicatif: string | null } | null) => {
     if (!exposant?.profile_id) return;
     setContacting(true);
-    const { data, error } = await createConversation(exposant.profile_id);
+    const { data } = await createConversation(exposant.profile_id);
     if (data) {
-      if (productName) {
-        const { data: session } = await supabaseClient.auth.getSession();
-        if (session?.session?.user) {
-          await supabaseClient.from('messages').insert({
-            conversation_id: data.id,
-            sender_id: session.session.user.id,
-            content: `Bonjour, je suis intéressé(e) par votre produit/service : "${productName}". Pourriez-vous m'en dire plus ?`,
-            is_read: false,
-          });
-        }
+      let url = `/chat?conv=${data.id}`;
+      if (product && exposant) {
+        const payload = {
+          id: product.id,
+          nom: product.nom,
+          image_url: product.image_url,
+          prix_indicatif: product.prix_indicatif,
+          exposant_nom: exposant.nom,
+          exposant_id: exposant.id,
+        };
+        url += `&product=${btoa(JSON.stringify(payload))}`;
       }
-      router.push(`/chat/${data.id}`);
+      router.push(url);
     } else {
       toast.error('Erreur lors de la création de la conversation');
     }
@@ -466,7 +467,7 @@ export default function VitrineExposantPage() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {produits.map((prod) => (
                 <Dialog key={prod.id}>
-                  <DialogTrigger asChild>
+                  <DialogTrigger>
                     <div className="cursor-pointer rounded-xl border border-border/60 bg-muted/20 p-5 transition-all hover:border-primary/30 hover:shadow-md hover:bg-muted/40 group">
                       {prod.image_url && (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -513,7 +514,7 @@ export default function VitrineExposantPage() {
                       )}
                       <Button
                         className="w-full rounded-xl"
-                        onClick={() => handleContact(prod.nom)}
+                        onClick={() => handleContact({ id: prod.id, nom: prod.nom, image_url: prod.image_url, prix_indicatif: prod.prix_indicatif })}
                         disabled={contacting}
                       >
                         <MessageSquare className="mr-2 size-4" />

@@ -2,23 +2,22 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { MessageSquare, Search, ArrowLeft, Plus, Loader2, X } from 'lucide-react';
+import {
+  MessageSquare, Search, ArrowLeft, Plus, Loader2, X, Building2, User,
+} from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ChatInput } from '@/components/chat/ChatInput';
+import { Badge } from '@/components/ui/badge';
+import { ChatInput, type SendOptions } from '@/components/chat/ChatInput';
 import { MessageBubble, DateSeparator } from '@/components/chat/MessageBubble';
-import { useConversations, useMessages, createConversation } from '@/hooks/useChat';
-import { supabaseClient } from '@/lib/supabase/client';
+import {
+  useConversations, useMessages, useContacts, createConversation,
+  type EnrichedMessage, type ProductAttachment,
+} from '@/hooks/useChat';
 import { cn } from '@/lib/utils';
 
-interface ExposantSearch {
-  id: string;
-  nom: string;
-  profile_id: string | null;
-  logo_url?: string | null;
-}
-
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function getInitials(name: string | null | undefined) {
   if (!name) return '?';
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -44,7 +43,7 @@ function isSameDay(a: string, b: string) {
   return new Date(a).toDateString() === new Date(b).toDateString();
 }
 
-// ─── Conversation List Panel ────────────────────────────────────────────────
+// ─── Panneau liste des conversations ──────────────────────────────────────────
 function ConversationList({
   selectedId,
   onSelect,
@@ -53,44 +52,41 @@ function ConversationList({
   onSelect: (id: string) => void;
 }) {
   const { conversations, loading } = useConversations();
+  const { contacts, loading: loadingContacts, load: loadContacts } = useContacts();
   const [search, setSearch] = useState('');
   const [showNew, setShowNew] = useState(false);
-  const [exposants, setExposants] = useState<ExposantSearch[]>([]);
-  const [loadingExposants, setLoadingExposants] = useState(false);
-  const [exposantSearch, setExposantSearch] = useState('');
-  const [creating, setCreating] = useState(false);
+  const [contactSearch, setContactSearch] = useState('');
+  const [creating, setCreating] = useState<string | null>(null);
+  const [contactTab, setContactTab] = useState<'exposant' | 'visiteur'>('exposant');
 
-  // Load exposants when panel opens
+  // Charger les contacts quand on ouvre le panneau
   useEffect(() => {
-    if (!showNew || exposants.length > 0) return;
-    setLoadingExposants(true);
-    supabaseClient
-      .from('exposants')
-      .select('id, nom, profile_id, logo_url')
-      .then(({ data }) => {
-        setExposants(data ?? []);
-        setLoadingExposants(false);
-      });
-  }, [showNew, exposants.length]);
+    if (showNew && contacts.length === 0) loadContacts();
+  }, [showNew, contacts.length, loadContacts]);
 
   const handleStartConversation = async (profileId: string) => {
-    setCreating(true);
+    setCreating(profileId);
     const { data } = await createConversation(profileId);
-    setCreating(false);
+    setCreating(null);
     if (data) {
       setShowNew(false);
-      setExposantSearch('');
+      setContactSearch('');
       onSelect(data.id);
     }
   };
 
-  const filteredExposants = exposants.filter((e) =>
-    e.nom.toLowerCase().includes(exposantSearch.toLowerCase()),
-  );
+  const filteredContacts = contacts.filter((c) => {
+    const matchTab = c.role === contactTab;
+    const q = contactSearch.toLowerCase();
+    const matchSearch =
+      c.display_name.toLowerCase().includes(q) ||
+      (c.company?.toLowerCase().includes(q) ?? false);
+    return matchTab && matchSearch;
+  });
 
   const filtered = conversations.filter((conv) => {
     const name = conv.other_user?.full_name?.toLowerCase() ?? '';
-    const company = conv.other_user?.company?.toLowerCase() ?? '';
+    const company = (conv.other_exposant_nom ?? conv.other_user?.company ?? '').toLowerCase();
     const q = search.toLowerCase();
     return name.includes(q) || company.includes(q);
   });
@@ -102,9 +98,9 @@ function ConversationList({
         <div className="mb-3 flex items-center justify-between">
           <h1 className="text-base font-semibold text-foreground">Messages</h1>
           <Button
-            size="xs"
+            size="sm"
             variant="outline"
-            className="rounded-lg"
+            className="h-7 rounded-lg px-2.5 text-xs"
             onClick={() => setShowNew((v) => !v)}
           >
             {showNew ? <X className="mr-1 size-3.5" /> : <Plus className="mr-1 size-3.5" />}
@@ -112,46 +108,81 @@ function ConversationList({
           </Button>
         </div>
 
-        {/* New conversation search panel */}
+        {/* Panneau Nouveau chat */}
         {showNew && (
           <div className="mb-3 rounded-xl border border-border/60 bg-muted/30 p-3 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Démarrer avec un exposant</p>
+            {/* Onglets Exposant / Visiteur */}
+            <div className="flex gap-1 rounded-lg bg-muted/50 p-0.5">
+              <button
+                onClick={() => setContactTab('exposant')}
+                className={cn(
+                  'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors',
+                  contactTab === 'exposant'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Building2 className="size-3.5" />
+                Exposants
+              </button>
+              <button
+                onClick={() => setContactTab('visiteur')}
+                className={cn(
+                  'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors',
+                  contactTab === 'visiteur'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <User className="size-3.5" />
+                Visiteurs
+              </button>
+            </div>
+
             <div className="relative">
               <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Rechercher un exposant…"
-                value={exposantSearch}
-                onChange={(e) => setExposantSearch(e.target.value)}
+                placeholder={`Rechercher un ${contactTab}…`}
+                value={contactSearch}
+                onChange={(e) => setContactSearch(e.target.value)}
                 className="h-8 pl-8 text-xs"
               />
             </div>
-            <div className="max-h-44 overflow-y-auto space-y-0.5">
-              {loadingExposants ? (
+
+            <div className="max-h-48 overflow-y-auto space-y-0.5">
+              {loadingContacts ? (
                 <div className="flex justify-center py-4">
                   <Loader2 className="size-4 animate-spin text-muted-foreground" />
                 </div>
-              ) : filteredExposants.length === 0 ? (
-                <p className="py-3 text-center text-xs text-muted-foreground">Aucun exposant trouvé</p>
+              ) : filteredContacts.length === 0 ? (
+                <p className="py-3 text-center text-xs text-muted-foreground">
+                  Aucun {contactTab} trouvé
+                </p>
               ) : (
-                filteredExposants.map((exp) => (
+                filteredContacts.map((contact) => (
                   <button
-                    key={exp.id}
-                    disabled={!exp.profile_id || creating}
-                    onClick={() => exp.profile_id && handleStartConversation(exp.profile_id)}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition-colors hover:bg-muted/70 disabled:opacity-40"
+                    key={contact.profile_id}
+                    disabled={creating === contact.profile_id}
+                    onClick={() => handleStartConversation(contact.profile_id)}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition-colors hover:bg-muted/70 disabled:opacity-50"
                   >
-                    <Avatar className="size-7 shrink-0">
-                      {exp.logo_url ? (
-                        <AvatarImage src={exp.logo_url} />
+                    <Avatar className="size-8 shrink-0">
+                      {contact.avatar_url ? (
+                        <AvatarImage src={contact.avatar_url} />
                       ) : (
                         <AvatarFallback className="bg-primary/10 text-[10px] font-semibold text-primary">
-                          {exp.nom.charAt(0).toUpperCase()}
+                          {getInitials(contact.display_name)}
                         </AvatarFallback>
                       )}
                     </Avatar>
-                    <span className="truncate font-medium">{exp.nom}</span>
-                    {!exp.profile_id && (
-                      <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">Non inscrit</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-foreground">{contact.display_name}</p>
+                      {contact.company && (
+                        <p className="truncate text-[11px] text-muted-foreground">{contact.company}</p>
+                      )}
+                    </div>
+                    {creating === contact.profile_id && (
+                      <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
                     )}
                   </button>
                 ))
@@ -160,7 +191,7 @@ function ConversationList({
           </div>
         )}
 
-        {/* Conversation search */}
+        {/* Recherche conversations */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -172,7 +203,7 @@ function ConversationList({
         </div>
       </div>
 
-      {/* Conversation List */}
+      {/* Liste des conversations */}
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="space-y-3 p-4">
@@ -190,7 +221,7 @@ function ConversationList({
           <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
             <MessageSquare className="size-10 text-muted-foreground/40" />
             <p className="text-sm text-muted-foreground">
-              {search ? 'Aucune conversation trouvée.' : 'Aucune conversation pour l\'instant.'}
+              {search ? 'Aucune conversation trouvée.' : "Aucune conversation pour l'instant."}
             </p>
             {!search && (
               <Button variant="outline" size="sm" className="rounded-lg" onClick={() => setShowNew(true)}>
@@ -204,6 +235,9 @@ function ConversationList({
             const other = conv.other_user;
             const isSelected = conv.id === selectedId;
             const isUnread = conv.unread_count > 0;
+            const displayName = conv.other_exposant_nom ?? other?.full_name ?? 'Utilisateur';
+            const subName = conv.other_exposant_nom ? other?.full_name : (other?.company ?? null);
+            const avatarUrl = conv.other_exposant_logo ?? other?.avatar_url;
 
             return (
               <button
@@ -216,11 +250,11 @@ function ConversationList({
               >
                 <div className="relative shrink-0">
                   <Avatar className="size-10">
-                    {other?.avatar_url ? (
-                      <AvatarImage src={other.avatar_url} />
+                    {avatarUrl ? (
+                      <AvatarImage src={avatarUrl} />
                     ) : (
                       <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
-                        {getInitials(other?.full_name)}
+                        {getInitials(displayName)}
                       </AvatarFallback>
                     )}
                   </Avatar>
@@ -234,14 +268,14 @@ function ConversationList({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className={cn('truncate text-sm', isUnread ? 'font-semibold text-foreground' : 'font-medium text-foreground/80')}>
-                      {other?.full_name ?? 'Utilisateur'}
+                      {displayName}
                     </span>
                     <span className="shrink-0 text-[11px] text-muted-foreground/60">
                       {formatRelativeTime(conv.last_message_at)}
                     </span>
                   </div>
-                  {other?.company && (
-                    <p className="truncate text-[11px] text-muted-foreground/70">{other.company}</p>
+                  {subName && (
+                    <p className="truncate text-[11px] text-muted-foreground/70">{subName}</p>
                   )}
                   {conv.last_message_content && (
                     <p className={cn('truncate text-xs', isUnread ? 'font-medium text-foreground/70' : 'text-muted-foreground/60')}>
@@ -258,19 +292,27 @@ function ConversationList({
   );
 }
 
-// ─── Message Thread Panel ────────────────────────────────────────────────────
+// ─── Thread (fil de messages) ─────────────────────────────────────────────────
 function MessageThread({
   conversationId,
   onBack,
+  initialProduct,
 }: {
   conversationId: string;
   onBack: () => void;
+  initialProduct?: ProductAttachment | null;
 }) {
-  const { messages, loading, sendMessage, markAsRead, myUserId, otherUser, typingUser } =
-    useMessages(conversationId);
+  const {
+    messages, loading, sendMessage, markAsRead, myUserId,
+    otherUser, otherExposant, typingUser, sendTypingEvent,
+  } = useMessages(conversationId);
+
   const [inputValue, setInputValue] = useState('');
   const [sending, setSending] = useState(false);
+  const [replyTo, setReplyTo] = useState<EnrichedMessage | null>(null);
+  const [productContext, setProductContext] = useState<ProductAttachment | null>(initialProduct ?? null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -280,18 +322,43 @@ function MessageThread({
     void markAsRead();
   }, [markAsRead, conversationId]);
 
-  const handleSend = useCallback(async () => {
-    const text = inputValue.trim();
-    if (!text) return;
-    setSending(true);
-    setInputValue('');
-    await sendMessage(text);
-    setSending(false);
-  }, [inputValue, sendMessage]);
+  // Pré-attacher produit depuis URL au montage
+  useEffect(() => {
+    if (initialProduct) setProductContext(initialProduct);
+  }, [initialProduct]);
+
+  const handleSend = useCallback(
+    async (opts: SendOptions) => {
+      if (!opts.content.trim() && !opts.file && !opts.productAttachment) return;
+      setSending(true);
+      setInputValue('');
+      setReplyTo(null);
+      setProductContext(null);
+      await sendMessage(opts);
+      setSending(false);
+      void sendTypingEvent(false);
+    },
+    [sendMessage, sendTypingEvent]
+  );
+
+  const handleTyping = useCallback(
+    (isTyping: boolean) => {
+      void sendTypingEvent(isTyping);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      if (isTyping) {
+        typingTimeoutRef.current = setTimeout(() => sendTypingEvent(false), 3000);
+      }
+    },
+    [sendTypingEvent]
+  );
+
+  const displayName = otherExposant?.nom ?? otherUser?.full_name ?? 'Conversation';
+  const subName = otherExposant ? otherUser?.full_name : otherUser?.company;
+  const avatarUrl = otherExposant?.logo_url ?? otherUser?.avatar_url;
 
   return (
     <div className="flex h-full flex-col">
-      {/* Thread Header */}
+      {/* En-tête du fil */}
       <div className="flex items-center gap-3 border-b border-border/50 px-4 py-3.5">
         <button
           onClick={onBack}
@@ -300,25 +367,26 @@ function MessageThread({
           <ArrowLeft className="size-4" />
         </button>
         <Avatar className="size-9 shrink-0">
-          {otherUser?.avatar_url ? (
-            <AvatarImage src={otherUser.avatar_url} />
+          {avatarUrl ? (
+            <AvatarImage src={avatarUrl} />
           ) : (
             <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
-              {getInitials(otherUser?.full_name)}
+              {getInitials(displayName)}
             </AvatarFallback>
           )}
         </Avatar>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">
-            {otherUser?.full_name ?? 'Conversation'}
-          </p>
-          {otherUser?.company && (
-            <p className="truncate text-xs text-muted-foreground">{otherUser.company}</p>
-          )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-foreground">{displayName}</p>
+          {subName && <p className="truncate text-xs text-muted-foreground">{subName}</p>}
         </div>
+        {otherExposant && (
+          <Badge variant="secondary" className="shrink-0 text-[10px]">
+            Exposant
+          </Badge>
+        )}
       </div>
 
-      {/* Messages */}
+      {/* Zone de messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {loading ? (
           <div className="flex h-full items-center justify-center">
@@ -345,10 +413,13 @@ function MessageThread({
                     message={msg}
                     isMine={msg.sender_id === myUserId}
                     showAvatar={showAvatar}
+                    onReply={setReplyTo}
                   />
                 </div>
               );
             })}
+
+            {/* Indicateur de saisie */}
             {typingUser && (
               <div className="flex items-center gap-2 py-1 pl-9">
                 <div className="flex gap-1">
@@ -368,20 +439,25 @@ function MessageThread({
         )}
       </div>
 
-      {/* Input */}
-      <div className="border-t border-border/50 p-4">
+      {/* Zone de saisie */}
+      <div className="border-t border-border/50 p-3">
         <ChatInput
           value={inputValue}
           onChange={setInputValue}
           onSend={handleSend}
+          onTyping={handleTyping}
           sending={sending}
+          replyTo={replyTo}
+          onCancelReply={() => setReplyTo(null)}
+          productContext={productContext}
+          onCancelProduct={() => setProductContext(null)}
         />
       </div>
     </div>
   );
 }
 
-// ─── Empty State ─────────────────────────────────────────────────────────────
+// ─── Empty State ──────────────────────────────────────────────────────────────
 function EmptyState() {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 text-center px-8">
@@ -398,11 +474,23 @@ function EmptyState() {
   );
 }
 
-// ─── Page ────────────────────────────────────────────────────────────────────
+// ─── Page principale ──────────────────────────────────────────────────────────
 export default function ChatPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const initialConv = searchParams.get('conv');
+
+  // Produit pré-attaché depuis la vitrine (?product=<base64json>)
+  const productParam = searchParams.get('product');
+  const initialProduct: ProductAttachment | null = (() => {
+    if (!productParam) return null;
+    try {
+      return JSON.parse(atob(productParam)) as ProductAttachment;
+    } catch {
+      return null;
+    }
+  })();
+
   const [selectedId, setSelectedId] = useState<string | null>(initialConv);
   const [mobileShowThread, setMobileShowThread] = useState(!!initialConv);
 
@@ -417,9 +505,11 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="-mx-4 -mt-6 flex overflow-hidden rounded-none border-0 sm:-mx-6 xl:-mx-8"
-      style={{ height: 'calc(100dvh - 64px)' }}>
-      {/* Left: Conversation List */}
+    <div
+      className="-mx-4 -mt-6 flex overflow-hidden rounded-none border-0 sm:-mx-6 xl:-mx-8"
+      style={{ height: 'calc(100dvh - 64px)' }}
+    >
+      {/* Liste des conversations */}
       <div
         className={cn(
           'w-full shrink-0 border-r border-border/50 xl:w-80',
@@ -430,7 +520,7 @@ export default function ChatPage() {
         <ConversationList selectedId={selectedId} onSelect={handleSelect} />
       </div>
 
-      {/* Right: Thread */}
+      {/* Fil de messages */}
       <div
         className={cn(
           'flex-1',
@@ -442,6 +532,7 @@ export default function ChatPage() {
             key={selectedId}
             conversationId={selectedId}
             onBack={handleBack}
+            initialProduct={initialProduct}
           />
         ) : (
           <EmptyState />

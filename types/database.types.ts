@@ -238,6 +238,16 @@ export interface Database {
           sender_id: string;
           content: string;
           attachment_url: string | null;
+          attachment_type: 'image' | 'document' | 'product' | null;
+          reply_to_id: string | null;
+          product_attachment: {
+            id: string;
+            nom: string;
+            image_url: string | null;
+            prix_indicatif: string | null;
+            exposant_nom: string;
+            exposant_id: string;
+          } | null;
           is_read: boolean;
           created_at: string | null;
         };
@@ -247,6 +257,16 @@ export interface Database {
           sender_id: string;
           content: string;
           attachment_url?: string | null;
+          attachment_type?: 'image' | 'document' | 'product' | null;
+          reply_to_id?: string | null;
+          product_attachment?: {
+            id: string;
+            nom: string;
+            image_url: string | null;
+            prix_indicatif: string | null;
+            exposant_nom: string;
+            exposant_id: string;
+          } | null;
           is_read?: boolean;
           created_at?: string | null;
         };
@@ -256,6 +276,16 @@ export interface Database {
           sender_id?: string;
           content?: string;
           attachment_url?: string | null;
+          attachment_type?: 'image' | 'document' | 'product' | null;
+          reply_to_id?: string | null;
+          product_attachment?: {
+            id: string;
+            nom: string;
+            image_url: string | null;
+            prix_indicatif: string | null;
+            exposant_nom: string;
+            exposant_id: string;
+          } | null;
           is_read?: boolean;
           created_at?: string | null;
         };
