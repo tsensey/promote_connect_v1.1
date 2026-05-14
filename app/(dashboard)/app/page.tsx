@@ -208,12 +208,12 @@ export default function DashboardHome() {
             <div className="relative -mt-6 space-y-5 p-6">
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-24 rounded-xl border border-border/60 bg-background" />
+                  <div key={i} className="h-24 rounded-xl border border-border/60 bg-background/50" />
                 ))}
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-[52px] rounded-xl border border-border/60 bg-background" />
+                  <div key={i} className="h-[52px] rounded-xl border border-border/60 bg-background/50" />
                 ))}
               </div>
             </div>
@@ -288,7 +288,7 @@ export default function DashboardHome() {
                   href={action.href}
                   className={cn(
                     buttonVariants({ variant: "outline" }),
-                    "group h-auto gap-3 rounded-xl border-border/70 bg-white/80 px-5 py-4 shadow-sm transition-all hover:border-primary/30 hover:bg-white hover:shadow-md",
+                    "group h-auto gap-3 rounded-xl border-border/70 bg-background/50 px-5 py-4 shadow-sm transition-all hover:border-primary/30 hover:bg-background hover:shadow-md",
                   )}
                 >
                   <action.icon className="size-5 text-primary" />
@@ -328,7 +328,7 @@ export default function DashboardHome() {
                 <Link
                   key={exposant.id}
                   href={`/annuaire/${exposant.id}`}
-                  className="surface-subtle group flex flex-col gap-3 p-5 transition-all hover:border-primary/30 hover:bg-white hover:shadow-md"
+                  className="surface-subtle group flex flex-col gap-3 p-5 transition-all hover:border-primary/30 hover:bg-background hover:shadow-md dark:hover:bg-muted/80"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
@@ -412,7 +412,7 @@ export default function DashboardHome() {
                   <Link
                     key={conversation.id}
                     href={`/chat/${conversation.id}`}
-                    className="surface-subtle group flex items-center gap-4 p-4 transition-all hover:border-primary/25 hover:bg-white hover:shadow-sm"
+                    className="surface-subtle group flex items-center gap-4 p-4 transition-all hover:border-primary/25 hover:bg-background hover:shadow-sm dark:hover:bg-muted/80"
                   >
                     <Avatar className="size-11 border-2 border-border/50">
                       <AvatarFallback className="bg-primary/10 font-semibold text-primary">
@@ -478,15 +478,6 @@ export default function DashboardHome() {
                 <span className="font-medium text-foreground">Actif</span>
               </div>
             </div>
-
-            <div className="rounded-xl border border-primary/10 bg-primary/[0.04] px-4 py-3">
-              <p className="text-xs font-bold text-primary">
-                Compte supervise par l&apos;admin
-              </p>
-              <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                Creation des acces et diffusion des identifiants centralisees.
-              </p>
-            </div>
           </CardContent>
         </Card>
 
@@ -513,10 +504,10 @@ export default function DashboardHome() {
                   <Link
                     key={event.id}
                     href="/agenda"
-                    className="surface-subtle group block p-4 transition-all hover:border-primary/25 hover:bg-white hover:shadow-sm"
+                    className="surface-subtle group block p-4 transition-all hover:border-primary/25 hover:bg-background hover:shadow-sm dark:hover:bg-muted/80"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="flex shrink-0 flex-col items-center rounded-xl border border-border/60 bg-white px-3 py-2 text-center">
+                      <div className="flex shrink-0 flex-col items-center rounded-xl border border-border/60 bg-background px-3 py-2 text-center">
                         <span className="text-xs font-bold uppercase text-primary">
                           {new Date(event.starts_at).toLocaleDateString("fr-FR", { month: "short" })}
                         </span>
@@ -574,7 +565,7 @@ export default function DashboardHome() {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-border/60 bg-white/80 p-4">
+                    <div className="rounded-xl border border-border/60 bg-background/50 p-4">
                       <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
                         Produits
                       </p>
@@ -582,7 +573,7 @@ export default function DashboardHome() {
                         {data.exposantSnapshot.produitsCount}
                       </p>
                     </div>
-                    <div className="rounded-xl border border-border/60 bg-white/80 p-4">
+                    <div className="rounded-xl border border-border/60 bg-background/50 p-4">
                       <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
                         Portee
                       </p>
@@ -622,7 +613,7 @@ export default function DashboardHome() {
                     href="/annuaire"
                     className={cn(
                       buttonVariants({ variant: "outline" }),
-                      "w-full rounded-xl bg-white/85",
+                      "w-full rounded-xl bg-background/50 hover:bg-background",
                     )}
                   >
                     <Users className="size-4" />
@@ -665,21 +656,21 @@ function MetricCard({
   tone: "blue" | "emerald" | "amber" | "violet";
 }) {
   const styles = {
-    blue: "bg-blue-100 text-blue-700",
-    emerald: "bg-emerald-100 text-emerald-700",
-    amber: "bg-amber-100 text-amber-700",
-    violet: "bg-violet-100 text-violet-700",
+    blue: "text-blue-700 dark:text-blue-400",
+    emerald: "text-emerald-700 dark:text-emerald-400",
+    amber: "text-amber-700 dark:text-amber-400",
+    violet: "text-violet-700 dark:text-violet-400",
   };
 
   const bgStyles = {
-    blue: "bg-blue-50",
-    emerald: "bg-emerald-50",
-    amber: "bg-amber-50",
-    violet: "bg-violet-50",
+    blue: "bg-blue-100 dark:bg-blue-500/20",
+    emerald: "bg-emerald-100 dark:bg-emerald-500/20",
+    amber: "bg-amber-100 dark:bg-amber-500/20",
+    violet: "bg-violet-100 dark:bg-violet-500/20",
   };
 
   return (
-    <div className="group rounded-xl border border-border/60 bg-white/90 p-5 shadow-sm transition-all hover:border-primary/20 hover:shadow-md">
+    <div className="group rounded-xl border border-border/60 bg-background/50 p-5 shadow-sm transition-all hover:border-primary/20 hover:bg-background hover:shadow-md dark:bg-muted/40 dark:hover:bg-muted/60">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">

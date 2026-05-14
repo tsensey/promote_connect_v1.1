@@ -73,8 +73,8 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
   const { profile } = useAuth();
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState("general");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -91,36 +91,48 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
     el.style.height = `${el.scrollHeight}px`;
   };
 
-  const handleFileSelect = useCallback((file: File | null) => {
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image trop volumineuse (max 5 Mo)");
-      return;
-    }
-    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!allowed.includes(file.type)) {
-      toast.error("Format non supporté (JPEG, PNG, WebP, GIF)");
-      return;
-    }
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = () => setImagePreview(reader.result as string);
-    reader.readAsDataURL(file);
+  const handleFilesSelect = useCallback((files: FileList | File[] | null) => {
+    if (!files || files.length === 0) return;
+    
+    const newFiles: File[] = [];
+    const newPreviews: string[] = [];
+    
+    Array.from(files).forEach((file) => {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`L'image ${file.name} est trop volumineuse (max 5 Mo)`);
+        return;
+      }
+      const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+      if (!allowed.includes(file.type)) {
+        toast.error(`Format non supporté pour ${file.name}`);
+        return;
+      }
+      newFiles.push(file);
+      newPreviews.push(URL.createObjectURL(file));
+    });
+
+    setImageFiles((prev) => [...prev, ...newFiles].slice(0, 4));
+    setImagePreviews((prev) => [...prev, ...newPreviews].slice(0, 4));
   }, []);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       setDragOver(false);
-      handleFileSelect(e.dataTransfer.files?.[0]);
+      handleFilesSelect(e.dataTransfer.files);
     },
-    [handleFileSelect],
+    [handleFilesSelect],
   );
 
-  const handleRemoveImage = useCallback(() => {
-    setImageFile(null);
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  const handleRemoveImage = useCallback((index: number) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => {
+      const newPreviews = prev.filter((_, i) => i !== index);
+      if (newPreviews.length === 0 && fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return newPreviews;
+    });
   }, []);
 
   const handleSubmit = useCallback(
@@ -130,10 +142,10 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
 
       setSubmitting(true);
       try {
-        let imageUrl: string | null = null;
-        if (imageFile) {
+        let imageUrls: string[] | undefined = undefined;
+        if (imageFiles.length > 0) {
           setUploading(true);
-          imageUrl = await onUpload(imageFile);
+          imageUrls = await onUpload(imageFiles);
           setUploading(false);
         }
 
@@ -143,16 +155,18 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
           postType !== "general"
             ? POST_TYPES.find((t) => t.value === postType)?.label
             : undefined,
-          imageUrl ?? undefined,
+          imageUrls,
         );
 
         if (result && !result.error) {
           setContent("");
-          setImageFile(null);
-          setImagePreview(null);
+          setImageFiles([]);
+          setImagePreviews([]);
           setIsExpanded(false);
           setPostType("general");
           toast.success("Publication envoyée !");
+        } else if (result && result.error) {
+          toast.error(result.error.message || "Erreur lors de la publication");
         }
       } catch {
         toast.error("Erreur lors de la publication");
@@ -161,13 +175,13 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
         setUploading(false);
       }
     },
-    [content, postType, imageFile, submitting, isOverLimit, onSubmit, onUpload],
+    [content, postType, imageFiles, submitting, isOverLimit, onSubmit, onUpload],
   );
 
   const handleCancel = () => {
     setContent("");
-    setImageFile(null);
-    setImagePreview(null);
+    setImageFiles([]);
+    setImagePreviews([]);
     setIsExpanded(false);
     setPostType("general");
   };
@@ -302,29 +316,30 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
                   </div>
 
                   {/* Image preview */}
-                  {imagePreview && (
-                    <div className="relative mt-3 overflow-hidden rounded-2xl border border-border bg-muted/20">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={imagePreview}
-                        alt="Aperçu"
-                        className="max-h-72 w-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleRemoveImage}
-                        className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
-                      >
-                        <X className="size-3.5" />
-                      </button>
-                      <div className="absolute bottom-2 left-2 rounded-full bg-black/50 px-2 py-0.5 text-[10px] text-white backdrop-blur-sm">
-                        {imageFile?.name}
-                      </div>
+                  {imagePreviews.length > 0 && (
+                    <div className={cn("mt-3 grid gap-2", imagePreviews.length > 1 ? "grid-cols-2" : "grid-cols-1")}>
+                      {imagePreviews.map((preview, idx) => (
+                        <div key={preview} className="relative overflow-hidden rounded-2xl border border-border bg-muted/20">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={preview}
+                            alt={`Aperçu ${idx + 1}`}
+                            className="max-h-72 w-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(idx)}
+                            className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
+                          >
+                            <X className="size-3.5" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
 
-                  {/* Drag & drop zone (only when no image) */}
-                  {!imagePreview && (
+                  {/* Drag & drop zone */}
+                  {imagePreviews.length < 4 && (
                     <div
                       onDragOver={(e) => {
                         e.preventDefault();
@@ -348,17 +363,16 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
                       />
                       <span>
                         {dragOver
-                          ? "Déposez l'image ici"
-                          : "Ajouter une image — glisser-déposer ou cliquer"}
+                          ? "Déposez vos images ici"
+                          : "Ajouter des images (max 4) — glisser-déposer ou cliquer"}
                       </span>
                       <input
                         ref={fileInputRef}
                         type="file"
+                        multiple
                         accept="image/jpeg,image/png,image/webp,image/gif"
                         className="hidden"
-                        onChange={(e) =>
-                          handleFileSelect(e.target.files?.[0] || null)
-                        }
+                        onChange={(e) => handleFilesSelect(e.target.files)}
                       />
                     </div>
                   )}

@@ -8,7 +8,9 @@ type PostCommentRow = Database['public']['Tables']['post_comments']['Row'];
 type PostCommentInsert = Database['public']['Tables']['post_comments']['Insert'];
 type PostLikeInsert = Database['public']['Tables']['post_likes']['Insert'];
 type PostShareInsert = Database['public']['Tables']['post_shares']['Insert'];
-type ProfileRow = Database['public']['Tables']['profiles']['Row'];
+type ProfileRow = Database['public']['Tables']['profiles']['Row'] & {
+  exposants?: { id: string }[];
+};
 
 type PostWithAuthor = PostRow & {
   author: Pick<ProfileRow, 'id' | 'full_name' | 'company' | 'avatar_url' | 'role'>;
@@ -55,7 +57,7 @@ export function useFeed(limit = 20) {
           .from('posts')
           .select(`
             *,
-            author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role)
+            author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
           `)
           .order('created_at', { ascending: false })
           .limit(limit);
@@ -127,17 +129,17 @@ export function useFeed(limit = 20) {
     if (lastPost) fetchPosts(lastPost.created_at ?? undefined);
   }, [hasMore, loading, posts, fetchPosts]);
 
-  const uploadImage = useCallback(async (file: File): Promise<string | null> => {
+  const uploadImage = useCallback(async (files: File[]): Promise<string[]> => {
     const formData = new FormData();
-    formData.append('file', file);
+    files.forEach(file => formData.append('files', file));
     const res = await fetch('/api/feed/upload', { method: 'POST', body: formData });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Erreur lors de l'upload");
-    return data.url;
+    return data.urls || (data.url ? [data.url] : []);
   }, []);
 
   const createPost = useCallback(
-    async (content: string, type = 'general', category?: string, imageUrl?: string | null) => {
+    async (content: string, type = 'general', category?: string, imageUrls?: string[]) => {
       const { data: session } = await supabaseClient.auth.getSession();
       const myId = session?.session?.user?.id;
       if (!myId) return { error: new Error('Not authenticated') };
@@ -147,7 +149,7 @@ export function useFeed(limit = 20) {
         content: content.trim(),
         type,
         category: category || null,
-        image_url: imageUrl || null,
+        image_url: imageUrls?.length ? imageUrls.join(',') : null,
       };
 
       const { error } = await supabaseClient.from('posts').insert(insertData);
@@ -244,7 +246,7 @@ export function useFeed(limit = 20) {
       .from('post_comments')
       .select(`
         *,
-        author:profiles!post_comments_author_id_fkey(id, full_name, company, avatar_url, role)
+        author:profiles!post_comments_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
       `)
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
@@ -287,7 +289,7 @@ export function useFeed(limit = 20) {
         .insert(insertData)
         .select(`
           *,
-          author:profiles!post_comments_author_id_fkey(id, full_name, company, avatar_url, role)
+          author:profiles!post_comments_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
         `)
         .single();
 
@@ -306,6 +308,26 @@ export function useFeed(limit = 20) {
     [posts]
   );
 
+  const updatePost = useCallback(
+    async (postId: string, content: string, type: string, category?: string, imageUrl?: string | null) => {
+      const { data: session } = await supabaseClient.auth.getSession();
+      const myId = session?.session?.user?.id;
+      if (!myId) return { error: new Error('Not authenticated') };
+
+      const updateData: Partial<PostInsert> = {
+        content: content.trim(),
+        type,
+        category: category || null,
+        ...(imageUrl !== undefined ? { image_url: imageUrl } : {}),
+      };
+
+      const { error } = await supabaseClient.from('posts').update(updateData).eq('id', postId).eq('author_id', myId);
+      if (!error) await fetchPosts();
+      return { error };
+    },
+    [fetchPosts]
+  );
+
   return {
     posts,
     loading,
@@ -313,6 +335,7 @@ export function useFeed(limit = 20) {
     hasMore,
     loadMore,
     createPost,
+    updatePost,
     deletePost,
     toggleLike,
     toggleShare,

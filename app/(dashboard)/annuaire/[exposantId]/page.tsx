@@ -11,15 +11,20 @@ import {
   MapPin,
   Building2,
   MessageSquare,
-  Star,
   Package,
   ExternalLink,
   Share2,
+  Rss,
+  ThumbsUp,
+  MessageCircle,
+  Mail,
+  Phone,
+  Video,
+  Download
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/types/database.types';
 
@@ -52,6 +57,7 @@ const IconInstagram = ({ className }: { className?: string }) => (
 
 type Exposant = Database['public']['Tables']['exposants']['Row'];
 type Produit = Database['public']['Tables']['produits']['Row'];
+type Post = Database['public']['Tables']['posts']['Row'];
 
 export default function ExposantDetailPage() {
   const params = useParams();
@@ -59,6 +65,7 @@ export default function ExposantDetailPage() {
 
   const [exposant, setExposant] = useState<Exposant | null>(null);
   const [produits, setProduits] = useState<Produit[]>([]);
+  const [publications, setPublications] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [contacting, setContacting] = useState(false);
 
@@ -88,6 +95,16 @@ export default function ExposantDetailPage() {
         .order('created_at', { ascending: false });
 
       if (prods) setProduits(prods);
+
+      if (exp?.profile_id) {
+        const { data: posts } = await supabaseClient
+          .from('posts')
+          .select('*')
+          .eq('author_id', exp.profile_id)
+          .order('created_at', { ascending: false });
+        if (posts) setPublications(posts);
+      }
+
       setLoading(false);
     };
 
@@ -138,15 +155,13 @@ export default function ExposantDetailPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="mx-auto max-w-5xl space-y-6">
         <div className="surface-panel h-8 w-48 animate-pulse rounded-xl" />
         <div className="surface-panel h-72 animate-pulse border-0" />
-        <div className="grid gap-4 md:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="surface-panel h-24 animate-pulse border-0" />
-          ))}
+        <div className="grid gap-6 md:grid-cols-[1fr_320px]">
+          <div className="surface-panel h-96 animate-pulse border-0" />
+          <div className="surface-panel h-96 animate-pulse border-0" />
         </div>
-        <div className="surface-panel h-64 animate-pulse border-0" />
       </div>
     );
   }
@@ -171,13 +186,9 @@ export default function ExposantDetailPage() {
     );
   }
 
-  const hasSocials = exposant.facebook_url || exposant.linkedin_url || exposant.twitter_url || exposant.instagram_url;
-  const hasContact = exposant.email_contact || exposant.phone_contact;
-  const hasStats = exposant.annee_creation || exposant.nombre_employes || exposant.chiffre_affaires;
-
   return (
-    <div className="space-y-6">
-      {/* Back nav */}
+    <div className="mx-auto max-w-5xl space-y-6">
+      {/* Back nav & share */}
       <div className="flex items-center justify-between">
         <Link
           href="/annuaire"
@@ -192,359 +203,329 @@ export default function ExposantDetailPage() {
         </Button>
       </div>
 
-      {/* Hero header */}
-      <Card className="surface-panel overflow-hidden border-0 py-0">
-        {/* Cover image or gradient */}
-        <div
-          className={cn(
-            'relative w-full',
-            exposant.cover_url ? 'h-52 sm:h-64' : 'h-36'
-          )}
-        >
+      {/* HEADER CARD (LinkedIn Style) */}
+      <Card className="surface-panel overflow-hidden border-0 p-0">
+        <div className="relative h-48 w-full bg-muted sm:h-64">
           {exposant.cover_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={exposant.cover_url}
-              alt={`Image de couverture de ${exposant.nom}`}
-              className="h-full w-full object-cover"
-            />
+            <img src={exposant.cover_url} alt="Cover" className="h-full w-full object-cover" />
           ) : (
-            <div className="brand-gradient h-full w-full" />
-          )}
-          {exposant.is_featured && (
-            <div className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-amber-400/90 px-3 py-1 text-xs font-bold text-amber-900 backdrop-blur-sm">
-              <Star className="size-3.5" />
-              Exposant vedette
-            </div>
+            <div className="h-full w-full bg-gradient-to-r from-slate-200 to-slate-100 dark:from-slate-800 dark:to-slate-900" />
           )}
         </div>
-
-        <CardContent className="p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-6">
-            {/* Logo */}
-            <div className="relative -mt-14 shrink-0 sm:-mt-16">
-              <div className="flex size-24 items-center justify-center rounded-2xl border-4 border-background bg-primary/10 text-3xl font-bold text-primary shadow-lg">
+        <div className="relative px-6 pb-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
+            <div className="relative -mt-16 sm:-mt-20">
+              <div className="flex size-32 items-center justify-center overflow-hidden rounded-xl border-4 border-background bg-white shadow-sm dark:bg-slate-900 sm:size-40">
                 {exposant.logo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={exposant.logo_url} alt={exposant.nom} className="size-full rounded-xl object-contain" />
+                  <img src={exposant.logo_url} alt={exposant.nom} className="size-full object-contain" />
                 ) : (
-                  exposant.nom.charAt(0).toUpperCase()
+                  <Building2 className="size-16 text-muted-foreground/30" />
                 )}
               </div>
             </div>
+            <div className="mt-4 flex flex-wrap gap-3 sm:mt-6">
+              {exposant.profile_id && (
+                <Button className="rounded-full px-6 shadow-sm" onClick={() => handleContact()} disabled={contacting}>
+                  <MessageSquare className="mr-2 size-4" />
+                  Contacter
+                </Button>
+              )}
+              {exposant.website && (
+                <a
+                  href={exposant.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(buttonVariants({ variant: 'outline' }), 'rounded-full shadow-sm')}
+                >
+                  <Globe className="mr-2 size-4" />
+                  Visiter le site
+                  <ExternalLink className="ml-2 size-3" />
+                </a>
+              )}
+            </div>
+          </div>
 
-            {/* Name and description */}
-            <div className="min-w-0 flex-1">
-              <h1 className="text-3xl font-heading font-semibold text-foreground">
-                {exposant.nom}
-              </h1>
-              <p className="mt-1 text-base leading-7 text-muted-foreground">
-                {exposant.description || 'Bienvenue sur le profil de cet exposant PROMOTE-CONNECT.'}
-              </p>
+          <div className="mt-4 sm:mt-2">
+            <h1 className="text-2xl font-bold text-foreground sm:text-3xl">{exposant.nom}</h1>
+            {exposant.description && (
+              <p className="mt-1.5 max-w-3xl text-base text-foreground/90">{exposant.description}</p>
+            )}
+            <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+              {exposant.secteur && <span>{exposant.secteur}</span>}
+              {exposant.secteur && exposant.pays && <span>•</span>}
+              {exposant.pays && <span>{exposant.pays}</span>}
+              {(exposant.secteur || exposant.pays) && exposant.nombre_employes && <span>•</span>}
+              {exposant.nombre_employes && <span>{exposant.nombre_employes} employés</span>}
             </div>
 
-            {/* CTA */}
-            {exposant.profile_id && (
-              <Button
-                className="shrink-0 rounded-xl"
-                onClick={() => handleContact()}
-                disabled={contacting}
-              >
-                <MessageSquare className="mr-2 size-4" />
-                Contacter
-              </Button>
+            {(exposant.pavillon || exposant.stand) && (
+              <div className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 text-sm font-medium text-primary">
+                <MapPin className="size-4" />
+                Pavillon {exposant.pavillon} {exposant.stand && `— Stand ${exposant.stand}`}
+              </div>
             )}
           </div>
-
-          {/* Badges */}
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            {exposant.secteur && (
-              <Badge variant="outline" className="gap-1.5 rounded-full border-border/70">
-                <Building2 className="size-3" />
-                {exposant.secteur}
-              </Badge>
-            )}
-            {exposant.pays && (
-              <Badge variant="outline" className="gap-1.5 rounded-full border-border/70">
-                <MapPin className="size-3" />
-                {exposant.pays}
-              </Badge>
-            )}
-            {exposant.pavillon && (
-              <Badge variant="secondary" className="rounded-full">
-                Pavillon {exposant.pavillon}
-                {exposant.stand && ` — Stand ${exposant.stand}`}
-              </Badge>
-            )}
-            {exposant.website && (
-              <a
-                href={exposant.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-              >
-                <Globe className="size-3" />
-                Site web
-                <ExternalLink className="size-3" />
-              </a>
-            )}
-          </div>
-        </CardContent>
+        </div>
       </Card>
 
-      {/* Key figures */}
-      {hasStats && (
-        <div className="grid gap-4 sm:grid-cols-3">
-          {exposant.annee_creation && (
-            <div className="surface-panel flex items-center gap-4 p-5">
-              <div className="flex size-11 items-center justify-center rounded-xl bg-blue-500/10">
-                <svg className="size-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Fondée en</p>
-                <p className="text-xl font-bold text-foreground">{exposant.annee_creation}</p>
-              </div>
-            </div>
-          )}
-          {exposant.nombre_employes && (
-            <div className="surface-panel flex items-center gap-4 p-5">
-              <div className="flex size-11 items-center justify-center rounded-xl bg-violet-500/10">
-                <svg className="size-5 text-violet-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                  <circle cx="9" cy="7" r="4"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Effectif</p>
-                <p className="text-xl font-bold text-foreground">{exposant.nombre_employes}</p>
-              </div>
-            </div>
-          )}
-          {exposant.chiffre_affaires && (
-            <div className="surface-panel flex items-center gap-4 p-5">
-              <div className="flex size-11 items-center justify-center rounded-xl bg-emerald-500/10">
-                <svg className="size-5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-                  <polyline points="17 6 23 6 23 12"/>
-                </svg>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Chiffre d&apos;affaires</p>
-                <p className="text-xl font-bold text-foreground">{exposant.chiffre_affaires}</p>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Two Columns Layout */}
+      <div className="grid gap-6 md:grid-cols-[1fr_320px] lg:grid-cols-[1fr_380px]">
+        {/* Left Column (Main) */}
+        <div className="space-y-6">
+          {/* About Section */}
+          {(exposant.long_description || exposant.video_url || exposant.brochure_url) && (
+            <Card className="surface-panel border-0">
+              <CardContent className="space-y-6 p-6">
+                <h2 className="text-xl font-semibold text-foreground">À propos</h2>
+                {exposant.long_description && (
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/80">
+                    {exposant.long_description}
+                  </p>
+                )}
+                
+                {exposant.brochure_url && (
+                  <a
+                    href={exposant.brochure_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg border border-border/70 bg-muted/30 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
+                  >
+                    <Download className="size-4 text-muted-foreground" />
+                    Télécharger la brochure commerciale
+                  </a>
+                )}
 
-      {/* About */}
-      {exposant.long_description && (
-        <Card className="surface-panel border-0">
-          <CardContent className="p-6 space-y-3">
-            <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-primary/70">
-              <Package className="size-4" />
-              À propos
-            </div>
-            <p className="text-base leading-8 text-muted-foreground whitespace-pre-wrap">
-              {exposant.long_description}
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Video */}
-      {exposant.video_url && (
-        <Card className="surface-panel border-0">
-          <CardContent className="p-6 space-y-3">
-            <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-primary/70">
-              <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polygon points="5 3 19 12 5 21 5 3"/>
-              </svg>
-              Vidéo de présentation
-            </div>
-            <div className="aspect-video w-full overflow-hidden rounded-xl">
-              <iframe
-                src={exposant.video_url}
-                className="h-full w-full"
-                allowFullScreen
-                title={`Présentation de ${exposant.nom}`}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Contact & Socials */}
-      {(hasContact || hasSocials || exposant.brochure_url) && (
-        <Card className="surface-panel border-0">
-          <CardContent className="p-6 space-y-5">
-            <div className="text-sm font-semibold uppercase tracking-widest text-primary/70">
-              Contacts &amp; Liens
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {exposant.email_contact && (
-                <a
-                  href={`mailto:${exposant.email_contact}`}
-                  className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/30 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
-                >
-                  <svg className="size-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                    <polyline points="22,6 12,13 2,6"/>
-                  </svg>
-                  {exposant.email_contact}
-                </a>
-              )}
-              {exposant.phone_contact && (
-                <a
-                  href={`tel:${exposant.phone_contact}`}
-                  className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/30 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
-                >
-                  <svg className="size-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13 19.79 19.79 0 0 1 1.61 4.4 2 2 0 0 1 3.59 2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.09 6.09l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-                  </svg>
-                  {exposant.phone_contact}
-                </a>
-              )}
-              {exposant.linkedin_url && (
-                <a href={exposant.linkedin_url} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-[#0077B5]/10 px-4 py-2 text-sm font-medium text-[#0077B5] hover:bg-[#0077B5]/20 transition-colors">
-                  <IconLinkedin /> LinkedIn
-                </a>
-              )}
-              {exposant.facebook_url && (
-                <a href={exposant.facebook_url} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-[#1877F2]/10 px-4 py-2 text-sm font-medium text-[#1877F2] hover:bg-[#1877F2]/20 transition-colors">
-                  <IconFacebook /> Facebook
-                </a>
-              )}
-              {exposant.twitter_url && (
-                <a href={exposant.twitter_url} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-foreground/10 px-4 py-2 text-sm font-medium text-foreground hover:bg-foreground/20 transition-colors">
-                  <IconTwitter /> X / Twitter
-                </a>
-              )}
-              {exposant.instagram_url && (
-                <a href={exposant.instagram_url} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-[#E1306C]/10 px-4 py-2 text-sm font-medium text-[#E1306C] hover:bg-[#E1306C]/20 transition-colors">
-                  <IconInstagram /> Instagram
-                </a>
-              )}
-              {exposant.brochure_url && (
-                <a href={exposant.brochure_url} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/30 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors">
-                  <svg className="size-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="16" y1="13" x2="8" y2="13"/>
-                    <line x1="16" y1="17" x2="8" y2="17"/>
-                  </svg>
-                  Télécharger la brochure
-                </a>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Products */}
-      <Card className="surface-panel border-0">
-        <CardContent className="space-y-5 p-6">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
-              <Package className="size-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">Catalogue</p>
-              <h2 className="text-2xl font-heading text-foreground">
-                Produits &amp; Services ({produits.length})
-              </h2>
-            </div>
-          </div>
-
-          {produits.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-12 text-center">
-              <Package className="size-12 text-muted-foreground/30" />
-              <p className="text-base font-medium text-foreground">Aucun produit ou service publié</p>
-              <p className="text-sm text-muted-foreground">
-                Cet exposant n&apos;a pas encore ajouté de produits à son profil.
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {produits.map((prod) => (
-                <div
-                  key={prod.id}
-                  className="group rounded-xl border border-border/60 bg-muted/20 p-5 transition-all hover:border-primary/30 hover:shadow-md hover:bg-muted/40"
-                >
-                  {prod.image_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={prod.image_url} alt={prod.nom} className="mb-3 h-40 w-full rounded-lg object-cover" />
-                  )}
-                  <h3 className="font-heading text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
-                    {prod.nom}
-                  </h3>
-                  {prod.description && (
-                    <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">
-                      {prod.description}
-                    </p>
-                  )}
-                  <div className="mt-4 flex items-center justify-between">
-                    {prod.categorie && (
-                      <Badge variant="secondary" className="rounded-full text-xs">
-                        {prod.categorie}
-                      </Badge>
-                    )}
-                    {prod.prix_indicatif && (
-                      <span className="font-bold text-foreground">{prod.prix_indicatif}</span>
-                    )}
+                {exposant.video_url && (
+                  <div className="mt-4 overflow-hidden rounded-lg border border-border/50">
+                    <div className="flex items-center gap-2 border-b border-border/50 bg-muted/30 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <Video className="size-3.5" />
+                      Vidéo de présentation
+                    </div>
+                    <div className="aspect-video w-full">
+                      <iframe
+                        src={exposant.video_url}
+                        className="h-full w-full"
+                        allowFullScreen
+                        title={`Vidéo ${exposant.nom}`}
+                      />
+                    </div>
                   </div>
-                  {exposant.profile_id && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-4 w-full rounded-xl"
-                      onClick={() => handleContact(prod.nom)}
-                      disabled={contacting}
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Publications Section */}
+          <Card className="surface-panel border-0">
+            <CardContent className="space-y-4 p-6">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-foreground">Publications</h2>
+                <span className="flex size-6 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
+                  {publications.length}
+                </span>
+              </div>
+
+              {publications.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border/60 py-12 text-center text-muted-foreground">
+                  <Rss className="mx-auto mb-3 size-8 opacity-20" />
+                  <p className="text-sm">Aucune publication pour le moment.</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {publications.map((post) => (
+                    <div
+                      key={post.id}
+                      className="group relative overflow-hidden rounded-xl border border-border/50 bg-background/50 p-5 transition-colors hover:bg-muted/20"
                     >
-                      <MessageSquare className="mr-2 size-3.5" />
-                      Contacter à propos de ce produit
-                    </Button>
+                      <div className="mb-4 flex items-center gap-3">
+                        <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10">
+                          {exposant.logo_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={exposant.logo_url} className="size-full object-cover" alt="" />
+                          ) : (
+                            <Building2 className="size-6 text-primary/50" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{exposant.nom}</p>
+                          {post.created_at && (
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(post.created_at).toLocaleDateString('fr-FR', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                              })}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <p className="mb-4 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+                        {post.content}
+                      </p>
+                      {post.image_url && (
+                        <div className="mt-3 overflow-hidden rounded-lg border border-border/40">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={post.image_url} alt="" className="max-h-96 w-full object-cover" />
+                        </div>
+                      )}
+                      <div className="mt-5 flex items-center gap-6 border-t border-border/50 pt-4 text-sm font-medium text-muted-foreground">
+                        <button className="flex items-center gap-2 transition-colors hover:text-primary">
+                          <ThumbsUp className="size-4" /> {post.likes_count}
+                        </button>
+                        <button className="flex items-center gap-2 transition-colors hover:text-primary">
+                          <MessageCircle className="size-4" /> {post.comments_count}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column (Sidebar) */}
+        <div className="space-y-6">
+          {/* Details Sidebar */}
+          <Card className="surface-panel border-0">
+            <CardContent className="space-y-5 p-6">
+              <h2 className="text-lg font-semibold text-foreground">Détails de l&apos;entreprise</h2>
+              <dl className="space-y-4 text-sm">
+                {exposant.website && (
+                  <div>
+                    <dt className="font-medium text-muted-foreground">Site web</dt>
+                    <dd className="mt-1 font-medium text-primary hover:underline">
+                      <a href={exposant.website} target="_blank" rel="noopener noreferrer">
+                        {exposant.website.replace(/^https?:\/\//, '')}
+                      </a>
+                    </dd>
+                  </div>
+                )}
+                {exposant.secteur && (
+                  <div>
+                    <dt className="font-medium text-muted-foreground">Secteur d&apos;activité</dt>
+                    <dd className="mt-1 text-foreground">{exposant.secteur}</dd>
+                  </div>
+                )}
+                {exposant.nombre_employes && (
+                  <div>
+                    <dt className="font-medium text-muted-foreground">Taille de l&apos;entreprise</dt>
+                    <dd className="mt-1 text-foreground">{exposant.nombre_employes} employés</dd>
+                  </div>
+                )}
+                {exposant.annee_creation && (
+                  <div>
+                    <dt className="font-medium text-muted-foreground">Fondée en</dt>
+                    <dd className="mt-1 text-foreground">{exposant.annee_creation}</dd>
+                  </div>
+                )}
+                {exposant.chiffre_affaires && (
+                  <div>
+                    <dt className="font-medium text-muted-foreground">Chiffre d&apos;affaires</dt>
+                    <dd className="mt-1 text-foreground">{exposant.chiffre_affaires}</dd>
+                  </div>
+                )}
+                
+                {/* Contacts Section */}
+                {(exposant.email_contact || exposant.phone_contact) && (
+                  <div className="border-t border-border/50 pt-4">
+                    <dt className="mb-2 font-medium text-muted-foreground">Contacts</dt>
+                    <dd className="space-y-2 text-foreground">
+                      {exposant.email_contact && (
+                        <a href={`mailto:${exposant.email_contact}`} className="flex items-center gap-2 transition-colors hover:text-primary">
+                          <Mail className="size-4 text-muted-foreground" /> {exposant.email_contact}
+                        </a>
+                      )}
+                      {exposant.phone_contact && (
+                        <a href={`tel:${exposant.phone_contact}`} className="flex items-center gap-2 transition-colors hover:text-primary">
+                          <Phone className="size-4 text-muted-foreground" /> {exposant.phone_contact}
+                        </a>
+                      )}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+
+              {/* Socials Row */}
+              {(exposant.linkedin_url || exposant.facebook_url || exposant.twitter_url || exposant.instagram_url) && (
+                <div className="flex gap-2 border-t border-border/50 pt-5">
+                  {exposant.linkedin_url && (
+                    <a href={exposant.linkedin_url} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-full bg-[#0077B5]/10 text-[#0077B5] transition-colors hover:bg-[#0077B5]/20">
+                      <IconLinkedin className="size-4" />
+                    </a>
+                  )}
+                  {exposant.facebook_url && (
+                    <a href={exposant.facebook_url} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-full bg-[#1877F2]/10 text-[#1877F2] transition-colors hover:bg-[#1877F2]/20">
+                      <IconFacebook className="size-4" />
+                    </a>
+                  )}
+                  {exposant.twitter_url && (
+                    <a href={exposant.twitter_url} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-full bg-foreground/5 text-foreground transition-colors hover:bg-foreground/10">
+                      <IconTwitter className="size-4" />
+                    </a>
+                  )}
+                  {exposant.instagram_url && (
+                    <a href={exposant.instagram_url} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-full bg-[#E1306C]/10 text-[#E1306C] transition-colors hover:bg-[#E1306C]/20">
+                      <IconInstagram className="size-4" />
+                    </a>
                   )}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              )}
+            </CardContent>
+          </Card>
 
-      {/* Bottom CTA */}
-      {exposant.profile_id && (
-        <Card className="surface-panel border-0">
-          <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-lg font-heading font-semibold text-foreground">
-                Intéressé par cet exposant ?
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Contactez-le directement via le chat PROMOTE-CONNECT pour discuter de vos besoins.
-              </p>
-            </div>
-            <Button
-              className="shrink-0 rounded-xl"
-              onClick={() => handleContact()}
-              disabled={contacting}
-            >
-              <MessageSquare className="mr-2 size-4" />
-              Démarrer une conversation
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+          {/* Products Sidebar */}
+          <Card className="surface-panel border-0">
+            <CardContent className="space-y-4 p-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-foreground">Produits & Services</h2>
+                <span className="flex size-6 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
+                  {produits.length}
+                </span>
+              </div>
+              
+              {produits.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Aucun produit publié.</p>
+              ) : (
+                <div className="space-y-4">
+                  {produits.map((prod) => (
+                    <div key={prod.id} className="group flex items-start gap-3 rounded-lg border border-transparent p-2 transition-colors hover:border-border/50 hover:bg-muted/30">
+                      {prod.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={prod.image_url} alt="" className="size-16 shrink-0 rounded-md bg-muted object-cover" />
+                      ) : (
+                        <div className="flex size-16 shrink-0 items-center justify-center rounded-md bg-muted/50">
+                          <Package className="size-6 text-muted-foreground/40" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <h3 className="line-clamp-1 text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                          {prod.nom}
+                        </h3>
+                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                          {prod.description}
+                        </p>
+                        {exposant.profile_id && (
+                          <button
+                            onClick={() => handleContact(prod.nom)}
+                            className="mt-1.5 flex items-center gap-1 text-xs font-medium text-primary hover:underline text-left"
+                            disabled={contacting}
+                          >
+                            <MessageSquare className="size-3" />
+                            Se renseigner
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

@@ -15,6 +15,8 @@ import {
   Share2,
   Repeat2,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { supabaseClient } from '@/lib/supabase/client';
 
 export default function FeedPage() {
   const {
@@ -23,6 +25,7 @@ export default function FeedPage() {
     hasMore,
     loadMore,
     createPost,
+    updatePost,
     deletePost,
     toggleLike,
     toggleShare,
@@ -32,6 +35,22 @@ export default function FeedPage() {
     uploadImage,
     myUserId,
   } = useFeed();
+
+  const [randomProducts, setRandomProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadRandomProducts() {
+      const { data } = await supabaseClient
+        .from('produits')
+        .select('*, exposants(nom, profile_id)')
+        .limit(20);
+      if (data && data.length > 0) {
+        const shuffled = data.sort(() => 0.5 - Math.random()).slice(0, 4);
+        setRandomProducts(shuffled);
+      }
+    }
+    loadRandomProducts();
+  }, []);
 
   const totalLikes = posts.reduce((acc, p) => acc + (p.likes_count ?? 0), 0);
   const totalComments = posts.reduce((acc, p) => acc + (p.comments_count ?? 0), 0);
@@ -140,6 +159,8 @@ export default function FeedPage() {
                   onLike={() => toggleLike(post.id)}
                   onShare={() => toggleShare(post.id)}
                   onRepost={() => toggleRepost(post.id)}
+                  onEdit={updatePost}
+                  createPost={createPost}
                   onDelete={() => deletePost(post.id)}
                   onGetComments={() => getComments(post.id)}
                   onAddComment={(content, parentCommentId) => addComment(post.id, content, parentCommentId)}
@@ -199,6 +220,22 @@ export default function FeedPage() {
                 </p>
               </CardContent>
             </Card>
+
+            {randomProducts.slice(0, 2).map((product) => (
+              <Card key={product.id} className="border-border/60 p-0 overflow-hidden group">
+                {product.image_url && (
+                  <div className="h-32 w-full overflow-hidden">
+                    <img src={product.image_url} alt={product.nom} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                  </div>
+                )}
+                <CardContent className="p-4">
+                  <div className="mb-2 inline-flex rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary">Sponsorisé</div>
+                  <h4 className="font-semibold text-sm line-clamp-1">{product.nom}</h4>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{product.description || 'Découvrez ce produit.'}</p>
+                  <p className="text-xs font-medium text-foreground mt-2">{product.exposants?.nom}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </div>

@@ -124,6 +124,7 @@ export default function ManageVitrinePage() {
     twitter_url: "",
     instagram_url: "",
     cover_url: "",
+    logo_url: "",
     brochure_url: "",
     video_url: "",
     chiffre_affaires: "",
@@ -161,6 +162,7 @@ export default function ManageVitrinePage() {
           twitter_url: existingExposant.twitter_url || "",
           instagram_url: existingExposant.instagram_url || "",
           cover_url: existingExposant.cover_url || "",
+          logo_url: existingExposant.logo_url || "",
           brochure_url: existingExposant.brochure_url || "",
           video_url: existingExposant.video_url || "",
           chiffre_affaires: existingExposant.chiffre_affaires || "",
@@ -235,6 +237,7 @@ export default function ManageVitrinePage() {
         twitter_url: showcaseForm.twitter_url.trim() || null,
         instagram_url: showcaseForm.instagram_url.trim() || null,
         cover_url: showcaseForm.cover_url.trim() || null,
+        logo_url: showcaseForm.logo_url.trim() || null,
         brochure_url: showcaseForm.brochure_url.trim() || null,
         video_url: showcaseForm.video_url.trim() || null,
         chiffre_affaires: showcaseForm.chiffre_affaires.trim() || null,
@@ -668,7 +671,22 @@ export default function ManageVitrinePage() {
               </div>
 
               <SectionTitle>Médias &amp; Documents</SectionTitle>
-              <div className="grid gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field
+                  label="Logo (URL)"
+                  hint="Image carrée recommandée."
+                >
+                  <Input
+                    value={showcaseForm.logo_url}
+                    onChange={(e) =>
+                      setShowcaseForm((f) => ({
+                        ...f,
+                        logo_url: e.target.value,
+                      }))
+                    }
+                    placeholder="https://exemple.com/logo.png"
+                  />
+                </Field>
                 <Field
                   label="Image de couverture (URL)"
                   hint="Image d'en-tête de votre profil. Format recommandé : 1200×400px."
@@ -684,6 +702,8 @@ export default function ManageVitrinePage() {
                     placeholder="https://exemple.com/cover.jpg"
                   />
                 </Field>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
                 <Field
                   label="Vidéo de présentation (URL embed YouTube / Vimeo)"
                   hint="Ex : https://www.youtube.com/embed/VOTRE_ID"

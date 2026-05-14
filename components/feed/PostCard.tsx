@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Heart,
@@ -13,8 +15,11 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   CornerDownRight,
   Link2,
+  X,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -30,6 +35,8 @@ interface PostCardProps {
   onLike: () => void;
   onShare: () => void;
   onRepost: () => void;
+  onEdit: (postId: string, content: string, type: string, category?: string, imageUrl?: string | null) => Promise<{error: any}>;
+  createPost: (content: string, type?: string, category?: string, imageUrl?: string | null) => Promise<{error: any}>;
   onDelete: () => void;
   onGetComments: () => Promise<Comment[]>;
   onAddComment: (content: string, parentCommentId?: string) => Promise<{ data: Comment | null; error: unknown }>;
@@ -153,6 +160,8 @@ export function PostCard({
   onLike,
   onShare,
   onRepost,
+  onEdit,
+  createPost,
   onDelete,
   onGetComments,
   onAddComment,
@@ -165,6 +174,12 @@ export function PostCard({
   const [likeAnim, setLikeAnim] = useState(false);
   const [repostAnim, setRepostAnim] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(post.content);
+  const [isReposting, setIsReposting] = useState(false);
+  const [repostContent, setRepostContent] = useState(`[Republication de @${post.author.full_name}] :\n"${post.content}"\n\n`);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
 
@@ -186,10 +201,31 @@ export function PostCard({
   }, [onLike]);
 
   const handleRepost = useCallback(() => {
-    setRepostAnim(true);
-    onRepost();
-    setTimeout(() => setRepostAnim(false), 400);
-  }, [onRepost]);
+    setIsReposting(true);
+  }, []);
+
+  const handleEditSubmit = async () => {
+    if (!editContent.trim()) return;
+    const { error } = await onEdit(post.id, editContent, post.type, post.category ?? undefined, post.image_url);
+    if (!error) {
+      setIsEditing(false);
+      toast.success("Publication modifiée");
+    } else {
+      toast.error("Erreur lors de la modification");
+    }
+  };
+
+  const submitRepost = async () => {
+    if (!repostContent.trim()) return;
+    const { error } = await createPost(repostContent, post.type, undefined, post.image_url);
+    if (!error) {
+      setIsReposting(false);
+      onRepost();
+      toast.success("Republication effectuée");
+    } else {
+      toast.error("Erreur lors de la republication");
+    }
+  };
 
   const handleNativeShare = useCallback(async () => {
     const url = `${window.location.origin}/feed#${post.id}`;
@@ -233,6 +269,14 @@ export function PostCard({
   const typeInfo = TYPE_BADGE[post.type] || TYPE_BADGE.general;
   const authorInitials = getInitials(post.author.full_name);
   const timeAgo = formatDistanceToNow(new Date(post.created_at as string), { locale: fr, addSuffix: true });
+  const exposantId = post.author.exposants?.[0]?.id;
+
+  const AuthorWrapper = ({ children }: { children: React.ReactNode }) => {
+    if (post.author.role === 'exposant' && exposantId) {
+      return <Link href={`/annuaire/${exposantId}`} className="hover:opacity-80 transition-opacity">{children}</Link>;
+    }
+    return <>{children}</>;
+  };
 
   return (
     <Card
@@ -242,21 +286,25 @@ export function PostCard({
       <CardContent className="p-0">
         {/* Header */}
         <div className="flex items-start gap-3 p-4 pb-3">
-          <Avatar className="size-10 shrink-0 ring-2 ring-border/20">
-            {post.author.avatar_url ? (
-              <AvatarImage src={post.author.avatar_url} />
-            ) : (
-              <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
-                {authorInitials}
-              </AvatarFallback>
-            )}
-          </Avatar>
+          <AuthorWrapper>
+            <Avatar className="size-10 shrink-0 ring-2 ring-border/20">
+              {post.author.avatar_url ? (
+                <AvatarImage src={post.author.avatar_url} />
+              ) : (
+                <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+                  {authorInitials}
+                </AvatarFallback>
+              )}
+            </Avatar>
+          </AuthorWrapper>
 
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="font-semibold text-sm text-foreground">
-                {post.author.full_name || 'Utilisateur'}
-              </span>
+              <AuthorWrapper>
+                <span className="font-semibold text-sm text-foreground hover:underline">
+                  {post.author.full_name || 'Utilisateur'}
+                </span>
+              </AuthorWrapper>
               {post.author.role === 'exposant' && (
                 <span className="inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-600/20">
                   Exposant
@@ -288,6 +336,13 @@ export function PostCard({
               {showMenu && (
                 <div className="absolute right-0 top-full z-20 mt-1 w-40 rounded-xl border border-border bg-card shadow-xl">
                   <button
+                    onClick={() => { setIsEditing(true); setShowMenu(false); }}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-foreground hover:bg-muted/50 rounded-xl"
+                  >
+                    <MoreHorizontal className="size-4" />
+                    Modifier
+                  </button>
+                  <button
                     onClick={() => { onDelete(); setShowMenu(false); }}
                     className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10 rounded-xl"
                   >
@@ -302,34 +357,77 @@ export function PostCard({
 
         {/* Content */}
         <div className="px-4 pb-2">
-          <p className="whitespace-pre-wrap text-sm text-foreground/90 leading-relaxed">
-            {displayContent}
-          </p>
-          {isLong && (
-            <button
-              onClick={() => setExpanded((v) => !v)}
-              className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-            >
-              {expanded ? (
-                <><ChevronUp className="size-3" /> Voir moins</>
-              ) : (
-                <><ChevronDown className="size-3" /> Voir plus</>
+          {isEditing ? (
+            <div className="space-y-3">
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full resize-none rounded-xl border border-border bg-muted/20 px-3 py-2 text-sm text-foreground outline-none focus:border-primary/50"
+                rows={4}
+              />
+              <div className="flex gap-2 justify-end">
+                <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>Annuler</Button>
+                <Button size="sm" onClick={handleEditSubmit}>Enregistrer</Button>
+              </div>
+            </div>
+          ) : isReposting ? (
+            <div className="space-y-3 border-l-2 border-primary/40 pl-3 ml-1 mb-3">
+              <p className="text-xs font-semibold text-primary mb-1">Citation de republication</p>
+              <textarea
+                value={repostContent}
+                onChange={(e) => setRepostContent(e.target.value)}
+                className="w-full resize-none rounded-xl border border-border bg-muted/20 px-3 py-2 text-sm text-foreground outline-none focus:border-primary/50"
+                rows={5}
+                autoFocus
+              />
+              <div className="flex gap-2 justify-end">
+                <Button variant="ghost" size="sm" onClick={() => setIsReposting(false)}>Annuler</Button>
+                <Button size="sm" onClick={submitRepost}>Republier</Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="whitespace-pre-wrap text-sm text-foreground/90 leading-relaxed">
+                {displayContent}
+              </p>
+              {isLong && (
+                <button
+                  onClick={() => setExpanded((v) => !v)}
+                  className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                >
+                  {expanded ? (
+                    <><ChevronUp className="size-3" /> Voir moins</>
+                  ) : (
+                    <><ChevronDown className="size-3" /> Voir plus</>
+                  )}
+                </button>
               )}
-            </button>
+            </>
           )}
         </div>
 
         {/* Image */}
         {post.image_url && (
-          <div className="mx-4 mb-3 overflow-hidden rounded-xl border border-border/60">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={post.image_url}
-              alt=""
-              className="w-full object-cover max-h-[28rem]"
-              loading="lazy"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-            />
+          <div className={cn("mx-4 mb-3 overflow-hidden rounded-xl border border-border/60", post.image_url.includes(',') ? "grid grid-cols-2 gap-1 border-none" : "")}>
+            {post.image_url.split(',').map((url, i) => (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                key={i}
+                src={url}
+                alt=""
+                onClick={() => {
+                  setSelectedImageIdx(i);
+                  setIsImageModalOpen(true);
+                  if (comments.length === 0) {
+                     setLoadingComments(true);
+                     onGetComments().then(data => { setComments(data); setLoadingComments(false); });
+                  }
+                }}
+                className={cn("w-full object-cover cursor-pointer hover:opacity-95 transition-opacity", post.image_url?.includes(',') ? "aspect-square rounded-xl border border-border/60" : "max-h-[28rem]")}
+                loading="lazy"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            ))}
           </div>
         )}
 
@@ -460,6 +558,125 @@ export function PostCard({
           </div>
         )}
       </CardContent>
+
+      {/* Full Screen Image/Post Modal */}
+      <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
+        <DialogContent className="!max-w-[1200px] sm:!max-w-[1200px] w-[95vw] h-[90vh] p-0 !flex flex-col md:flex-row overflow-hidden border-border/40 gap-0" showCloseButton={false}>
+          {/* Left Side: Images */}
+          <div className="flex-1 bg-black/95 relative flex items-center justify-center min-h-[40vh] md:min-h-0">
+             <button onClick={() => setIsImageModalOpen(false)} className="absolute top-4 left-4 z-50 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 p-2 rounded-full backdrop-blur-sm transition-all">
+               <X className="size-5" />
+             </button>
+             {post.image_url && (
+                <img 
+                  src={post.image_url.split(',')[selectedImageIdx]} 
+                  alt="Aperçu" 
+                  className="max-w-full max-h-full object-contain"
+                />
+             )}
+             {/* Next/Prev controls */}
+             {post.image_url?.includes(',') && (
+               <>
+                 <button 
+                   onClick={(e) => { e.stopPropagation(); setSelectedImageIdx(prev => Math.max(0, prev - 1)); }}
+                   disabled={selectedImageIdx === 0}
+                   className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/80 disabled:opacity-30 transition-all"
+                 >
+                   <ChevronLeft className="size-6" />
+                 </button>
+                 <button 
+                   onClick={(e) => { e.stopPropagation(); setSelectedImageIdx(prev => Math.min(post.image_url!.split(',').length - 1, prev + 1)); }}
+                   disabled={selectedImageIdx === (post.image_url?.split(',').length ?? 1) - 1}
+                   className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/80 disabled:opacity-30 transition-all"
+                 >
+                   <ChevronRight className="size-6" />
+                 </button>
+               </>
+             )}
+          </div>
+          
+          {/* Right Side: Post Details */}
+          <div className="w-full md:w-[400px] flex flex-col bg-background h-full overflow-hidden shrink-0 border-l border-border/40">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-border/40 shrink-0">
+              <div className="flex items-center gap-3">
+                 <AuthorWrapper>
+                   <Avatar className="size-10 ring-2 ring-border/20">
+                      {post.author.avatar_url ? <AvatarImage src={post.author.avatar_url} /> : <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">{authorInitials}</AvatarFallback>}
+                   </Avatar>
+                 </AuthorWrapper>
+                 <div>
+                    <AuthorWrapper>
+                      <span className="font-semibold text-sm block hover:underline">{post.author.full_name || 'Utilisateur'}</span>
+                    </AuthorWrapper>
+                    <span className="text-xs text-muted-foreground">{post.author.company} • {timeAgo}</span>
+                 </div>
+              </div>
+            </div>
+            
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+               <p className="whitespace-pre-wrap text-sm text-foreground/90">{post.content}</p>
+               
+               {/* Stats */}
+               <div className="flex items-center gap-3 text-[11px] text-muted-foreground border-y border-border/40 py-3 mt-4">
+                  <span className="flex items-center gap-1"><Heart className="size-3.5 fill-red-500 text-red-500" /> {post.likes_count}</span>
+                  <span>{post.comments_count} commentaire{post.comments_count > 1 ? 's' : ''}</span>
+               </div>
+               
+               {/* Actions */}
+               <div className="flex items-center justify-between py-2 border-b border-border/40">
+                  <button onClick={onLike} className={cn("flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted", "text-muted-foreground")}><Heart className="size-4" /> J'aime</button>
+                  <button onClick={() => {}} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"><MessageSquare className="size-4" /> Commenter</button>
+                  <button onClick={() => { setIsImageModalOpen(false); handleRepost(); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"><Repeat2 className="size-4" /> Republier</button>
+               </div>
+               
+               {/* Comments section */}
+               <div className="space-y-4 pt-2">
+                 {loadingComments ? (
+                   <div className="text-center py-4 text-xs text-muted-foreground">Chargement...</div>
+                 ) : comments.length === 0 ? (
+                   <div className="text-center py-4 text-xs text-muted-foreground">Aucun commentaire</div>
+                 ) : (
+                   comments.map(c => (
+                     <div key={c.id} className="flex gap-2">
+                       <Avatar className="size-8">
+                         {c.author.avatar_url ? <AvatarImage src={c.author.avatar_url} /> : <AvatarFallback>{getInitials(c.author.full_name)}</AvatarFallback>}
+                       </Avatar>
+                       <div className="flex-1">
+                         <div className="bg-muted/40 rounded-2xl px-3 py-2">
+                           <p className="text-[13px] font-semibold">{c.author.full_name}</p>
+                           <p className="text-[13px] text-foreground/90">{c.content}</p>
+                         </div>
+                         <div className="flex gap-3 px-2 mt-1 text-[11px] text-muted-foreground font-medium">
+                           <span>{formatDistanceToNow(new Date(c.created_at as string), { locale: fr })}</span>
+                         </div>
+                       </div>
+                     </div>
+                   ))
+                 )}
+               </div>
+            </div>
+            
+            {/* Input */}
+            <div className="p-3 border-t border-border/40 bg-background shrink-0 flex gap-2">
+               <form className="flex-1 flex gap-2" onSubmit={async (e) => {
+                 e.preventDefault();
+                 if(!newComment.trim()) return;
+                 const res = await onAddComment(newComment);
+                 if(!res.error) { 
+                   setNewComment(''); 
+                   setLoadingComments(true);
+                   onGetComments().then(data => { setComments(data); setLoadingComments(false); });
+                 }
+               }}>
+                 <input type="text" value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Ajouter un commentaire..." className="flex-1 bg-muted/50 rounded-full px-4 text-sm outline-none focus:ring-1 focus:ring-primary/40 border border-transparent focus:border-primary/30" />
+                 <button type="submit" disabled={!newComment.trim()} className="shrink-0 p-2 text-primary hover:bg-primary/10 rounded-full disabled:opacity-50"><Send className="size-4" /></button>
+               </form>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
