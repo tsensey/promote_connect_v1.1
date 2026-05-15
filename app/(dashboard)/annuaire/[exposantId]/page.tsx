@@ -317,6 +317,23 @@ export default function ExposantDetailPage() {
             </Card>
           )}
 
+          {/* Gallery Section */}
+          {exposant.gallery_urls && exposant.gallery_urls.length > 0 && (
+            <Card className="surface-panel border-0">
+              <CardContent className="space-y-4 p-6">
+                <h2 className="text-xl font-semibold text-foreground">Galerie multimédia</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {exposant.gallery_urls.map((url: string, i: number) => (
+                    <div key={i} className="aspect-square rounded-xl overflow-hidden bg-muted border border-border/50">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt={`Galerie ${i}`} className="size-full object-cover hover:scale-105 transition-transform duration-300 cursor-pointer" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Publications Section */}
           <Card className="surface-panel border-0">
             <CardContent className="space-y-4 p-6">
@@ -501,9 +518,21 @@ export default function ExposantDetailPage() {
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
-                        <h3 className="line-clamp-1 text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                          {prod.nom}
-                        </h3>
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="line-clamp-1 text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                            {prod.nom}
+                          </h3>
+                          {(prod as any).type && (
+                            <span className="inline-flex shrink-0 items-center rounded-sm bg-secondary px-1.5 py-0.5 text-[9px] font-medium text-secondary-foreground">
+                              {(prod as any).type === 'service' ? 'Service' : 'Produit'}
+                            </span>
+                          )}
+                        </div>
+                        {prod.categorie && (
+                          <span className="text-[10px] text-muted-foreground font-medium block mt-0.5">
+                            {prod.categorie}
+                          </span>
+                        )}
                         <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
                           {prod.description}
                         </p>

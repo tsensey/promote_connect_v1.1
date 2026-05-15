@@ -80,6 +80,7 @@ export interface Database {
           annee_creation: string | null;
           nombre_employes: string | null;
           is_featured: boolean;
+          gallery_urls: string[] | null;
           created_at: string | null;
         };
         Insert: {
@@ -107,6 +108,7 @@ export interface Database {
           annee_creation?: string | null;
           nombre_employes?: string | null;
           is_featured?: boolean;
+          gallery_urls?: string[] | null;
           created_at?: string | null;
         };
         Update: {
@@ -134,6 +136,7 @@ export interface Database {
           annee_creation?: string | null;
           nombre_employes?: string | null;
           is_featured?: boolean;
+          gallery_urls?: string[] | null;
           created_at?: string | null;
         };
         Relationships: [];
@@ -183,6 +186,7 @@ export interface Database {
           categorie: string | null;
           image_url: string | null;
           prix_indicatif: string | null;
+          type: string | null;
           created_at: string | null;
         };
         Insert: {
@@ -193,6 +197,7 @@ export interface Database {
           categorie?: string | null;
           image_url?: string | null;
           prix_indicatif?: string | null;
+          type?: string | null;
           created_at?: string | null;
         };
         Update: {
@@ -203,6 +208,7 @@ export interface Database {
           categorie?: string | null;
           image_url?: string | null;
           prix_indicatif?: string | null;
+          type?: string | null;
           created_at?: string | null;
         };
         Relationships: [];

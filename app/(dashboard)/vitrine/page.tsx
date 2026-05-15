@@ -236,18 +236,30 @@ export default function VitrinePage() {
                 className="surface-panel group border-0 flex flex-col transition-all hover:shadow-lg"
               >
                 <CardContent className="flex flex-1 flex-col space-y-4 p-5">
+                  {produit.image_url && (
+                    <div className="relative h-40 w-full overflow-hidden rounded-lg bg-muted border border-border/50 mb-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={produit.image_url} alt={produit.nom} className="size-full object-cover" />
+                    </div>
+                  )}
                   {/* Product name & category */}
                   <div className="space-y-1">
                     <div className="flex items-start justify-between gap-2">
                       <h2 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors leading-tight">
                         {produit.nom}
                       </h2>
-                      {produit.categorie && (
-                        <Badge variant="secondary" className="shrink-0 rounded-full text-xs">
-                          <Tag className="mr-1 size-2.5" />
-                          {produit.categorie}
-                        </Badge>
-                      )}
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        {(produit as any).type && (
+                          <span className="inline-flex items-center rounded-sm bg-secondary px-1.5 py-0.5 text-[9px] font-medium text-secondary-foreground">
+                            {(produit as any).type === 'service' ? 'Service' : 'Produit'}
+                          </span>
+                        )}
+                        {produit.categorie && (
+                          <Badge variant="outline" className="rounded-full text-[10px]">
+                            {produit.categorie}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     {produit.prix_indicatif && (
                       <p className="text-sm font-bold text-primary">{produit.prix_indicatif}</p>

@@ -9,6 +9,9 @@ import {
   PencilLine,
   Store,
   Trash2,
+  Upload,
+  ImagePlus,
+  X,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/context";
 import { supabaseClient } from "@/lib/supabase/client";
@@ -21,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import type { Database } from "@/types/database.types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // ── Icônes de marque (SVG inline) ──
 const IconLinkedin = () => (
@@ -70,6 +74,8 @@ const emptyProductForm = {
   description: "",
   categorie: "",
   prix_indicatif: "",
+  type: "produit" as string | null,
+  image_url: "",
 };
 
 function Field({
@@ -130,8 +136,101 @@ export default function ManageVitrinePage() {
     chiffre_affaires: "",
     annee_creation: "",
     nombre_employes: "",
+    gallery_urls: [] as string[],
   });
   const [productForm, setProductForm] = useState(emptyProductForm);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingProductImage, setUploadingProductImage] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+
+  const handleGalleryUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !user) return;
+    
+    setUploadingGallery(true);
+    const newUrls: string[] = [];
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`L'image ${file.name} est trop volumineuse (max 5 Mo)`);
+          continue;
+        }
+        
+        const ext = file.name.split('.').pop();
+        const fileName = `${user.id}-gallery-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+        
+        const { data, error } = await supabaseClient.storage
+          .from('vitrine-images')
+          .upload(fileName, file);
+
+        if (error) throw error;
+
+        const { data: { publicUrl } } = supabaseClient.storage
+          .from('vitrine-images')
+          .getPublicUrl(data.path);
+          
+        newUrls.push(publicUrl);
+      }
+
+      if (newUrls.length > 0) {
+        setShowcaseForm(f => ({ ...f, gallery_urls: [...f.gallery_urls, ...newUrls] }));
+        toast.success(`${newUrls.length} image(s) ajoutée(s) à la galerie`);
+      }
+    } catch (error) {
+      toast.error("Erreur lors de l'upload des images");
+    } finally {
+      setUploadingGallery(false);
+    }
+  };
+
+  const handleImageUpload = async (file: File | null, field: 'logo_url' | 'cover_url' | 'product_image') => {
+    if (!file || !user) return;
+    
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(`L'image est trop volumineuse (max 5 Mo)`);
+      return;
+    }
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowed.includes(file.type)) {
+      toast.error(`Format non supporté (JPEG, PNG, WebP, GIF)`);
+      return;
+    }
+
+    const isProduct = field === 'product_image';
+    if (field === 'logo_url') setUploadingLogo(true);
+    else if (field === 'cover_url') setUploadingCover(true);
+    else setUploadingProductImage(true);
+
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `${user.id}-${field}-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+      
+      const { data, error } = await supabaseClient.storage
+        .from('vitrine-images')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabaseClient.storage
+        .from('vitrine-images')
+        .getPublicUrl(data.path);
+
+      if (isProduct) {
+        setProductForm(f => ({ ...f, image_url: publicUrl }));
+      } else {
+        setShowcaseForm(f => ({ ...f, [field]: publicUrl }));
+      }
+      toast.success("Image téléchargée avec succès");
+    } catch (error) {
+      toast.error("Erreur lors du téléchargement de l'image");
+    } finally {
+      if (field === 'logo_url') setUploadingLogo(false);
+      else if (field === 'cover_url') setUploadingCover(false);
+      else setUploadingProductImage(false);
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -168,6 +267,7 @@ export default function ManageVitrinePage() {
           chiffre_affaires: existingExposant.chiffre_affaires || "",
           annee_creation: existingExposant.annee_creation || "",
           nombre_employes: existingExposant.nombre_employes || "",
+          gallery_urls: existingExposant.gallery_urls || [],
         });
 
         const { data: existingProducts } = await supabaseClient
@@ -243,6 +343,7 @@ export default function ManageVitrinePage() {
         chiffre_affaires: showcaseForm.chiffre_affaires.trim() || null,
         annee_creation: showcaseForm.annee_creation.trim() || null,
         nombre_employes: showcaseForm.nombre_employes.trim() || null,
+        gallery_urls: showcaseForm.gallery_urls,
       };
 
       if (exposant) {
@@ -300,6 +401,8 @@ export default function ManageVitrinePage() {
             description: productForm.description.trim() || null,
             categorie: productForm.categorie.trim() || null,
             prix_indicatif: productForm.prix_indicatif.trim() || null,
+            type: productForm.type,
+            image_url: productForm.image_url || null,
           })
           .eq("id", productForm.id);
 
@@ -311,6 +414,8 @@ export default function ManageVitrinePage() {
           description: productForm.description.trim() || null,
           categorie: productForm.categorie.trim() || null,
           prix_indicatif: productForm.prix_indicatif.trim() || null,
+          type: productForm.type,
+          image_url: productForm.image_url || null,
         });
 
         if (error) throw error;
@@ -337,6 +442,8 @@ export default function ManageVitrinePage() {
       description: product.description || "",
       categorie: product.categorie || "",
       prix_indicatif: product.prix_indicatif || "",
+      type: product.type || "produit",
+      image_url: product.image_url || "",
     });
   };
 
@@ -415,11 +522,13 @@ export default function ManageVitrinePage() {
         </TabsList>
         <TabsContent value="presentation">
           {/* ─── Présentation principale ─── */}
-          <Card className="surface-panel border-0">
-            <CardHeader>
-              <CardTitle>Présentation de l&apos;entreprise</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <div className="space-y-6">
+            <Card className="surface-panel border-0">
+              <CardHeader className="border-b border-border/50 pb-4">
+                <CardTitle className="text-lg">Informations générales</CardTitle>
+                <p className="text-sm text-muted-foreground">Les informations de base affichées sur votre fiche annuaire.</p>
+              </CardHeader>
+              <CardContent className="space-y-6 pt-6">
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label="Nom de l'entreprise *">
                   <Input
@@ -478,7 +587,75 @@ export default function ManageVitrinePage() {
                 />
               </Field>
 
-              <SectionTitle>Localisation &amp; Salon</SectionTitle>
+              </CardContent>
+            </Card>
+
+            <Card className="surface-panel border-0">
+              <CardHeader className="border-b border-border/50 pb-4">
+                <CardTitle className="text-lg">Identité visuelle</CardTitle>
+                <p className="text-sm text-muted-foreground">Personnalisez l&apos;apparence de votre vitrine.</p>
+              </CardHeader>
+              <CardContent className="space-y-6 pt-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <Field
+                    label="Logo"
+                    hint="Image carrée recommandée (JPEG, PNG)."
+                  >
+                    <div className="flex items-center gap-4">
+                      {showcaseForm.logo_url && (
+                        <div className="relative size-16 overflow-hidden rounded-xl border border-border/50 shrink-0 bg-white">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={showcaseForm.logo_url} className="size-full object-contain" alt="Logo" />
+                          <button type="button" onClick={() => setShowcaseForm(f => ({ ...f, logo_url: '' }))} className="absolute -right-1 -top-1 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"><X className="size-3" /></button>
+                        </div>
+                      )}
+                      <div className="relative w-full">
+                        <Input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          disabled={uploadingLogo}
+                          className="file:hidden pl-10 h-12 pt-3"
+                          onChange={(e) => handleImageUpload(e.target.files?.[0] || null, 'logo_url')}
+                        />
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"><ImagePlus className="size-5" /></span>
+                        {uploadingLogo && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 animate-spin text-muted-foreground" />}
+                      </div>
+                    </div>
+                  </Field>
+                  <Field
+                    label="Image de couverture"
+                    hint="Image d'en-tête de votre profil (1200×400px)."
+                  >
+                    <div className="flex flex-col gap-3">
+                      {showcaseForm.cover_url && (
+                        <div className="relative h-24 w-full overflow-hidden rounded-xl border border-border/50 shrink-0 bg-muted">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={showcaseForm.cover_url} className="h-full w-full object-cover" alt="Cover" />
+                          <button type="button" onClick={() => setShowcaseForm(f => ({ ...f, cover_url: '' }))} className="absolute right-2 top-2 rounded-full bg-black/50 p-1.5 text-white hover:bg-black/70"><X className="size-3" /></button>
+                        </div>
+                      )}
+                      <div className="relative w-full">
+                        <Input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          disabled={uploadingCover}
+                          className="file:hidden pl-10 h-12 pt-3"
+                          onChange={(e) => handleImageUpload(e.target.files?.[0] || null, 'cover_url')}
+                        />
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"><ImagePlus className="size-5" /></span>
+                        {uploadingCover && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 animate-spin text-muted-foreground" />}
+                      </div>
+                    </div>
+                  </Field>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="surface-panel border-0">
+              <CardHeader className="border-b border-border/50 pb-4">
+                <CardTitle className="text-lg">Localisation & Salon</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6 pt-6">
               <div className="grid gap-4 md:grid-cols-4">
                 <Field label="Secteur">
                   <Input
@@ -524,7 +701,14 @@ export default function ManageVitrinePage() {
                 </Field>
               </div>
 
-              <SectionTitle>Chiffres clés</SectionTitle>
+              </CardContent>
+            </Card>
+
+            <Card className="surface-panel border-0">
+              <CardHeader className="border-b border-border/50 pb-4">
+                <CardTitle className="text-lg">Chiffres clés</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6 pt-6">
               <div className="grid gap-4 md:grid-cols-3">
                 <Field label="Année de création">
                   <Input
@@ -564,7 +748,15 @@ export default function ManageVitrinePage() {
                 </Field>
               </div>
 
-              <SectionTitle>Contacts directs</SectionTitle>
+              </CardContent>
+            </Card>
+
+            <Card className="surface-panel border-0">
+              <CardHeader className="border-b border-border/50 pb-4">
+                <CardTitle className="text-lg">Contacts & Réseaux sociaux</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6 pt-6">
+                <SectionTitle>Contacts directs</SectionTitle>
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label="Email de contact">
                   <Input
@@ -669,89 +861,67 @@ export default function ManageVitrinePage() {
                   </div>
                 </Field>
               </div>
+              </CardContent>
+            </Card>
 
-              <SectionTitle>Médias &amp; Documents</SectionTitle>
-              <div className="grid gap-4 md:grid-cols-2">
-                <Field
-                  label="Logo (URL)"
-                  hint="Image carrée recommandée."
-                >
-                  <Input
-                    value={showcaseForm.logo_url}
-                    onChange={(e) =>
-                      setShowcaseForm((f) => ({
-                        ...f,
-                        logo_url: e.target.value,
-                      }))
-                    }
-                    placeholder="https://exemple.com/logo.png"
-                  />
-                </Field>
-                <Field
-                  label="Image de couverture (URL)"
-                  hint="Image d'en-tête de votre profil. Format recommandé : 1200×400px."
-                >
-                  <Input
-                    value={showcaseForm.cover_url}
-                    onChange={(e) =>
-                      setShowcaseForm((f) => ({
-                        ...f,
-                        cover_url: e.target.value,
-                      }))
-                    }
-                    placeholder="https://exemple.com/cover.jpg"
-                  />
-                </Field>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <Field
-                  label="Vidéo de présentation (URL embed YouTube / Vimeo)"
-                  hint="Ex : https://www.youtube.com/embed/VOTRE_ID"
-                >
-                  <Input
-                    value={showcaseForm.video_url}
-                    onChange={(e) =>
-                      setShowcaseForm((f) => ({
-                        ...f,
-                        video_url: e.target.value,
-                      }))
-                    }
-                    placeholder="https://www.youtube.com/embed/..."
-                  />
-                </Field>
-                <Field
-                  label="Brochure commerciale (URL PDF)"
-                  hint="Lien direct vers votre brochure téléchargeable."
-                >
-                  <Input
-                    value={showcaseForm.brochure_url}
-                    onChange={(e) =>
-                      setShowcaseForm((f) => ({
-                        ...f,
-                        brochure_url: e.target.value,
-                      }))
-                    }
-                    placeholder="https://exemple.com/brochure.pdf"
-                  />
-                </Field>
-              </div>
+            <Card className="surface-panel border-0">
+              <CardHeader className="border-b border-border/50 pb-4">
+                <CardTitle className="text-lg">Médias & Documents (Optionnel)</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6 pt-6">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field
+                    label="Vidéo de présentation (URL embed YouTube / Vimeo)"
+                    hint="Ex : https://www.youtube.com/embed/VOTRE_ID"
+                  >
+                    <Input
+                      value={showcaseForm.video_url}
+                      onChange={(e) =>
+                        setShowcaseForm((f) => ({
+                          ...f,
+                          video_url: e.target.value,
+                        }))
+                      }
+                      placeholder="https://www.youtube.com/embed/..."
+                    />
+                  </Field>
+                  <Field
+                    label="Brochure commerciale (URL PDF)"
+                    hint="Lien direct vers votre brochure téléchargeable."
+                  >
+                    <Input
+                      value={showcaseForm.brochure_url}
+                      onChange={(e) =>
+                        setShowcaseForm((f) => ({
+                          ...f,
+                          brochure_url: e.target.value,
+                        }))
+                      }
+                      placeholder="https://exemple.com/brochure.pdf"
+                    />
+                  </Field>
+                </div>
+              </CardContent>
+            </Card>
 
+            <div className="sticky bottom-4 z-10 flex justify-end">
               <Button
                 onClick={saveShowcase}
                 disabled={savingShowcase}
-                className="rounded-xl"
+                className="rounded-full shadow-lg px-8 h-12 text-base font-semibold"
+                size="lg"
               >
                 {savingShowcase ? (
                   <>
-                    <Loader2 className="mr-2 size-4 animate-spin" />
+                    <Loader2 className="mr-2 size-5 animate-spin" />
                     Enregistrement...
                   </>
                 ) : (
-                  "Enregistrer la vitrine"
+                  "Enregistrer ma vitrine"
                 )}
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
         <TabsContent value="produits">
           {/* ─── Catalogue produits ─── */}
@@ -765,38 +935,75 @@ export default function ManageVitrinePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Field label="Nom">
-                  <Input
-                    value={productForm.nom}
-                    onChange={(e) =>
-                      setProductForm((f) => ({ ...f, nom: e.target.value }))
-                    }
-                    placeholder="Catalogue premium"
-                  />
-                </Field>
-                <Field label="Catégorie">
-                  <Input
-                    value={productForm.categorie}
-                    onChange={(e) =>
-                      setProductForm((f) => ({
-                        ...f,
-                        categorie: e.target.value,
-                      }))
-                    }
-                    placeholder="Service / Produit / Solution"
-                  />
-                </Field>
-                <Field label="Prix indicatif">
-                  <Input
-                    value={productForm.prix_indicatif}
-                    onChange={(e) =>
-                      setProductForm((f) => ({
-                        ...f,
-                        prix_indicatif: e.target.value,
-                      }))
-                    }
-                    placeholder="Sur devis / À partir de 500€"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Nom">
+                    <Input
+                      value={productForm.nom}
+                      onChange={(e) =>
+                        setProductForm((f) => ({ ...f, nom: e.target.value }))
+                      }
+                      placeholder="Catalogue premium"
+                    />
+                  </Field>
+                  <Field label="Type">
+                    <Select value={productForm.type || "produit"} onValueChange={v => setProductForm(f => ({ ...f, type: v }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez le type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="produit">Produit</SelectItem>
+                        <SelectItem value="service">Service</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Catégorie (optionnel)">
+                    <Input
+                      value={productForm.categorie}
+                      onChange={(e) =>
+                        setProductForm((f) => ({
+                          ...f,
+                          categorie: e.target.value,
+                        }))
+                      }
+                      placeholder="Logiciel / Conseil..."
+                    />
+                  </Field>
+                  <Field label="Prix indicatif (optionnel)">
+                    <Input
+                      value={productForm.prix_indicatif}
+                      onChange={(e) =>
+                        setProductForm((f) => ({
+                          ...f,
+                          prix_indicatif: e.target.value,
+                        }))
+                      }
+                      placeholder="Sur devis / À partir de 500€"
+                    />
+                  </Field>
+                </div>
+                <Field label="Image du produit / service (optionnel)">
+                  <div className="flex items-center gap-3">
+                    {productForm.image_url && (
+                      <div className="relative size-16 overflow-hidden rounded-xl border border-border/50 shrink-0 bg-muted">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={productForm.image_url} className="size-full object-cover" alt="Produit" />
+                        <button type="button" onClick={() => setProductForm(f => ({ ...f, image_url: '' }))} className="absolute -right-1 -top-1 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"><X className="size-3" /></button>
+                      </div>
+                    )}
+                    <div className="relative w-full">
+                      <Input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        disabled={uploadingProductImage}
+                        className="file:hidden pl-10"
+                        onChange={(e) => handleImageUpload(e.target.files?.[0] || null, 'product_image')}
+                      />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"><ImagePlus className="size-4" /></span>
+                      {uploadingProductImage && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 animate-spin text-muted-foreground" />}
+                    </div>
+                  </div>
                 </Field>
                 <Field label="Description">
                   <Textarea
@@ -866,21 +1073,37 @@ export default function ManageVitrinePage() {
                     {products.map((product) => (
                       <article
                         key={product.id}
-                        className="surface-subtle flex flex-col gap-4 p-5"
+                        className="group relative overflow-hidden rounded-xl border border-border/50 bg-background/50 p-5 transition-all hover:bg-muted/20 hover:shadow-md flex flex-col gap-4"
                       >
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           <div className="flex items-start justify-between gap-3">
-                            <h2 className="text-xl text-foreground">
-                              {product.nom}
-                            </h2>
-                            {product.categorie && (
-                              <Badge
-                                variant="outline"
-                                className="rounded-full shrink-0"
-                              >
-                                {product.categorie}
-                              </Badge>
-                            )}
+                            <div className="flex gap-4">
+                              {product.image_url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={product.image_url} alt="" className="size-16 rounded-xl object-cover bg-muted border border-border/50 shrink-0" />
+                              ) : (
+                                <div className="flex size-16 shrink-0 items-center justify-center rounded-xl bg-muted/50 border border-border/50 text-muted-foreground">
+                                  <PackagePlus className="size-6" />
+                                </div>
+                              )}
+                              <div>
+                                <h2 className="text-lg font-medium text-foreground leading-tight">
+                                  {product.nom}
+                                </h2>
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {product.type && (
+                                    <Badge variant="secondary" className="rounded-full shrink-0 text-[10px]">
+                                      {product.type === 'service' ? 'Service' : 'Produit'}
+                                    </Badge>
+                                  )}
+                                  {product.categorie && (
+                                    <Badge variant="outline" className="rounded-full shrink-0 text-[10px]">
+                                      {product.categorie}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
                           </div>
                           <p className="text-sm leading-6 text-muted-foreground">
                             {product.description ||
@@ -925,7 +1148,83 @@ export default function ManageVitrinePage() {
             </Card>
           </div>
         </TabsContent>
-        <TabsContent value="gallery"></TabsContent>
+        <TabsContent value="gallery">
+          <Card className="surface-panel border-0">
+            <CardHeader>
+              <CardTitle>Galerie multimédia</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Ajoutez des photos de votre entreprise, de vos équipes, de vos réalisations ou de votre stand.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-center w-full">
+                <label htmlFor="gallery-upload" className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-border/60 rounded-xl cursor-pointer bg-muted/20 hover:bg-muted/50 transition-colors">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    {uploadingGallery ? (
+                      <Loader2 className="size-8 animate-spin text-muted-foreground mb-3" />
+                    ) : (
+                      <Upload className="size-8 text-muted-foreground mb-3" />
+                    )}
+                    <p className="mb-2 text-sm text-muted-foreground">
+                      <span className="font-semibold text-foreground">Cliquez pour ajouter</span> ou glissez-déposez
+                    </p>
+                    <p className="text-xs text-muted-foreground">PNG, JPG, WebP (Max. 5Mo par image)</p>
+                  </div>
+                  <input 
+                    id="gallery-upload" 
+                    type="file" 
+                    multiple 
+                    accept="image/jpeg,image/png,image/webp" 
+                    className="hidden" 
+                    disabled={uploadingGallery}
+                    onChange={e => handleGalleryUpload(e.target.files)} 
+                  />
+                </label>
+              </div>
+
+              {showcaseForm.gallery_urls.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {showcaseForm.gallery_urls.map((url, i) => (
+                    <div key={i} className="group relative aspect-square rounded-xl overflow-hidden border border-border/50 bg-muted">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt="" className="size-full object-cover" />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="rounded-full size-8"
+                          onClick={() => {
+                            const newUrls = showcaseForm.gallery_urls.filter((_, idx) => idx !== i);
+                            setShowcaseForm(f => ({ ...f, gallery_urls: newUrls }));
+                            // Automatically save the showcase to persist deletion
+                            // Or leave it for the explicit save
+                          }}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <Button
+                onClick={saveShowcase}
+                disabled={savingShowcase}
+                className="rounded-xl"
+              >
+                {savingShowcase ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                    Enregistrement...
+                  </>
+                ) : (
+                  "Enregistrer la galerie"
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
