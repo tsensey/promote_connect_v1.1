@@ -198,7 +198,7 @@ export default function AgendaPage() {
       )}
 
       {/* Tabs */}
-      <Tabs defaultValue="programme">
+      <Tabs defaultValue="programme" className="flex flex-col gap-y-2">
         <TabsList className="rounded-xl bg-muted/80 p-1 w-full sm:w-auto">
           <TabsTrigger value="programme" className="rounded-lg gap-2 data-[state=active]:shadow-sm">
             <Calendar className="size-4" />
