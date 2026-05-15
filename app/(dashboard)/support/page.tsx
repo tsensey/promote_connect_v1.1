@@ -137,7 +137,7 @@ export default function SupportPage() {
   };
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-6 pb-8 max-w-6xl mx-auto">
       <div className="space-y-1">
         <h1 className="text-3xl font-heading text-foreground">
           Support technique

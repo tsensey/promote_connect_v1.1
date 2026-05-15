@@ -6,6 +6,7 @@ import { PostCard } from '@/components/feed/PostCard';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Sparkles,
   Loader2,
@@ -14,13 +15,17 @@ import {
   Heart,
   Share2,
   Repeat2,
+  Send,
+  Package,
 } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
+import { createConversation } from '@/hooks/useChat';
+import { toast } from 'sonner';
 import type { Database } from '@/types/database.types';
 
 type Product = Database['public']['Tables']['produits']['Row'] & {
-  exposants: { nom: string; profile_id: string } | null;
+  exposants: { nom: string; profile_id: string; logo_url: string | null } | null;
 };
 
 export default function FeedPage() {
@@ -42,13 +47,14 @@ export default function FeedPage() {
   } = useFeed();
 
   const [randomProducts, setRandomProducts] = useState<Product[]>([]);
+  const [contactingProd, setContactingProd] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function loadRandomProducts() {
       const { data } = await supabaseClient
         .from('produits')
-        .select('*, exposants(nom, profile_id)')
+        .select('*, exposants(nom, profile_id, logo_url)')
         .limit(20);
       if (data && data.length > 0) {
         const shuffled = (data as Product[]).sort(() => 0.5 - Math.random()).slice(0, 4);
@@ -59,6 +65,31 @@ export default function FeedPage() {
     const interval = setInterval(loadRandomProducts, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleContactProduct = async (product: Product) => {
+    if (!product.exposants?.profile_id) {
+      toast.error("Cet exposant n'est pas joignable.");
+      return;
+    }
+    setContactingProd(product.id);
+    const { data } = await createConversation(product.exposants.profile_id);
+    if (data) {
+      const { data: session } = await supabaseClient.auth.getSession();
+      if (session?.session?.user) {
+        const type = (product.type ?? 'produit') === 'service' ? 'service' : 'produit';
+        await supabaseClient.from('messages').insert({
+          conversation_id: data.id,
+          sender_id: session.session.user.id,
+          content: `Bonjour, je suis intéressé(e) par votre ${type} : "${product.nom}". Pourriez-vous m'en dire plus ?`,
+          is_read: false,
+        });
+        toast.success("Message envoyé !");
+      }
+    } else {
+      toast.error("Erreur lors de la création de la conversation");
+    }
+    setContactingProd(null);
+  };
 
   useEffect(() => {
     if (!hasMore || loading) return;
@@ -177,8 +208,8 @@ export default function FeedPage() {
                     Aucune publication pour le moment
                   </p>
                   <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
-                    Soyez le premier a partager une actualite ou une annonce
-                    avec la communaute PROMOTE.
+                    Soyez le premier à partager une actualité ou une annonce
+                    avec la communauté PROMOTE.
                   </p>
                 </div>
               </CardContent>
@@ -241,21 +272,55 @@ export default function FeedPage() {
               </CardContent>
             </Card>
 
-            {randomProducts.slice(0, 3).map((product) => (
-              <Card key={product.id} className="border-border/60 p-0 overflow-hidden group">
-                {product.image_url && (
-                  <div className="h-32 w-full overflow-hidden">
-                    <img src={product.image_url} alt={product.nom} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
-                  </div>
-                )}
-                <CardContent className={product.image_url ? "px-3 pb-3" : "p-3"}>
-                  <div className="mb-2 inline-flex rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary">Sponsorisé</div>
-                  <h4 className="font-semibold text-sm line-clamp-1">{product.nom}</h4>
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{product.description || 'Découvrez ce produit.'}</p>
-                  <p className="text-xs font-medium text-foreground mt-2">{product.exposants?.nom}</p>
-                </CardContent>
-              </Card>
-            ))}
+            {randomProducts.slice(0, 3).map((product) => {
+              return (
+                <Card key={product.id} className="border-border/60 p-0 overflow-hidden group shadow-sm hover:shadow-md transition-all">
+                  {product.image_url && (
+                    <div className="h-28 w-full overflow-hidden">
+                      <img src={product.image_url} alt={product.nom} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                    </div>
+                  )}
+                  <CardContent className={product.image_url ? "p-3" : "p-3"}>
+                    <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary">
+                      <Package className="size-3" />
+                      Sponsorisé
+                    </div>
+                    <h4 className="font-semibold text-sm text-foreground line-clamp-1">{product.nom}</h4>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{product.description || 'Découvrez ce produit.'}</p>
+
+                    {/* Exposant + CTA */}
+                    <div className="mt-3 flex items-center gap-2 border-t border-border/40 pt-2.5">
+                      <Avatar className="size-6 shrink-0">
+                        {product.exposants?.logo_url ? (
+                          <AvatarImage src={product.exposants.logo_url} />
+                        ) : (
+                          <AvatarFallback className="bg-primary/10 text-[9px] font-bold text-primary">
+                            {product.exposants?.nom?.charAt(0) || '?'}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <span className="truncate text-[11px] font-medium text-muted-foreground flex-1">
+                        {product.exposants?.nom || 'Exposant'}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 rounded-lg text-[10px] px-2.5 gap-1 shrink-0"
+                        disabled={contactingProd === product.id}
+                        onClick={() => handleContactProduct(product)}
+                      >
+                        {contactingProd === product.id ? (
+                          <Loader2 className="size-3 animate-spin" />
+                        ) : (
+                          <Send className="size-3" />
+                        )}
+                        Contacter
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </div>

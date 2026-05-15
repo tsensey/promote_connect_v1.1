@@ -246,7 +246,7 @@ export default function DashboardHome() {
   const firstName = profile.full_name?.split(" ")[0] || "participant";
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px]">
+    <div className="grid gap-6 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px] max-w-6xl mx-auto">
       <section className="space-y-6 flex min-w-0 flex-col pb-8">
         <Card className="surface-panel overflow-hidden border-0 py-0">
           <div className="brand-gradient relative px-6 pb-12 pt-8">
@@ -267,7 +267,7 @@ export default function DashboardHome() {
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <MetricCard
                 icon={Users}
-                label={profile.role === "exposant" ? "Reseau exposants" : "Exposants disponibles"}
+                label={profile.role === "exposant" ? "Réseau exposants" : "Exposants disponibles"}
                 value={data.stats.networkSize}
                 tone="blue"
               />
@@ -279,7 +279,7 @@ export default function DashboardHome() {
               />
               <MetricCard
                 icon={CalendarDays}
-                label={profile.role === "exposant" ? "Rendez-vous B2B" : "Evenements a venir"}
+                label={profile.role === "exposant" ? "Rendez-vous B2B" : "Événements à venir"}
                 value={data.stats.upcomingCount}
                 tone="amber"
               />
@@ -315,10 +315,10 @@ export default function DashboardHome() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">
-                  Opportunites
+                  Opportunités
                 </p>
                 <h2 className="mt-1 text-2xl font-heading text-foreground">
-                  Exposants a suivre
+                  Exposants à suivre
                 </h2>
               </div>
               <Link
@@ -393,7 +393,7 @@ export default function DashboardHome() {
                   Messagerie
                 </p>
                 <h2 className="mt-1 text-2xl font-heading text-foreground">
-                  Conversations recentes
+                  Conversations récentes
                 </h2>
               </div>
               <Link
@@ -476,13 +476,13 @@ export default function DashboardHome() {
           </div>
           <CardContent className="space-y-4 p-5">
             <div className="flex items-center justify-between rounded-xl bg-muted/70 px-4 py-3">
-              <span className="text-sm text-muted-foreground">Role</span>
+              <span className="text-sm text-muted-foreground">Rôle</span>
               <Badge variant="secondary" className="rounded-full">
                 {roleLabel}
               </Badge>
             </div>
             <div className="flex items-center justify-between rounded-xl bg-muted/70 px-4 py-3">
-              <span className="text-sm text-muted-foreground">Statut acces</span>
+              <span className="text-sm text-muted-foreground">Statut</span>
               <div className="flex items-center gap-1.5">
                 <span className="size-2 rounded-full bg-emerald-500" />
                 <span className="font-medium text-foreground">Actif</span>
@@ -498,7 +498,7 @@ export default function DashboardHome() {
                 Agenda
               </p>
               <h2 className="mt-1 text-2xl font-heading text-foreground">
-                Prochains evenements
+                Prochains événements
               </h2>
             </div>
             <div className="space-y-2">
@@ -506,7 +506,7 @@ export default function DashboardHome() {
                 <div className="surface-subtle flex items-center gap-3 p-4 text-sm text-muted-foreground">
                   <CalendarDays className="size-5 shrink-0 text-primary/50" />
                   <span>
-                    Aucun evenement programme.
+                    Aucun événement programme.
                   </span>
                 </div>
               ) : (
@@ -585,7 +585,7 @@ export default function DashboardHome() {
                     </div>
                     <div className="rounded-xl border border-border/60 bg-background/50 p-4">
                       <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                        Portee
+                        Portée
                       </p>
                       <p className="mt-1 text-2xl font-bold text-foreground">
                         {data.stats.networkSize}
@@ -600,7 +600,7 @@ export default function DashboardHome() {
                     )}
                   >
                     <Eye className="size-4" />
-                    Gerer ma vitrine
+                    Gérer ma vitrine
                   </Link>
                 </div>
               </div>
@@ -611,10 +611,10 @@ export default function DashboardHome() {
                     <TrendingUp className="mt-0.5 size-5 text-primary" />
                     <div>
                       <p className="font-semibold text-foreground">
-                        Reseau en croissance
+                        Réseau en croissance
                       </p>
                       <p className="text-sm leading-6 text-muted-foreground">
-                        {data.stats.networkSize} exposants sont deja accessibles
+                        {data.stats.networkSize} exposants sont déjà accessibles
                         pour vos prises de contact et vos rendez-vous B2B.
                       </p>
                     </div>
@@ -632,21 +632,6 @@ export default function DashboardHome() {
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        <Card className="surface-panel border-0">
-          <CardContent className="flex items-start gap-4 p-5">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-              <Sparkles className="size-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">Rappel</p>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                Tous les acces sont crees par l&apos;administrateur et envoyes
-                par email.
-              </p>
-            </div>
           </CardContent>
         </Card>
       </section>

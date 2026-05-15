@@ -115,7 +115,7 @@ export default function TicketDetailPage() {
   }
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-6 pb-8 max-w-6xl mx-auto">
       <Link
         href="/support"
         className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"

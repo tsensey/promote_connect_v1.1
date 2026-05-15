@@ -159,7 +159,7 @@ export default function AnnuairePage() {
   }, [page, totalPages]);
 
   return (
-    <div className="space-y-5 pb-6">
+    <div className="space-y-5 pb-6 max-w-6xl mx-auto">
       {/* Hero */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/5 via-primary/[0.02] to-background border border-border/50 p-6 sm:p-8">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(var(--primary)/0.08),transparent_60%)]" />

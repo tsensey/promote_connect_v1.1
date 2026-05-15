@@ -107,7 +107,7 @@ export default function NewsletterPage() {
   };
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-6 pb-8 max-w-6xl mx-auto">
       <div className="space-y-1">
         <h1 className="text-3xl font-heading text-foreground">
           Newsletter PROMOTE
@@ -127,7 +127,7 @@ export default function NewsletterPage() {
               </div>
               <div className="text-white">
                 <h2 className="font-heading text-lg font-semibold">
-                  Vous etes inscrit a la newsletter
+                  Vous êtes inscrit à la newsletter
                 </h2>
                 <p className="text-sm text-white/80">
                   {email} —{" "}
@@ -149,7 +149,7 @@ export default function NewsletterPage() {
                   Abonnement
                 </p>
                 <h2 className="text-2xl font-heading text-foreground">
-                  Inscription a la newsletter
+                  Inscription à la newsletter
                 </h2>
               </div>
             </div>
@@ -171,7 +171,7 @@ export default function NewsletterPage() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">
-                  Frequence
+                  Fréquence
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {FREQUENCIES.map((f) => (
@@ -191,7 +191,7 @@ export default function NewsletterPage() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">
-                  Secteurs d&apos;interet (optionnel)
+                  Secteurs d&apos;intérêt (optionnel)
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {SECTORS.map((sector) => (
@@ -220,7 +220,7 @@ export default function NewsletterPage() {
 
               {success && (
                 <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                  Inscription reussie ! Verifiez votre boite mail.
+                  Inscription réussie ! Vérifiez votre boîte mail.
                 </div>
               )}
 
@@ -254,7 +254,7 @@ export default function NewsletterPage() {
                 Archives
               </p>
               <h2 className="text-2xl font-heading text-foreground">
-                Editions precedentes
+                Éditions précédentes
               </h2>
             </div>
           </div>
@@ -297,10 +297,10 @@ export default function NewsletterPage() {
               <div className="flex flex-col items-center gap-3 py-12 text-center">
                 <Mail className="size-12 text-muted-foreground/30" />
                 <p className="text-base font-medium text-foreground">
-                  Aucune edition disponible
+                  Aucune édition disponible
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Les newsletters seront archivees ici des leur publication.
+                  Les newsletters seront archivées ici dès leur publication.
                 </p>
               </div>
             )}

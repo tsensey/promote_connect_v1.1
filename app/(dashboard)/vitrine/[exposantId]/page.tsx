@@ -190,7 +190,7 @@ export default function VitrineExposantPage() {
   const hasStats = exposant.annee_creation || exposant.nombre_employes || exposant.chiffre_affaires;
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-6 pb-8 max-w-6xl mx-auto">
       {/* Back nav */}
       <div className="flex items-center justify-between">
         <Link
