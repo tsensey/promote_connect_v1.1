@@ -143,6 +143,7 @@ export function UserSidebar({
               src="/logo-promote.png"
               alt="Logo"
               fill
+              sizes="32px"
               className="object-cover"
             />
           </div>

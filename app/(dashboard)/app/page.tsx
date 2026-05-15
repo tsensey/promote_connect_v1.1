@@ -95,7 +95,7 @@ export default function DashboardHome() {
           .from("exposants")
           .select("id, nom, secteur")
           .eq("profile_id", user.id)
-          .single();
+          .maybeSingle();
 
         if (exposant) {
           const { count } = await supabaseClient

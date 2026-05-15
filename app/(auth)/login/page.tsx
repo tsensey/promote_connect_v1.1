@@ -80,7 +80,7 @@ function LoginPageContent() {
             alt="PROMOTE-CONNECT Logo"
             width={120}
             height={40}
-            className="h-10 w-auto object-contain"
+            className="object-contain"
           />
         </div>
         <div className="space-y-2 text-center">

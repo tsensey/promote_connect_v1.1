@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 import { createConversation } from '@/hooks/useChat';
+import { toEmbedUrl } from '@/lib/utils';
 import {
   ArrowLeft,
   Globe,
@@ -305,7 +306,7 @@ export default function ExposantDetailPage() {
                     </div>
                     <div className="aspect-video w-full">
                       <iframe
-                        src={exposant.video_url}
+                        src={toEmbedUrl(exposant.video_url)}
                         className="h-full w-full"
                         allowFullScreen
                         title={`Vidéo ${exposant.nom}`}

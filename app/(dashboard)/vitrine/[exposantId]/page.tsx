@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 import { createConversation } from '@/hooks/useChat';
 import { toast } from 'sonner';
+import { toEmbedUrl } from '@/lib/utils';
 import {
   ArrowLeft,
   Globe,
@@ -369,7 +370,7 @@ export default function VitrineExposantPage() {
             </div>
             <div className="aspect-video w-full overflow-hidden rounded-xl">
               <iframe
-                src={exposant.video_url}
+                src={toEmbedUrl(exposant.video_url)}
                 className="h-full w-full"
                 allowFullScreen
                 title={`Présentation de ${exposant.nom}`}
