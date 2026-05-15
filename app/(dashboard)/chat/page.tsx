@@ -15,6 +15,7 @@ import {
   useConversations, useMessages, useContacts, createConversation,
   type EnrichedMessage, type ProductAttachment,
 } from '@/hooks/useChat';
+import { useNotificationState } from '@/lib/notification-context';
 import { cn } from '@/lib/utils';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -478,6 +479,7 @@ function EmptyState() {
 export default function ChatPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { setActiveConversationId } = useNotificationState();
   const initialConv = searchParams.get('conv');
 
   // Produit pré-attaché depuis la vitrine (?product=<base64json>)
@@ -502,7 +504,12 @@ export default function ChatPage() {
 
   const handleBack = () => {
     setMobileShowThread(false);
+    setActiveConversationId(null);
   };
+
+  useEffect(() => {
+    setActiveConversationId(selectedId);
+  }, [selectedId, setActiveConversationId]);
 
   return (
     <div

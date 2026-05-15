@@ -6,6 +6,8 @@ import { AuthProvider } from '@/lib/auth/context';
 import { QueryProvider } from '@/lib/query-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { NotificationStateProvider } from '@/lib/notification-context';
+import { NotificationProvider } from '@/components/shared/NotificationProvider';
 import { cn } from '@/lib/utils';
 import './globals.css';
 
@@ -42,10 +44,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <QueryProvider>
             <TooltipProvider>
               <AuthProvider>
-                <Suspense fallback={null}>
-                  {children}
-                </Suspense>
-                <Toaster richColors position="top-right" />
+                <NotificationStateProvider>
+                  <NotificationProvider>
+                    <Suspense fallback={null}>
+                      {children}
+                    </Suspense>
+                    <Toaster richColors position="top-right" />
+                  </NotificationProvider>
+                </NotificationStateProvider>
               </AuthProvider>
             </TooltipProvider>
           </QueryProvider>
