@@ -15,8 +15,13 @@ import {
   Share2,
   Repeat2,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
+import type { Database } from '@/types/database.types';
+
+type Product = Database['public']['Tables']['produits']['Row'] & {
+  exposants: { nom: string; profile_id: string } | null;
+};
 
 export default function FeedPage() {
   const {
@@ -36,7 +41,8 @@ export default function FeedPage() {
     myUserId,
   } = useFeed();
 
-  const [randomProducts, setRandomProducts] = useState<any[]>([]);
+  const [randomProducts, setRandomProducts] = useState<Product[]>([]);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function loadRandomProducts() {
@@ -45,12 +51,40 @@ export default function FeedPage() {
         .select('*, exposants(nom, profile_id)')
         .limit(20);
       if (data && data.length > 0) {
-        const shuffled = data.sort(() => 0.5 - Math.random()).slice(0, 4);
+        const shuffled = (data as Product[]).sort(() => 0.5 - Math.random()).slice(0, 4);
         setRandomProducts(shuffled);
       }
     }
     loadRandomProducts();
+    const interval = setInterval(loadRandomProducts, 30000);
+    return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!hasMore || loading) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadMore();
+      },
+      { threshold: 0.1 }
+    );
+    const el = sentinelRef.current;
+    if (el) observer.observe(el);
+    return () => { if (el) observer.unobserve(el); };
+  }, [hasMore, loading, loadMore]);
+
+  useEffect(() => {
+    if (posts.length === 0) return;
+    const hash = window.location.hash;
+    if (!hash) return;
+    const id = hash.replace('#', '');
+    const el = document.getElementById(id);
+    if (el) {
+      setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+      el.classList.add('ring-2', 'ring-primary', 'rounded-xl');
+      setTimeout(() => el.classList.remove('ring-2', 'ring-primary', 'rounded-xl'), 3000);
+    }
+  }, [posts]);
 
   const totalLikes = posts.reduce((acc, p) => acc + (p.likes_count ?? 0), 0);
   const totalComments = posts.reduce((acc, p) => acc + (p.comments_count ?? 0), 0);
@@ -59,7 +93,7 @@ export default function FeedPage() {
   const myPosts = posts.filter((p) => p.author_id === myUserId).length;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6 pb-10">
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="hidden space-y-4 lg:col-span-3 lg:block">
           <div className="sticky top-20 space-y-4">
@@ -168,7 +202,7 @@ export default function FeedPage() {
               ))}
 
               {hasMore && (
-                <div className="flex justify-center py-4">
+                <div ref={sentinelRef} className="flex justify-center py-4">
                   <Button
                     variant="outline"
                     onClick={loadMore}
@@ -207,28 +241,14 @@ export default function FeedPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/60 p-0">
-              <CardContent className="p-3">
-                <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground/70">
-                  A propos
-                </h3>
-                <p className="text-xs leading-5 text-muted-foreground">
-                  Le fil d&apos;actualites vous permet de rester informe des
-                  dernieres nouvelles de la communaute PROMOTE. Interagissez
-                  avec les autres membres en aimant, commentant et partageant
-                  leurs publications.
-                </p>
-              </CardContent>
-            </Card>
-
-            {randomProducts.slice(0, 2).map((product) => (
+            {randomProducts.slice(0, 3).map((product) => (
               <Card key={product.id} className="border-border/60 p-0 overflow-hidden group">
                 {product.image_url && (
                   <div className="h-32 w-full overflow-hidden">
                     <img src={product.image_url} alt={product.nom} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
                   </div>
                 )}
-                <CardContent className="p-3">
+                <CardContent className={product.image_url ? "px-3 pb-3" : "p-3"}>
                   <div className="mb-2 inline-flex rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary">Sponsorisé</div>
                   <h4 className="font-semibold text-sm line-clamp-1">{product.nom}</h4>
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{product.description || 'Découvrez ce produit.'}</p>

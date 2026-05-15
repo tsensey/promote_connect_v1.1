@@ -137,11 +137,8 @@ export default function SupportPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8">
       <div className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary/70">
-          Module assistance
-        </p>
         <h1 className="text-3xl font-heading text-foreground">
           Support technique
         </h1>

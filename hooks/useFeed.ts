@@ -152,11 +152,28 @@ export function useFeed(limit = 20) {
         image_url: imageUrls?.length ? imageUrls.join(',') : null,
       };
 
-      const { error } = await supabaseClient.from('posts').insert(insertData);
-      if (!error) await fetchPosts();
+      const { data: newPost, error } = await supabaseClient
+        .from('posts')
+        .insert(insertData)
+        .select(`
+          *,
+          author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+        `)
+        .single();
+
+      if (!error && newPost) {
+        const enriched: Post = {
+          ...(newPost as unknown as PostWithAuthor),
+          is_liked: false,
+          is_shared: false,
+          is_reposted: false,
+        };
+        setPosts((prev) => [enriched, ...prev]);
+      }
+
       return { error };
     },
-    [fetchPosts]
+    []
   );
 
   const deletePost = useCallback(async (postId: string) => {

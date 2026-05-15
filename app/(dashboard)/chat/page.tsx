@@ -307,6 +307,7 @@ function MessageThread({
     messages, loading, sendMessage, markAsRead, myUserId,
     otherUser, otherExposant, typingUser, sendTypingEvent,
   } = useMessages(conversationId);
+  const { refreshUnreadCount } = useNotificationState();
 
   const [inputValue, setInputValue] = useState('');
   const [sending, setSending] = useState(false);
@@ -320,8 +321,11 @@ function MessageThread({
   }, [messages]);
 
   useEffect(() => {
-    void markAsRead();
-  }, [markAsRead, conversationId]);
+    (async () => {
+      await markAsRead();
+      await refreshUnreadCount();
+    })();
+  }, [markAsRead, refreshUnreadCount, conversationId]);
 
   // Pré-attacher produit depuis URL au montage
   useEffect(() => {

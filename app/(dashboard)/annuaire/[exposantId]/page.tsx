@@ -188,7 +188,7 @@ export default function ExposantDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 pb-8">
       {/* Back nav & share */}
       <div className="flex items-center justify-between">
         <Link
@@ -285,7 +285,7 @@ export default function ExposantDetailPage() {
                     {exposant.long_description}
                   </p>
                 )}
-                
+
                 {exposant.brochure_url && (
                   <a
                     href={exposant.brochure_url}

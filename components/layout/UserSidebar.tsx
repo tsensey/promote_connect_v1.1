@@ -19,6 +19,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useNotificationState } from '@/lib/notification-context';
 import Image from 'next/image';
 
 interface NavItem {
@@ -125,6 +126,7 @@ export function UserSidebar({
 }) {
   const pathname = usePathname();
   const sections = role === 'exposant' ? EXHIBITOR_SECTIONS : VISITOR_SECTIONS;
+  const { unreadMessages } = useNotificationState();
 
   return (
     <aside
@@ -225,7 +227,19 @@ export function UserSidebar({
                       <Icon className="size-4 shrink-0" />
                       <LabelText collapsed={collapsed} className="flex items-center gap-2">
                         <span className="truncate">{item.label}</span>
-                        {item.badge && (
+                        {(item.href === '/chat' && unreadMessages > 0) ? (
+                          <Badge
+                            variant={active ? 'secondary' : 'outline'}
+                            className={cn(
+                              'rounded-full px-1.5 py-px text-[9px] font-semibold shrink-0',
+                              active
+                                ? 'bg-primary-foreground/15 text-primary-foreground'
+                                : 'border-sidebar-border text-sidebar-foreground/50',
+                            )}
+                          >
+                            {unreadMessages > 99 ? '99+' : unreadMessages}
+                          </Badge>
+                        ) : item.badge ? (
                           <Badge
                             variant={active ? 'secondary' : 'outline'}
                             className={cn(
@@ -237,7 +251,7 @@ export function UserSidebar({
                           >
                             {item.badge}
                           </Badge>
-                        )}
+                        ) : null}
                       </LabelText>
                     </Link>
                   );

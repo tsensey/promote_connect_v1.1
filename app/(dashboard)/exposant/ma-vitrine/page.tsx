@@ -501,7 +501,7 @@ export default function ManageVitrinePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         {exposant && (
           <Link href={`/annuaire/${exposant.id}`}>

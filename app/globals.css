@@ -216,6 +216,31 @@
   ::selection {
     background: color-mix(in oklab, var(--primary) 22%, white);
   }
+
+  /* ─── Scrollbar ────────────────────────────────────────── */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: var(--radius);
+    transition: background 0.2s;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--muted-foreground) 50%, var(--border));
+  }
 }
 
 @layer base {
@@ -234,7 +259,7 @@
   }
 
   .surface-panel {
-    @apply rounded-2xl border border-border/70 bg-card/95 shadow-[0_14px_40px_-26px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:shadow-[0_14px_40px_-26px_rgba(0,0,0,0.5)];
+    @apply rounded-xl border border-border/70 bg-card/95 shadow-[0_14px_40px_-26px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:shadow-[0_14px_40px_-26px_rgba(0,0,0,0.5)];
   }
 
   .surface-subtle {

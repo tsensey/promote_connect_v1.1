@@ -111,7 +111,7 @@ export function useNotifications() {
             action: {
               label: 'Voir',
               onClick: () => {
-                window.location.href = '/feed';
+                window.location.href = `/feed#${post.id}`;
               },
             },
             duration: 4000,

@@ -55,7 +55,6 @@ export default function AgendaPage() {
     loading: rdvsLoading,
     createRdv,
     updateRdvStatus,
-    cancelRdv,
   } = useRendezVous();
   const [showNewRdv, setShowNewRdv] = useState(false);
   const [eventFilter, setEventFilter] = useState<string>("all");
@@ -92,7 +91,7 @@ export default function AgendaPage() {
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-6 pb-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1">
             <h1 className="text-3xl font-heading text-foreground">
@@ -425,9 +424,9 @@ export default function AgendaPage() {
                                 variant="outline"
                                 className="rounded-xl border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700"
                                 onClick={() => {
-                                  updateRdvStatus(rdv.id, "confirmed").then(
-                                    () => toast.success("RDV confirme"),
-                                  );
+                                  updateRdvStatus(rdv.id, "confirmed")
+                                    .then(() => toast.success("RDV confirmé"))
+                                    .catch(() => toast.error("Erreur lors de l'acceptation"));
                                 }}
                               >
                                 <Check className="mr-1 size-4" /> Accepter
@@ -437,9 +436,9 @@ export default function AgendaPage() {
                                 variant="outline"
                                 className="rounded-xl border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700"
                                 onClick={() => {
-                                  cancelRdv(rdv.id).then(() =>
-                                    toast.info("RDV annule"),
-                                  );
+                                  updateRdvStatus(rdv.id, "cancelled")
+                                    .then(() => toast.info("RDV refusé"))
+                                    .catch(() => toast.error("Erreur lors du refus"));
                                 }}
                               >
                                 <X className="mr-1 size-4" /> Refuser
@@ -454,9 +453,9 @@ export default function AgendaPage() {
                               size="sm"
                               className="rounded-full text-xs text-red-500 hover:text-red-700"
                               onClick={() => {
-                                cancelRdv(rdv.id).then(() =>
-                                  toast.info("RDV annule"),
-                                );
+                                updateRdvStatus(rdv.id, "cancelled")
+                                  .then(() => toast.info("RDV annulé"))
+                                  .catch(() => toast.error("Erreur lors de l'annulation"));
                               }}
                             >
                               Annuler

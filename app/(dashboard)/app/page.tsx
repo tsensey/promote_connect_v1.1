@@ -247,7 +247,7 @@ export default function DashboardHome() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px]">
-      <section className="space-y-6 flex min-w-0 flex-col">
+      <section className="space-y-6 flex min-w-0 flex-col pb-8">
         <Card className="surface-panel overflow-hidden border-0 py-0">
           <div className="brand-gradient relative px-6 pb-12 pt-8">
             <Badge className="mb-4 inline-flex rounded-full bg-white/15 text-white backdrop-blur-sm hover:bg-white/20">

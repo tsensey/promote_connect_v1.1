@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Bell, ChevronDown, Menu, MessageSquare, CalendarDays } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { useNotificationState } from "@/lib/notification-context";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,7 @@ export function UserTopbar({
   onSignOut: () => void;
 }) {
   const router = useRouter();
+  const { unreadMessages } = useNotificationState();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
@@ -64,9 +66,14 @@ export function UserTopbar({
             variant="ghost"
             size="icon-sm"
             className="relative rounded-full text-muted-foreground hover:text-foreground"
+            onClick={() => router.push("/chat")}
           >
             <Bell className="size-4" />
-            <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-primary ring-1 ring-background" />
+            {unreadMessages > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-primary px-1 py-px text-[10px] font-bold text-primary-foreground ring-2 ring-background">
+                {unreadMessages > 99 ? '99+' : unreadMessages}
+              </span>
+            )}
           </Button>
 
           <DropdownMenu>
