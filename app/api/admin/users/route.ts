@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import type { Database } from '@/types/database.types';
 
 const resendApiKey = process.env.RESEND_API_KEY || '';
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -69,6 +70,12 @@ export async function POST(request: Request) {
     sector,
     country,
     pavillon,
+    espace_id,
+    stand,
+    description,
+    website,
+    annee_creation,
+    nombre_employes,
     generate_exposant,
   } = body;
 
@@ -128,8 +135,6 @@ export async function POST(request: Request) {
       sector: sector || null,
       country: country || null,
       pavillon: pavillon || null,
-      subscription_status: 'active',
-      subscription_ends_at: null,
     });
 
   if (profileError) {
@@ -141,6 +146,20 @@ export async function POST(request: Request) {
   }
 
   if (generate_exposant && role === 'exposant') {
+    const exposantData: Database['public']['Tables']['exposants']['Insert'] = {
+      nom: company || full_name,
+      secteur: sector || null,
+      pavillon: pavillon || null,
+      pays: country || null,
+      stand: stand || null,
+      description: description || null,
+      website: website || null,
+      annee_creation: annee_creation || null,
+      nombre_employes: nombre_employes || null,
+      espace_id: espace_id || null,
+      profile_id: userId,
+    };
+
     const { data: existingExposant } = await supabaseAdmin
       .from('exposants')
       .select('id')
@@ -148,23 +167,13 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (existingExposant?.id) {
+      const { profile_id: _, ...updateData } = exposantData;
       await supabaseAdmin
         .from('exposants')
-        .update({
-          nom: company || full_name,
-          secteur: sector || null,
-          pavillon: pavillon || null,
-          pays: country || null,
-        })
+        .update(updateData as Database['public']['Tables']['exposants']['Update'])
         .eq('id', existingExposant.id);
     } else {
-      await supabaseAdmin.from('exposants').insert({
-        profile_id: userId,
-        nom: company || full_name,
-        secteur: sector || null,
-        pavillon: pavillon || null,
-        pays: country || null,
-      });
+      await supabaseAdmin.from('exposants').insert(exposantData);
     }
   }
 
@@ -178,12 +187,17 @@ export async function POST(request: Request) {
       await resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
         to: [email],
-        subject: 'Vos acces PROMOTE-CONNECT',
+        subject: role === 'exposant'
+          ? 'Vos acces exposant PROMOTE-CONNECT'
+          : 'Vos acces PROMOTE-CONNECT',
         html: buildCredentialsHtml({
           fullName: full_name,
           email,
           password,
           role,
+          company: company || null,
+          pavillon: (generate_exposant && pavillon) ? pavillon : null,
+          stand: (generate_exposant && stand) ? stand : null,
         }),
       });
 
@@ -244,13 +258,20 @@ function buildCredentialsHtml({
   email,
   password,
   role,
+  company,
+  pavillon,
+  stand,
 }: {
   fullName: string;
   email: string;
   password: string;
   role: string;
+  company?: string | null;
+  pavillon?: string | null;
+  stand?: string | null;
 }) {
   const loginUrl = `${appUrl}/login`;
+  const isExposant = role === 'exposant';
 
   return `
     <div style="margin:0;background:#eef4ff;padding:32px 16px;font-family:Arial,sans-serif;color:#172554">
@@ -284,8 +305,16 @@ function buildCredentialsHtml({
             </p>
             <p style="margin:0 0 10px;font-size:14px;color:#64748b">Role</p>
             <p style="margin:0 0 18px;font-size:16px;font-weight:700;color:#0f172a">
-              ${role === 'admin' ? 'Administrateur' : role === 'exposant' ? 'Exposant' : 'Visiteur'}
+              ${isExposant ? 'Exposant' : role === 'admin' ? 'Administrateur' : 'Visiteur'}
             </p>
+            ${isExposant ? `
+            <p style="margin:12px 0 8px;font-size:14px;color:#64748b">Entreprise</p>
+            <p style="margin:0 0 18px;font-size:16px;font-weight:700;color:#0f172a">${company || fullName}</p>
+            ${pavillon ? `<p style="margin:0 0 8px;font-size:14px;color:#64748b">Pavillon</p>
+            <p style="margin:0 0 18px;font-size:16px;font-weight:700;color:#0f172a">${pavillon}</p>` : ''}
+            ${stand ? `<p style="margin:0 0 8px;font-size:14px;color:#64748b">Stand</p>
+            <p style="margin:0 0 18px;font-size:16px;font-weight:700;color:#0f172a">${stand}</p>` : ''}
+            ` : ''}
             <p style="margin:0;font-size:14px;color:#475569">
               Votre compte dispose d un acces complet a la plateforme.
             </p>

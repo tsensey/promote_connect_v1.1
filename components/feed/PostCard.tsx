@@ -36,7 +36,7 @@ interface PostCardProps {
   onShare: () => void;
   onRepost: () => void;
   onEdit: (postId: string, content: string, type: string, category?: string, imageUrl?: string | null) => Promise<{error: any}>;
-  createPost: (content: string, type?: string, category?: string, imageUrl?: string | null) => Promise<{error: any}>;
+  createPost: (content: string, type?: string, category?: string, imageUrls?: string[]) => Promise<{error: any}>;
   onDelete: () => void;
   onGetComments: () => Promise<Comment[]>;
   onAddComment: (content: string, parentCommentId?: string) => Promise<{ data: Comment | null; error: unknown }>;
@@ -217,7 +217,7 @@ export function PostCard({
 
   const submitRepost = async () => {
     if (!repostContent.trim()) return;
-    const { error } = await createPost(repostContent, post.type, undefined, post.image_url);
+    const { error } = await createPost(repostContent, post.type, undefined, post.image_url ? [post.image_url] : undefined);
     if (!error) {
       setIsReposting(false);
       onRepost();

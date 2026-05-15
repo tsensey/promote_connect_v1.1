@@ -107,7 +107,7 @@ const COUNTRIES = [
   'Turquie',
 ];
 
-const PAVILLONS = ['A', 'B', 'C', 'D', 'E', 'F'];
+const NOMBRE_EMPLOYES = ['1-10', '11-50', '51-200', '200+'];
 
 export default function AdminUsersPage() {
   const { session } = useAuth();
@@ -123,14 +123,21 @@ export default function AdminUsersPage() {
     password: string;
     emailSent: boolean;
   } | null>(null);
+  const [espaces, setEspaces] = useState<{ id: string; code: string; nom: string; type: string }[]>([]);
   const [form, setForm] = useState({
     full_name: '',
     email: '',
     company: '',
     role: 'visiteur' as 'visiteur' | 'exposant',
+    espace_id: '',
     sector: '',
     country: '',
     pavillon: '',
+    stand: '',
+    description: '',
+    website: '',
+    annee_creation: '',
+    nombre_employes: '',
     generate_exposant: true,
   });
 
@@ -190,6 +197,18 @@ export default function AdminUsersPage() {
     return () => window.clearTimeout(timer);
   }, [fetchUsers]);
 
+  useEffect(() => {
+    if (!showCreateDialog || !token) return;
+    fetch('/api/admin/espaces', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.espaces) setEspaces(data.espaces);
+      })
+      .catch(() => {});
+  }, [showCreateDialog, token]);
+
   async function handleCreate() {
     if (!token) {
       toast.error('Session administrateur introuvable');
@@ -231,9 +250,15 @@ export default function AdminUsersPage() {
         email: '',
         company: '',
         role: 'visiteur',
+        espace_id: '',
         sector: '',
         country: '',
         pavillon: '',
+        stand: '',
+        description: '',
+        website: '',
+        annee_creation: '',
+        nombre_employes: '',
         generate_exposant: true,
       });
       setShowCreateDialog(false);
@@ -519,6 +544,7 @@ export default function AdminUsersPage() {
                       ...form,
                       role: 'visiteur',
                       generate_exposant: false,
+                      espace_id: '',
                       sector: '',
                       country: '',
                       pavillon: '',
@@ -581,21 +607,91 @@ export default function AdminUsersPage() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <Label>Pavillon</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {PAVILLONS.map((pavillon) => (
-                      <Button
-                        key={pavillon}
-                        type="button"
-                        variant={form.pavillon === pavillon ? 'default' : 'outline'}
-                        size="sm"
-                        className="rounded-full"
-                        onClick={() => setForm({ ...form, pavillon })}
-                      >
-                        {pavillon}
-                      </Button>
+                <div className="space-y-2">
+                  <Label htmlFor="espace_id">Espace / Pavillon</Label>
+                  <select
+                    id="espace_id"
+                    value={form.espace_id}
+                    onChange={(event) => {
+                      const espace = espaces.find((e) => e.id === event.target.value);
+                      setForm({
+                        ...form,
+                        espace_id: event.target.value,
+                        pavillon: espace?.code || '',
+                      });
+                    }}
+                    className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
+                  >
+                    <option value="">Selectionner un espace</option>
+                    {espaces.map((espace) => (
+                      <option key={espace.id} value={espace.id}>
+                        {espace.type === 'pavillon' ? 'Pavillon' : 'Espace'} {espace.code} — {espace.nom}
+                      </option>
                     ))}
+                  </select>
+                  <p className="text-xs text-muted-foreground">
+                    Le code de l&apos;espace sera utilise comme pavillon. Le stand est libre.
+                  </p>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="stand">Stand</Label>
+                    <Input
+                      id="stand"
+                      value={form.stand}
+                      onChange={(event) => setForm({ ...form, stand: event.target.value })}
+                      placeholder="Ex: A1-001"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="website">Site web</Label>
+                    <Input
+                      id="website"
+                      type="url"
+                      value={form.website}
+                      onChange={(event) => setForm({ ...form, website: event.target.value })}
+                      placeholder="https://example.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description de l&apos;entreprise</Label>
+                  <textarea
+                    id="description"
+                    value={form.description}
+                    onChange={(event) => setForm({ ...form, description: event.target.value })}
+                    placeholder="Presentez votre entreprise, ses activites et ses produits..."
+                    className="flex min-h-24 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm shadow-sm"
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="annee_creation">Annee de creation</Label>
+                    <Input
+                      id="annee_creation"
+                      value={form.annee_creation}
+                      onChange={(event) => setForm({ ...form, annee_creation: event.target.value })}
+                      placeholder="Ex: 2015"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="nombre_employes">Nombre d&apos;employes</Label>
+                    <select
+                      id="nombre_employes"
+                      value={form.nombre_employes}
+                      onChange={(event) => setForm({ ...form, nombre_employes: event.target.value })}
+                      className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
+                    >
+                      <option value="">Selectionner</option>
+                      {NOMBRE_EMPLOYES.map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </>

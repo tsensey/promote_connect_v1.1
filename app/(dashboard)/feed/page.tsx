@@ -64,14 +64,14 @@ export default function FeedPage() {
         <div className="hidden space-y-4 lg:col-span-3 lg:block">
           <div className="sticky top-20 space-y-4">
             <Card className="border-border/60 p-0">
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <div className="mb-4 flex items-center gap-2">
                   <Rss className="size-4 text-primary" />
                   <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground/70">
                     Votre activité
                   </h3>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {[
                     { icon: Sparkles, label: 'Publications', value: myPosts },
                     { icon: Heart, label: 'Reactions', value: totalLikes },
@@ -81,7 +81,7 @@ export default function FeedPage() {
                   ].map(({ icon: Icon, label, value }) => (
                     <div
                       key={label}
-                      className="flex items-center justify-between rounded-xl bg-muted/50 px-3 py-2.5 transition-colors hover:bg-muted/80"
+                      className="flex items-center justify-between rounded-xl bg-muted/50 px-2 py-1.5 transition-colors hover:bg-muted/80"
                     >
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Icon className="size-4" />
@@ -97,7 +97,7 @@ export default function FeedPage() {
             </Card>
 
             <Card className="border-border/60 p-0">
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground/70">
                   Types de publication
                 </h3>
@@ -187,7 +187,7 @@ export default function FeedPage() {
         <div className="hidden space-y-4 lg:col-span-3 lg:block">
           <div className="sticky top-20 space-y-4">
             <Card className="border-border/60 p-0">
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground/70">
                   Conseils de publication
                 </h3>
@@ -208,7 +208,7 @@ export default function FeedPage() {
             </Card>
 
             <Card className="border-border/60 p-0">
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground/70">
                   A propos
                 </h3>
@@ -228,7 +228,7 @@ export default function FeedPage() {
                     <img src={product.image_url} alt={product.nom} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
                   </div>
                 )}
-                <CardContent className="p-4">
+                <CardContent className="p-3">
                   <div className="mb-2 inline-flex rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary">Sponsorisé</div>
                   <h4 className="font-semibold text-sm line-clamp-1">{product.nom}</h4>
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{product.description || 'Découvrez ce produit.'}</p>

@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { Manrope } from 'next/font/google';
+import { Suspense } from 'react';
 import { ThemeProvider } from 'next-themes';
 import { AuthProvider } from '@/lib/auth/context';
+import { QueryProvider } from '@/lib/query-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -37,12 +39,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           enableSystem
           disableTransitionOnChange
         >
-          <TooltipProvider>
-            <AuthProvider>
-              {children}
-              <Toaster richColors position="top-right" />
-            </AuthProvider>
-          </TooltipProvider>
+          <QueryProvider>
+            <TooltipProvider>
+              <AuthProvider>
+                <Suspense fallback={null}>
+                  {children}
+                </Suspense>
+                <Toaster richColors position="top-right" />
+              </AuthProvider>
+            </TooltipProvider>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

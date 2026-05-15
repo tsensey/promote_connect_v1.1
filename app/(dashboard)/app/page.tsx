@@ -149,35 +149,45 @@ export default function DashboardHome() {
           .limit(4),
       ]);
 
+      const conversationsData = conversationsListRes.data || [];
       const recentConversations: RecentConversation[] = [];
 
-      for (const conversation of conversationsListRes.data || []) {
-        const otherId =
-          conversation.participant_a === user.id
-            ? conversation.participant_b
-            : conversation.participant_a;
+      if (conversationsData.length > 0) {
+        const otherIds = conversationsData.map((c) =>
+          c.participant_a === user.id ? c.participant_b : c.participant_a
+        ).filter(Boolean) as string[];
+        const convIds = conversationsData.map((c) => c.id);
 
-        if (!otherId) continue;
+        const [profilesRes, messagesRes] = await Promise.all([
+          supabaseClient.from("profiles").select("id, full_name").in("id", otherIds),
+          supabaseClient
+            .from("messages")
+            .select("conversation_id, content, created_at")
+            .in("conversation_id", convIds)
+            .order("created_at", { ascending: false }),
+        ]);
 
-        const [{ data: otherProfile }, { data: lastMessage }] =
-          await Promise.all([
-            supabaseClient.from("profiles").select("full_name").eq("id", otherId).single(),
-            supabaseClient
-              .from("messages")
-              .select("content, created_at")
-              .eq("conversation_id", conversation.id)
-              .order("created_at", { ascending: false })
-              .limit(1)
-              .single(),
-          ]);
+        const profileMap = new Map((profilesRes.data || []).map((p) => [p.id, p.full_name]));
 
-        recentConversations.push({
-          id: conversation.id,
-          other_name: otherProfile?.full_name || "Contact PROMOTE",
-          last_message: lastMessage?.content || null,
-          last_message_at:
-            lastMessage?.created_at || conversation.last_message_at,
-        });
+        const lastMsgMap = new Map<string, { content: string | null; created_at: string | null }>();
+        for (const msg of messagesRes.data || []) {
+          if (!lastMsgMap.has(msg.conversation_id)) {
+            lastMsgMap.set(msg.conversation_id, { content: msg.content, created_at: msg.created_at });
+          }
+        }
+
+        for (const conversation of conversationsData) {
+          const otherId = conversation.participant_a === user.id ? conversation.participant_b : conversation.participant_a;
+          if (!otherId) continue;
+
+          const lastMsg = lastMsgMap.get(conversation.id);
+          recentConversations.push({
+            id: conversation.id,
+            other_name: profileMap.get(otherId) || "Contact PROMOTE",
+            last_message: lastMsg?.content || null,
+            last_message_at: lastMsg?.created_at || conversation.last_message_at,
+          });
+        }
       }
 
       setData({

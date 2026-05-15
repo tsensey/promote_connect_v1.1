@@ -8,51 +8,47 @@ function isPublicRoute(pathname: string) {
   return PUBLIC_ROUTES.has(pathname)
 }
 
+async function getUserRole(supabase: ReturnType<typeof createServerClient<Database>>, userId: string): Promise<string | null> {
+  const { data } = await supabase.from('profiles').select('role').eq('id', userId).single()
+  return data?.role ?? null
+}
+
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+  const pathname = request.nextUrl.pathname
+
+  let response = NextResponse.next({ request })
 
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
+        getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
         },
       },
     }
   )
 
-  const pathname = request.nextUrl.pathname
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user && !isPublicRoute(pathname)) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    url.searchParams.set('redirect', `${pathname}${request.nextUrl.search}`)
-    return NextResponse.redirect(url)
-  }
+  const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return supabaseResponse
+    if (!isPublicRoute(pathname)) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      url.searchParams.set('redirect', `${pathname}${request.nextUrl.search}`)
+      return NextResponse.redirect(url)
+    }
+    return response
   }
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-
-  const isAdmin = profile?.role === 'admin'
+  const needsRoleCheck = pathname === '/login' || pathname === '/register' || pathname.startsWith('/admin')
+  let isAdmin = false
+  if (needsRoleCheck) {
+    const role = await getUserRole(supabase, user.id)
+    isAdmin = role === 'admin'
+  }
 
   if (pathname === '/login' || pathname === '/register') {
     const url = request.nextUrl.clone()
@@ -67,5 +63,5 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  return supabaseResponse
+  return response
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/context';
 import { UserSidebar } from '@/components/layout/UserSidebar';
@@ -97,7 +97,15 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
           onSignOut={handleSignOut}
         />
 
-        <main className="px-4 pt-6 sm:px-6 xl:px-8">{children}</main>
+        <main className="px-4 pt-6 sm:px-6 xl:px-8">
+          <Suspense fallback={
+            <div className="flex min-h-[60vh] items-center justify-center">
+              <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            </div>
+          }>
+            {children}
+          </Suspense>
+        </main>
       </div>
     </div>
   );

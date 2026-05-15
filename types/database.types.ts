@@ -81,6 +81,7 @@ export interface Database {
           nombre_employes: string | null;
           is_featured: boolean;
           gallery_urls: string[] | null;
+          espace_id: string | null;
           created_at: string | null;
         };
         Insert: {
@@ -109,6 +110,7 @@ export interface Database {
           nombre_employes?: string | null;
           is_featured?: boolean;
           gallery_urls?: string[] | null;
+          espace_id?: string | null;
           created_at?: string | null;
         };
         Update: {
@@ -137,6 +139,7 @@ export interface Database {
           nombre_employes?: string | null;
           is_featured?: boolean;
           gallery_urls?: string[] | null;
+          espace_id?: string | null;
           created_at?: string | null;
         };
         Relationships: [];
@@ -688,6 +691,36 @@ export interface Database {
             referencedColumns: ['id'];
           },
         ];
+      };
+      espaces: {
+        Row: {
+          id: string;
+          code: string;
+          nom: string;
+          description: string | null;
+          type: string;
+          sort_order: number;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          nom: string;
+          description?: string | null;
+          type?: string;
+          sort_order?: number;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          code?: string;
+          nom?: string;
+          description?: string | null;
+          type?: string;
+          sort_order?: number;
+          created_at?: string | null;
+        };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;

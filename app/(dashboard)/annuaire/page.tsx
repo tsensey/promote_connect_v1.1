@@ -216,13 +216,13 @@ export default function AnnuairePage() {
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Tous les pavillons" />
+                  <SelectValue placeholder="Tous les espaces" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les pavillons</SelectItem>
-                  {filterOptions.pavillons.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
+                  <SelectItem value="">Tous les espaces</SelectItem>
+                  {filterOptions.espaces.map((espace) => (
+                    <SelectItem key={espace.id} value={espace.code}>
+                      {espace.type === 'pavillon' ? 'Pav.' : 'Espace'} {espace.code} — {espace.nom}
                     </SelectItem>
                   ))}
                 </SelectContent>

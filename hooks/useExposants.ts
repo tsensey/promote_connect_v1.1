@@ -4,6 +4,13 @@ import type { Database } from '@/types/database.types';
 
 type Exposant = Database['public']['Tables']['exposants']['Row'];
 
+interface Espace {
+  id: string;
+  code: string;
+  nom: string;
+  type: string;
+}
+
 interface UseExposantsOptions {
   search?: string;
   secteur?: string;
@@ -21,10 +28,11 @@ export function useExposants(options: UseExposantsOptions = {}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [totalCount, setTotalCount] = useState<number | null>(null);
-  const [filters, setFilters] = useState<{ secteurs: string[]; pavillons: string[]; pays: string[] }>({
+  const [filters, setFilters] = useState<{ secteurs: string[]; pavillons: string[]; pays: string[]; espaces: Espace[] }>({
     secteurs: [],
     pavillons: [],
     pays: [],
+    espaces: [],
   });
 
   useEffect(() => {
@@ -73,24 +81,22 @@ export function useExposants(options: UseExposantsOptions = {}) {
 
   useEffect(() => {
     const fetchFilterOptions = async () => {
-      const { data } = await supabaseClient
-        .from('exposants')
-        .select('secteur, pavillon, pays')
-        .limit(500);
+      const [secteursRes, pavillonsRes, paysRes, espData] = await Promise.all([
+        supabaseClient.from('exposants').select('secteur').not('secteur', 'is', null).limit(200),
+        supabaseClient.from('exposants').select('pavillon').not('pavillon', 'is', null).limit(200),
+        supabaseClient.from('exposants').select('pays').not('pays', 'is', null).limit(200),
+        supabaseClient.from('espaces').select('id, code, nom, type').order('sort_order', { ascending: true }),
+      ]);
 
-      if (data) {
-        setFilters({
-          secteurs: Array.from(
-            new Set(data.map((e) => e.secteur).filter((value): value is string => Boolean(value)))
-          ),
-          pavillons: Array.from(
-            new Set(data.map((e) => e.pavillon).filter((value): value is string => Boolean(value)))
-          ),
-          pays: Array.from(
-            new Set(data.map((e) => e.pays).filter((value): value is string => Boolean(value)))
-          ),
-        });
-      }
+      const unique = (arr: ({ [key: string]: string | null } | null)[] | null, key: string): string[] =>
+        Array.from(new Set((arr || []).map((e) => e?.[key]).filter((v): v is string => Boolean(v))));
+
+      setFilters({
+        secteurs: unique(secteursRes.data, 'secteur'),
+        pavillons: unique(pavillonsRes.data, 'pavillon'),
+        pays: unique(paysRes.data, 'pays'),
+        espaces: (espData.data || []) as Espace[],
+      });
     };
     fetchFilterOptions();
   }, []);

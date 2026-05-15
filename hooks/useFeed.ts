@@ -13,7 +13,7 @@ type ProfileRow = Database['public']['Tables']['profiles']['Row'] & {
 };
 
 type PostWithAuthor = PostRow & {
-  author: Pick<ProfileRow, 'id' | 'full_name' | 'company' | 'avatar_url' | 'role'>;
+  author: Pick<ProfileRow, 'id' | 'full_name' | 'company' | 'avatar_url' | 'role'> & { exposants?: { id: string }[] };
 };
 
 type Post = PostWithAuthor & {

@@ -14,8 +14,6 @@ export type AppProfile = Pick<
   | 'sector'
   | 'country'
   | 'pavillon'
-  | 'subscription_status'
-  | 'subscription_ends_at'
   | 'avatar_url'
 >;
 
@@ -35,7 +33,7 @@ async function loadProfile(userId: string) {
   const { data, error } = await supabaseClient
     .from('profiles')
     .select(
-      'id, full_name, company, role, sector, country, pavillon, subscription_status, subscription_ends_at, avatar_url'
+      'id, full_name, company, role, sector, country, pavillon, avatar_url'
     )
     .eq('id', userId)
     .single();
@@ -55,49 +53,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let isInitialLoad = true;
 
     const syncAuthState = async (nextSession?: Session | null) => {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      }
 
       const resolvedSession =
         nextSession ?? (await supabaseClient.auth.getSession()).data.session ?? null;
 
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       setSession(resolvedSession);
       setUser(resolvedSession?.user ?? null);
 
       if (!resolvedSession?.user) {
         setProfile(null);
-        setLoading(false);
+        if (isInitialLoad) setLoading(false);
+        isInitialLoad = false;
         return;
       }
 
       try {
         const nextProfile = await loadProfile(resolvedSession.user.id);
-
-        if (mounted) {
-          setProfile(nextProfile);
-        }
-      } catch (error) {
-        console.error('Failed to load profile', error);
-        if (mounted) {
-          setProfile(null);
-        }
+        if (mounted) setProfile(nextProfile);
+      } catch {
+        if (mounted) setProfile(null);
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (mounted && isInitialLoad) setLoading(false);
+        isInitialLoad = false;
       }
     };
 
     void syncAuthState();
 
-    const {
-      data: { subscription },
-    } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => {
       void syncAuthState(nextSession);
     });
 

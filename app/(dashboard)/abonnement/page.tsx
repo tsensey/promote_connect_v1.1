@@ -11,7 +11,7 @@ export default function AccessPage() {
           Acces a la plateforme
         </h1>
         <p className="max-w-2xl text-base leading-7 text-muted-foreground">
-          Gerer votre abonnement et vos acces a PROMOTE-CONNECT.
+          Votre acces a PROMOTE-CONNECT.
         </p>
       </div>
 
@@ -26,7 +26,7 @@ export default function AccessPage() {
                 Acces complet
               </h2>
               <p className="text-sm text-white/80">
-                Votre compte est actif et supervisé par l&apos;administration
+                Votre compte est actif et supervise par l administration
               </p>
             </div>
           </div>
@@ -38,12 +38,11 @@ export default function AccessPage() {
               <Sparkles className="size-5 text-emerald-600" />
               <div>
                 <p className="font-semibold text-emerald-800">
-                  Systeme d&apos;abonnement desactive
+                  Acces actif
                 </p>
                 <p className="mt-0.5 text-sm text-emerald-600">
-                  Tous les comptes crees par l&apos;administrateur
-                  PROMOTE-CONNECT disposent d&apos;un acces complet a la
-                  plateforme.
+                  Tous les comptes provisionnes par PROMOTE-CONNECT
+                  disposent d un acces complet a la plateforme.
                 </p>
               </div>
             </div>
@@ -71,7 +70,7 @@ export default function AccessPage() {
                 Provisioning admin
               </p>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                La creation des comptes et l&apos;attribution des roles sont
+                La creation des comptes et l attribution des roles sont
                 gerees uniquement depuis le back-office administrateur.
               </p>
             </div>

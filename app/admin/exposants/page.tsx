@@ -24,55 +24,109 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { toast } from 'sonner';
 
 type Exposant = Database['public']['Tables']['exposants']['Row'];
 
+interface Espace {
+  id: string;
+  code: string;
+  nom: string;
+  type: string;
+}
+
 export default function AdminExposantsPage() {
   const [exposants, setExposants] = useState<Exposant[]>([]);
+  const [espaces, setEspaces] = useState<Espace[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [formData, setFormData] = useState({
-    nom: '', description: '', secteur: '', pavillon: '', stand: '', pays: '', website: '', is_featured: false,
+    nom: '', description: '', secteur: '', espace_id: '', pavillon: '', stand: '', pays: '', website: '', is_featured: false,
   });
 
-  const fetchExposants = async () => {
+  const fetchData = async () => {
     setLoading(true);
-    const { data } = await supabaseClient.from('exposants').select('*').order('created_at', { ascending: false });
-    if (data) setExposants(data);
+    const [expRes, espRes] = await Promise.all([
+      supabaseClient.from('exposants').select('*').order('created_at', { ascending: false }),
+      supabaseClient.from('espaces').select('*').order('sort_order', { ascending: true }),
+    ]);
+    if (expRes.data) setExposants(expRes.data);
+    if (espRes.data) setEspaces(espRes.data);
     setLoading(false);
   };
 
-  useEffect(() => { fetchExposants(); }, []);
+  useEffect(() => { fetchData(); }, []);
+
+  const resetForm = () => {
+    setFormData({ nom: '', description: '', secteur: '', espace_id: '', pavillon: '', stand: '', pays: '', website: '', is_featured: false });
+    setEditingId(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormLoading(true);
+
     if (editingId) {
-      const { error } = await supabaseClient.from('exposants').update(formData).eq('id', editingId);
-      if (!error) { setShowForm(false); setEditingId(null); fetchExposants(); }
+      const updatePayload: Database['public']['Tables']['exposants']['Update'] = {
+        nom: formData.nom,
+        description: formData.description || null,
+        secteur: formData.secteur || null,
+        pavillon: formData.pavillon || null,
+        stand: formData.stand || null,
+        pays: formData.pays || null,
+        website: formData.website || null,
+        is_featured: formData.is_featured,
+        espace_id: formData.espace_id || null,
+      };
+      const { error } = await supabaseClient.from('exposants').update(updatePayload).eq('id', editingId);
+      if (error) { toast.error(error.message); } else { setShowForm(false); resetForm(); fetchData(); }
     } else {
-      const { error } = await supabaseClient.from('exposants').insert(formData);
-      if (!error) { setShowForm(false); fetchExposants(); }
+      const insertPayload: Database['public']['Tables']['exposants']['Insert'] = {
+        nom: formData.nom,
+        description: formData.description || null,
+        secteur: formData.secteur || null,
+        pavillon: formData.pavillon || null,
+        stand: formData.stand || null,
+        pays: formData.pays || null,
+        website: formData.website || null,
+        is_featured: formData.is_featured,
+        espace_id: formData.espace_id || null,
+      };
+      const { error } = await supabaseClient.from('exposants').insert(insertPayload);
+      if (error) { toast.error(error.message); } else { setShowForm(false); resetForm(); fetchData(); }
     }
     setFormLoading(false);
   };
 
   const handleEdit = (exp: Exposant) => {
-    setFormData({ nom: exp.nom || '', description: exp.description || '', secteur: exp.secteur || '', pavillon: exp.pavillon || '', stand: exp.stand || '', pays: exp.pays || '', website: exp.website || '', is_featured: exp.is_featured || false });
+    setFormData({
+      nom: exp.nom || '',
+      description: exp.description || '',
+      secteur: exp.secteur || '',
+      espace_id: exp.espace_id || '',
+      pavillon: exp.pavillon || '',
+      stand: exp.stand || '',
+      pays: exp.pays || '',
+      website: exp.website || '',
+      is_featured: exp.is_featured || false,
+    });
     setEditingId(exp.id);
     setShowForm(true);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Supprimer cet exposant ?')) return;
-    await supabaseClient.from('exposants').delete().eq('id', id);
-    fetchExposants();
+    const { error } = await supabaseClient.from('exposants').delete().eq('id', id);
+    if (error) toast.error(error.message);
+    else fetchData();
   };
 
   const filtered = exposants.filter((exp) => exp.nom.toLowerCase().includes(search.toLowerCase()));
+
+  const selectedEspace = espaces.find((e) => e.id === formData.espace_id);
 
   return (
     <div className="space-y-6">
@@ -84,9 +138,10 @@ export default function AdminExposantsPage() {
           <h1 className="text-4xl text-foreground">Gestion des fiches exposants</h1>
           <p className="max-w-3xl text-base leading-7 text-muted-foreground">
             Publiez, modifiez et organisez les fiches exposes dans l annuaire PROMOTE-CONNECT.
+            Les espaces et pavillons sont configurés depuis la section <strong>Espaces & Pavillons</strong>.
           </p>
         </div>
-        <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ nom: '', description: '', secteur: '', pavillon: '', stand: '', pays: '', website: '', is_featured: false }); }} className="rounded-xl">
+        <Button onClick={() => { setShowForm(true); resetForm(); }} className="rounded-xl">
           <Plus className="mr-2 size-4" /> Ajouter
         </Button>
       </div>
@@ -110,8 +165,8 @@ export default function AdminExposantsPage() {
               <TableRow>
                 <TableHead>Exposant</TableHead>
                 <TableHead>Secteur</TableHead>
-                <TableHead>Pavillon</TableHead>
-                <TableHead>Pays</TableHead>
+                <TableHead>Espace</TableHead>
+                <TableHead>Stand</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -123,38 +178,49 @@ export default function AdminExposantsPage() {
                     <TableCell><div className="h-5 w-32 animate-pulse rounded bg-muted" /></TableCell>
                     <TableCell><div className="h-5 w-20 animate-pulse rounded bg-muted" /></TableCell>
                     <TableCell><div className="h-5 w-16 animate-pulse rounded bg-muted" /></TableCell>
-                    <TableCell><div className="h-5 w-20 animate-pulse rounded bg-muted" /></TableCell>
+                    <TableCell><div className="h-5 w-16 animate-pulse rounded bg-muted" /></TableCell>
                     <TableCell><div className="h-5 w-16 animate-pulse rounded bg-muted" /></TableCell>
                     <TableCell><div className="h-5 w-20 animate-pulse rounded bg-muted ml-auto" /></TableCell>
                   </TableRow>
                 ))
               ) : filtered.length > 0 ? (
-                filtered.map((exp) => (
-                  <TableRow key={exp.id}>
-                    <TableCell>
-                      <div className="font-medium text-foreground">{exp.nom}</div>
-                      {exp.is_featured && <Badge variant="secondary" className="mt-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300">En vedette</Badge>}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{exp.secteur || '-'}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{exp.pavillon || '-'}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{exp.pays || '-'}</TableCell>
-                    <TableCell>
-                      <Badge variant={exp.profile_id ? 'default' : 'secondary'} className="rounded-full">
-                        {exp.profile_id ? 'Lie' : 'Non lie'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(exp)} className="h-8 w-8 p-0">
-                          <Edit className="size-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(exp.id)} className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10">
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                filtered.map((exp) => {
+                  const espace = espaces.find((e) => e.id === exp.espace_id);
+                  return (
+                    <TableRow key={exp.id}>
+                      <TableCell>
+                        <div className="font-medium text-foreground">{exp.nom}</div>
+                        {exp.is_featured && <Badge variant="secondary" className="mt-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300">En vedette</Badge>}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{exp.secteur || '-'}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {espace ? (
+                          <Badge variant="outline" className="rounded-full text-xs font-mono">
+                            {espace.type === 'pavillon' ? 'P' : 'E'}{espace.code}
+                          </Badge>
+                        ) : exp.pavillon ? (
+                          <span className="text-muted-foreground">Pav. {exp.pavillon}</span>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{exp.stand || '-'}</TableCell>
+                      <TableCell>
+                        <Badge variant={exp.profile_id ? 'default' : 'secondary'} className="rounded-full">
+                          {exp.profile_id ? 'Lie' : 'Non lie'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => handleEdit(exp)} className="h-8 w-8 p-0">
+                            <Edit className="size-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDelete(exp.id)} className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10">
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
@@ -175,15 +241,51 @@ export default function AdminExposantsPage() {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="grid gap-3 py-4">
             <Input placeholder="Nom" value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} required />
-            <Input placeholder="Secteur" value={formData.secteur} onChange={(e) => setFormData({ ...formData, secteur: e.target.value })} />
+
             <div className="grid grid-cols-2 gap-3">
-              <Input placeholder="Pavillon" value={formData.pavillon} onChange={(e) => setFormData({ ...formData, pavillon: e.target.value })} />
-              <Input placeholder="Stand" value={formData.stand} onChange={(e) => setFormData({ ...formData, stand: e.target.value })} />
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Espace / Pavillon</label>
+                <select
+                  value={formData.espace_id}
+                  onChange={(e) => {
+                    const espace = espaces.find((sp) => sp.id === e.target.value);
+                    setFormData({
+                      ...formData,
+                      espace_id: e.target.value,
+                      pavillon: espace?.code || '',
+                    });
+                  }}
+                  className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
+                >
+                  <option value="">Aucun</option>
+                  {espaces.map((espace) => (
+                    <option key={espace.id} value={espace.id}>
+                      {espace.type === 'pavillon' ? 'Pavillon' : 'Espace'} {espace.code} — {espace.nom}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Stand</label>
+                <Input
+                  placeholder="Ex: 3-1, H-10"
+                  value={formData.stand}
+                  onChange={(e) => setFormData({ ...formData, stand: e.target.value })}
+                />
+              </div>
             </div>
+
+            {selectedEspace && (
+              <div className="rounded-xl bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                Code pavillon : <strong>{selectedEspace.code}</strong> — {selectedEspace.type === 'pavillon' ? 'Pavillon' : 'Espace'} {selectedEspace.code} — {selectedEspace.nom}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
+              <Input placeholder="Secteur" value={formData.secteur} onChange={(e) => setFormData({ ...formData, secteur: e.target.value })} />
               <Input placeholder="Pays" value={formData.pays} onChange={(e) => setFormData({ ...formData, pays: e.target.value })} />
-              <Input placeholder="Website" value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} />
             </div>
+            <Input placeholder="Website" value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} />
             <Textarea placeholder="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} />
             <div className="flex items-center gap-2">
               <Checkbox id="featured" checked={formData.is_featured} onCheckedChange={(checked) => setFormData({ ...formData, is_featured: checked === true })} />

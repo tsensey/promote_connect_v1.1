@@ -122,7 +122,7 @@ export default function VitrinePage() {
       </div>
 
       {/* Search & Filters */}
-      <Card className="surface-panel border-0">
+      <Card className="border-0 py-0">
         <CardContent className="space-y-4 p-5">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -233,7 +233,7 @@ export default function VitrinePage() {
             return (
               <Card
                 key={key}
-                className="surface-panel group border-0 flex flex-col transition-all hover:shadow-lg"
+                className="group border-0 flex flex-col transition-all hover:shadow-lg py-0"
               >
                 <CardContent className="flex flex-1 flex-col space-y-4 p-5">
                   {produit.image_url && (

@@ -80,7 +80,8 @@ export default function RegisterPage() {
             <div>
               <h1 className="text-2xl font-bold text-foreground">Compte créé !</h1>
               <p className="mt-2 text-sm text-muted-foreground leading-6">
-                Bienvenue sur PROMOTE-CONNECT. Vous allez être redirigé vers votre espace personnel.
+                Bienvenue sur PROMOTE-CONNECT. Un email de confirmation vous a été envoyé.
+                Vérifiez votre boîte de réception et cliquez sur le lien pour activer votre compte.
               </p>
             </div>
             <Loader2 className="size-5 animate-spin text-muted-foreground" />
