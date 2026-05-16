@@ -68,6 +68,7 @@ export function UserSidebar({
   role,
   collapsed,
   onToggle,
+  onNavigate,
   user,
   onSignOut,
   mobile = false,
@@ -75,6 +76,7 @@ export function UserSidebar({
   role: 'exposant' | 'visiteur';
   collapsed: boolean;
   onToggle: () => void;
+  onNavigate?: () => void;
   user: { name: string; company?: string; avatar?: string } | null;
   onSignOut: () => void;
   mobile?: boolean;
@@ -223,6 +225,7 @@ export function UserSidebar({
                     <Link
                       key={item.href}
                       href={item.href}
+                      onClick={onNavigate}
                       className={cn(
                         'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
                         active

@@ -64,10 +64,12 @@ function LabelText({
 export function AdminSidebar({
   collapsed,
   onToggle,
+  onNavigate,
   mobile = false,
 }: {
   collapsed: boolean;
   onToggle: () => void;
+  onNavigate?: () => void;
   mobile?: boolean;
 }) {
   const pathname = usePathname();
@@ -166,6 +168,7 @@ export function AdminSidebar({
                     <Link
                       key={item.href}
                       href={item.href}
+                      onClick={onNavigate}
                       className={cn(
                         'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
                         active

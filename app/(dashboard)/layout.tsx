@@ -70,6 +70,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
               role={role}
               collapsed={false}
               onToggle={() => setMobileOpen(false)}
+              onNavigate={() => setMobileOpen(false)}
               user={{
                 name: profile?.full_name || user.email?.split('@')[0] || 'Participant',
                 company: profile?.company || undefined,

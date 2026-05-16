@@ -59,7 +59,7 @@ export default function AdminLayoutWrapper({ children }: { children: React.React
             className="h-full w-[86%] max-w-sm bg-sidebar"
             onClick={(event) => event.stopPropagation()}
           >
-            <AdminSidebar collapsed={false} onToggle={() => setMobileOpen(false)} mobile />
+            <AdminSidebar collapsed={false} onToggle={() => setMobileOpen(false)} onNavigate={() => setMobileOpen(false)} mobile />
           </div>
         </div>
       )}
