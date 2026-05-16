@@ -922,6 +922,16 @@ export const translations: Record<Locale, Record<string, string>> = {
     'notifications.document': '📄 Document',
     'notifications.product': '🏷️ Produit',
     'notifications.someone': 'Quelqu\'un',
+    'notifications.title': 'Notifications',
+    'notifications.mark_all_read': 'Tout marquer comme lu',
+    'notifications.empty_title': 'Aucune notification',
+    'notifications.empty_desc': 'Vous serez averti ici pour toute activité importante.',
+    'notifications.see_all': 'Toutes les notifications',
+    'notifications.liked_post': '{name} a aimé votre publication',
+    'notifications.commented_post': '{name} a commenté votre publication',
+    'notifications.mentioned_post': '{name} vous a mentionné dans une publication',
+    'notifications.mentioned_comment': '{name} vous a mentionné dans un commentaire',
+    'notifications.new_activity': '{name} a interagi avec vous',
     'notifications.view': 'Voir',
 
     // ─── Settings ────────────────────────────────────────────
@@ -1934,6 +1944,16 @@ export const translations: Record<Locale, Record<string, string>> = {
     'notifications.document': '📄 Document',
     'notifications.product': '🏷️ Product',
     'notifications.someone': 'Someone',
+    'notifications.title': 'Notifications',
+    'notifications.mark_all_read': 'Mark all as read',
+    'notifications.empty_title': 'No notifications',
+    'notifications.empty_desc': 'You will be notified here for any important activity.',
+    'notifications.see_all': 'All notifications',
+    'notifications.liked_post': '{name} liked your post',
+    'notifications.commented_post': '{name} commented on your post',
+    'notifications.mentioned_post': '{name} mentioned you in a post',
+    'notifications.mentioned_comment': '{name} mentioned you in a comment',
+    'notifications.new_activity': '{name} interacted with you',
     'notifications.view': 'View',
 
     // ─── Settings ────────────────────────────────────────────

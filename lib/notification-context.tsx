@@ -3,11 +3,30 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
 
+export interface Notification {
+  id: string;
+  profile_id: string;
+  sender_id: string;
+  type: string;
+  data: any;
+  is_read: boolean;
+  created_at: string;
+  sender?: {
+    full_name: string;
+    avatar_url: string;
+  };
+}
+
 interface NotificationContextValue {
   activeConversationId: string | null;
   setActiveConversationId: (id: string | null) => void;
   unreadMessages: number;
+  notifications: Notification[];
+  unreadNotificationsCount: number;
   refreshUnreadCount: () => Promise<void>;
+  refreshNotifications: () => Promise<void>;
+  markAsRead: (notificationId: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
 }
 
 const notificationContext = createContext<NotificationContextValue | undefined>(undefined);
@@ -15,6 +34,8 @@ const notificationContext = createContext<NotificationContextValue | undefined>(
 export function NotificationStateProvider({ children }: { children: React.ReactNode }) {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
 
   const fetchUnreadCount = async () => {
     const { data: session } = await supabaseClient.auth.getSession();
@@ -42,23 +63,77 @@ export function NotificationStateProvider({ children }: { children: React.ReactN
     setUnreadMessages(count ?? 0);
   };
 
+  const fetchNotifications = async () => {
+    const { data: session } = await supabaseClient.auth.getSession();
+    const myId = session?.session?.user?.id;
+    if (!myId) return;
+
+    const { data, error } = await supabaseClient
+      .from('notifications')
+      .select(`
+        *,
+        sender:profiles!notifications_sender_id_fkey(full_name, avatar_url)
+      `)
+      .eq('profile_id', myId)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (!error && data) {
+      setNotifications(data as Notification[]);
+      setUnreadNotificationsCount(data.filter(n => !n.is_read).length);
+    }
+  };
+
+  const markAsRead = async (id: string) => {
+    const { error } = await supabaseClient
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('id', id);
+    
+    if (!error) {
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+      setUnreadNotificationsCount(prev => Math.max(0, prev - 1));
+    }
+  };
+
+  const markAllAsRead = async () => {
+    const { data: session } = await supabaseClient.auth.getSession();
+    const myId = session?.session?.user?.id;
+    if (!myId) return;
+
+    const { error } = await supabaseClient
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('profile_id', myId)
+      .eq('is_read', false);
+    
+    if (!error) {
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadNotificationsCount(0);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
-    const safeFetch = async () => { if (mounted) await fetchUnreadCount(); };
+    const safeFetch = async () => { 
+      if (mounted) {
+        await Promise.all([fetchUnreadCount(), fetchNotifications()]);
+      }
+    };
 
     safeFetch();
 
     const channel = supabaseClient
-      .channel('unread-counts')
+      .channel('realtime-notifications')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        () => safeFetch()
+        { event: '*', schema: 'public', table: 'messages' },
+        () => fetchUnreadCount()
       )
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'messages', filter: 'is_read=eq.true' },
-        () => safeFetch()
+        { event: '*', schema: 'public', table: 'notifications' },
+        () => fetchNotifications()
       )
       .subscribe();
 
@@ -69,7 +144,17 @@ export function NotificationStateProvider({ children }: { children: React.ReactN
   }, []);
 
   return (
-    <notificationContext.Provider value={{ activeConversationId, setActiveConversationId, unreadMessages, refreshUnreadCount: fetchUnreadCount }}>
+    <notificationContext.Provider value={{ 
+      activeConversationId, 
+      setActiveConversationId, 
+      unreadMessages, 
+      notifications,
+      unreadNotificationsCount,
+      refreshUnreadCount: fetchUnreadCount,
+      refreshNotifications: fetchNotifications,
+      markAsRead,
+      markAllAsRead
+    }}>
       {children}
     </notificationContext.Provider>
   );

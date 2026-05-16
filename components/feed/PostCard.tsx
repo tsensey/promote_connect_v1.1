@@ -27,6 +27,9 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
 import type { useFeed, Comment } from '@/hooks/useFeed';
+import { MentionInput } from '@/components/shared/MentionInput';
+import { supabaseClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 
 type Post = NonNullable<ReturnType<typeof useFeed>['posts']>[number];
 
@@ -77,24 +80,51 @@ function CommentItem({
 }) {
   const { t, locale } = useTranslation();
   const [showReply, setShowReply] = useState(false);
-  const [replyText, setReplyText] = useState('');
-  const [localReplies, setLocalReplies] = useState<Comment[]>(comment.replies ?? []);
-  const [submitting, setSubmitting] = useState(false);
+  const [mentionedProfiles, setMentionedProfiles] = useState<string[]>([]);
+  const { user } = useAuth();
 
   const handleReply = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyText.trim()) return;
     setSubmitting(true);
     const { data, error } = await onAddComment(replyText, comment.id);
+    
     if (!error && data) {
+      // 1. Notify the person being replied to (if not self)
+      if (comment.author_id !== user?.id) {
+        await supabaseClient.from('notifications').insert({
+          profile_id: comment.author_id,
+          sender_id: user?.id,
+          type: 'comment',
+          data: { post_id: comment.post_id, comment_id: data.id, content_preview: replyText.slice(0, 50) }
+        });
+      }
+
+      // 2. Notify all mentioned profiles
+      if (mentionedProfiles.length > 0) {
+        const uniqueMentions = Array.from(new Set(mentionedProfiles)).filter(id => id !== user?.id);
+        if (uniqueMentions.length > 0) {
+          await supabaseClient.from('notifications').insert(
+            uniqueMentions.map(profile_id => ({
+              profile_id,
+              sender_id: user?.id,
+              type: 'mention_comment',
+              data: { post_id: comment.post_id, comment_id: data.id, content_preview: replyText.slice(0, 50) }
+            }))
+          );
+        }
+      }
+
       setLocalReplies((prev) => [...prev, { ...data, replies: [] }]);
       setReplyText('');
+      setMentionedProfiles([]);
       setShowReply(false);
     }
     setSubmitting(false);
   };
 
   const authorInitials = getInitials(comment.author.full_name);
+  const authorExposantId = comment.author.exposants?.[0]?.id;
 
   return (
     <div className={cn('flex gap-2', depth > 0 && 'ml-8 mt-2')}>
@@ -134,16 +164,17 @@ function CommentItem({
 
             {showReply && (
               <form onSubmit={handleReply} className="mt-2 flex gap-2">
-                <input
+                <MentionInput
                   autoFocus
-                  type="text"
                   value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
+                  onChange={setReplyText}
+                  onMention={(exposant) => setMentionedProfiles(prev => [...prev, exposant.profile_id])}
+                  authorExposantId={authorExposantId}
                   placeholder={t('feed.post.reply_placeholder', { name: comment.author.full_name || t('feed.post.user') })}
-                  className="flex-1 rounded-full border border-border bg-muted/50 px-3 py-1.5 text-xs text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-primary/50"
+                  className="rounded-xl px-3 py-1.5"
                 />
-                <Button type="submit" size="icon-sm" className="size-7 rounded-full" disabled={!replyText.trim() || submitting}>
-                  <Send className="size-3" />
+                <Button type="submit" size="icon-sm" className="size-8 rounded-full shrink-0" disabled={!replyText.trim() || submitting}>
+                  <Send className="size-3.5" />
                 </Button>
               </form>
             )}
@@ -174,6 +205,9 @@ export const PostCard = memo(function PostCard({
   const [comments, setComments] = useState<Comment[]>([]);
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [mentionedProfiles, setMentionedProfiles] = useState<string[]>([]);
+  const { user } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
   const [likeAnim, setLikeAnim] = useState(false);
@@ -262,13 +296,42 @@ export const PostCard = memo(function PostCard({
     async (e: React.FormEvent) => {
       e.preventDefault();
       if (!newComment.trim()) return;
+      setSubmitting(true);
       const { data, error } = await onAddComment(newComment);
+      
       if (!error && data) {
+        // 1. Notify the post author (if not self)
+        if (post.author_id !== user?.id) {
+          await supabaseClient.from('notifications').insert({
+            profile_id: post.author_id,
+            sender_id: user?.id,
+            type: 'comment',
+            data: { post_id: post.id, comment_id: data.id, content_preview: newComment.slice(0, 50) }
+          });
+        }
+
+        // 2. Notify all mentioned profiles
+        if (mentionedProfiles.length > 0) {
+          const uniqueMentions = Array.from(new Set(mentionedProfiles)).filter(id => id !== user?.id);
+          if (uniqueMentions.length > 0) {
+            await supabaseClient.from('notifications').insert(
+              uniqueMentions.map(profile_id => ({
+                profile_id,
+                sender_id: user?.id,
+                type: 'mention_comment',
+                data: { post_id: post.id, comment_id: data.id, content_preview: newComment.slice(0, 50) }
+              }))
+            );
+          }
+        }
+
         setComments((prev) => [...prev, { ...data, replies: [] }]);
         setNewComment('');
+        setMentionedProfiles([]);
       }
+      setSubmitting(false);
     },
-    [newComment, onAddComment]
+    [newComment, onAddComment, post.author_id, post.id, user?.id, mentionedProfiles]
   );
 
   const typeBg = TYPE_BADGE[post.type] || TYPE_BADGE.general;
@@ -543,19 +606,20 @@ export const PostCard = memo(function PostCard({
 
             {/* New root comment */}
             <form onSubmit={handleAddComment} className="flex gap-2 pt-1">
-              <input
-                ref={commentInputRef}
-                type="text"
+              <MentionInput
+                ref={commentInputRef as any}
                 value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
+                onChange={setNewComment}
+                onMention={(exposant) => setMentionedProfiles(prev => [...prev, exposant.profile_id])}
+                authorExposantId={exposantId}
                 placeholder={t('feed.post.comment_placeholder')}
-                className="flex-1 rounded-full border border-border bg-background px-4 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-primary/50 focus:bg-muted/30"
+                className="rounded-full bg-background focus:bg-muted/30"
               />
               <Button
                 type="submit"
                 size="icon-sm"
                 className="size-9 rounded-full shrink-0"
-                disabled={!newComment.trim()}
+                disabled={!newComment.trim() || submitting}
               >
                 <Send className="size-4" />
               </Button>
