@@ -21,11 +21,8 @@ const manrope = Manrope({
 });
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0f0f0f' },
-  ],
-  colorScheme: 'light dark',
+  themeColor: { media: '(prefers-color-scheme: dark)', color: '#0f0f0f' },
+  colorScheme: 'dark',
   width: 'device-width',
   initialScale: 1,
   minimumScale: 1,
@@ -65,8 +62,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-screen bg-background text-foreground">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="dark"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <QueryProvider>

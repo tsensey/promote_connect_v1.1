@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
-  MessageSquare, Search, ArrowLeft, Plus, Loader2, X, Building2, User,
+  MessageSquare, Search, ArrowLeft, Plus, Loader2, X, Building2, User, MoreVertical, Ban, ShieldAlert, ShieldBan,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,14 @@ import { useNotificationState } from '@/lib/notification-context';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { getInitials, formatRelativeTime, isSameDay } from '@/lib/chat/utils';
+import { toast } from 'sonner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 
 // ─── Panneau liste des conversations ──────────────────────────────────────────
 function ConversationList({
@@ -286,13 +294,22 @@ function MessageThread({
     otherUser, otherExposant, typingUser, sendTypingEvent,
   } = useMessages(conversationId);
   const { refreshUnreadCount } = useNotificationState();
+  const { blockUser, unblockUser, isBlocked, loadBlockedUsers } = useBlockedUsers();
 
   const [inputValue, setInputValue] = useState('');
   const [sending, setSending] = useState(false);
   const [replyTo, setReplyTo] = useState<EnrichedMessage | null>(null);
   const [productContext, setProductContext] = useState<ProductAttachment | null>(initialProduct ?? null);
+  const [blocking, setBlocking] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const otherUserId = otherUser?.id;
+  const isCurrentlyBlocked = otherUserId ? isBlocked(otherUserId) : false;
+
+  useEffect(() => {
+    loadBlockedUsers();
+  }, [loadBlockedUsers]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -304,6 +321,22 @@ function MessageThread({
       await refreshUnreadCount();
     })();
   }, [markAsRead, refreshUnreadCount, conversationId]);
+
+  const handleBlock = async () => {
+    if (!otherUserId) return;
+    setBlocking(true);
+    const { error } = await blockUser(otherUserId, 'harassment');
+    if (!error) toast.success(t('chat.block_success'));
+    setBlocking(false);
+  };
+
+  const handleUnblock = async () => {
+    if (!otherUserId) return;
+    setBlocking(true);
+    const { error } = await unblockUser(otherUserId);
+    if (!error) toast.success(t('chat.unblock_success'));
+    setBlocking(false);
+  };
 
   const handleSend = useCallback(
     async (opts: SendOptions) => {
@@ -362,11 +395,67 @@ function MessageThread({
             {t('chat.exposant_badge')}
           </Badge>
         )}
+        {otherUserId && (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <button className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                  <MoreVertical className="size-4" />
+                </button>
+              }
+            />
+            <DropdownMenuContent align="end" className="w-48 rounded-xl p-1">
+              {isCurrentlyBlocked ? (
+                <DropdownMenuItem
+                  onClick={handleUnblock}
+                  disabled={blocking}
+                  className="rounded-lg text-destructive focus:text-destructive"
+                >
+                  <Ban className="mr-2 size-4" />
+                  {t('chat.unblock_user')}
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem
+                  onClick={handleBlock}
+                  disabled={blocking}
+                  className="rounded-lg text-destructive focus:text-destructive"
+                >
+                  <ShieldAlert className="mr-2 size-4" />
+                  {t('chat.block_user')}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       {/* Zone de messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
-        {loading ? (
+        {isCurrentlyBlocked ? (
+          <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
+            <div className="flex size-16 items-center justify-center rounded-2xl bg-destructive/10">
+              <ShieldBan className="size-8 text-destructive" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                {t('chat.user_blocked', { name: displayName })}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {t('chat.user_blocked_desc')}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleUnblock}
+              disabled={blocking}
+              className="rounded-xl"
+            >
+              <Ban className="mr-1.5 size-3.5" />
+              {t('chat.unblock_user')}
+            </Button>
+          </div>
+        ) : loading ? (
           <div className="flex h-full items-center justify-center">
             <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           </div>
@@ -417,20 +506,21 @@ function MessageThread({
         )}
       </div>
 
-      {/* Zone de saisie */}
-      <div className="border-t border-border/50 p-3">
-        <ChatInput
-          value={inputValue}
-          onChange={setInputValue}
-          onSend={handleSend}
-          onTyping={handleTyping}
-          sending={sending}
-          replyTo={replyTo}
-          onCancelReply={() => setReplyTo(null)}
-          productContext={productContext}
-          onCancelProduct={() => setProductContext(null)}
-        />
-      </div>
+      {!isCurrentlyBlocked && (
+        <div className="border-t border-border/50 p-3">
+          <ChatInput
+            value={inputValue}
+            onChange={setInputValue}
+            onSend={handleSend}
+            onTyping={handleTyping}
+            sending={sending}
+            replyTo={replyTo}
+            onCancelReply={() => setReplyTo(null)}
+            productContext={productContext}
+            onCancelProduct={() => setProductContext(null)}
+          />
+        </div>
+      )}
     </div>
   );
 }

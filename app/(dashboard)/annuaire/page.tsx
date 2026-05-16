@@ -33,6 +33,8 @@ import {
 } from '@/components/ui/select';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+import { useBlockedUsers } from '@/hooks/useBlockedUsers';
+import { Ban } from 'lucide-react';
 
 const COVER_GRADIENTS = [
   'from-blue-600/20 via-blue-500/10 to-transparent',
@@ -67,7 +69,12 @@ export default function AnnuairePage() {
   );
   const [page, setPage] = useState(Number(searchParams.get('page')) || 0);
   const [contactingId, setContactingId] = useState<string | null>(null);
+  const { loadBlockedUsers, isBlocked } = useBlockedUsers();
   const pageSize = 20;
+
+  useEffect(() => {
+    loadBlockedUsers();
+  }, [loadBlockedUsers]);
 
   const deferredSearch = useDeferredValue(search);
 
@@ -466,7 +473,12 @@ export default function AnnuairePage() {
                       <Eye className="mr-1.5 size-3.5" />
                       {t('common.view_profile')}
                     </Button>
-                    {!isOwn && (
+                    {!isOwn && exposant.profile_id && isBlocked(exposant.profile_id) ? (
+                      <div className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs font-medium text-destructive">
+                        <Ban className="size-3.5" />
+                        {t('annuaire.detail.blocked')}
+                      </div>
+                    ) : !isOwn && (
                       <Button
                         variant="outline"
                         size="sm"

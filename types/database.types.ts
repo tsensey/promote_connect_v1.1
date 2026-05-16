@@ -739,6 +739,45 @@ export interface Database {
         };
         Relationships: [];
       };
+      blocked_users: {
+        Row: {
+          id: string;
+          blocker_id: string;
+          blocked_id: string;
+          reason: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          blocker_id: string;
+          blocked_id: string;
+          reason?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          blocker_id?: string;
+          blocked_id?: string;
+          reason?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'blocked_users_blocker_id_fkey';
+            columns: ['blocker_id'];
+            isRelationOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'blocked_users_blocked_id_fkey';
+            columns: ['blocked_id'];
+            isRelationOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
       notifications: {
         Row: {
           id: string;

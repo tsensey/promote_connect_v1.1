@@ -368,6 +368,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     'annuaire.detail.cover_alt': 'Image de couverture',
     'annuaire.detail.gallery_image_alt': 'Galerie {index}',
     'annuaire.detail.video_title': 'Vidéo de présentation de {name}',
+    'annuaire.detail.block': 'Bloquer',
+    'annuaire.detail.block_success': 'Exposant bloqué',
+    'annuaire.detail.unblock': 'Débloquer',
+    'annuaire.detail.unblock_success': 'Exposant débloqué',
+    'annuaire.detail.blocked': 'Exposant bloqué',
 
     // ─── Chat ────────────────────────────────────────────────
     'chat.title': 'Messages',
@@ -406,6 +411,19 @@ export const translations: Record<Locale, Record<string, string>> = {
     'chat.document': '📄 Document',
     'chat.kb': 'Ko',
     'chat.enlarged_photo': 'Photo agrandie',
+    'chat.block_user': 'Bloquer',
+    'chat.block_confirm': 'Bloquer {name} ?',
+    'chat.block_confirm_desc': 'Cette personne ne pourra plus vous contacter et ses messages seront masqués.',
+    'chat.block_reason': 'Signaler un harcèlement',
+    'chat.block_other': 'Autre raison',
+    'chat.block_success': 'Utilisateur bloqué',
+    'chat.unblock_user': 'Débloquer',
+    'chat.unblock_confirm': 'Débloquer {name} ?',
+    'chat.unblock_success': 'Utilisateur débloqué',
+    'chat.user_blocked': '{name} est bloqué(e)',
+    'chat.user_blocked_desc': 'Vous avez bloqué cette personne. Elle ne peut plus vous contacter.',
+    'chat.user_blocked_unknown': 'Cet utilisateur est bloqué',
+    'chat.blocked_contact_error': 'Vous ne pouvez pas contacter un utilisateur que vous avez bloqué',
 
     // ─── Agenda ──────────────────────────────────────────────
     'agenda.title': 'Agenda interactif',
@@ -1412,6 +1430,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     'annuaire.detail.cover_alt': 'Cover image',
     'annuaire.detail.gallery_image_alt': 'Gallery {index}',
     'annuaire.detail.video_title': 'Presentation video of {name}',
+    'annuaire.detail.block': 'Block',
+    'annuaire.detail.block_success': 'Exhibitor blocked',
+    'annuaire.detail.unblock': 'Unblock',
+    'annuaire.detail.unblock_success': 'Exhibitor unblocked',
+    'annuaire.detail.blocked': 'Exhibitor blocked',
 
     // ─── Chat ────────────────────────────────────────────────
     'chat.title': 'Messages',
@@ -1450,6 +1473,19 @@ export const translations: Record<Locale, Record<string, string>> = {
     'chat.document': '📄 Document',
     'chat.kb': 'KB',
     'chat.enlarged_photo': 'Enlarged photo',
+    'chat.block_user': 'Block',
+    'chat.block_confirm': 'Block {name}?',
+    'chat.block_confirm_desc': 'This person will no longer be able to contact you and their messages will be hidden.',
+    'chat.block_reason': 'Report harassment',
+    'chat.block_other': 'Other reason',
+    'chat.block_success': 'User blocked',
+    'chat.unblock_user': 'Unblock',
+    'chat.unblock_confirm': 'Unblock {name}?',
+    'chat.unblock_success': 'User unblocked',
+    'chat.user_blocked': '{name} is blocked',
+    'chat.user_blocked_desc': 'You have blocked this person. They can no longer contact you.',
+    'chat.user_blocked_unknown': 'This user is blocked',
+    'chat.blocked_contact_error': 'You cannot contact a user you have blocked',
 
     // ─── Agenda ──────────────────────────────────────────────
     'agenda.title': 'Interactive Agenda',

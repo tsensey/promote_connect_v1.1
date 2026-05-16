@@ -29,6 +29,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
 import type { Database } from '@/types/database.types';
+import { useBlockedUsers } from '@/hooks/useBlockedUsers';
+import { Ban, ShieldAlert } from 'lucide-react';
 
 // ── Icônes de marque SVG inline ──
 const IconLinkedin = ({ className }: { className?: string }) => (
@@ -71,6 +73,32 @@ export default function ExposantDetailPage() {
   const [publications, setPublications] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [contacting, setContacting] = useState(false);
+  const [blocking, setBlocking] = useState(false);
+
+  const { blockUser, unblockUser, isBlocked, loadBlockedUsers } = useBlockedUsers();
+
+  const exposantProfileId = exposant?.profile_id;
+  const isCurrentlyBlocked = exposantProfileId ? isBlocked(exposantProfileId) : false;
+
+  useEffect(() => {
+    loadBlockedUsers();
+  }, [loadBlockedUsers]);
+
+  const handleBlockExposant = async () => {
+    if (!exposantProfileId) return;
+    setBlocking(true);
+    await blockUser(exposantProfileId, 'harassment');
+    toast.success(t('annuaire.detail.block_success'));
+    setBlocking(false);
+  };
+
+  const handleUnblockExposant = async () => {
+    if (!exposantProfileId) return;
+    setBlocking(true);
+    await unblockUser(exposantProfileId);
+    toast.success(t('annuaire.detail.unblock_success'));
+    setBlocking(false);
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -229,10 +257,26 @@ export default function ExposantDetailPage() {
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-3 sm:mt-6">
-              {exposant.profile_id && (
+              {exposant.profile_id && !isCurrentlyBlocked && (
                 <Button className="rounded-full px-6 shadow-sm" onClick={() => handleContact()} disabled={contacting}>
                   <MessageSquare className="mr-2 size-4" />
                   {t('annuaire.detail.contact')}
+                </Button>
+              )}
+              {exposant.profile_id && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full size-11 shadow-sm"
+                  onClick={isCurrentlyBlocked ? handleUnblockExposant : handleBlockExposant}
+                  disabled={blocking}
+                  title={isCurrentlyBlocked ? t('annuaire.detail.unblock') : t('annuaire.detail.block')}
+                >
+                  {isCurrentlyBlocked ? (
+                    <Ban className="size-4 text-destructive" />
+                  ) : (
+                    <ShieldAlert className="size-4 text-destructive" />
+                  )}
                 </Button>
               )}
               {exposant.website && (
