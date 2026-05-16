@@ -69,6 +69,7 @@ export function UserSidebar({
   collapsed,
   onToggle,
   onNavigate,
+  onItemClick,
   user,
   onSignOut,
   mobile = false,
@@ -77,10 +78,10 @@ export function UserSidebar({
   collapsed: boolean;
   onToggle: () => void;
   onNavigate?: () => void;
+  onItemClick?: () => void;
   user: { name: string; company?: string; avatar?: string } | null;
   onSignOut: () => void;
   mobile?: boolean;
-  onItemClick?: () => void;
 }) {
   const pathname = usePathname();
   const { t } = useTranslation();
@@ -226,14 +227,13 @@ export function UserSidebar({
                     <Link
                       key={item.href}
                       href={item.href}
-                      onClick={onNavigate}
+                      onClick={() => { onNavigate?.(); onItemClick?.(); }}
                       className={cn(
                         'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
                         active
                           ? 'bg-primary text-primary-foreground shadow-sm'
                           : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground',
                       )}
-                      onClick={onItemClick}
                     >
                       <Icon className="size-4 shrink-0" />
                       <LabelText collapsed={collapsed} className="flex items-center gap-2">

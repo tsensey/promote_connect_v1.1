@@ -94,7 +94,8 @@ export function CreatePostFAB({ onSubmit, onUpload }: CreatePostFABProps) {
 
         if (imageFile) {
           setUploading(true);
-          imageUrl = await onUpload(imageFile);
+          const urls = await onUpload([imageFile]);
+          imageUrl = urls[0] ?? null;
           setUploading(false);
         }
 
@@ -102,7 +103,7 @@ export function CreatePostFAB({ onSubmit, onUpload }: CreatePostFABProps) {
           content,
           postType,
           postType !== 'general' ? POST_TYPES.find((t) => t.value === postType)?.label : undefined,
-          imageUrl ?? undefined
+          imageUrl ? [imageUrl] : undefined
         );
 
         if (result && !result.error) {
