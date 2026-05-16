@@ -76,6 +76,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
                 company: profile?.company || undefined,
               }}
               onSignOut={handleSignOut}
+              onItemClick={() => setMobileOpen(false)}
               mobile
             />
           </div>

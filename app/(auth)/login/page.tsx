@@ -73,17 +73,17 @@ function LoginPageContent() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-8">
+    <div className="w-full max-w-md mx-auto space-y-10 sm:space-y-12">
         <div className="flex justify-center mb-6">
           <Image
             src="/logo-promote.png"
             alt="PROMOTE-CONNECT Logo"
             width={120}
             height={40}
-            className="object-contain"
+            className="object-contain rounded-full shadow-sm"
           />
         </div>
-        <div className="space-y-2 text-center">
+        <div className="space-y-3 text-center">
           <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
             {t('auth.login.title')}
           </h1>
@@ -108,8 +108,8 @@ function LoginPageContent() {
           </Alert>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="space-y-2">
+        <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
+          <div className="space-y-3">
             <Label htmlFor="email">{t('auth.login.email')}</Label>
             <div className="relative">
               <Mail className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -125,7 +125,7 @@ function LoginPageContent() {
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center justify-between gap-3">
               <Label htmlFor="password">{t('auth.login.password')}</Label>
               <span className="text-xs text-muted-foreground">
@@ -174,7 +174,7 @@ function LoginPageContent() {
             {!loading && <ArrowRight className="size-4" />}
           </Button>
         </form>
-        <div className="flex flex-col gap-3 pt-2">
+        <div className="flex flex-col gap-4 pt-4">
           <Link
             href="mailto:support@promote-connect.com"
             className="text-center text-sm font-medium text-muted-foreground transition hover:text-primary"
@@ -196,7 +196,7 @@ function LoginSkeleton() {
         <div className="h-8 w-48 animate-pulse rounded bg-muted mx-auto" />
         <div className="h-4 w-64 animate-pulse rounded bg-muted mx-auto" />
       </div>
-      <div className="space-y-5">
+      <div className="space-y-6">
         <div className="h-12 animate-pulse rounded-2xl bg-muted" />
         <div className="h-12 animate-pulse rounded-2xl bg-muted" />
         <div className="h-12 animate-pulse rounded-2xl bg-muted" />

@@ -80,6 +80,7 @@ export function UserSidebar({
   user: { name: string; company?: string; avatar?: string } | null;
   onSignOut: () => void;
   mobile?: boolean;
+  onItemClick?: () => void;
 }) {
   const pathname = usePathname();
   const { t } = useTranslation();
@@ -232,6 +233,7 @@ export function UserSidebar({
                           ? 'bg-primary text-primary-foreground shadow-sm'
                           : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground',
                       )}
+                      onClick={onItemClick}
                     >
                       <Icon className="size-4 shrink-0" />
                       <LabelText collapsed={collapsed} className="flex items-center gap-2">
