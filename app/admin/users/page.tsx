@@ -42,6 +42,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { toast } from 'sonner';
+import { useTranslation } from '@/lib/i18n';
 
 interface UserRow {
   id: string;
@@ -110,6 +111,7 @@ const COUNTRIES = [
 const NOMBRE_EMPLOYES = ['1-10', '11-50', '51-200', '200+'];
 
 export default function AdminUsersPage() {
+  const { t, locale } = useTranslation();
   const { session } = useAuth();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -177,13 +179,13 @@ export default function AdminUsersPage() {
       const payload = await response.json();
 
       if (!response.ok) {
-        toast.error(payload.error || 'Impossible de charger les utilisateurs');
+        toast.error(payload.error || t('admin.users.toast_load_error'));
         return;
       }
 
       setUsers(payload.users || []);
     } catch {
-      toast.error('Erreur reseau lors du chargement des comptes');
+      toast.error(t('admin.users.toast_network_error'));
     } finally {
       setLoading(false);
     }
@@ -211,12 +213,12 @@ export default function AdminUsersPage() {
 
   async function handleCreate() {
     if (!token) {
-      toast.error('Session administrateur introuvable');
+      toast.error(t('admin.users.toast_session_error'));
       return;
     }
 
     if (!form.full_name || !form.email) {
-      toast.error('Nom complet et email sont requis');
+      toast.error(t('admin.users.toast_required_fields'));
       return;
     }
 
@@ -235,7 +237,7 @@ export default function AdminUsersPage() {
       const payload = await response.json();
 
       if (!response.ok) {
-        toast.error(payload.error || 'Erreur lors de la creation du compte');
+        toast.error(payload.error || t('admin.users.toast_create_error'));
         return;
       }
 
@@ -264,12 +266,12 @@ export default function AdminUsersPage() {
       setShowCreateDialog(false);
       toast.success(
         payload.email_sent
-          ? 'Compte cree et email envoye'
-          : 'Compte cree. Copiez les identifiants et transmettez-les manuellement.'
+          ? t('admin.users.toast_create_sent')
+          : t('admin.users.toast_create_no_email')
       );
       await fetchUsers();
     } catch {
-      toast.error('Erreur serveur pendant la creation du compte');
+      toast.error(t('admin.users.toast_create_server_error'));
     } finally {
       setCreating(false);
     }
@@ -277,11 +279,11 @@ export default function AdminUsersPage() {
 
   async function handleDelete(userId: string) {
     if (!token) {
-      toast.error('Session administrateur introuvable');
+      toast.error(t('admin.users.toast_session_error'));
       return;
     }
 
-    if (!window.confirm('Supprimer ce compte definitivement ?')) {
+    if (!window.confirm(t('admin.users.toast_confirm_delete'))) {
       return;
     }
 
@@ -296,14 +298,14 @@ export default function AdminUsersPage() {
       const payload = await response.json();
 
       if (!response.ok) {
-        toast.error(payload.error || 'Suppression impossible');
+        toast.error(payload.error || t('admin.users.toast_delete_error'));
         return;
       }
 
-      toast.success('Compte supprime');
+      toast.success(t('admin.users.toast_delete_success'));
       await fetchUsers();
     } catch {
-      toast.error('Erreur reseau pendant la suppression');
+      toast.error(t('admin.users.toast_delete_network'));
     } finally {
       setDeleting(null);
     }
@@ -314,9 +316,9 @@ export default function AdminUsersPage() {
       return;
     }
 
-    const message = `Email: ${lastInvite.email}\nMot de passe temporaire: ${lastInvite.password}`;
+    const message = `Email: ${lastInvite.email}\n${t('admin.users.temp_password')} ${lastInvite.password}`;
     await navigator.clipboard.writeText(message);
-    toast.success('Identifiants copies');
+    toast.success(t('admin.users.toast_copy_success'));
   }
 
   return (
@@ -324,25 +326,24 @@ export default function AdminUsersPage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-600/80">
-            Administration des acces
+            {t('admin.users.title')}
           </p>
-          <h1 className="text-4xl text-foreground">Utilisateurs geres par l&apos;admin</h1>
+          <h1 className="text-4xl text-foreground">{t('admin.users.desc')}</h1>
           <p className="max-w-3xl text-base leading-7 text-muted-foreground">
-            Creation de comptes, envoi des identifiants de connexion et
-            attribution des roles pour toute la plateforme.
+            {t('admin.users.subtitle')}
           </p>
         </div>
         <Button onClick={() => setShowCreateDialog(true)} className="rounded-xl">
           <UserPlus className="mr-2 size-4" />
-          Creer un compte
+          {t('admin.users.create_btn')}
         </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total comptes" value={stats.total} icon={Users} tone="blue" />
-        <StatCard label="Administrateurs" value={stats.admins} icon={UserPlus} tone="amber" />
-        <StatCard label="Exposants" value={stats.exposants} icon={Building2} tone="violet" />
-        <StatCard label="Visiteurs" value={stats.visiteurs} icon={Globe2} tone="emerald" />
+        <StatCard label={t('admin.users.total')} value={stats.total} icon={Users} tone="blue" />
+        <StatCard label={t('admin.users.admins')} value={stats.admins} icon={UserPlus} tone="amber" />
+        <StatCard label={t('admin.users.exposants')} value={stats.exposants} icon={Building2} tone="violet" />
+        <StatCard label={t('admin.users.visiteurs')} value={stats.visiteurs} icon={Globe2} tone="emerald" />
       </div>
 
       {lastInvite && (
@@ -350,21 +351,21 @@ export default function AdminUsersPage() {
           <CardContent className="flex flex-col gap-4 p-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-2">
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary/70">
-                Dernier acces cree
+                {t('admin.users.last_created')}
               </p>
               <p className="text-lg font-semibold text-foreground">{lastInvite.email}</p>
               <p className="text-sm text-muted-foreground">
-                Mot de passe temporaire: <span className="font-semibold text-foreground">{lastInvite.password}</span>
+                {t('admin.users.temp_password')} <span className="font-semibold text-foreground">{lastInvite.password}</span>
               </p>
               <p className="text-sm text-muted-foreground">
                 {lastInvite.emailSent
-                  ? 'Email envoye automatiquement au participant.'
-                  : 'Aucun email n a pu etre envoye. Partagez ces identifiants manuellement.'}
+                  ? t('admin.users.email_sent')
+                  : t('admin.users.email_not_sent')}
               </p>
             </div>
             <Button variant="outline" onClick={copyInvite} className="rounded-xl bg-white/80">
               <Copy className="mr-2 size-4" />
-              Copier les acces
+              {t('admin.users.copy_credentials')}
             </Button>
           </CardContent>
         </Card>
@@ -378,7 +379,7 @@ export default function AdminUsersPage() {
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Rechercher par nom, entreprise ou secteur..."
+                placeholder={t('admin.users.search')}
                 className="pl-10"
               />
             </div>
@@ -390,7 +391,7 @@ export default function AdminUsersPage() {
                   className="rounded-full"
                   onClick={() => setRoleFilter(role)}
                 >
-                  {role === 'all' ? 'Tous' : role}
+                  {role === 'all' ? t('admin.users.all_roles') : role}
                 </Button>
               ))}
             </div>
@@ -400,9 +401,9 @@ export default function AdminUsersPage() {
 
       <Card className="surface-panel border-0">
         <CardHeader>
-          <CardTitle>Liste des comptes</CardTitle>
+          <CardTitle>{t('admin.users.list_title')}</CardTitle>
           <CardDescription>
-            Tous les utilisateurs sont provisionnes depuis cette interface.
+            {t('admin.users.list_desc')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -415,16 +416,16 @@ export default function AdminUsersPage() {
           ) : filteredUsers.length === 0 ? (
             <div className="surface-subtle py-12 text-center">
               <Users className="mx-auto mb-3 size-10 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Aucun compte ne correspond a votre recherche.</p>
+              <p className="text-sm text-muted-foreground">{t('admin.users.no_results')}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Utilisateur</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Profil</TableHead>
-                  <TableHead>Creation</TableHead>
+                  <TableHead>{t('admin.users.col_user')}</TableHead>
+                  <TableHead>{t('admin.users.col_role')}</TableHead>
+                  <TableHead>{t('admin.users.col_profile')}</TableHead>
+                  <TableHead>{t('admin.users.col_creation')}</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -443,7 +444,7 @@ export default function AdminUsersPage() {
                             {user.full_name}
                           </p>
                           <p className="truncate text-xs text-muted-foreground">
-                            {[user.company, user.sector, user.country].filter(Boolean).join(' - ') || 'Profil PROMOTE-CONNECT'}
+                            {[user.company, user.sector, user.country].filter(Boolean).join(' - ') || t('admin.users.profile_title')}
                           </p>
                         </div>
                       </div>
@@ -455,11 +456,11 @@ export default function AdminUsersPage() {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {user.role === 'exposant'
-                        ? `Pavillon ${user.pavillon || '-'}`
-                        : user.company || 'Compte utilisateur'}
+                        ? t('admin.users.pavillon', { pavillon: user.pavillon || '-' })
+                        : user.company || t('admin.users.account_type')}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {new Date(user.created_at).toLocaleDateString('fr-FR')}
+                      {new Date(user.created_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR')}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -477,7 +478,7 @@ export default function AdminUsersPage() {
                             ) : (
                               <Trash2 className="mr-2 size-4" />
                             )}
-                            Supprimer
+                            {t('admin.users.delete_btn')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -493,47 +494,47 @@ export default function AdminUsersPage() {
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Creer un compte utilisateur</DialogTitle>
+            <DialogTitle>{t('admin.users.form_title')}</DialogTitle>
             <DialogDescription>
-              Le participant recevra ses acces par email et pourra utiliser toute la plateforme.
+              {t('admin.users.form_desc')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-5 py-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="full_name">Nom complet</Label>
+                <Label htmlFor="full_name">{t('admin.users.form_full_name')}</Label>
                 <Input
                   id="full_name"
                   value={form.full_name}
                   onChange={(event) => setForm({ ...form, full_name: event.target.value })}
-                  placeholder="Jean Dupont"
+                  placeholder={t('admin.users.form_full_name_placeholder')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('admin.users.form_email')}</Label>
                 <Input
                   id="email"
                   type="email"
                   value={form.email}
                   onChange={(event) => setForm({ ...form, email: event.target.value })}
-                  placeholder="jean@entreprise.com"
+                  placeholder={t('admin.users.form_email_placeholder')}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="company">Entreprise</Label>
+              <Label htmlFor="company">{t('admin.users.form_company')}</Label>
               <Input
                 id="company"
                 value={form.company}
                 onChange={(event) => setForm({ ...form, company: event.target.value })}
-                placeholder="Nom de l entreprise"
+                placeholder={t('admin.users.form_company_placeholder')}
               />
             </div>
 
             <div className="space-y-3">
-              <Label>Role</Label>
+              <Label>{t('admin.users.form_role')}</Label>
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   type="button"
@@ -551,7 +552,7 @@ export default function AdminUsersPage() {
                     })
                   }
                 >
-                  Visiteur
+                  {t('admin.users.form_visiteur')}
                 </Button>
                 <Button
                   type="button"
@@ -565,7 +566,7 @@ export default function AdminUsersPage() {
                     })
                   }
                 >
-                  Exposant
+                  {t('admin.users.form_exposant')}
                 </Button>
               </div>
             </div>
@@ -574,14 +575,14 @@ export default function AdminUsersPage() {
               <>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="sector">Secteur</Label>
+                    <Label htmlFor="sector">{t('admin.users.form_sector')}</Label>
                     <select
                       id="sector"
                       value={form.sector}
                       onChange={(event) => setForm({ ...form, sector: event.target.value })}
                       className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
                     >
-                      <option value="">Selectionner</option>
+                      <option value="">{t('admin.users.form_select')}</option>
                       {SECTORS.map((sector) => (
                         <option key={sector} value={sector}>
                           {sector}
@@ -590,14 +591,14 @@ export default function AdminUsersPage() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="country">Pays</Label>
+                    <Label htmlFor="country">{t('admin.users.form_country')}</Label>
                     <select
                       id="country"
                       value={form.country}
                       onChange={(event) => setForm({ ...form, country: event.target.value })}
                       className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
                     >
-                      <option value="">Selectionner</option>
+                      <option value="">{t('admin.users.form_select')}</option>
                       {COUNTRIES.map((country) => (
                         <option key={country} value={country}>
                           {country}
@@ -608,7 +609,7 @@ export default function AdminUsersPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="espace_id">Espace / Pavillon</Label>
+                  <Label htmlFor="espace_id">{t('admin.users.form_pavillon')}</Label>
                   <select
                     id="espace_id"
                     value={form.espace_id}
@@ -622,70 +623,70 @@ export default function AdminUsersPage() {
                     }}
                     className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
                   >
-                    <option value="">Selectionner un espace</option>
+                    <option value="">{t('admin.users.form_select_space')}</option>
                     {espaces.map((espace) => (
                       <option key={espace.id} value={espace.id}>
-                        {espace.type === 'pavillon' ? 'Pavillon' : 'Espace'} {espace.code} — {espace.nom}
+                        {t(espace.type === 'pavillon' ? 'admin.espaces.type_pavillon' : 'admin.espaces.type_espace')} {espace.code} — {espace.nom}
                       </option>
                     ))}
                   </select>
                   <p className="text-xs text-muted-foreground">
-                    Le code de l&apos;espace sera utilise comme pavillon. Le stand est libre.
+                    {t('admin.users.form_space_hint')}
                   </p>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="stand">Stand</Label>
+                    <Label htmlFor="stand">{t('admin.users.form_stand')}</Label>
                     <Input
                       id="stand"
                       value={form.stand}
                       onChange={(event) => setForm({ ...form, stand: event.target.value })}
-                      placeholder="Ex: A1-001"
+                      placeholder={t('admin.users.form_stand_placeholder')}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="website">Site web</Label>
+                    <Label htmlFor="website">{t('admin.users.form_website')}</Label>
                     <Input
                       id="website"
                       type="url"
                       value={form.website}
                       onChange={(event) => setForm({ ...form, website: event.target.value })}
-                      placeholder="https://example.com"
+                      placeholder={t('admin.users.form_website_placeholder')}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description de l&apos;entreprise</Label>
+                  <Label htmlFor="description">{t('admin.users.form_description')}</Label>
                   <textarea
                     id="description"
                     value={form.description}
                     onChange={(event) => setForm({ ...form, description: event.target.value })}
-                    placeholder="Presentez votre entreprise, ses activites et ses produits..."
+                    placeholder={t('admin.users.form_description_placeholder')}
                     className="flex min-h-24 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm shadow-sm"
                   />
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="annee_creation">Annee de creation</Label>
+                    <Label htmlFor="annee_creation">{t('admin.users.form_year')}</Label>
                     <Input
                       id="annee_creation"
                       value={form.annee_creation}
                       onChange={(event) => setForm({ ...form, annee_creation: event.target.value })}
-                      placeholder="Ex: 2015"
+                      placeholder={t('admin.users.form_year_placeholder')}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="nombre_employes">Nombre d&apos;employes</Label>
+                    <Label htmlFor="nombre_employes">{t('admin.users.form_employees')}</Label>
                     <select
                       id="nombre_employes"
                       value={form.nombre_employes}
                       onChange={(event) => setForm({ ...form, nombre_employes: event.target.value })}
                       className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
                     >
-                      <option value="">Selectionner</option>
+                      <option value="">{t('admin.users.form_employees_placeholder')}</option>
                       {NOMBRE_EMPLOYES.map((n) => (
                         <option key={n} value={n}>
                           {n}
@@ -705,18 +706,18 @@ export default function AdminUsersPage() {
               className="rounded-xl"
               onClick={() => setShowCreateDialog(false)}
             >
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button type="button" className="rounded-xl" disabled={creating} onClick={handleCreate}>
               {creating ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
-                  Creation...
+                  {t('admin.users.form_creating')}
                 </>
               ) : (
                 <>
                   <UserPlus className="mr-2 size-4" />
-                  Creer et envoyer l email
+                  {t('admin.users.form_submit_email')}
                 </>
               )}
             </Button>

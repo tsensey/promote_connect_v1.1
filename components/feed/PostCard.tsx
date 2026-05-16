@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,9 +22,10 @@ import {
   X,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enUS } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useTranslation } from '@/lib/i18n';
 import type { useFeed, Comment } from '@/hooks/useFeed';
 
 type Post = NonNullable<ReturnType<typeof useFeed>['posts']>[number];
@@ -42,12 +43,20 @@ interface PostCardProps {
   onAddComment: (content: string, parentCommentId?: string) => Promise<{ data: Comment | null; error: unknown }>;
 }
 
-const TYPE_BADGE: Record<string, { bg: string; label: string }> = {
-  annonce:   { bg: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',       label: 'Annonce'    },
-  actualite: { bg: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300', label: 'Actualité' },
-  offre:     { bg: 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300',     label: 'Offre'      },
-  evenement: { bg: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',        label: 'Événement'  },
-  general:   { bg: 'bg-muted text-muted-foreground',                                               label: 'Général'    },
+const TYPE_BADGE: Record<string, string> = {
+  annonce:   'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
+  actualite: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300',
+  offre:     'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300',
+  evenement: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
+  general:   'bg-muted text-muted-foreground',
+};
+
+const TYPE_KEYS: Record<string, string> = {
+  annonce: 'feed.type.announcement',
+  actualite: 'feed.type.news',
+  offre: 'feed.type.offer',
+  evenement: 'feed.type.event',
+  general: 'feed.type.general',
 };
 
 const PREVIEW_CHARS = 80;
@@ -57,9 +66,6 @@ function getInitials(name: string | null | undefined) {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
-// ─────────────────────────────────────────────────────────
-// Composant récursif : un commentaire + ses réponses
-// ─────────────────────────────────────────────────────────
 function CommentItem({
   comment,
   depth = 0,
@@ -69,6 +75,7 @@ function CommentItem({
   depth?: number;
   onAddComment: PostCardProps['onAddComment'];
 }) {
+  const { t, locale } = useTranslation();
   const [showReply, setShowReply] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [localReplies, setLocalReplies] = useState<Comment[]>(comment.replies ?? []);
@@ -105,11 +112,11 @@ function CommentItem({
             <div className="rounded-2xl rounded-tl-sm bg-muted/50 px-3 py-2">
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="text-xs font-semibold text-foreground">
-                  {comment.author.full_name || 'Utilisateur'}
+                  {comment.author.full_name || t('feed.post.user')}
                 </span>
                 <span className="text-[10px] text-muted-foreground/60">
                   {comment.created_at
-                    ? formatDistanceToNow(new Date(comment.created_at), { locale: fr, addSuffix: true })
+                    ? formatDistanceToNow(new Date(comment.created_at), { locale: locale === 'en' ? enUS : fr, addSuffix: true })
                     : ''}
                 </span>
               </div>
@@ -121,7 +128,7 @@ function CommentItem({
                 onClick={() => setShowReply((v) => !v)}
                 className="mt-1 ml-2 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors"
               >
-                Répondre
+                {t('feed.post.reply')}
               </button>
             )}
 
@@ -132,7 +139,7 @@ function CommentItem({
                   type="text"
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
-                  placeholder={`Répondre à ${comment.author.full_name || 'Utilisateur'}...`}
+                  placeholder={t('feed.post.reply_placeholder', { name: comment.author.full_name || t('feed.post.user') })}
                   className="flex-1 rounded-full border border-border bg-muted/50 px-3 py-1.5 text-xs text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-primary/50"
                 />
                 <Button type="submit" size="icon-sm" className="size-7 rounded-full" disabled={!replyText.trim() || submitting}>
@@ -151,10 +158,7 @@ function CommentItem({
   );
 }
 
-// ─────────────────────────────────────────────────────────
-// PostCard principal
-// ─────────────────────────────────────────────────────────
-export function PostCard({
+export const PostCard = memo(function PostCard({
   post,
   isOwner,
   onLike,
@@ -166,6 +170,7 @@ export function PostCard({
   onGetComments,
   onAddComment,
 }: PostCardProps) {
+  const { t, locale } = useTranslation();
   const [comments, setComments] = useState<Comment[]>([]);
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
@@ -177,7 +182,7 @@ export function PostCard({
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
   const [isReposting, setIsReposting] = useState(false);
-  const [repostContent, setRepostContent] = useState(`[Republication de @${post.author.full_name}] :\n"${post.content}"\n\n`);
+  const [repostContent, setRepostContent] = useState(`${t('feed.post.repost_prefix', { name: post.author.full_name || '' })}\n"${post.content}"\n\n`);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -209,9 +214,9 @@ export function PostCard({
     const { error } = await onEdit(post.id, editContent, post.type, post.category ?? undefined, post.image_url);
     if (!error) {
       setIsEditing(false);
-      toast.success("Publication modifiée");
+      toast.success(t('feed.post.edited'));
     } else {
-      toast.error("Erreur lors de la modification");
+      toast.error(t('feed.post.edit_error'));
     }
   };
 
@@ -221,20 +226,20 @@ export function PostCard({
     if (!error) {
       setIsReposting(false);
       onRepost();
-      toast.success("Republication effectuée");
+      toast.success(t('feed.post.reposted'));
     } else {
-      toast.error("Erreur lors de la republication");
+      toast.error(t('feed.post.repost_error'));
     }
   };
 
   const handleNativeShare = useCallback(async () => {
     const url = `${window.location.origin}/feed#${post.id}`;
-    const shareData = { title: `Publication de ${post.author.full_name}`, text: post.content.slice(0, 120), url };
+    const shareData = { title: t('feed.post.share_title', { name: post.author.full_name || '' }), text: post.content.slice(0, 120), url };
     if (navigator.share) {
       try { await navigator.share(shareData); } catch { /* annulé */ }
     } else {
       await navigator.clipboard.writeText(url);
-      toast.success('Lien copié dans le presse-papier');
+      toast.success(t('feed.post.copied'));
     }
     onShare();
   }, [post, onShare]);
@@ -266,9 +271,9 @@ export function PostCard({
     [newComment, onAddComment]
   );
 
-  const typeInfo = TYPE_BADGE[post.type] || TYPE_BADGE.general;
+  const typeBg = TYPE_BADGE[post.type] || TYPE_BADGE.general;
   const authorInitials = getInitials(post.author.full_name);
-  const timeAgo = formatDistanceToNow(new Date(post.created_at as string), { locale: fr, addSuffix: true });
+  const timeAgo = formatDistanceToNow(new Date(post.created_at as string), { locale: locale === 'en' ? enUS : fr, addSuffix: true });
   const exposantId = post.author.exposants?.[0]?.id;
 
   const AuthorWrapper = ({ children }: { children: React.ReactNode }) => {
@@ -302,17 +307,17 @@ export function PostCard({
             <div className="flex flex-wrap items-center gap-1.5">
               <AuthorWrapper>
                 <span className="font-semibold text-sm text-foreground hover:underline">
-                  {post.author.full_name || 'Utilisateur'}
+                  {post.author.full_name || t('feed.post.user')}
                 </span>
               </AuthorWrapper>
               {post.author.role === 'exposant' && (
                 <span className="inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-600/20">
-                  Exposant
+                  {t('feed.post.exposant')}
                 </span>
               )}
               {post.type !== 'general' && (
-                <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', typeInfo.bg)}>
-                  {typeInfo.label}
+                <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', typeBg)}>
+                  {t(TYPE_KEYS[post.type] || 'feed.type.general')}
                 </span>
               )}
             </div>
@@ -340,14 +345,14 @@ export function PostCard({
                     className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-foreground hover:bg-muted/50 rounded-xl"
                   >
                     <MoreHorizontal className="size-4" />
-                    Modifier
+                    {t('feed.post.edit')}
                   </button>
                   <button
                     onClick={() => { onDelete(); setShowMenu(false); }}
                     className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10 rounded-xl"
                   >
                     <Trash2 className="size-4" />
-                    Supprimer
+                    {t('common.delete')}
                   </button>
                 </div>
               )}
@@ -366,13 +371,13 @@ export function PostCard({
                 rows={4}
               />
               <div className="flex gap-2 justify-end">
-                <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>Annuler</Button>
-                <Button size="sm" onClick={handleEditSubmit}>Enregistrer</Button>
+                <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>{t('common.cancel')}</Button>
+                <Button size="sm" onClick={handleEditSubmit}>{t('common.save')}</Button>
               </div>
             </div>
           ) : isReposting ? (
             <div className="space-y-3 border-l-2 border-primary/40 pl-3 ml-1 mb-3">
-              <p className="text-xs font-semibold text-primary mb-1">Citation de republication</p>
+              <p className="text-xs font-semibold text-primary mb-1">{t('feed.post.repost_quote')}</p>
               <textarea
                 value={repostContent}
                 onChange={(e) => setRepostContent(e.target.value)}
@@ -381,8 +386,8 @@ export function PostCard({
                 autoFocus
               />
               <div className="flex gap-2 justify-end">
-                <Button variant="ghost" size="sm" onClick={() => setIsReposting(false)}>Annuler</Button>
-                <Button size="sm" onClick={submitRepost}>Republier</Button>
+                <Button variant="ghost" size="sm" onClick={() => setIsReposting(false)}>{t('common.cancel')}</Button>
+                <Button size="sm" onClick={submitRepost}>{t('feed.post.repost_btn')}</Button>
               </div>
             </div>
           ) : (
@@ -396,9 +401,9 @@ export function PostCard({
                   className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                 >
                   {expanded ? (
-                    <><ChevronUp className="size-3" /> Voir moins</>
+                    <><ChevronUp className="size-3" /> {t('feed.post.see_less')}</>
                   ) : (
-                    <><ChevronDown className="size-3" /> Voir plus</>
+                    <><ChevronDown className="size-3" /> {t('feed.post.see_more')}</>
                   )}
                 </button>
               )}
@@ -442,11 +447,11 @@ export function PostCard({
             )}
             {post.comments_count > 0 && (
               <button onClick={handleToggleComments} className="hover:text-foreground transition-colors">
-                {post.comments_count} commentaire{post.comments_count > 1 ? 's' : ''}
+                {t('feed.post.comments_count', { count: post.comments_count })}
               </button>
             )}
             {(post.shares_count ?? 0) > 0 && (
-              <span>{post.shares_count} partage{(post.shares_count ?? 0) > 1 ? 's' : ''}</span>
+              <span>{t('feed.post.shares_count', { count: post.shares_count ?? 0 })}</span>
             )}
             {(post.reposts_count ?? 0) > 0 && (
               <span className="flex items-center gap-1">
@@ -475,7 +480,7 @@ export function PostCard({
                 likeAnim && 'scale-125'
               )}
             />
-            <span className="text-xs hidden sm:inline">J&apos;aime</span>
+            <span className="text-xs hidden sm:inline">{t('feed.post.like')}</span>
           </Button>
 
           <Button
@@ -485,7 +490,7 @@ export function PostCard({
             onClick={handleToggleComments}
           >
             <MessageSquare className="size-4" />
-            <span className="text-xs hidden sm:inline">Commenter</span>
+            <span className="text-xs hidden sm:inline">{t('feed.post.comment')}</span>
           </Button>
 
           <Button
@@ -498,7 +503,7 @@ export function PostCard({
             onClick={handleNativeShare}
           >
             {post.is_shared ? <Check className="size-4" /> : <Link2 className="size-4" />}
-            <span className="text-xs hidden sm:inline">Partager</span>
+            <span className="text-xs hidden sm:inline">{t('feed.post.share')}</span>
           </Button>
 
           <Button
@@ -511,7 +516,7 @@ export function PostCard({
             onClick={handleRepost}
           >
             <Repeat2 className={cn('size-4 transition-all', repostAnim && 'rotate-180')} />
-            <span className="text-xs hidden sm:inline">Republier</span>
+            <span className="text-xs hidden sm:inline">{t('feed.post.repost_btn')}</span>
           </Button>
         </div>
 
@@ -519,7 +524,7 @@ export function PostCard({
         {showComments && (
           <div className="border-t border-border/50 bg-muted/20 px-4 pt-3 pb-4 space-y-3 rounded-b-xl">
             {loadingComments ? (
-              <p className="text-center text-xs text-muted-foreground py-2">Chargement des commentaires...</p>
+              <p className="text-center text-xs text-muted-foreground py-2">{t('feed.post.loading_comments')}</p>
             ) : (
               <div className="space-y-3">
                 {comments.map((comment) => (
@@ -531,7 +536,7 @@ export function PostCard({
                   />
                 ))}
                 {comments.length === 0 && (
-                  <p className="text-center text-xs text-muted-foreground py-1">Soyez le premier à commenter.</p>
+                  <p className="text-center text-xs text-muted-foreground py-1">{t('feed.post.no_comments')}</p>
                 )}
               </div>
             )}
@@ -543,7 +548,7 @@ export function PostCard({
                 type="text"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Écrire un commentaire..."
+                placeholder={t('feed.post.comment_placeholder')}
                 className="flex-1 rounded-full border border-border bg-background px-4 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-primary/50 focus:bg-muted/30"
               />
               <Button
@@ -570,7 +575,7 @@ export function PostCard({
              {post.image_url && (
                 <img 
                   src={post.image_url.split(',')[selectedImageIdx]} 
-                  alt="Aperçu" 
+                  alt={t('common.preview')}
                   className="max-w-full max-h-full object-contain"
                 />
              )}
@@ -607,7 +612,7 @@ export function PostCard({
                  </AuthorWrapper>
                  <div>
                     <AuthorWrapper>
-                      <span className="font-semibold text-sm block hover:underline">{post.author.full_name || 'Utilisateur'}</span>
+                      <span className="font-semibold text-sm block hover:underline">{post.author.full_name || t('feed.post.user')}</span>
                     </AuthorWrapper>
                     <span className="text-xs text-muted-foreground">{post.author.company} • {timeAgo}</span>
                  </div>
@@ -621,22 +626,22 @@ export function PostCard({
                {/* Stats */}
                <div className="flex items-center gap-3 text-[11px] text-muted-foreground border-y border-border/40 py-3 mt-4">
                   <span className="flex items-center gap-1"><Heart className="size-3.5 fill-red-500 text-red-500" /> {post.likes_count}</span>
-                  <span>{post.comments_count} commentaire{post.comments_count > 1 ? 's' : ''}</span>
+                  <span>{t('feed.post.comments_count', { count: post.comments_count })}</span>
                </div>
                
                {/* Actions */}
                <div className="flex items-center justify-between py-2 border-b border-border/40">
-                  <button onClick={onLike} className={cn("flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted", "text-muted-foreground")}><Heart className="size-4" /> J'aime</button>
-                  <button onClick={() => {}} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"><MessageSquare className="size-4" /> Commenter</button>
-                  <button onClick={() => { setIsImageModalOpen(false); handleRepost(); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"><Repeat2 className="size-4" /> Republier</button>
+                  <button onClick={onLike} className={cn("flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted", "text-muted-foreground")}><Heart className="size-4" /> {t('feed.post.like')}</button>
+                  <button onClick={() => {}} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"><MessageSquare className="size-4" /> {t('feed.post.comment')}</button>
+                  <button onClick={() => { setIsImageModalOpen(false); handleRepost(); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"><Repeat2 className="size-4" /> {t('feed.post.repost_btn')}</button>
                </div>
                
                {/* Comments section */}
                <div className="space-y-4 pt-2">
                  {loadingComments ? (
-                   <div className="text-center py-4 text-xs text-muted-foreground">Chargement...</div>
+                   <div className="text-center py-4 text-xs text-muted-foreground">{t('common.loading')}</div>
                  ) : comments.length === 0 ? (
-                   <div className="text-center py-4 text-xs text-muted-foreground">Aucun commentaire</div>
+                   <div className="text-center py-4 text-xs text-muted-foreground">{t('feed.post.no_comments')}</div>
                  ) : (
                    comments.map(c => (
                      <div key={c.id} className="flex gap-2">
@@ -649,7 +654,7 @@ export function PostCard({
                            <p className="text-[13px] text-foreground/90">{c.content}</p>
                          </div>
                          <div className="flex gap-3 px-2 mt-1 text-[11px] text-muted-foreground font-medium">
-                           <span>{formatDistanceToNow(new Date(c.created_at as string), { locale: fr })}</span>
+                            <span>{formatDistanceToNow(new Date(c.created_at as string), { locale: locale === 'en' ? enUS : fr })}</span>
                          </div>
                        </div>
                      </div>
@@ -670,7 +675,7 @@ export function PostCard({
                    onGetComments().then(data => { setComments(data); setLoadingComments(false); });
                  }
                }}>
-                 <input type="text" value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Ajouter un commentaire..." className="flex-1 bg-muted/50 rounded-full px-4 text-sm outline-none focus:ring-1 focus:ring-primary/40 border border-transparent focus:border-primary/30" />
+                 <input type="text" value={newComment} onChange={e => setNewComment(e.target.value)} placeholder={t('feed.post.comment_placeholder')} className="flex-1 bg-muted/50 rounded-full px-4 text-sm outline-none focus:ring-1 focus:ring-primary/40 border border-transparent focus:border-primary/30" />
                  <button type="submit" disabled={!newComment.trim()} className="shrink-0 p-2 text-primary hover:bg-primary/10 rounded-full disabled:opacity-50"><Send className="size-4" /></button>
                </form>
             </div>
@@ -679,4 +684,4 @@ export function PostCard({
       </Dialog>
     </Card>
   );
-}
+});

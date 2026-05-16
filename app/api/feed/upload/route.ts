@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseServer } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`;
       const filePath = `posts/${fileName}`;
 
-      const { data, error } = await supabaseServer.storage
+      const adminClient = createAdminClient();
+      const { data, error } = await adminClient.storage
         .from('feed-images')
         .upload(filePath, buffer, {
           contentType: file.type,
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: `Erreur upload: ${error.message}` }, { status: 500 });
       }
 
-      const { data: urlData } = supabaseServer.storage
+      const { data: urlData } = adminClient.storage
         .from('feed-images')
         .getPublicUrl(data.path);
 

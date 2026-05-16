@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ModeToggle } from '@/components/ui/mode-toggle';
 import { AdminBreadcrumb } from '@/components/ui/breadcrumb-nav';
+import { useTranslation } from '@/lib/i18n';
 
 export function AdminTopbar({
   onToggleSidebar,
@@ -26,6 +27,7 @@ export function AdminTopbar({
   onSignOut: () => void;
 }) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
@@ -57,7 +59,7 @@ export function AdminTopbar({
               </Avatar>
               <div className="hidden text-left md:block">
                 <p className="max-w-[8rem] truncate text-sm font-medium text-foreground">{user?.name}</p>
-                <p className="text-[11px] text-muted-foreground">Administrateur</p>
+                <p className="text-[11px] text-muted-foreground">{t('layout.admin.topbar.admin')}</p>
               </div>
               <ChevronDown className="hidden size-3.5 text-muted-foreground md:block" />
             </DropdownMenuTrigger>
@@ -70,14 +72,14 @@ export function AdminTopbar({
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => router.push('/admin')} className="rounded-lg">
-                Dashboard
+                {t('layout.admin.topbar.dashboard')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => router.push('/admin/users')} className="rounded-lg">
-                Utilisateurs
+                {t('layout.admin.topbar.users')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onSignOut} className="rounded-lg text-destructive focus:text-destructive">
-                Deconnexion
+                {t('layout.admin.topbar.signout')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

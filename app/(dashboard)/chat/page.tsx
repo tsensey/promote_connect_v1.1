@@ -18,32 +18,7 @@ import {
 import { useNotificationState } from '@/lib/notification-context';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function getInitials(name: string | null | undefined) {
-  if (!name) return '?';
-  return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
-}
-
-function formatRelativeTime(dateStr: string | null | undefined, t: any) {
-  if (!dateStr) return '';
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHr = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHr / 24);
-
-  if (diffMin < 1) return t('chat.now');
-  if (diffMin < 60) return `${diffMin}m`;
-  if (diffHr < 24) return `${diffHr}h`;
-  if (diffDay === 1) return t('chat.yesterday');
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-}
-
-function isSameDay(a: string, b: string) {
-  return new Date(a).toDateString() === new Date(b).toDateString();
-}
+import { getInitials, formatRelativeTime, isSameDay } from '@/lib/chat/utils';
 
 // ─── Panneau liste des conversations ──────────────────────────────────────────
 function ConversationList({
@@ -330,11 +305,6 @@ function MessageThread({
     })();
   }, [markAsRead, refreshUnreadCount, conversationId]);
 
-  // Pré-attacher produit depuis URL au montage
-  useEffect(() => {
-    if (initialProduct) setProductContext(initialProduct);
-  }, [initialProduct]);
-
   const handleSend = useCallback(
     async (opts: SendOptions) => {
       if (!opts.content.trim() && !opts.file && !opts.productAttachment) return;
@@ -485,7 +455,6 @@ function EmptyState() {
 
 // ─── Page principale ──────────────────────────────────────────────────────────
 export default function ChatPage() {
-  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { setActiveConversationId } = useNotificationState();

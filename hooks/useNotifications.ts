@@ -6,6 +6,7 @@ import { supabaseClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth/context';
 import { useNotificationState } from '@/lib/notification-context';
 import { playMessageSound } from '@/lib/notification-sound';
+import { useTranslation } from '@/lib/i18n';
 import type { Database } from '@/types/database.types';
 
 type Message = Database['public']['Tables']['messages']['Row'];
@@ -13,6 +14,7 @@ type Post = Database['public']['Tables']['posts']['Row'];
 
 export function useNotifications() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { activeConversationId } = useNotificationState();
   const myIdRef = useRef<string | null>(null);
 
@@ -52,23 +54,23 @@ export function useNotifications() {
             .eq('id', msg.sender_id)
             .single();
 
-          const senderName = sender?.full_name ?? 'Quelqu\'un';
+          const senderName = sender?.full_name ?? t('notifications.someone');
           const preview = msg.content
             ? msg.content.length > 60 ? msg.content.slice(0, 60) + '…' : msg.content
             : msg.attachment_type === 'image'
-              ? '📷 Photo'
+              ? t('notifications.photo')
               : msg.attachment_type === 'document'
-                ? '📄 Document'
+                ? t('notifications.document')
                 : msg.product_attachment
-                  ? '🏷️ Produit'
-                  : 'Nouveau message';
+                  ? t('notifications.product')
+                  : t('notifications.new_message');
 
           playMessageSound();
 
           toast(senderName, {
             description: preview,
             action: {
-              label: 'Voir',
+              label: t('notifications.view'),
               onClick: () => {
                 window.location.href = `/chat?conv=${msg.conversation_id}`;
               },
@@ -101,15 +103,15 @@ export function useNotifications() {
             .eq('id', post.author_id)
             .single();
 
-          const authorName = author?.full_name ?? 'Quelqu\'un';
+          const authorName = author?.full_name ?? t('notifications.someone');
           const preview = post.content.length > 80
             ? post.content.slice(0, 80) + '…'
             : post.content;
 
-          toast('Nouvelle publication', {
+          toast(t('notifications.new_post'), {
             description: `${authorName} : ${preview}`,
             action: {
-              label: 'Voir',
+              label: t('notifications.view'),
               onClick: () => {
                 window.location.href = `/feed#${post.id}`;
               },

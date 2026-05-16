@@ -20,7 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
   User,
@@ -32,28 +31,28 @@ import {
   Loader2,
   Check,
   Languages,
+  Settings2,
+  ChevronRight,
+  CalendarClock,
+  Mail,
+  Rss,
+  Volume2,
+  Camera,
 } from 'lucide-react';
 import type { Locale } from '@/lib/i18n';
 
 const SECTORS = [
-  'agriculture',
-  'agroalimentaire',
-  'artisanat',
-  'banque_assurance',
-  'batiment',
-  'chimie',
-  'commerce',
-  'communication',
-  'education',
-  'energie',
-  'environnement',
-  'finance',
-  'industrie',
-  'it',
-  'logistique',
-  'sante',
-  'services',
-  'tourisme',
+  'agriculture', 'agroalimentaire', 'artisanat', 'banque_assurance',
+  'batiment', 'chimie', 'commerce', 'communication', 'education',
+  'energie', 'environnement', 'finance', 'industrie', 'it',
+  'logistique', 'sante', 'services', 'tourisme',
+] as const;
+
+const TABS = [
+  { id: 'profile', icon: User, key: 'settings.profile' },
+  { id: 'notifications', icon: Bell, key: 'settings.notifications' },
+  { id: 'language', icon: Globe, key: 'settings.language' },
+  { id: 'account', icon: Shield, key: 'settings.account' },
 ] as const;
 
 function ProfileTab() {
@@ -70,176 +69,119 @@ function ProfileTab() {
 
   const handleSave = async () => {
     const result = await updateProfile({
-      full_name: fullName,
-      company,
-      sector: sector || null,
-      country: country || null,
-      pavillon: pavillon || null,
-      avatar_url: avatarUrl,
+      full_name: fullName, company,
+      sector: sector || null, country: country || null,
+      pavillon: pavillon || null, avatar_url: avatarUrl,
     });
-
     if (result.success) {
       await refreshProfile();
-      toast.success(t('profile.updated'), {
-        description: t('profile.updated.description'),
-      });
+      toast.success(t('profile.updated'), { description: t('profile.updated.description') });
     } else {
-      toast.error(t('profile.error'), {
-        description: result.error,
-      });
+      toast.error(t('profile.error'), { description: result.error });
     }
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const { data: session } = await supabaseClient.auth.getSession();
     const userId = session?.session?.user?.id;
     if (!userId) return;
-
     const fileExt = file.name.split('.').pop();
     const filePath = `avatars/${userId}-${Date.now()}.${fileExt}`;
-
-    const { error: uploadError } = await supabaseClient.storage
-      .from('avatars')
-      .upload(filePath, file);
-
+    const { error: uploadError } = await supabaseClient.storage.from('avatars').upload(filePath, file);
     if (uploadError) {
       toast.error(t('profile.error'), { description: uploadError.message });
       return;
     }
-
-    const { data: urlData } = supabaseClient.storage
-      .from('avatars')
-      .getPublicUrl(filePath);
-
+    const { data: urlData } = supabaseClient.storage.from('avatars').getPublicUrl(filePath);
     setAvatarUrl(urlData.publicUrl);
   };
 
   const removeAvatar = () => setAvatarUrl(null);
 
   const hasChanges =
-    profile?.full_name !== fullName ||
-    profile?.company !== company ||
-    profile?.sector !== sector ||
-    profile?.country !== country ||
-    profile?.pavillon !== pavillon ||
-    profile?.avatar_url !== avatarUrl;
+    profile?.full_name !== fullName || profile?.company !== company ||
+    profile?.sector !== sector || profile?.country !== country ||
+    profile?.pavillon !== pavillon || profile?.avatar_url !== avatarUrl;
 
   return (
-    <div className="space-y-8">
-      <Card>
+    <div className="space-y-6">
+      <Card className="overflow-hidden border-border/50 shadow-sm transition-shadow hover:shadow-md">
+        <div className="h-1.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <User className="size-4" />
-            {t('settings.profile')}
-          </CardTitle>
-          <CardDescription>{t('settings.profile.description')}</CardDescription>
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+              <User className="size-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">{t('settings.profile')}</CardTitle>
+              <CardDescription>{t('settings.profile.description')}</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex items-center gap-4">
-            <Avatar className="size-16 border-2 border-border/50">
-              <AvatarImage src={avatarUrl ?? undefined} />
-              <AvatarFallback className="text-lg font-semibold text-muted-foreground bg-muted">
-                {fullName?.charAt(0).toUpperCase() || '?'}
-              </AvatarFallback>
-            </Avatar>
+          <div className="flex flex-col items-center gap-4 sm:flex-row">
+            <div className="relative group">
+              <Avatar className="size-20 border-2 border-border/50 shadow-sm transition-shadow group-hover:shadow-md">
+                <AvatarImage src={avatarUrl ?? undefined} />
+                <AvatarFallback className="text-xl font-bold text-muted-foreground bg-muted">
+                  {fullName?.charAt(0).toUpperCase() || '?'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                <Camera className="size-6 text-white" />
+              </div>
+            </div>
             <div className="flex flex-col gap-1.5">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarUpload}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-              >
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+              <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
                 {t('profile.avatar.upload')}
               </Button>
               {avatarUrl && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive"
-                  onClick={removeAvatar}
-                >
+                <Button type="button" variant="ghost" size="sm" className="text-destructive" onClick={removeAvatar}>
                   {t('profile.avatar.remove')}
                 </Button>
               )}
             </div>
           </div>
-
           <Separator />
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field>
               <Label htmlFor="fullName">{t('profile.full_name')}</Label>
-              <Input
-                id="fullName"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder={t('profile.full_name.placeholder')}
-              />
-            </div>
-            <div className="space-y-2">
+              <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t('profile.full_name.placeholder')} />
+            </Field>
+            <Field>
               <Label htmlFor="company">{t('profile.company')}</Label>
-              <Input
-                id="company"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                placeholder={t('profile.company.placeholder')}
-              />
-            </div>
-            <div className="space-y-2">
+              <Input id="company" value={company} onChange={(e) => setCompany(e.target.value)} placeholder={t('profile.company.placeholder')} />
+            </Field>
+            <Field>
               <Label htmlFor="sector">{t('profile.sector')}</Label>
-              <Select value={sector} onValueChange={(value: string | null) => setSector(value ?? '')}>
+              <Select value={sector} onValueChange={(v: string | null) => setSector(v ?? '')}>
                 <SelectTrigger>
                   <SelectValue placeholder={t('profile.sector.placeholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {SECTORS.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {t(`sector.${s}`)}
-                    </SelectItem>
+                    <SelectItem key={s} value={s}>{t(`sector.${s}`)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
+            </Field>
+            <Field>
               <Label htmlFor="country">{t('profile.country')}</Label>
-              <Input
-                id="country"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                placeholder={t('profile.country.placeholder')}
-              />
-            </div>
-            <div className="space-y-2">
+              <Input id="country" value={country} onChange={(e) => setCountry(e.target.value)} placeholder={t('profile.country.placeholder')} />
+            </Field>
+            <Field>
               <Label htmlFor="pavillon">{t('profile.pavillon')}</Label>
-              <Input
-                id="pavillon"
-                value={pavillon}
-                onChange={(e) => setPavillon(e.target.value)}
-                placeholder={t('profile.pavillon.placeholder')}
-              />
-            </div>
+              <Input id="pavillon" value={pavillon} onChange={(e) => setPavillon(e.target.value)} placeholder={t('profile.pavillon.placeholder')} />
+            </Field>
           </div>
         </CardContent>
       </Card>
-
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={!hasChanges || saving}>
-          {saving ? (
-            <Loader2 className="mr-2 size-4 animate-spin" />
-          ) : (
-            <Save className="mr-2 size-4" />
-          )}
+        <Button onClick={handleSave} disabled={!hasChanges || saving} className="min-w-[140px] shadow-sm">
+          {saving ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
           {saving ? t('common.saving') : t('common.save')}
         </Button>
       </div>
@@ -247,51 +189,59 @@ function ProfileTab() {
   );
 }
 
+function Field({ children }: { children: React.ReactNode }) {
+  return <div className="space-y-2">{children}</div>;
+}
+
 function NotificationsTab() {
   const { t } = useTranslation();
   const { preferences, updatePreferences, saving } = useSettings();
 
-  const toggles: {
-    key: 'notify_messages' | 'notify_rdv' | 'notify_newsletter' | 'notify_feed' | 'notify_sound';
-    labelKey: string;
-    descKey: string;
-  }[] = [
-    { key: 'notify_messages', labelKey: 'notifications.messages', descKey: 'notifications.messages.description' },
-    { key: 'notify_rdv', labelKey: 'notifications.rdv', descKey: 'notifications.rdv.description' },
-    { key: 'notify_newsletter', labelKey: 'notifications.newsletter', descKey: 'notifications.newsletter.description' },
-    { key: 'notify_feed', labelKey: 'notifications.feed', descKey: 'notifications.feed.description' },
-    { key: 'notify_sound', labelKey: 'notifications.sound', descKey: 'notifications.sound.description' },
+  const toggles: { key: 'notify_messages' | 'notify_rdv' | 'notify_newsletter' | 'notify_feed' | 'notify_sound'; icon: typeof Bell; labelKey: string; descKey: string }[] = [
+    { key: 'notify_messages', icon: Bell, labelKey: 'notifications.messages', descKey: 'notifications.messages.description' },
+    { key: 'notify_rdv', icon: CalendarClock, labelKey: 'notifications.rdv', descKey: 'notifications.rdv.description' },
+    { key: 'notify_newsletter', icon: Mail, labelKey: 'notifications.newsletter', descKey: 'notifications.newsletter.description' },
+    { key: 'notify_feed', icon: Rss, labelKey: 'notifications.feed', descKey: 'notifications.feed.description' },
+    { key: 'notify_sound', icon: Volume2, labelKey: 'notifications.sound', descKey: 'notifications.sound.description' },
   ];
 
   const handleToggle = async (key: typeof toggles[number]['key'], checked: boolean) => {
     const result = await updatePreferences({ [key]: checked });
     if (result.success) {
-      toast.success(t('notifications.updated'), {
-        description: t('notifications.updated.description'),
-      });
+      toast.success(t('notifications.updated'), { description: t('notifications.updated.description') });
     }
   };
 
   return (
-    <Card>
+    <Card className="overflow-hidden border-border/50 shadow-sm transition-shadow hover:shadow-md">
+      <div className="h-1.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Bell className="size-4" />
-          {t('settings.notifications')}
-        </CardTitle>
-        <CardDescription>{t('settings.notifications.description')}</CardDescription>
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+            <Bell className="size-5 text-primary" />
+          </div>
+          <div>
+            <CardTitle className="text-lg">{t('settings.notifications')}</CardTitle>
+            <CardDescription>{t('settings.notifications.description')}</CardDescription>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {toggles.map(({ key, labelKey, descKey }) => (
+      <CardContent className="space-y-3">
+        {toggles.map(({ key, icon: Icon, labelKey, descKey }) => (
           <div
             key={key}
-            className="flex items-center justify-between rounded-xl border border-border/50 p-4 transition-colors hover:bg-accent/30"
+            className="group flex items-center justify-between rounded-xl border border-border/50 bg-card p-4 transition-all hover:border-border hover:bg-accent/30 hover:shadow-sm"
           >
-            <div className="space-y-0.5">
-              <Label htmlFor={key} className="text-sm font-medium cursor-pointer">
-                {t(labelKey)}
-              </Label>
-              <p className="text-xs text-muted-foreground">{t(descKey)}</p>
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+                <Icon className="size-4" />
+              </div>
+              <div className="space-y-0.5">
+                <Label htmlFor={key} className="cursor-pointer text-sm font-medium">
+                  {t(labelKey)}
+                </Label>
+                <p className="text-xs text-muted-foreground">{t(descKey)}</p>
+              </div>
             </div>
             <Switch
               id={key}
@@ -309,50 +259,56 @@ function NotificationsTab() {
 function LanguageTab() {
   const { t, locale, setLocale } = useTranslation();
 
-  const languages: { value: Locale; labelKey: string; flag: string }[] = [
-    { value: 'fr', labelKey: 'language.fr', flag: '🇫🇷' },
-    { value: 'en', labelKey: 'language.en', flag: '🇬🇧' },
+  const languages: { value: Locale; labelKey: string; flag: string; native: string }[] = [
+    { value: 'fr', labelKey: 'language.fr', flag: '🇫🇷', native: 'Français' },
+    { value: 'en', labelKey: 'language.en', flag: '🇬🇧', native: 'English' },
   ];
 
   const handleChange = async (newLocale: Locale) => {
     await setLocale(newLocale);
-    toast.success(t('language.updated'), {
-      description: t('language.updated.description'),
-    });
+    toast.success(t('language.updated'), { description: t('language.updated.description') });
   };
 
   return (
-    <Card>
+    <Card className="overflow-hidden border-border/50 shadow-sm transition-shadow hover:shadow-md">
+      <div className="h-1.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Languages className="size-4" />
-          {t('settings.language')}
-        </CardTitle>
-        <CardDescription>{t('settings.language.description')}</CardDescription>
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+            <Languages className="size-5 text-primary" />
+          </div>
+          <div>
+            <CardTitle className="text-lg">{t('settings.language')}</CardTitle>
+            <CardDescription>{t('settings.language.description')}</CardDescription>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {languages.map(({ value, labelKey, flag }) => (
+      <CardContent className="grid gap-3 sm:grid-cols-2">
+        {languages.map(({ value, labelKey, flag, native }) => (
           <button
             key={value}
             type="button"
             onClick={() => handleChange(value)}
-            className={`flex w-full items-center justify-between rounded-xl border p-4 text-left transition-all ${
+            className={`group relative overflow-hidden rounded-xl border-2 p-5 text-left transition-all ${
               locale === value
-                ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                : 'border-border/50 hover:border-border hover:bg-accent/30'
+                ? 'border-primary bg-primary/5 shadow-sm'
+                : 'border-border/50 bg-card hover:border-border hover:shadow-sm'
             }`}
           >
-            <div className="flex items-center gap-3">
-              <span className="text-xl">{flag}</span>
-              <span className={`text-sm font-medium ${locale === value ? 'text-primary' : ''}`}>
-                {t(labelKey)}
-              </span>
-            </div>
             {locale === value && (
-              <div className="flex size-6 items-center justify-center rounded-full bg-primary">
+              <div className="absolute right-3 top-3 flex size-6 items-center justify-center rounded-full bg-primary shadow-sm">
                 <Check className="size-3.5 text-primary-foreground" />
               </div>
             )}
+            <div className="flex flex-col items-center gap-3 text-center">
+              <span className="text-4xl">{flag}</span>
+              <div>
+                <p className={`text-base font-semibold ${locale === value ? 'text-primary' : ''}`}>
+                  {t(labelKey)}
+                </p>
+                <p className="text-xs text-muted-foreground">{native}</p>
+              </div>
+            </div>
           </button>
         ))}
       </CardContent>
@@ -382,61 +338,57 @@ function AccountTab() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="overflow-hidden border-border/50 shadow-sm transition-shadow hover:shadow-md">
+        <div className="h-1.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Shield className="size-4" />
-            {t('settings.account')}
-          </CardTitle>
-          <CardDescription>{t('settings.account.description')}</CardDescription>
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+              <Shield className="size-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">{t('settings.account')}</CardTitle>
+              <CardDescription>{t('settings.account.description')}</CardDescription>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">{t('account.email')}</p>
-              <p className="text-sm">{user?.email}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">{t('account.role')}</p>
+        <CardContent>
+          <div className="grid gap-6 sm:grid-cols-2">
+            <InfoItem label={t('account.email')} value={user?.email} />
+            <InfoItem label={t('account.role')} badge={
               <Badge variant="secondary" className="font-medium">
-                {profile?.role === 'exposant'
-                  ? t('account.role.exposant')
-                  : profile?.role === 'visiteur'
-                    ? t('account.role.visiteur')
-                    : t('account.role.admin')}
+                {profile?.role === 'exposant' ? t('account.role.exposant') :
+                 profile?.role === 'visiteur' ? t('account.role.visiteur') : t('account.role.admin')}
               </Badge>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">{t('account.subscription')}</p>
+            } />
+            <InfoItem label={t('account.subscription')} badge={
               <Badge variant={statusBadge(profile?.subscription_status)}>
                 {statusLabel(profile?.subscription_status)}
               </Badge>
-            </div>
+            } />
             {profile?.subscription_ends_at && (
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground">{t('account.subscription.ends_at')}</p>
-                <p className="text-sm">
-                  {new Date(profile.subscription_ends_at).toLocaleDateString(
-                    locale === 'en' ? 'en-US' : 'fr-FR',
-                    { day: 'numeric', month: 'long', year: 'numeric' }
-                  )}
-                </p>
-              </div>
+              <InfoItem
+                label={t('account.subscription.ends_at')}
+                value={new Date(profile.subscription_ends_at).toLocaleDateString(
+                  locale === 'en' ? 'en-US' : 'fr-FR',
+                  { day: 'numeric', month: 'long', year: 'numeric' }
+                )}
+              />
             )}
           </div>
         </CardContent>
       </Card>
-
-      <Card className="border-destructive/20">
-        <CardContent className="flex items-center justify-between p-6">
-          <div className="flex items-center gap-3">
-            <LogOut className="size-4 text-destructive" />
+      <Card className="border-destructive/20 shadow-sm">
+        <CardContent className="flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10">
+              <LogOut className="size-5 text-destructive" />
+            </div>
             <div>
               <p className="text-sm font-medium">{t('account.sign_out')}</p>
               <p className="text-xs text-muted-foreground">{t('account.sign_out.confirm')}</p>
             </div>
           </div>
-          <Button variant="destructive" size="sm" onClick={handleSignOut}>
+          <Button variant="destructive" size="sm" onClick={handleSignOut} className="shrink-0 shadow-sm">
             <LogOut className="mr-2 size-4" />
             {t('account.sign_out')}
           </Button>
@@ -446,66 +398,70 @@ function AccountTab() {
   );
 }
 
+function InfoItem({ label, value, badge }: { label: string; value?: string | null; badge?: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-border/50 bg-muted/30 p-4">
+      <p className="mb-1 text-xs font-medium text-muted-foreground">{label}</p>
+      {badge || <p className="text-sm font-medium">{value || '—'}</p>}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState('profile');
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 pb-10">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t('settings.title')}</h1>
-          <p className="text-sm text-muted-foreground">{t('settings.subtitle')}</p>
+    <div className="mx-auto max-w-6xl space-y-8 pb-10">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-border/50 p-6 sm:p-8">
+        <div className="absolute -right-20 -top-20 size-64 rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute -bottom-10 -left-10 size-48 rounded-full bg-primary/5 blur-3xl" />
+        <div className="relative flex items-center gap-4">
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20">
+            <Settings2 className="size-7 text-primary-foreground" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{t('settings.title')}</h1>
+            <p className="text-sm text-muted-foreground">{t('settings.subtitle')}</p>
+          </div>
         </div>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-6 flex flex-col">
-        <TabsList className="w-full justify-start gap-0 border-b border-border/50 bg-transparent p-0">
-          <TabsTrigger
-            value="profile"
-            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium data-[state=active]:border-primary data-[state=active]:text-primary"
-          >
-            <User className="size-4" />
-            {t('settings.profile')}
-          </TabsTrigger>
-          <TabsTrigger
-            value="notifications"
-            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium data-[state=active]:border-primary data-[state=active]:text-primary"
-          >
-            <Bell className="size-4" />
-            {t('settings.notifications')}
-          </TabsTrigger>
-          <TabsTrigger
-            value="language"
-            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium data-[state=active]:border-primary data-[state=active]:text-primary"
-          >
-            <Globe className="size-4" />
-            {t('settings.language')}
-          </TabsTrigger>
-          <TabsTrigger
-            value="account"
-            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium data-[state=active]:border-primary data-[state=active]:text-primary"
-          >
-            <Shield className="size-4" />
-            {t('settings.account')}
-          </TabsTrigger>
-        </TabsList>
+      <div className="flex flex-col gap-8 lg:flex-row">
+        <nav className="flex shrink-0 gap-1 overflow-x-auto rounded-xl border border-border/50 bg-card p-1.5 lg:w-56 lg:flex-col">
+          {TABS.map(({ id, icon: Icon, key }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setActiveTab(id)}
+              className={`flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
+                activeTab === id
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+              }`}
+            >
+              <Icon className="size-4 shrink-0" />
+              <span className="truncate lg:inline">{t(key)}</span>
+              <ChevronRight className={`ml-auto size-3.5 shrink-0 opacity-0 transition-opacity lg:block ${activeTab === id ? 'opacity-100' : ''}`} />
+            </button>
+          ))}
+        </nav>
 
-        <TabsContent value="profile">
-          <ProfileTab />
-        </TabsContent>
-
-        <TabsContent value="notifications">
-          <NotificationsTab />
-        </TabsContent>
-
-        <TabsContent value="language">
-          <LanguageTab />
-        </TabsContent>
-
-        <TabsContent value="account">
-          <AccountTab />
-        </TabsContent>
-      </Tabs>
+        <div className="min-w-0 flex-1">
+          <div className={`transition-opacity duration-200 ${activeTab === 'profile' ? 'opacity-100' : 'hidden'}`}>
+            <ProfileTab />
+          </div>
+          <div className={`transition-opacity duration-200 ${activeTab === 'notifications' ? 'opacity-100' : 'hidden'}`}>
+            <NotificationsTab />
+          </div>
+          <div className={`transition-opacity duration-200 ${activeTab === 'language' ? 'opacity-100' : 'hidden'}`}>
+            <LanguageTab />
+          </div>
+          <div className={`transition-opacity duration-200 ${activeTab === 'account' ? 'opacity-100' : 'hidden'}`}>
+            <AccountTab />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

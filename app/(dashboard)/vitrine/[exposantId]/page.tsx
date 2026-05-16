@@ -204,7 +204,7 @@ export default function VitrineExposantPage() {
         </Link>
         <Button variant="ghost" size="sm" className="rounded-full" onClick={handleShare}>
           <Share2 className="mr-2 size-4" />
-          Partager
+          {t('vitrine.detail.share')}
         </Button>
       </div>
 
@@ -374,7 +374,7 @@ export default function VitrineExposantPage() {
                 src={toEmbedUrl(exposant.video_url)}
                 className="h-full w-full"
                 allowFullScreen
-                title={`Présentation de ${exposant.nom}`}
+                title={t('vitrine.detail.video_title', { name: exposant.nom })}
               />
             </div>
           </CardContent>
@@ -449,7 +449,7 @@ export default function VitrineExposantPage() {
                 <Package className="size-5 text-primary" />
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">Catalogue</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">{t('vitrine.detail.catalogue')}</p>
                 <h2 className="text-2xl font-heading text-foreground">
                   {t('vitrine.detail.products', { count: produits.length })}
                 </h2>

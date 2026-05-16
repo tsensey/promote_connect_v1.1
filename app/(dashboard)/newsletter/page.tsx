@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslation } from "@/lib/i18n";
 import { supabaseClient } from "@/lib/supabase/client";
 import { Mail, Check, Loader2, Newspaper, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,12 +21,6 @@ const SECTORS = [
   "Logistics",
 ];
 
-const FREQUENCIES = [
-  { value: "daily", label: "Quotidienne" },
-  { value: "weekly", label: "Hebdomadaire" },
-  { value: "monthly", label: "Mensuelle" },
-];
-
 interface NewsletterEdition {
   id: string;
   titre: string;
@@ -34,6 +29,12 @@ interface NewsletterEdition {
 }
 
 export default function NewsletterPage() {
+  const { t, locale } = useTranslation();
+  const FREQUENCIES = [
+    { value: "daily", label: t("newsletter.daily") },
+    { value: "weekly", label: t("newsletter.weekly") },
+    { value: "monthly", label: t("newsletter.monthly") },
+  ];
   const [email, setEmail] = useState("");
   const [sectors, setSectors] = useState<string[]>([]);
   const [frequency, setFrequency] = useState("weekly");
@@ -98,9 +99,9 @@ export default function NewsletterPage() {
 
       setSuccess(true);
       setIsSubscribed(true);
-      toast.success("Inscription reussie !");
+      toast.success(t("newsletter.success"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -110,11 +111,10 @@ export default function NewsletterPage() {
     <div className="space-y-6 pb-8 max-w-6xl mx-auto">
       <div className="space-y-1">
         <h1 className="text-3xl font-heading text-foreground">
-          Newsletter PROMOTE
+          {t("newsletter.title")}
         </h1>
         <p className="max-w-2xl text-base leading-7 text-muted-foreground">
-          Actualites et opportunites d&apos;affaires pour tous les comptes
-          actifs.
+          {t("newsletter.desc")}
         </p>
       </div>
 
@@ -127,7 +127,7 @@ export default function NewsletterPage() {
               </div>
               <div className="text-white">
                 <h2 className="font-heading text-lg font-semibold">
-                  Vous êtes inscrit à la newsletter
+                  {t("newsletter.subscribed")}
                 </h2>
                 <p className="text-sm text-white/80">
                   {email} —{" "}
@@ -146,10 +146,10 @@ export default function NewsletterPage() {
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">
-                  Abonnement
+                  {t("newsletter.subscription")}
                 </p>
                 <h2 className="text-2xl font-heading text-foreground">
-                  Inscription à la newsletter
+                  {t("newsletter.signup")}
                 </h2>
               </div>
             </div>
@@ -157,21 +157,21 @@ export default function NewsletterPage() {
             <form onSubmit={handleSubscribe} className="space-y-5">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">
-                  Adresse email
+                  {t("newsletter.email")}
                 </label>
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  placeholder="votre@email.com"
+                  placeholder={t("newsletter.email_placeholder")}
                   className="h-11 rounded-xl border-border/70 bg-white/90"
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">
-                  Fréquence
+                  {t("newsletter.frequency")}
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {FREQUENCIES.map((f) => (
@@ -191,7 +191,7 @@ export default function NewsletterPage() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">
-                  Secteurs d&apos;intérêt (optionnel)
+                  {t("newsletter.sectors")}
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {SECTORS.map((sector) => (
@@ -220,7 +220,7 @@ export default function NewsletterPage() {
 
               {success && (
                 <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                  Inscription réussie ! Vérifiez votre boîte mail.
+                  {t("newsletter.success_desc")}
                 </div>
               )}
 
@@ -232,10 +232,10 @@ export default function NewsletterPage() {
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 size-4 animate-spin" />
-                    Inscription en cours...
+                    {t("newsletter.subscribing")}
                   </>
                 ) : (
-                  "S'inscrire"
+                  t("newsletter.subscribe")
                 )}
               </Button>
             </form>
@@ -251,10 +251,10 @@ export default function NewsletterPage() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">
-                Archives
+                {t("newsletter.archives")}
               </p>
               <h2 className="text-2xl font-heading text-foreground">
-                Éditions précédentes
+                {t("newsletter.previous_editions")}
               </h2>
             </div>
           </div>
@@ -275,7 +275,7 @@ export default function NewsletterPage() {
                         <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
                           <CalendarDays className="size-3.5" />
                           {new Date(edition.sent_at).toLocaleDateString(
-                            "fr-FR",
+                            locale === 'en' ? 'en-US' : 'fr-FR',
                             {
                               year: "numeric",
                               month: "long",
@@ -297,10 +297,10 @@ export default function NewsletterPage() {
               <div className="flex flex-col items-center gap-3 py-12 text-center">
                 <Mail className="size-12 text-muted-foreground/30" />
                 <p className="text-base font-medium text-foreground">
-                  Aucune édition disponible
+                  {t("newsletter.no_editions")}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Les newsletters seront archivées ici dès leur publication.
+                  {t("newsletter.no_editions_hint")}
                 </p>
               </div>
             )}

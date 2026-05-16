@@ -178,10 +178,10 @@ export default function ManageVitrinePage() {
 
       if (newUrls.length > 0) {
         setShowcaseForm(f => ({ ...f, gallery_urls: [...f.gallery_urls, ...newUrls] }));
-        toast.success(`${newUrls.length} image(s) ajoutée(s) à la galerie`);
+          toast.success(t('exposant.vitrine.gallery_added', { count: newUrls.length }));
       }
     } catch (error) {
-      toast.error("Erreur lors de l'upload des images");
+      toast.error(t('exposant.vitrine.upload_error'));
     } finally {
       setUploadingGallery(false);
     }
@@ -196,7 +196,7 @@ export default function ManageVitrinePage() {
     }
     const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!allowed.includes(file.type)) {
-      toast.error(`Format non supporté (JPEG, PNG, WebP, GIF)`);
+      toast.error(t('exposant.vitrine.format_unsupported'));
       return;
     }
 
@@ -224,9 +224,9 @@ export default function ManageVitrinePage() {
       } else {
         setShowcaseForm(f => ({ ...f, [field]: publicUrl }));
       }
-      toast.success("Image téléchargée avec succès");
+      toast.success(t('exposant.vitrine.upload_success'));
     } catch (error) {
-      toast.error("Erreur lors du téléchargement de l'image");
+      toast.error(t('exposant.vitrine.upload_error'));
     } finally {
       if (field === 'logo_url') setUploadingLogo(false);
       else if (field === 'cover_url') setUploadingCover(false);
@@ -369,7 +369,7 @@ export default function ManageVitrinePage() {
         setExposant(data);
       }
 
-      toast.success("Vitrine enregistrée avec succès.");
+      toast.success(t('exposant.vitrine.saved'));
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -425,7 +425,7 @@ export default function ManageVitrinePage() {
 
       setProductForm(emptyProductForm);
       await refreshProducts(exposant.id);
-      toast.success(productForm.id ? "Produit mis à jour." : "Produit ajouté.");
+      toast.success(productForm.id ? t('exposant.vitrine.product_updated') : t('exposant.vitrine.product_added'));
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -458,7 +458,7 @@ export default function ManageVitrinePage() {
         .eq("id", productId);
       if (error) throw error;
       if (exposant) await refreshProducts(exposant.id);
-      toast.success("Produit supprimé.");
+      toast.success(t('exposant.vitrine.product_deleted'));
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Suppression impossible.",
@@ -475,7 +475,7 @@ export default function ManageVitrinePage() {
           <Store className="mx-auto size-10 text-primary" />
           <div>
             <h1 className="text-2xl text-foreground">
-              Espace réservé aux exposants
+              {t('exposant.vitrine.restricted')}
             </h1>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">
               La gestion de la vitrine est disponible uniquement pour les
@@ -484,7 +484,7 @@ export default function ManageVitrinePage() {
           </div>
           <Link href="/app">
             <Button className="rounded-xl">
-              Retour à l&apos;accueil
+              {t('exposant.vitrine.back_home')}
               <ArrowRight className="size-4" />
             </Button>
           </Link>
@@ -508,7 +508,7 @@ export default function ManageVitrinePage() {
         {exposant && (
           <Link href={`/annuaire/${exposant.id}`}>
             <Button variant="outline" className="rounded-xl bg-white/85">
-              Voir mon profil public
+              {t('dashboard.home.view_profile')}
             </Button>
           </Link>
         )}
@@ -517,31 +517,31 @@ export default function ManageVitrinePage() {
       <Tabs defaultValue="presentation" className="flex flex-col gap-y-1.5">
         <TabsList>
           <TabsTrigger value="presentation">
-            {`Présentation de l'entreprise`}
+            {t('exposant.vitrine.presentation')}
           </TabsTrigger>
           <TabsTrigger value="produits">Mes produits</TabsTrigger>
-          <TabsTrigger value="gallery">Galerie multimédia</TabsTrigger>
+          <TabsTrigger value="gallery">{t('exposant.vitrine.gallery')}</TabsTrigger>
         </TabsList>
         <TabsContent value="presentation">
           {/* ─── Présentation principale ─── */}
           <div className="space-y-6">
             <Card className="surface-panel border-0">
               <CardHeader className="border-b border-border/50 pb-4">
-                <CardTitle className="text-lg">Informations générales</CardTitle>
-                <p className="text-sm text-muted-foreground">Les informations de base affichées sur votre fiche annuaire.</p>
+                <CardTitle className="text-lg">{t('exposant.vitrine.general_info')}</CardTitle>
+                <p className="text-sm text-muted-foreground">{t('exposant.vitrine.general_info_desc')}</p>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Nom de l'entreprise *">
+                <Field label={t('exposant.vitrine.company_name')}>
                   <Input
                     value={showcaseForm.nom}
                     onChange={(e) =>
                       setShowcaseForm((f) => ({ ...f, nom: e.target.value }))
                     }
-                    placeholder="Nom de votre entreprise"
+                    placeholder={t('exposant.vitrine.company_name_placeholder')}
                   />
                 </Field>
-                <Field label="Site web">
+                <Field label={t('exposant.vitrine.website')}>
                   <Input
                     value={showcaseForm.website}
                     onChange={(e) =>
@@ -556,8 +556,8 @@ export default function ManageVitrinePage() {
               </div>
 
               <Field
-                label="Description courte"
-                hint="Accroche affichée sous votre nom dans l'annuaire (1-2 phrases)."
+                label={t('exposant.vitrine.short_desc')}
+                hint={t('exposant.vitrine.short_desc_hint')}
               >
                 <Textarea
                   rows={2}
@@ -568,13 +568,13 @@ export default function ManageVitrinePage() {
                       description: e.target.value,
                     }))
                   }
-                  placeholder="Une courte présentation de votre entreprise."
+                  placeholder={t('exposant.vitrine.short_desc_placeholder')}
                 />
               </Field>
 
               <Field
-                label="À propos (description complète)"
-                hint="Décrivez votre activité, votre histoire, vos valeurs et vos avantages concurrentiels."
+                label={t('exposant.vitrine.about')}
+                hint={t('exposant.vitrine.about_hint')}
               >
                 <Textarea
                   rows={6}
@@ -585,7 +585,7 @@ export default function ManageVitrinePage() {
                       long_description: e.target.value,
                     }))
                   }
-                  placeholder="Présentez votre entreprise en détail : domaines d'expertise, histoire, différenciateurs, marchés cibles..."
+                  placeholder={t('exposant.vitrine.about_placeholder')}
                 />
               </Field>
 
@@ -594,14 +594,14 @@ export default function ManageVitrinePage() {
 
             <Card className="surface-panel border-0">
               <CardHeader className="border-b border-border/50 pb-4">
-                <CardTitle className="text-lg">Identité visuelle</CardTitle>
+                <CardTitle className="text-lg">{t('exposant.vitrine.visual_identity')}</CardTitle>
                 <p className="text-sm text-muted-foreground">Personnalisez l&apos;apparence de votre vitrine.</p>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
                 <div className="grid gap-6 md:grid-cols-2">
                   <Field
                     label="Logo"
-                    hint="Image carrée recommandée (JPEG, PNG)."
+                    hint={t('exposant.vitrine.logo_hint')}
                   >
                     <div className="flex items-center gap-4">
                       {showcaseForm.logo_url && (
@@ -626,7 +626,7 @@ export default function ManageVitrinePage() {
                   </Field>
                   <Field
                     label="Image de couverture"
-                    hint="Image d'en-tête de votre profil (1200×400px)."
+                    hint={t('exposant.vitrine.cover_hint')}
                   >
                     <div className="flex flex-col gap-3">
                       {showcaseForm.cover_url && (
@@ -655,11 +655,11 @@ export default function ManageVitrinePage() {
 
             <Card className="surface-panel border-0">
               <CardHeader className="border-b border-border/50 pb-4">
-                <CardTitle className="text-lg">Localisation & Salon</CardTitle>
+                <CardTitle className="text-lg">Localisation &amp; Salon</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
               <div className="grid gap-4 md:grid-cols-4">
-                <Field label="Secteur">
+                <Field label={t('exposant.vitrine.sector')}>
                   <Input
                     value={showcaseForm.secteur}
                     onChange={(e) =>
@@ -692,7 +692,7 @@ export default function ManageVitrinePage() {
                     placeholder="A1-03"
                   />
                 </Field>
-                <Field label="Pays">
+                <Field label={t('exposant.vitrine.country')}>
                   <Input
                     value={showcaseForm.pays}
                     onChange={(e) =>
@@ -708,11 +708,11 @@ export default function ManageVitrinePage() {
 
             <Card className="surface-panel border-0">
               <CardHeader className="border-b border-border/50 pb-4">
-                <CardTitle className="text-lg">Chiffres clés</CardTitle>
+                <CardTitle className="text-lg">{t('exposant.vitrine.key_figures')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
               <div className="grid gap-4 md:grid-cols-3">
-                <Field label="Année de création">
+                <Field label={t('exposant.vitrine.year_founded')}>
                   <Input
                     value={showcaseForm.annee_creation}
                     onChange={(e) =>
@@ -724,7 +724,7 @@ export default function ManageVitrinePage() {
                     placeholder="2005"
                   />
                 </Field>
-                <Field label="Effectif">
+                <Field label={t('exposant.vitrine.employees')}>
                   <Input
                     value={showcaseForm.nombre_employes}
                     onChange={(e) =>
@@ -733,7 +733,7 @@ export default function ManageVitrinePage() {
                         nombre_employes: e.target.value,
                       }))
                     }
-                    placeholder="50-200 employés"
+                    placeholder={t('exposant.vitrine.employees_placeholder')}
                   />
                 </Field>
                 <Field label="Chiffre d'affaires">
@@ -755,7 +755,7 @@ export default function ManageVitrinePage() {
 
             <Card className="surface-panel border-0">
               <CardHeader className="border-b border-border/50 pb-4">
-                <CardTitle className="text-lg">Contacts & Réseaux sociaux</CardTitle>
+                <CardTitle className="text-lg">{t('exposant.vitrine.contacts_social')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
                 <SectionTitle>Contacts directs</SectionTitle>
@@ -773,7 +773,7 @@ export default function ManageVitrinePage() {
                     placeholder="contact@entreprise.com"
                   />
                 </Field>
-                <Field label="Téléphone">
+                <Field label={t('exposant.vitrine.phone')}>
                   <Input
                     type="tel"
                     value={showcaseForm.phone_contact}
@@ -788,7 +788,7 @@ export default function ManageVitrinePage() {
                 </Field>
               </div>
 
-              <SectionTitle>Réseaux sociaux</SectionTitle>
+              <SectionTitle>{t('exposant.vitrine.social')}</SectionTitle>
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label="LinkedIn">
                   <div className="relative">
@@ -868,12 +868,12 @@ export default function ManageVitrinePage() {
 
             <Card className="surface-panel border-0">
               <CardHeader className="border-b border-border/50 pb-4">
-                <CardTitle className="text-lg">Médias & Documents (Optionnel)</CardTitle>
+                <CardTitle className="text-lg">{t('exposant.vitrine.media_docs')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field
-                    label="Vidéo de présentation (URL embed YouTube / Vimeo)"
+                    label={t('exposant.vitrine.video_url')}
                     hint="Ex : https://www.youtube.com/embed/VOTRE_ID"
                   >
                     <Input
@@ -889,7 +889,7 @@ export default function ManageVitrinePage() {
                   </Field>
                   <Field
                     label="Brochure commerciale (URL PDF)"
-                    hint="Lien direct vers votre brochure téléchargeable."
+                    hint={t('exposant.vitrine.brochure_url')}
                   >
                     <Input
                       value={showcaseForm.brochure_url}
@@ -916,10 +916,10 @@ export default function ManageVitrinePage() {
                 {savingShowcase ? (
                   <>
                     <Loader2 className="mr-2 size-5 animate-spin" />
-                    Enregistrement...
+                    {t('common.saving')}
                   </>
                 ) : (
-                  "Enregistrer ma vitrine"
+                  t('common.save')
                 )}
               </Button>
             </div>
@@ -950,7 +950,7 @@ export default function ManageVitrinePage() {
                   <Field label="Type">
                     <Select value={productForm.type || "produit"} onValueChange={v => setProductForm(f => ({ ...f, type: v }))}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Sélectionnez le type" />
+                        <SelectValue placeholder={t('exposant.vitrine.product_type_placeholder')} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="produit">Produit</SelectItem>
@@ -960,7 +960,7 @@ export default function ManageVitrinePage() {
                   </Field>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <Field label="Catégorie (optionnel)">
+                  <Field label={t('exposant.vitrine.product_category')}>
                     <Input
                       value={productForm.categorie}
                       onChange={(e) =>
@@ -1017,7 +1017,7 @@ export default function ManageVitrinePage() {
                         description: e.target.value,
                       }))
                     }
-                    placeholder="Décrivez votre offre, sa valeur et son usage."
+                    placeholder={t('exposant.vitrine.product_desc_placeholder')}
                   />
                 </Field>
 
@@ -1030,12 +1030,12 @@ export default function ManageVitrinePage() {
                     {savingProduct ? (
                       <>
                         <Loader2 className="mr-2 size-4 animate-spin" />
-                        Enregistrement...
+                        {t('common.saving')}
                       </>
                     ) : (
                       <>
                         <PackagePlus className="mr-2 size-4" />
-                        {productForm.id ? "Mettre à jour" : "Ajouter"}
+                        {productForm.id ? t('exposant.vitrine.product_update') : t('exposant.vitrine.product_add')}
                       </>
                     )}
                   </Button>
@@ -1045,7 +1045,7 @@ export default function ManageVitrinePage() {
                       className="rounded-xl"
                       onClick={() => setProductForm(emptyProductForm)}
                     >
-                      Annuler
+                      {t('common.cancel')}
                     </Button>
                   )}
                 </div>
@@ -1055,7 +1055,7 @@ export default function ManageVitrinePage() {
             <Card className="surface-panel border-0">
               <CardHeader>
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <CardTitle>Catalogue publié</CardTitle>
+                  <CardTitle>{t('exposant.vitrine.catalogue_published')}</CardTitle>
                   <Badge variant="secondary" className="rounded-full">
                     {products.length} produit{products.length > 1 ? "s" : ""}
                   </Badge>
@@ -1066,8 +1066,7 @@ export default function ManageVitrinePage() {
                   <div className="surface-subtle py-12 text-center">
                     <Store className="mx-auto mb-3 size-10 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">
-                      Votre catalogue est vide. Ajoutez votre première offre
-                      pour rendre votre profil plus visible.
+                      {t('exposant.vitrine.catalogue_empty')}
                     </p>
                   </div>
                 ) : (
@@ -1109,13 +1108,13 @@ export default function ManageVitrinePage() {
                           </div>
                           <p className="text-sm leading-6 text-muted-foreground">
                             {product.description ||
-                              "Aucune description renseignée."}
+                              t('exposant.vitrine.no_description_short')}
                           </p>
                         </div>
 
                         <div className="flex items-center justify-between gap-3 text-sm">
                           <span className="font-medium text-foreground">
-                            {product.prix_indicatif || "Prix non renseigné"}
+                            {product.prix_indicatif || t('exposant.vitrine.no_price')}
                           </span>
                           <div className="flex gap-2">
                             <Button
@@ -1125,7 +1124,7 @@ export default function ManageVitrinePage() {
                               onClick={() => startEditProduct(product)}
                             >
                               <PencilLine className="mr-2 size-3.5" />
-                              Modifier
+                              {t('common.edit')}
                             </Button>
                             <Button
                               variant="outline"
@@ -1153,9 +1152,9 @@ export default function ManageVitrinePage() {
         <TabsContent value="gallery">
           <Card className="surface-panel border-0">
             <CardHeader>
-              <CardTitle>Galerie multimédia</CardTitle>
+              <CardTitle>{t('exposant.vitrine.gallery')}</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Ajoutez des photos de votre entreprise, de vos équipes, de vos réalisations ou de votre stand.
+                {t('exposant.vitrine.gallery_desc')}
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -1168,7 +1167,7 @@ export default function ManageVitrinePage() {
                       <Upload className="size-8 text-muted-foreground mb-3" />
                     )}
                     <p className="mb-2 text-sm text-muted-foreground">
-                      <span className="font-semibold text-foreground">Cliquez pour ajouter</span> ou glissez-déposez
+                      <span className="font-semibold text-foreground">{t('exposant.vitrine.gallery_click')}</span> ou glissez-déposez
                     </p>
                     <p className="text-xs text-muted-foreground">PNG, JPG, WebP (Max. 5Mo par image)</p>
                   </div>
@@ -1218,10 +1217,10 @@ export default function ManageVitrinePage() {
                 {savingShowcase ? (
                   <>
                     <Loader2 className="mr-2 size-4 animate-spin" />
-                    Enregistrement...
+                    {t('common.saving')}
                   </>
                 ) : (
-                  "Enregistrer la galerie"
+                  t('common.save')
                 )}
               </Button>
             </CardContent>

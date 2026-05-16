@@ -19,6 +19,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 
 interface AdminNavItem {
   label: string;
@@ -31,28 +32,6 @@ interface AdminNavSection {
   title: string;
   items: AdminNavItem[];
 }
-
-const ADMIN_NAV: AdminNavSection[] = [
-  {
-    title: 'Pilotage',
-    items: [
-      { label: 'Dashboard', href: '/admin', icon: BarChart3 },
-      { label: 'Utilisateurs', href: '/admin/users', icon: UserPlus, badge: 'Core' },
-      { label: 'Exposants', href: '/admin/exposants', icon: Users },
-      { label: 'Espaces & Pavillons', href: '/admin/espaces', icon: Layers },
-      { label: 'Programme', href: '/admin/programme', icon: CalendarDays },
-    ],
-  },
-  {
-    title: 'Operationnel',
-    items: [
-      { label: 'Acces', href: '/admin/abonnes', icon: Shield },
-      { label: 'Produits', href: '/admin/exposants', icon: Store },
-      { label: 'Newsletter', href: '/admin/newsletter', icon: Megaphone },
-      { label: 'Tickets', href: '/admin/tickets', icon: Ticket },
-    ],
-  },
-];
 
 function isActive(pathname: string, href: string) {
   return pathname === href || (href !== '/admin' && pathname.startsWith(href));
@@ -92,6 +71,29 @@ export function AdminSidebar({
   mobile?: boolean;
 }) {
   const pathname = usePathname();
+  const { t } = useTranslation();
+
+  const ADMIN_NAV: AdminNavSection[] = [
+    {
+      title: t('layout.admin.sidebar.pilotage'),
+      items: [
+        { label: t('layout.admin.sidebar.dashboard'), href: '/admin', icon: BarChart3 },
+        { label: t('layout.admin.sidebar.users'), href: '/admin/users', icon: UserPlus, badge: 'Core' },
+        { label: t('layout.admin.sidebar.exposants'), href: '/admin/exposants', icon: Users },
+        { label: t('layout.admin.sidebar.espaces'), href: '/admin/espaces', icon: Layers },
+        { label: t('layout.admin.sidebar.programme'), href: '/admin/programme', icon: CalendarDays },
+      ],
+    },
+    {
+      title: t('layout.admin.sidebar.operationnel'),
+      items: [
+        { label: t('layout.admin.sidebar.access'), href: '/admin/abonnes', icon: Shield },
+        { label: t('layout.admin.sidebar.products'), href: '/admin/exposants', icon: Store },
+        { label: t('layout.admin.sidebar.newsletter'), href: '/admin/newsletter', icon: Megaphone },
+        { label: t('layout.admin.sidebar.tickets'), href: '/admin/tickets', icon: Ticket },
+      ],
+    },
+  ];
 
   return (
     <aside
@@ -111,7 +113,7 @@ export function AdminSidebar({
           <LabelText collapsed={collapsed}>
             <div className="min-w-0">
               <p className="truncate text-[10px] font-bold uppercase tracking-[0.24em] text-sidebar-foreground/40">
-                Admin
+                {t('layout.admin.sidebar.console')}
               </p>
               <p className="-mt-0.5 truncate text-sm font-bold text-sidebar-foreground">PROMOTE-CONNECT</p>
             </div>
@@ -140,8 +142,8 @@ export function AdminSidebar({
             </div>
             <LabelText collapsed={collapsed}>
               <div className="min-w-0">
-                <p className="truncate text-xs font-semibold text-sidebar-foreground">Console admin</p>
-                <p className="truncate text-[11px] text-sidebar-foreground/50">Comptes, acces et suivi</p>
+                <p className="truncate text-xs font-semibold text-sidebar-foreground">{t('layout.admin.sidebar.console')}</p>
+                <p className="truncate text-[11px] text-sidebar-foreground/50">{t('layout.admin.sidebar.subtitle')}</p>
               </div>
             </LabelText>
           </div>
@@ -203,7 +205,7 @@ export function AdminSidebar({
           className="flex items-center justify-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent/50 px-3 py-2 text-xs font-medium text-sidebar-foreground/70 transition hover:bg-sidebar-accent hover:text-sidebar-foreground"
         >
           <Shield className="size-3.5 shrink-0" />
-          <LabelText collapsed={collapsed}>Retour a la plateforme</LabelText>
+          <LabelText collapsed={collapsed}>{t('layout.admin.sidebar.back')}</LabelText>
         </Link>
       </div>
     </aside>

@@ -1,50 +1,20 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
+import { uploadChatFile } from '@/lib/chat/storage';
 import type { Database } from '@/types/database.types';
+import type {
+  EnrichedConversation,
+  EnrichedMessage,
+  ChatContact,
+  ProductAttachment,
+} from '@/types/chat';
 
 type Conversation = Database['public']['Tables']['conversations']['Row'];
 type Message = Database['public']['Tables']['messages']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
-export type ProductAttachment = {
-  id: string;
-  nom: string;
-  image_url: string | null;
-  prix_indicatif: string | null;
-  exposant_nom: string;
-  exposant_id: string;
-};
+export { type ProductAttachment, type EnrichedConversation, type EnrichedMessage, type ChatContact };
 
-export interface EnrichedConversation extends Conversation {
-  other_user: Profile | null;
-  /** Nom de l'exposant lié au profil (si role = 'exposant') */
-  other_exposant_nom: string | null;
-  other_exposant_logo: string | null;
-  last_message_content: string | null;
-  unread_count: number;
-}
-
-export interface EnrichedMessage extends Message {
-  author: Pick<Profile, 'id' | 'full_name' | 'avatar_url' | 'role'> | null;
-  /** Message cité (réponse) */
-  reply_to: Pick<EnrichedMessage, 'id' | 'content' | 'author' | 'attachment_type'> | null;
-}
-
-// ─── Contacts unifiés (exposants + visiteurs) pour le panneau "Nouveau chat" ──
-export interface ChatContact {
-  profile_id: string;
-  display_name: string;
-  company: string | null;
-  avatar_url: string | null;
-  role: string | null;
-  /** Présent uniquement si role = 'exposant' */
-  exposant_id: string | null;
-  exposant_logo: string | null;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// useContacts — charge tous les profils contactables (exposants + visiteurs)
-// ─────────────────────────────────────────────────────────────────────────────
 export function useContacts() {
   const [contacts, setContacts] = useState<ChatContact[]>([]);
   const [loading, setLoading] = useState(false);
@@ -57,7 +27,6 @@ export function useContacts() {
       const myId = session?.session?.user?.id;
       if (myId) setMyUserId(myId);
 
-      // 1. Charger tous les profils sauf le mien
       const { data: profiles } = await supabaseClient
         .from('profiles')
         .select('id, full_name, company, avatar_url, role')
@@ -66,7 +35,6 @@ export function useContacts() {
 
       if (!profiles) return;
 
-      // 2. Charger les exposants pour enrichir les profils exposant
       const { data: exposants } = await supabaseClient
         .from('exposants')
         .select('id, profile_id, nom, logo_url');
@@ -100,9 +68,6 @@ export function useContacts() {
   return { contacts, loading, myUserId, load };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// useConversations
-// ─────────────────────────────────────────────────────────────────────────────
 export function useConversations() {
   const [conversations, setConversations] = useState<EnrichedConversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,11 +86,7 @@ export function useConversations() {
 
         const { data, error } = await supabaseClient
           .from('conversations')
-          .select(`
-            *,
-            participant_a:participant_a(*),
-            participant_b:participant_b(*)
-          `)
+          .select('*, participant_a:participant_a(*), participant_b:participant_b(*)')
           .or(`participant_a.eq.${myId},participant_b.eq.${myId}`)
           .order('last_message_at', { ascending: false });
 
@@ -137,12 +98,11 @@ export function useConversations() {
           participant_b: Profile | null;
         })[];
 
-        // Récupérer les exposants liés aux profils "other"
         const otherIds = convs.map((c) =>
           c.participant_a?.id === myId ? c.participant_b?.id : c.participant_a?.id
         ).filter(Boolean) as string[];
 
-        let exposantMap = new Map<string, { nom: string; logo_url: string | null }>();
+        const exposantMap = new Map<string, { nom: string; logo_url: string | null }>();
         if (otherIds.length > 0) {
           const { data: exps } = await supabaseClient
             .from('exposants')
@@ -172,10 +132,9 @@ export function useConversations() {
           const [{ data: lastMessages }, { data: unreadCounts }] = await Promise.all([
             supabaseClient
               .from('messages')
-              .select('conversation_id, content, sender_id, created_at, attachment_type, product_attachment')
+              .select('conversation_id, content, created_at, attachment_type, product_attachment')
               .in('conversation_id', convIds)
               .order('created_at', { ascending: false }),
-
             supabaseClient
               .from('messages')
               .select('conversation_id')
@@ -190,7 +149,6 @@ export function useConversations() {
           if (lastMessages) {
             for (const msg of lastMessages) {
               if (!lastMsgByConv.has(msg.conversation_id)) {
-                // Résumé lisible pour le dernier message
                 let preview = msg.content;
                 if (!preview && msg.attachment_type === 'image') preview = '📷 Photo';
                 else if (!preview && msg.attachment_type === 'document') preview = '📄 Document';
@@ -239,9 +197,6 @@ export function useConversations() {
   return { conversations, loading, error, myUserId };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// useMessages
-// ─────────────────────────────────────────────────────────────────────────────
 export function useMessages(conversationId: string) {
   const [messages, setMessages] = useState<EnrichedMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -263,11 +218,10 @@ export function useMessages(conversationId: string) {
         const myId = session?.session?.user?.id;
         if (myId) setMyUserId(myId);
 
-        // Charger la conversation + participants
         let other: Profile | null = null;
         const { data: convData } = await supabaseClient
           .from('conversations')
-          .select(`*, participant_a:participant_a(*), participant_b:participant_b(*)`)
+          .select('*, participant_a:participant_a(*), participant_b:participant_b(*)')
           .eq('id', conversationId)
           .single();
 
@@ -279,7 +233,6 @@ export function useMessages(conversationId: string) {
           other = conv.participant_a?.id === myId ? conv.participant_b : conv.participant_a;
           setOtherUser(other);
 
-          // Enrichir avec les données exposant si applicable
           if (other?.id) {
             const { data: expData } = await supabaseClient
               .from('exposants')
@@ -290,7 +243,6 @@ export function useMessages(conversationId: string) {
           }
         }
 
-        // Charger les messages avec auteur + message cité (avec fallback si colonnes absentes)
         let fetchedMessages: EnrichedMessage[] = [];
         try {
           const { data: enrichedData, error: enrichedError } = await supabaseClient
@@ -309,13 +261,9 @@ export function useMessages(conversationId: string) {
           if (enrichedError) throw enrichedError;
           fetchedMessages = (enrichedData || []) as unknown as EnrichedMessage[];
         } catch {
-          // Fallback : query sans reply_to (colonne pas encore migrée)
           const { data: basicData, error: basicError } = await supabaseClient
             .from('messages')
-            .select(`
-              *,
-              author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role)
-            `)
+            .select('*, author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role)')
             .eq('conversation_id', conversationId)
             .order('created_at', { ascending: true });
 
@@ -327,73 +275,41 @@ export function useMessages(conversationId: string) {
         }
 
         if (mounted) setMessages(fetchedMessages);
-
         if (!mounted) return;
 
-        // Realtime — nouveaux messages
         channel = supabaseClient
           .channel(`messages-${conversationId}`)
-          .on(
-            'postgres_changes',
-            {
-              event: 'INSERT',
-              schema: 'public',
-              table: 'messages',
-              filter: `conversation_id=eq.${conversationId}`,
-            },
-            async (payload) => {
-              const newMsg = payload.new as Message;
-              // Essayer d'abord avec reply_to enrichi, fallback si non disponible
-              let fullMsg: EnrichedMessage | null = null;
-              try {
-                const { data: enriched } = await supabaseClient
-                  .from('messages')
-                  .select(`
-                    *,
-                    author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role),
-                    reply_to:reply_to_id(
-                      id, content, attachment_type,
-                      author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role)
-                    )
-                  `)
-                  .eq('id', newMsg.id)
-                  .single();
-                if (enriched) fullMsg = enriched as unknown as EnrichedMessage;
-              } catch {
-                const { data: basic } = await supabaseClient
-                  .from('messages')
-                  .select(`*, author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role)`)
-                  .eq('id', newMsg.id)
-                  .single();
-                if (basic) fullMsg = { ...(basic as unknown as EnrichedMessage), reply_to: null };
-              }
-
-              if (fullMsg) {
-                setMessages((prev) => [...prev, fullMsg!]);
-              }
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, async (payload) => {
+            const newMsg = payload.new as Message;
+            let fullMsg: EnrichedMessage | null = null;
+            try {
+              const { data: enriched } = await supabaseClient
+                .from('messages')
+                .select('*, author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role), reply_to:reply_to_id(id, content, attachment_type, author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role))')
+                .eq('id', newMsg.id)
+                .single();
+              if (enriched) fullMsg = enriched as unknown as EnrichedMessage;
+            } catch {
+              const { data: basic } = await supabaseClient
+                .from('messages')
+                .select('*, author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role)')
+                .eq('id', newMsg.id)
+                .single();
+              if (basic) fullMsg = { ...(basic as unknown as EnrichedMessage), reply_to: null };
             }
-          )
-          .on(
-            'postgres_changes',
-            {
-              event: 'UPDATE',
-              schema: 'public',
-              table: 'messages',
-              filter: `conversation_id=eq.${conversationId}`,
-            },
-            (payload) => {
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === payload.new.id
-                    ? { ...(payload.new as Message), author: msg.author, reply_to: msg.reply_to } as EnrichedMessage
-                    : msg
-                )
-              );
-            }
-          )
+            if (fullMsg) setMessages((prev) => [...prev, fullMsg!]);
+          })
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (payload) => {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === payload.new.id
+                  ? { ...(payload.new as Message), author: msg.author, reply_to: msg.reply_to } as EnrichedMessage
+                  : msg
+              )
+            );
+          })
           .subscribe();
 
-        // Presence — indicateur de saisie
         presenceChannel = supabaseClient.channel(`presence-${conversationId}`, {
           config: { presence: { key: myId || 'anon' } },
         });
@@ -445,7 +361,6 @@ export function useMessages(conversationId: string) {
       .eq('is_read', false);
   }, [conversationId]);
 
-  // ── sendMessage : texte + fichier (upload Storage) + réponse + produit ──
   const sendMessage = useCallback(
     async (opts: {
       content: string;
@@ -463,22 +378,11 @@ export function useMessages(conversationId: string) {
       let attachmentUrl: string | null = null;
       let attachmentType: 'image' | 'document' | 'product' | null = null;
 
-      // Upload fichier vers Supabase Storage
       if (file) {
-        const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-        const isImage = ['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext);
-        attachmentType = isImage ? 'image' : 'document';
-
-        const filePath = `${conversationId}/${myId}-${Date.now()}.${ext}`;
-        const { data: uploadData, error: uploadError } = await supabaseClient.storage
-          .from('chat_media')
-          .upload(filePath, file, { upsert: false });
-
-        if (!uploadError && uploadData) {
-          const { data: urlData } = supabaseClient.storage
-            .from('chat_media')
-            .getPublicUrl(uploadData.path);
-          attachmentUrl = urlData.publicUrl;
+        const result = await uploadChatFile(conversationId, file);
+        if (result) {
+          attachmentUrl = result.url;
+          attachmentType = result.type;
         }
       } else if (productAttachment) {
         attachmentType = 'product';
@@ -530,9 +434,6 @@ export function useMessages(conversationId: string) {
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// createConversation
-// ─────────────────────────────────────────────────────────────────────────────
 export async function createConversation(otherUserId: string) {
   const { data: session } = await supabaseClient.auth.getSession();
   if (!session?.session?.user) return { error: new Error('Not authenticated') };

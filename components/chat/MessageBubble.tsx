@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Check, CheckCheck, Reply, FileText, ExternalLink } from 'lucide-react';
 import type { EnrichedMessage, ProductAttachment } from '@/hooks/useChat';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 
 interface MessageBubbleProps {
   message: EnrichedMessage;
@@ -13,9 +14,9 @@ interface MessageBubbleProps {
   onReply: (message: EnrichedMessage) => void;
 }
 
-function formatTime(dateStr: string | null) {
+function formatTime(dateStr: string | null, locale: string) {
   if (!dateStr) return '';
-  return new Date(dateStr).toLocaleTimeString('fr-FR', {
+  return new Date(dateStr).toLocaleTimeString(locale === 'en' ? 'en-US' : 'fr-FR', {
     hour: '2-digit',
     minute: '2-digit',
   });
@@ -33,6 +34,7 @@ function getInitials(name: string | null | undefined) {
 
 // ─── Bloc citation (reply) ────────────────────────────────────────────────────
 function ReplyQuote({ replyTo, isMine }: { replyTo: EnrichedMessage['reply_to']; isMine: boolean }) {
+  const { t } = useTranslation();
   if (!replyTo) return null;
   const text =
     replyTo.attachment_type === 'image'
@@ -51,7 +53,7 @@ function ReplyQuote({ replyTo, isMine }: { replyTo: EnrichedMessage['reply_to'];
       )}
     >
       <p className={cn('font-semibold truncate', isMine ? 'text-primary-foreground/80' : 'text-primary')}>
-        {replyTo.author?.full_name ?? 'Utilisateur'}
+        {replyTo.author?.full_name ?? t('chat.user')}
       </p>
       <p className={cn('truncate opacity-80', isMine ? 'text-primary-foreground' : 'text-foreground/70')}>
         {text}
@@ -162,7 +164,8 @@ function ImageAttachment({ url }: { url: string }) {
 }
 
 // ─── MessageBubble ────────────────────────────────────────────────────────────
-export function MessageBubble({ message, isMine, showAvatar, onReply }: MessageBubbleProps) {
+export const MessageBubble = memo(function MessageBubble({ message, isMine, showAvatar, onReply }: MessageBubbleProps) {
+  const { t, locale } = useTranslation();
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -195,7 +198,7 @@ export function MessageBubble({ message, isMine, showAvatar, onReply }: MessageB
           hovered ? 'opacity-100' : 'opacity-0',
           isMine ? 'order-first' : 'order-last'
         )}
-        title="Répondre"
+        title={t('chat.reply')}
       >
         <Reply className="size-3.5" />
       </button>
@@ -247,7 +250,7 @@ export function MessageBubble({ message, isMine, showAvatar, onReply }: MessageB
           )}
         >
           <span className="text-[10px] text-muted-foreground/60">
-            {formatTime(message.created_at)}
+            {formatTime(message.created_at, locale)}
           </span>
           {isMine && (
             <span className="text-[10px]">
@@ -262,10 +265,11 @@ export function MessageBubble({ message, isMine, showAvatar, onReply }: MessageB
       </div>
     </div>
   );
-}
+});
 
 // ─── DateSeparator ────────────────────────────────────────────────────────────
 export function DateSeparator({ date }: { date: string }) {
+  const { t, locale } = useTranslation();
   const d = new Date(date);
   const today = new Date();
   const yesterday = new Date(today);
@@ -273,11 +277,11 @@ export function DateSeparator({ date }: { date: string }) {
 
   let label: string;
   if (d.toDateString() === today.toDateString()) {
-    label = "Aujourd'hui";
+    label = t('chat.today');
   } else if (d.toDateString() === yesterday.toDateString()) {
-    label = 'Hier';
+    label = t('chat.yesterday');
   } else {
-    label = d.toLocaleDateString('fr-FR', {
+    label = d.toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', {
       day: 'numeric',
       month: 'long',
       year: d.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronRight, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 
 interface Crumb {
   label: string;
@@ -12,30 +13,30 @@ interface Crumb {
 }
 
 const ADMIN_MAP: Record<string, Omit<Crumb, 'href'>> = {
-  '/admin': { label: 'Dashboard' },
-  '/admin/users': { label: 'Utilisateurs' },
-  '/admin/exposants': { label: 'Exposants' },
-  '/admin/abonnes': { label: 'Acces' },
-  '/admin/programme': { label: 'Programme' },
-  '/admin/tickets': { label: 'Tickets' },
-  '/admin/newsletter': { label: 'Newsletter' },
+  '/admin': { label: 'layout.breadcrumb.dashboard' },
+  '/admin/users': { label: 'layout.breadcrumb.users' },
+  '/admin/exposants': { label: 'layout.breadcrumb.exposants' },
+  '/admin/abonnes': { label: 'layout.breadcrumb.access' },
+  '/admin/programme': { label: 'layout.breadcrumb.programme' },
+  '/admin/tickets': { label: 'layout.breadcrumb.tickets' },
+  '/admin/newsletter': { label: 'layout.breadcrumb.newsletter' },
 };
 
 const USER_MAP: Record<string, Omit<Crumb, 'href'>> = {
-  '/app': { label: 'Accueil' },
-  '/feed': { label: "Fil d'actualites" },
-  '/annuaire': { label: 'Annuaire' },
-  '/chat': { label: 'Messages' },
-  '/agenda': { label: 'Agenda' },
-  '/vitrine': { label: 'Catalogue produits' },
-  '/exposant/ma-vitrine': { label: 'Gérer ma vitrine' },
-  '/newsletter': { label: 'Newsletter' },
-  '/support': { label: 'Support' },
-  '/abonnement': { label: 'Abonnement' },
+  '/app': { label: 'layout.breadcrumb.home' },
+  '/feed': { label: 'layout.breadcrumb.feed' },
+  '/annuaire': { label: 'layout.breadcrumb.annuaire' },
+  '/chat': { label: 'layout.breadcrumb.messages' },
+  '/agenda': { label: 'layout.breadcrumb.agenda' },
+  '/vitrine': { label: 'layout.breadcrumb.catalogue' },
+  '/exposant/ma-vitrine': { label: 'layout.breadcrumb.manage_vitrine' },
+  '/newsletter': { label: 'layout.breadcrumb.newsletter' },
+  '/support': { label: 'layout.breadcrumb.support' },
+  '/abonnement': { label: 'layout.breadcrumb.abonnement' },
 };
 
 function buildAdminCrumbs(pathname: string): Crumb[] {
-  const crumbs: Crumb[] = [{ label: 'Administration', href: '/admin' }];
+  const crumbs: Crumb[] = [{ label: 'layout.breadcrumb.admin', href: '/admin' }];
 
   if (pathname === '/admin') return crumbs;
 
@@ -49,14 +50,14 @@ function buildAdminCrumbs(pathname: string): Crumb[] {
 }
 
 function buildUserCrumbs(pathname: string): Crumb[] {
-  const crumbs: Crumb[] = [{ label: 'Plateforme', href: '/app' }];
+  const crumbs: Crumb[] = [{ label: 'layout.breadcrumb.plateforme', href: '/app' }];
 
   if (pathname === '/app') return crumbs;
 
   const detail = USER_MAP[pathname];
   if (detail) {
     const section = getSection(pathname);
-    if (section && section !== 'Plateforme') {
+    if (section && section !== 'layout.breadcrumb.plateforme') {
       crumbs[crumbs.length - 1] = { label: section, href: getSectionHref(pathname) };
     }
     crumbs.push({ label: detail.label });
@@ -64,19 +65,19 @@ function buildUserCrumbs(pathname: string): Crumb[] {
   }
 
   if (pathname.startsWith('/annuaire/')) {
-    crumbs.push({ label: 'Annuaire', href: '/annuaire' }, { label: 'Fiche exposant' });
+    crumbs.push({ label: 'layout.breadcrumb.annuaire', href: '/annuaire' }, { label: 'layout.breadcrumb.profile' });
     return crumbs;
   }
   if (pathname.startsWith('/chat/')) {
-    crumbs.push({ label: 'Messages', href: '/chat' }, { label: 'Conversation' });
+    crumbs.push({ label: 'layout.breadcrumb.messages', href: '/chat' }, { label: 'layout.breadcrumb.conversation' });
     return crumbs;
   }
   if (pathname.startsWith('/exposant/')) {
-    crumbs.push({ label: 'Business', href: '/vitrine' }, { label: 'Gérer ma vitrine' });
+    crumbs.push({ label: 'layout.breadcrumb.business', href: '/vitrine' }, { label: 'layout.breadcrumb.manage_vitrine' });
     return crumbs;
   }
   if (pathname.startsWith('/support/')) {
-    crumbs.push({ label: 'Support', href: '/support' }, { label: 'Ticket' });
+    crumbs.push({ label: 'layout.breadcrumb.support', href: '/support' }, { label: 'layout.breadcrumb.ticket' });
     return crumbs;
   }
 
@@ -84,8 +85,8 @@ function buildUserCrumbs(pathname: string): Crumb[] {
 }
 
 function getSection(pathname: string): string | null {
-  if (pathname.startsWith('/vitrine') || pathname.startsWith('/exposant')) return 'Business';
-  if (['/newsletter', '/support', '/abonnement'].some((p) => pathname === p)) return 'Compte';
+  if (pathname.startsWith('/vitrine') || pathname.startsWith('/exposant')) return 'layout.breadcrumb.business';
+  if (['/newsletter', '/support', '/abonnement'].some((p) => pathname === p)) return 'layout.breadcrumb.account';
   return null;
 }
 
@@ -96,6 +97,7 @@ function getSectionHref(pathname: string): string | undefined {
 }
 
 export function AdminBreadcrumb({ className }: { className?: string }) {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const crumbs = buildAdminCrumbs(pathname);
 
@@ -106,10 +108,10 @@ export function AdminBreadcrumb({ className }: { className?: string }) {
           {i > 0 && <ChevronRight className="size-3 text-muted-foreground/40" />}
           {crumb.href && i < crumbs.length - 1 ? (
             <Link href={crumb.href} className="text-muted-foreground transition-colors hover:text-foreground">
-              {crumb.label}
+              {t(crumb.label)}
             </Link>
           ) : (
-            <span className="font-medium text-foreground">{crumb.label}</span>
+            <span className="font-medium text-foreground">{t(crumb.label)}</span>
           )}
         </span>
       ))}
@@ -118,6 +120,7 @@ export function AdminBreadcrumb({ className }: { className?: string }) {
 }
 
 export function UserBreadcrumb({ className }: { className?: string }) {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const crumbs = buildUserCrumbs(pathname);
 
@@ -128,10 +131,10 @@ export function UserBreadcrumb({ className }: { className?: string }) {
           {i > 0 && <ChevronRight className="size-3 text-muted-foreground/40" />}
           {crumb.href && i < crumbs.length - 1 ? (
             <Link href={crumb.href} className="text-muted-foreground transition-colors hover:text-foreground">
-              {crumb.label}
+              {t(crumb.label)}
             </Link>
           ) : (
-            <span className="font-medium text-foreground">{crumb.label}</span>
+            <span className="font-medium text-foreground">{t(crumb.label)}</span>
           )}
         </span>
       ))}

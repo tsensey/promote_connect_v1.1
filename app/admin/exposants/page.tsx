@@ -25,6 +25,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { toast } from 'sonner';
+import { useTranslation } from '@/lib/i18n';
 
 type Exposant = Database['public']['Tables']['exposants']['Row'];
 
@@ -36,6 +37,7 @@ interface Espace {
 }
 
 export default function AdminExposantsPage() {
+  const { t } = useTranslation();
   const [exposants, setExposants] = useState<Exposant[]>([]);
   const [espaces, setEspaces] = useState<Espace[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,7 +120,7 @@ export default function AdminExposantsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Supprimer cet exposant ?')) return;
+    if (!confirm(t('admin.exposants.delete_confirm'))) return;
     const { error } = await supabaseClient.from('exposants').delete().eq('id', id);
     if (error) toast.error(error.message);
     else fetchData();
@@ -133,16 +135,15 @@ export default function AdminExposantsPage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-600/80">
-            Administration exposants
+            {t('admin.exposants.title')}
           </p>
-          <h1 className="text-4xl text-foreground">Gestion des fiches exposants</h1>
+          <h1 className="text-4xl text-foreground">{t('admin.exposants.subtitle')}</h1>
           <p className="max-w-3xl text-base leading-7 text-muted-foreground">
-            Publiez, modifiez et organisez les fiches exposes dans l annuaire PROMOTE-CONNECT.
-            Les espaces et pavillons sont configurés depuis la section <strong>Espaces & Pavillons</strong>.
+            {t('admin.exposants.desc')} {t('admin.exposants.desc_hint')}
           </p>
         </div>
         <Button onClick={() => { setShowForm(true); resetForm(); }} className="rounded-xl">
-          <Plus className="mr-2 size-4" /> Ajouter
+          <Plus className="mr-2 size-4" /> {t('admin.exposants.add')}
         </Button>
       </div>
 
@@ -152,7 +153,7 @@ export default function AdminExposantsPage() {
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Rechercher un exposant..."
+              placeholder={t('admin.exposants.search')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
@@ -163,12 +164,12 @@ export default function AdminExposantsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Exposant</TableHead>
-                <TableHead>Secteur</TableHead>
-                <TableHead>Espace</TableHead>
-                <TableHead>Stand</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t('admin.exposants.col_exposant')}</TableHead>
+                <TableHead>{t('admin.exposants.col_secteur')}</TableHead>
+                <TableHead>{t('admin.exposants.col_espace')}</TableHead>
+                <TableHead>{t('admin.exposants.col_stand')}</TableHead>
+                <TableHead>{t('admin.exposants.col_status')}</TableHead>
+                <TableHead className="text-right">{t('admin.exposants.col_actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -190,7 +191,7 @@ export default function AdminExposantsPage() {
                     <TableRow key={exp.id}>
                       <TableCell>
                         <div className="font-medium text-foreground">{exp.nom}</div>
-                        {exp.is_featured && <Badge variant="secondary" className="mt-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300">En vedette</Badge>}
+                        {exp.is_featured && <Badge variant="secondary" className="mt-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300">{t('admin.exposants.featured')}</Badge>}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">{exp.secteur || '-'}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
@@ -199,13 +200,13 @@ export default function AdminExposantsPage() {
                             {espace.type === 'pavillon' ? 'P' : 'E'}{espace.code}
                           </Badge>
                         ) : exp.pavillon ? (
-                          <span className="text-muted-foreground">Pav. {exp.pavillon}</span>
+                          <span className="text-muted-foreground">{t('admin.exposants.pavillon_prefix')} {exp.pavillon}</span>
                         ) : '-'}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">{exp.stand || '-'}</TableCell>
                       <TableCell>
                         <Badge variant={exp.profile_id ? 'default' : 'secondary'} className="rounded-full">
-                          {exp.profile_id ? 'Lie' : 'Non lie'}
+                          {exp.profile_id ? t('admin.exposants.linked') : t('admin.exposants.unlinked')}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -225,7 +226,7 @@ export default function AdminExposantsPage() {
                 <TableRow>
                   <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
                     <Users className="mx-auto mb-3 size-10 text-muted-foreground" />
-                    Aucun exposant trouve
+                    {t('admin.exposants.no_results')}
                   </TableCell>
                 </TableRow>
               )}
@@ -237,14 +238,14 @@ export default function AdminExposantsPage() {
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingId ? "Modifier l'exposant" : 'Nouvel exposant'}</DialogTitle>
+            <DialogTitle>{editingId ? t('admin.exposants.form_edit') : t('admin.exposants.form_new')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="grid gap-3 py-4">
-            <Input placeholder="Nom" value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} required />
+            <Input placeholder={t('admin.exposants.form_nom')} value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} required />
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Espace / Pavillon</label>
+                <label className="text-xs text-muted-foreground">{t('admin.exposants.form_espace')}</label>
                 <select
                   value={formData.espace_id}
                   onChange={(e) => {
@@ -257,18 +258,18 @@ export default function AdminExposantsPage() {
                   }}
                   className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
                 >
-                  <option value="">Aucun</option>
+                  <option value="">{t('admin.exposants.form_none')}</option>
                   {espaces.map((espace) => (
                     <option key={espace.id} value={espace.id}>
-                      {espace.type === 'pavillon' ? 'Pavillon' : 'Espace'} {espace.code} — {espace.nom}
+                      {espace.type === 'pavillon' ? t('admin.exposants.select_pavillon') : t('admin.exposants.select_espace')} {espace.code} — {espace.nom}
                     </option>
                   ))}
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Stand</label>
+                <label className="text-xs text-muted-foreground">{t('admin.exposants.form_stand')}</label>
                 <Input
-                  placeholder="Ex: 3-1, H-10"
+                  placeholder={t('admin.exposants.form_stand_placeholder')}
                   value={formData.stand}
                   onChange={(e) => setFormData({ ...formData, stand: e.target.value })}
                 />
@@ -277,24 +278,24 @@ export default function AdminExposantsPage() {
 
             {selectedEspace && (
               <div className="rounded-xl bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-                Code pavillon : <strong>{selectedEspace.code}</strong> — {selectedEspace.type === 'pavillon' ? 'Pavillon' : 'Espace'} {selectedEspace.code} — {selectedEspace.nom}
+                {t('admin.exposants.form_space_code')} <strong>{selectedEspace.code}</strong> — {selectedEspace.type === 'pavillon' ? t('admin.exposants.form_space_pavillon') : t('admin.exposants.form_space_espace')} {selectedEspace.code} — {selectedEspace.nom}
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-3">
-              <Input placeholder="Secteur" value={formData.secteur} onChange={(e) => setFormData({ ...formData, secteur: e.target.value })} />
-              <Input placeholder="Pays" value={formData.pays} onChange={(e) => setFormData({ ...formData, pays: e.target.value })} />
+              <Input placeholder={t('admin.exposants.form_secteur')} value={formData.secteur} onChange={(e) => setFormData({ ...formData, secteur: e.target.value })} />
+              <Input placeholder={t('admin.exposants.form_pays')} value={formData.pays} onChange={(e) => setFormData({ ...formData, pays: e.target.value })} />
             </div>
-            <Input placeholder="Website" value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} />
-            <Textarea placeholder="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} />
+            <Input placeholder={t('admin.exposants.form_website')} value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} />
+            <Textarea placeholder={t('admin.exposants.form_description')} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} />
             <div className="flex items-center gap-2">
               <Checkbox id="featured" checked={formData.is_featured} onCheckedChange={(checked) => setFormData({ ...formData, is_featured: checked === true })} />
-              <label htmlFor="featured" className="text-sm text-foreground">En vedette</label>
+              <label htmlFor="featured" className="text-sm text-foreground">{t('admin.exposants.featured')}</label>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="rounded-xl">Annuler</Button>
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="rounded-xl">{t('common.cancel')}</Button>
               <Button type="submit" disabled={formLoading} className="rounded-xl">
-                {formLoading && <Loader2 className="mr-2 size-4 animate-spin" />} {editingId ? 'Sauvegarder' : 'Creer'}
+                {formLoading && <Loader2 className="mr-2 size-4 animate-spin" />} {editingId ? t('admin.exposants.form_save') : t('admin.exposants.form_create')}
               </Button>
             </DialogFooter>
           </form>

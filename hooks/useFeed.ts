@@ -134,7 +134,7 @@ export function useFeed(limit = 20) {
     files.forEach(file => formData.append('files', file));
     const res = await fetch('/api/feed/upload', { method: 'POST', body: formData });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Erreur lors de l'upload");
+    if (!res.ok) throw new Error(data.error || "Upload error");
     return data.urls || (data.url ? [data.url] : []);
   }, []);
 

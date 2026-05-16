@@ -62,7 +62,7 @@ type Produit = Database['public']['Tables']['produits']['Row'];
 type Post = Database['public']['Tables']['posts']['Row'];
 
 export default function ExposantDetailPage() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const params = useParams();
   const exposantId = params.exposantId as string;
 
@@ -125,14 +125,14 @@ export default function ExposantDetailPage() {
           await supabaseClient.from('messages').insert({
             conversation_id: data.id,
             sender_id: session.session.user.id,
-            content: `Bonjour, je suis intéressé(e) par votre produit/service : "${productName}". Pourriez-vous m'en dire plus ?`,
+            content: t('annuaire.detail.contact_interest', { product: productName }),
             is_read: false,
           });
         }
       }
       window.location.href = `/chat/${data.id}`;
     } else {
-      toast.error(t('annuaire.detail.conversation_error'));
+      toast.error(t('annuaire.detail.contact_error'));
     }
     setContacting(false);
   };
@@ -182,7 +182,7 @@ export default function ExposantDetailPage() {
           </div>
           <Link href="/annuaire" className={cn(buttonVariants({ variant: 'outline' }), 'rounded-xl')}>
             <ArrowLeft className="mr-2 size-4" />
-            {t('annuaire.detail.back_to_annuaire')}
+            {t('annuaire.detail.back')}
           </Link>
         </CardContent>
       </Card>
@@ -198,11 +198,11 @@ export default function ExposantDetailPage() {
           className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="size-4" />
-          {t('annuaire.detail.back_to_annuaire')}
+          {t('annuaire.detail.back')}
         </Link>
         <Button variant="ghost" size="sm" className="rounded-full" onClick={handleShare}>
           <Share2 className="mr-2 size-4" />
-          {t('annuaire.detail.share')}
+          {t('common.share')}
         </Button>
       </div>
 
@@ -211,7 +211,7 @@ export default function ExposantDetailPage() {
         <div className="relative h-48 w-full bg-muted sm:h-64">
           {exposant.cover_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={exposant.cover_url} alt="Cover" className="h-full w-full object-cover" />
+            <img src={exposant.cover_url} alt={t('annuaire.detail.cover_alt')} className="h-full w-full object-cover" />
           ) : (
             <div className="h-full w-full bg-gradient-to-r from-slate-200 to-slate-100 dark:from-slate-800 dark:to-slate-900" />
           )}
@@ -260,15 +260,19 @@ export default function ExposantDetailPage() {
               {exposant.secteur && exposant.pays && <span>•</span>}
               {exposant.pays && <span>{exposant.pays}</span>}
               {(exposant.secteur || exposant.pays) && exposant.nombre_employes && <span>•</span>}
-              {exposant.nombre_employes && <span>{exposant.nombre_employes} {t('annuaire.detail.employees')}</span>}
+              {exposant.nombre_employes && <span>{t('annuaire.detail.employees', { count: exposant.nombre_employes! })}</span>}
             </div>
 
-            {(exposant.pavillon || exposant.stand) && (
-              <div className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 text-sm font-medium text-primary">
-                <MapPin className="size-4" />
-                {t('annuaire.detail.pavillon')} {exposant.pavillon} {exposant.stand && `— ${t('annuaire.detail.stand')} ${exposant.stand}`}
-              </div>
-            )}
+              {(exposant.pavillon || exposant.stand) && (
+                <div className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 text-sm font-medium text-primary">
+                  <MapPin className="size-4" />
+                  {exposant.pavillon && exposant.stand
+                    ? t('annuaire.detail.pavillon_stand', { pavillon: exposant.pavillon, stand: exposant.stand })
+                    : exposant.pavillon
+                      ? `${t('annuaire.pavillon_prefix')} ${exposant.pavillon}`
+                      : t('annuaire.stand_label', { stand: exposant.stand! })}
+                </div>
+              )}
           </div>
         </div>
       </Card>
@@ -296,7 +300,7 @@ export default function ExposantDetailPage() {
                     className="inline-flex items-center gap-2 rounded-lg border border-border/70 bg-muted/30 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
                   >
                     <Download className="size-4 text-muted-foreground" />
-                    {t('annuaire.detail.download_brochure')}
+                    {t('annuaire.detail.brochure')}
                   </a>
                 )}
 
@@ -304,14 +308,14 @@ export default function ExposantDetailPage() {
                   <div className="mt-4 overflow-hidden rounded-lg border border-border/50">
                     <div className="flex items-center gap-2 border-b border-border/50 bg-muted/30 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       <Video className="size-3.5" />
-                      {t('annuaire.detail.presentation_video')}
+                      {t('annuaire.detail.video')}
                     </div>
                     <div className="aspect-video w-full">
                       <iframe
                         src={toEmbedUrl(exposant.video_url)}
                         className="h-full w-full"
                         allowFullScreen
-                        title={`Vidéo ${exposant.nom}`}
+                        title={t('annuaire.detail.video_title', { name: exposant.nom })}
                       />
                     </div>
                   </div>
@@ -329,7 +333,7 @@ export default function ExposantDetailPage() {
                   {exposant.gallery_urls.map((url: string, i: number) => (
                     <div key={i} className="aspect-square rounded-xl overflow-hidden bg-muted border border-border/50">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={url} alt={`Galerie ${i}`} className="size-full object-cover hover:scale-105 transition-transform duration-300 cursor-pointer" />
+                      <img src={url} alt={t('annuaire.detail.gallery_image_alt', { index: i })} className="size-full object-cover hover:scale-105 transition-transform duration-300 cursor-pointer" />
                     </div>
                   ))}
                 </div>
@@ -372,7 +376,7 @@ export default function ExposantDetailPage() {
                           <p className="text-sm font-semibold text-foreground">{exposant.nom}</p>
                           {post.created_at && (
                             <p className="text-xs text-muted-foreground">
-                              {new Date(post.created_at).toLocaleDateString('fr-FR', {
+                              {new Date(post.created_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', {
                                 day: 'numeric',
                                 month: 'long',
                                 year: 'numeric',
@@ -432,12 +436,12 @@ export default function ExposantDetailPage() {
                 {exposant.nombre_employes && (
                   <div>
                     <dt className="font-medium text-muted-foreground">{t('annuaire.detail.company_size')}</dt>
-                    <dd className="mt-1 text-foreground">{exposant.nombre_employes} {t('annuaire.detail.employees')}</dd>
+                    <dd className="mt-1 text-foreground">{t('annuaire.detail.employees', { count: exposant.nombre_employes! })}</dd>
                   </div>
                 )}
                 {exposant.annee_creation && (
                   <div>
-                    <dt className="font-medium text-muted-foreground">{t('annuaire.detail.founded_in')}</dt>
+                    <dt className="font-medium text-muted-foreground">{t('annuaire.detail.founded')}</dt>
                     <dd className="mt-1 text-foreground">{exposant.annee_creation}</dd>
                   </div>
                 )}
@@ -500,7 +504,7 @@ export default function ExposantDetailPage() {
           <Card className="surface-panel border-0 py-0">
             <CardContent className="space-y-4 p-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-foreground">{t('annuaire.detail.products_services')}</h2>
+                <h2 className="text-lg font-semibold text-foreground">{t('annuaire.detail.products')}</h2>
                 <span className="flex size-6 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
                   {produits.length}
                 </span>

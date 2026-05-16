@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNotificationState } from '@/lib/notification-context';
 import Image from 'next/image';
+import { useTranslation } from '@/lib/i18n';
 
 interface NavItem {
   label: string;
@@ -34,55 +35,6 @@ interface NavSection {
   title: string;
   items: NavItem[];
 }
-
-const VISITOR_SECTIONS: NavSection[] = [
-  {
-    title: 'Plateforme',
-    items: [
-      { label: "Fil d'actualites", href: '/feed', icon: Rss, badge: 'Nouveau' },
-      { label: 'Accueil', href: '/app', icon: LayoutDashboard },
-      { label: 'Reseau', href: '/annuaire', icon: Users },
-      { label: 'Messages', href: '/chat', icon: MessageSquare, badge: 'Live' },
-      { label: 'Agenda', href: '/agenda', icon: CalendarDays },
-    ],
-  },
-  {
-    title: 'Compte',
-    items: [
-      { label: 'Newsletter', href: '/newsletter', icon: Mail },
-      { label: 'Paramètres', href: '/parametres', icon: Settings },
-      { label: 'Support', href: '/support', icon: LifeBuoy },
-    ],
-  },
-];
-
-const EXHIBITOR_SECTIONS: NavSection[] = [
-  {
-    title: 'Plateforme',
-    items: [
-      { label: "Fil d'actualités", href: '/feed', icon: Rss, badge: 'Nouveau' },
-      { label: 'Accueil', href: '/app', icon: LayoutDashboard },
-      { label: 'Réseau', href: '/annuaire', icon: Users },
-      { label: 'Messages', href: '/chat', icon: MessageSquare, badge: 'Live' },
-      { label: 'Agenda', href: '/agenda', icon: CalendarDays },
-    ],
-  },
-  {
-    title: 'Business',
-    items: [
-      { label: 'Catalogue produits', href: '/vitrine', icon: BriefcaseBusiness },
-      { label: 'Gérer ma vitrine', href: '/exposant/ma-vitrine', icon: Sparkles },
-    ],
-  },
-  {
-    title: 'Compte',
-    items: [
-      { label: 'Newsletter', href: '/newsletter', icon: Mail },
-      { label: 'Paramètres', href: '/parametres', icon: Settings },
-      { label: 'Support', href: '/support', icon: LifeBuoy },
-    ],
-  },
-];
 
 function isItemActive(pathname: string, href: string) {
   return pathname === href || (href !== '/app' && pathname.startsWith(href));
@@ -128,8 +80,59 @@ export function UserSidebar({
   mobile?: boolean;
 }) {
   const pathname = usePathname();
-  const sections = role === 'exposant' ? EXHIBITOR_SECTIONS : VISITOR_SECTIONS;
+  const { t } = useTranslation();
   const { unreadMessages } = useNotificationState();
+
+  const VISITOR_SECTIONS: NavSection[] = [
+    {
+      title: t('layout.sidebar.plateforme'),
+      items: [
+        { label: t('layout.sidebar.feed'), href: '/feed', icon: Rss, badge: 'Nouveau' },
+        { label: t('layout.sidebar.home'), href: '/app', icon: LayoutDashboard },
+        { label: t('layout.sidebar.network'), href: '/annuaire', icon: Users },
+        { label: t('layout.sidebar.messages'), href: '/chat', icon: MessageSquare, badge: 'Live' },
+        { label: t('layout.sidebar.agenda'), href: '/agenda', icon: CalendarDays },
+      ],
+    },
+    {
+      title: t('layout.sidebar.compte'),
+      items: [
+        { label: t('layout.sidebar.newsletter'), href: '/newsletter', icon: Mail },
+        { label: t('layout.sidebar.settings'), href: '/parametres', icon: Settings },
+        { label: t('layout.sidebar.support'), href: '/support', icon: LifeBuoy },
+      ],
+    },
+  ];
+
+  const EXHIBITOR_SECTIONS: NavSection[] = [
+    {
+      title: t('layout.sidebar.plateforme'),
+      items: [
+        { label: t('layout.sidebar.feed'), href: '/feed', icon: Rss, badge: 'Nouveau' },
+        { label: t('layout.sidebar.home'), href: '/app', icon: LayoutDashboard },
+        { label: t('layout.sidebar.network'), href: '/annuaire', icon: Users },
+        { label: t('layout.sidebar.messages'), href: '/chat', icon: MessageSquare, badge: 'Live' },
+        { label: t('layout.sidebar.agenda'), href: '/agenda', icon: CalendarDays },
+      ],
+    },
+    {
+      title: t('layout.sidebar.business'),
+      items: [
+        { label: t('layout.sidebar.catalogue'), href: '/vitrine', icon: BriefcaseBusiness },
+        { label: t('layout.sidebar.manage_vitrine'), href: '/exposant/ma-vitrine', icon: Sparkles },
+      ],
+    },
+    {
+      title: t('layout.sidebar.compte'),
+      items: [
+        { label: t('layout.sidebar.newsletter'), href: '/newsletter', icon: Mail },
+        { label: t('layout.sidebar.settings'), href: '/parametres', icon: Settings },
+        { label: t('layout.sidebar.support'), href: '/support', icon: LifeBuoy },
+      ],
+    },
+  ];
+
+  const sections = role === 'exposant' ? EXHIBITOR_SECTIONS : VISITOR_SECTIONS;
 
   return (
     <aside
@@ -188,7 +191,7 @@ export function UserSidebar({
                   {user?.name}
                 </p>
                 <p className="truncate text-[11px] text-sidebar-foreground/50">
-                  {user?.company || (role === 'exposant' ? 'Exposant' : 'Visiteur')}
+                  {user?.company || t(role === 'exposant' ? 'layout.sidebar.exposant' : 'layout.sidebar.visiteur')}
                 </p>
               </div>
             </LabelText>
@@ -198,7 +201,7 @@ export function UserSidebar({
               variant="secondary"
               className="rounded-full bg-primary/10 px-2 py-px text-[10px] font-semibold text-primary hover:bg-primary/15"
             >
-              {role === 'exposant' ? 'Espace exposant' : 'Espace visiteur'}
+              {role === 'exposant' ? t('layout.sidebar.exposant_space') : t('layout.sidebar.visiteur_space')}
             </Badge>
           </LabelText>
         </div>
@@ -273,7 +276,7 @@ export function UserSidebar({
           onClick={onSignOut}
         >
           <ChevronLeft className={cn('size-3.5 shrink-0 transition-transform duration-300', collapsed && 'rotate-180')} />
-          <LabelText collapsed={collapsed}>Deconnexion</LabelText>
+          <LabelText collapsed={collapsed}>{t('layout.sidebar.signout')}</LabelText>
         </Button>
       </div>
     </aside>

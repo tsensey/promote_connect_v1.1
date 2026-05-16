@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { useTranslation } from '@/lib/i18n';
 
 interface AdminTicketRow {
   id: string;
@@ -24,10 +25,10 @@ interface AdminTicketRow {
 }
 
 const statusLabels: Record<string, string> = {
-  open: 'Ouvert',
-  in_progress: 'En cours',
-  resolved: 'Resolu',
-  closed: 'Ferme',
+  open: 'admin.tickets.status_open',
+  in_progress: 'admin.tickets.status_in_progress',
+  resolved: 'admin.tickets.status_resolved',
+  closed: 'admin.tickets.status_closed',
 };
 
 const statusClasses: Record<string, string> = {
@@ -44,6 +45,7 @@ const priorityClasses: Record<string, string> = {
 };
 
 export default function AdminTicketsPage() {
+  const { t, locale } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [tickets, setTickets] = useState<AdminTicketRow[]>([]);
@@ -111,9 +113,9 @@ export default function AdminTicketsPage() {
       }
 
       await loadTickets();
-      toast.success('Statut mis a jour.');
+      toast.success(t('admin.tickets.toast_updated'));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Mise a jour impossible.');
+      toast.error(error instanceof Error ? error.message : t('admin.tickets.toast_update_error'));
     } finally {
       setUpdatingId(null);
     }
@@ -123,23 +125,23 @@ export default function AdminTicketsPage() {
     <div className="space-y-6">
       <div className="space-y-2">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-600/80">
-          Support admin
+          {t('admin.tickets.title')}
         </p>
-        <h1 className="text-4xl text-foreground">Tickets en cours</h1>
+        <h1 className="text-4xl text-foreground">{t('admin.tickets.subtitle')}</h1>
         <p className="max-w-3xl text-base leading-7 text-muted-foreground">
-          Suivez les demandes des utilisateurs, priorisez les cas sensibles et faites avancer le support depuis le back-office.
+          {t('admin.tickets.desc')}
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Tickets" value={tickets.length} />
-        <StatCard label="Ouverts" value={tickets.filter((ticket) => ticket.status === 'open').length} />
-        <StatCard label="Priorite haute" value={tickets.filter((ticket) => ticket.priority === 'high').length} />
+        <StatCard label={t('admin.tickets.tickets_label')} value={tickets.length} />
+        <StatCard label={t('admin.tickets.open')} value={tickets.filter((ticket) => ticket.status === 'open').length} />
+        <StatCard label={t('admin.tickets.high_priority')} value={tickets.filter((ticket) => ticket.priority === 'high').length} />
       </div>
 
       <Card className="surface-panel border-0">
         <CardHeader>
-          <CardTitle>File de traitement</CardTitle>
+          <CardTitle>{t('admin.tickets.queue')}</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -151,7 +153,7 @@ export default function AdminTicketsPage() {
           ) : tickets.length === 0 ? (
             <div className="surface-subtle py-12 text-center">
               <LifeBuoy className="mx-auto mb-3 size-10 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Aucun ticket a traiter.</p>
+              <p className="text-sm text-muted-foreground">{t('admin.tickets.no_tickets')}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -162,35 +164,35 @@ export default function AdminTicketsPage() {
                       <div className="flex items-center gap-2">
                         <h2 className="text-xl text-foreground">{ticket.subject}</h2>
                         <Badge className={statusClasses[ticket.status || 'open']}>
-                          {statusLabels[ticket.status || 'open']}
+                          {t(statusLabels[ticket.status || 'open'])}
                         </Badge>
                         <Badge className={priorityClasses[ticket.priority || 'medium']}>
                           {ticket.priority || 'medium'}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {ticket.profiles?.full_name || 'Utilisateur'}{' '}
+                        {ticket.profiles?.full_name || t('admin.tickets.default_user')}{' '}
                         {ticket.profiles?.company ? `- ${ticket.profiles.company}` : ''}
                       </p>
                     </div>
                     <div className="text-right text-xs text-muted-foreground">
                       <p>
-                        Cree le{' '}
+                        {t('admin.tickets.created_on')}{' '}
                         {ticket.created_at
-                          ? new Date(ticket.created_at).toLocaleDateString('fr-FR')
+                          ? new Date(ticket.created_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR')
                           : '-'}
                       </p>
                       <p>
-                        Mis a jour le{' '}
+                        {t('admin.tickets.updated_on')}{' '}
                         {ticket.updated_at
-                          ? new Date(ticket.updated_at).toLocaleDateString('fr-FR')
+                          ? new Date(ticket.updated_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR')
                           : '-'}
                       </p>
                     </div>
                   </div>
 
                   <p className="text-sm leading-7 text-muted-foreground">
-                    {ticket.description || 'Aucune description complementaire.'}
+                    {ticket.description || t('admin.tickets.no_description')}
                   </p>
 
                   <div className="flex flex-wrap gap-2">
@@ -201,7 +203,7 @@ export default function AdminTicketsPage() {
                       disabled={updatingId === ticket.id}
                       onClick={() => updateStatus(ticket.id, 'in_progress')}
                     >
-                      {updatingId === ticket.id ? <Loader2 className="size-4 animate-spin" /> : 'Prendre en charge'}
+                      {updatingId === ticket.id ? <Loader2 className="size-4 animate-spin" /> : t('admin.tickets.take')}
                     </Button>
                     <Button
                       size="sm"
@@ -210,7 +212,7 @@ export default function AdminTicketsPage() {
                       disabled={updatingId === ticket.id}
                       onClick={() => updateStatus(ticket.id, 'resolved')}
                     >
-                      Resoudre
+                      {t('admin.tickets.resolve')}
                     </Button>
                     <Button
                       size="sm"
@@ -219,7 +221,7 @@ export default function AdminTicketsPage() {
                       disabled={updatingId === ticket.id}
                       onClick={() => updateStatus(ticket.id, 'closed')}
                     >
-                      Cloturer
+                      {t('admin.tickets.close')}
                     </Button>
                   </div>
                 </article>
@@ -233,7 +235,7 @@ export default function AdminTicketsPage() {
         <CardContent className="flex items-start gap-3 p-5 text-sm text-muted-foreground">
           <AlertCircle className="mt-0.5 size-4 text-primary" />
           <p className="leading-6">
-            Cette vue couvre la supervision des tickets. Le support conversationnel utilisateur reste disponible dans l espace membre, avec archivage des echanges.
+            {t('admin.tickets.footer_hint')}
           </p>
         </CardContent>
       </Card>

@@ -3,11 +3,13 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/context';
+import { useTranslation } from '@/lib/i18n';
 import { UserSidebar } from '@/components/layout/UserSidebar';
 import { UserTopbar } from '@/components/layout/UserTopbar';
 import { cn } from '@/lib/utils';
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const { user, profile, signOut, loading } = useAuth();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
@@ -38,7 +40,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
       <div className="flex min-h-screen items-center justify-center">
         <div className="surface-panel flex items-center gap-3 px-6 py-5">
           <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Chargement de votre espace...</p>
+          <p className="text-sm text-muted-foreground">{t('dashboard.layout.loading')}</p>
         </div>
       </div>
     );

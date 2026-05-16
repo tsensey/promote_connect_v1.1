@@ -72,7 +72,7 @@ export default function FeedPage() {
 
   const handleContactProduct = async (product: Product) => {
     if (!product.exposants?.profile_id) {
-      toast.error("Cet exposant n'est pas joignable.");
+      toast.error(t('annuaire.cannot_contact'));
       return;
     }
     setContactingProd(product.id);
@@ -84,14 +84,14 @@ export default function FeedPage() {
         await supabaseClient.from('messages').insert({
           conversation_id: data.id,
           sender_id: session.session.user.id,
-          content: `Bonjour, je suis intéressé(e) par votre ${type} : "${product.nom}". Pourriez-vous m'en dire plus ?`,
+          content: t('feed.contact_about', { type, product: product.nom }),
           is_read: false,
         });
         // Redirige vers la conversation
         router.push(`/chat/${data.id}`);
       }
     } else {
-      toast.error("Erreur lors de la création de la conversation");
+      toast.error(t('feed.contact_error'));
     }
     setContactingProd(null);
   };

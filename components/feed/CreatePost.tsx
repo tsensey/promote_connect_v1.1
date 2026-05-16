@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useTranslation } from '@/lib/i18n';
 import type { useFeed } from "@/hooks/useFeed";
 
 interface CreatePostProps {
@@ -28,7 +29,6 @@ interface CreatePostProps {
 const POST_TYPES = [
   {
     value: "general",
-    label: "Général",
     icon: Globe,
     color:
       "bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300",
@@ -36,14 +36,12 @@ const POST_TYPES = [
   },
   {
     value: "annonce",
-    label: "Annonce",
     icon: Megaphone,
     color: "bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300",
     active: "bg-blue-600 text-white",
   },
   {
     value: "actualite",
-    label: "Actualité",
     icon: Newspaper,
     color:
       "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300",
@@ -51,7 +49,6 @@ const POST_TYPES = [
   },
   {
     value: "offre",
-    label: "Offre d'emploi",
     icon: Briefcase,
     color:
       "bg-violet-50 text-violet-600 dark:bg-violet-900/40 dark:text-violet-300",
@@ -59,7 +56,6 @@ const POST_TYPES = [
   },
   {
     value: "evenement",
-    label: "Événement",
     icon: CalendarDays,
     color:
       "bg-amber-50 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300",
@@ -70,6 +66,7 @@ const POST_TYPES = [
 const MAX_CHARS = 1200;
 
 export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState("general");
@@ -93,18 +90,18 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
 
   const handleFilesSelect = useCallback((files: FileList | File[] | null) => {
     if (!files || files.length === 0) return;
-    
+
     const newFiles: File[] = [];
     const newPreviews: string[] = [];
-    
+
     Array.from(files).forEach((file) => {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error(`L'image ${file.name} est trop volumineuse (max 5 Mo)`);
+        toast.error(t('feed.create.file_too_large', { file: file.name }));
         return;
       }
       const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
       if (!allowed.includes(file.type)) {
-        toast.error(`Format non supporté pour ${file.name}`);
+        toast.error(t('feed.create.format_unsupported', { file: file.name }));
         return;
       }
       newFiles.push(file);
@@ -113,7 +110,7 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
 
     setImageFiles((prev) => [...prev, ...newFiles].slice(0, 4));
     setImagePreviews((prev) => [...prev, ...newPreviews].slice(0, 4));
-  }, []);
+  }, [t]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -152,9 +149,7 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
         const result = await onSubmit(
           content,
           postType,
-          postType !== "general"
-            ? POST_TYPES.find((t) => t.value === postType)?.label
-            : undefined,
+          postType !== "general" ? postType : undefined,
           imageUrls,
         );
 
@@ -164,18 +159,18 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
           setImagePreviews([]);
           setIsExpanded(false);
           setPostType("general");
-          toast.success("Publication envoyée !");
+          toast.success(t('feed.create.posted'));
         } else if (result && result.error) {
-          toast.error(result.error.message || "Erreur lors de la publication");
+          toast.error(result.error.message || t('feed.create.post_error'));
         }
       } catch {
-        toast.error("Erreur lors de la publication");
+        toast.error(t('feed.create.post_error'));
       } finally {
         setSubmitting(false);
         setUploading(false);
       }
     },
-    [content, postType, imageFiles, submitting, isOverLimit, onSubmit, onUpload],
+    [content, postType, imageFiles, submitting, isOverLimit, onSubmit, onUpload, t],
   );
 
   const handleCancel = () => {
@@ -238,31 +233,31 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
                     )}
                   >
                     {profile?.role === "exposant"
-                      ? "Publiez une annonce ou une actualité pour votre stand..."
-                      : "Partagez une actualité, une annonce ou une opportunité..."}
+                      ? t('feed.create.placeholder_exposant')
+                      : t('feed.create.placeholder_visitor')}
                   </button>
                 </div>
               ) : (
                 <>
                   {/* Type selector pills */}
                   <div className="mb-3 flex flex-wrap gap-1.5">
-                    {POST_TYPES.map((t) => {
-                      const Icon = t.icon;
-                      const isActive = postType === t.value;
+                    {POST_TYPES.map((pt) => {
+                      const Icon = pt.icon;
+                      const isActive = postType === pt.value;
                       return (
                         <button
-                          key={t.value}
+                          key={pt.value}
                           type="button"
-                          onClick={() => setPostType(t.value)}
+                          onClick={() => setPostType(pt.value)}
                           className={cn(
                             "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150",
                             isActive
-                              ? t.active + " shadow-sm scale-105"
-                              : t.color + " hover:opacity-80",
+                              ? pt.active + " shadow-sm scale-105"
+                              : pt.color + " hover:opacity-80",
                           )}
                         >
                           <Icon className="size-3" />
-                          {t.label}
+                          {t(`feed.type.${pt.value}`)}
                         </button>
                       );
                     })}
@@ -284,14 +279,14 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
                       }}
                       placeholder={
                         postType === "annonce"
-                          ? "Rédigez votre annonce..."
+                          ? t('feed.create.placeholder_announcement')
                           : postType === "actualite"
-                            ? "Quelle est votre actualité ?"
+                            ? t('feed.create.placeholder_news')
                             : postType === "offre"
-                              ? "Décrivez le poste et le profil recherché..."
+                              ? t('feed.create.placeholder_job')
                               : postType === "evenement"
-                                ? "Présentez votre événement (lieu, date, horaires)..."
-                                : "De quoi voulez-vous parler ?"
+                                ? t('feed.create.placeholder_event')
+                                : t('feed.create.placeholder_general')
                       }
                       rows={3}
                       className="w-full resize-none rounded-2xl bg-transparent px-4 pt-4 pb-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 leading-relaxed"
@@ -323,7 +318,7 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={preview}
-                            alt={`Aperçu ${idx + 1}`}
+                            alt={`${t('common.preview')} ${idx + 1}`}
                             className="max-h-72 w-full object-cover"
                           />
                           <button
@@ -363,8 +358,8 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
                       />
                       <span>
                         {dragOver
-                          ? "Déposez vos images ici"
-                          : "Ajouter des images (max 4) — glisser-déposer ou cliquer"}
+                          ? t('feed.create.dropzone')
+                          : t('feed.create.dropzone_hint')}
                       </span>
                       <input
                         ref={fileInputRef}
@@ -386,7 +381,7 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
                           selectedType.color,
                         )}
                       >
-                        {selectedType.label}
+                        {t(`feed.type.${selectedType.value}`)}
                       </span>
                     </div>
 
@@ -398,7 +393,7 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
                         onClick={handleCancel}
                         className="rounded-full text-muted-foreground"
                       >
-                        Annuler
+                        {t('common.cancel')}
                       </Button>
                       <Button
                         type="submit"
@@ -415,10 +410,10 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
                           <Send className="size-3.5" />
                         )}
                         {uploading
-                          ? "Upload…"
+                          ? t('feed.post.uploading')
                           : submitting
-                            ? "Publication…"
-                            : "Publier"}
+                            ? t('feed.create.publishing')
+                            : t('feed.create.publish')}
                       </Button>
                     </div>
                   </div>

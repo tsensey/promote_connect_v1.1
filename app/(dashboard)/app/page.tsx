@@ -79,7 +79,7 @@ const getQuickActions = (role: string, t: any) => [
 ];
 
 export default function DashboardHome() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { user, profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
@@ -372,7 +372,7 @@ export default function DashboardHome() {
                     {exposant.pavillon && (
                       <span className="flex items-center gap-1">
                         <Building2 className="size-3" />
-                        Pavillon {exposant.pavillon}
+                        {t('annuaire.pavillon', { pavillon: exposant.pavillon })}
                       </span>
                     )}
                     <span className="ml-auto text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
@@ -437,7 +437,7 @@ export default function DashboardHome() {
                           <span className="shrink-0 text-xs text-muted-foreground">
                             {new Date(
                               conversation.last_message_at,
-                            ).toLocaleDateString("fr-FR", {
+                            ).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', {
                               day: "numeric",
                               month: "short",
                             })}
@@ -518,10 +518,10 @@ export default function DashboardHome() {
                     <div className="flex items-start gap-3">
                       <div className="flex shrink-0 flex-col items-center rounded-xl border border-border/60 bg-background px-3 py-2 text-center">
                         <span className="text-xs font-bold uppercase text-primary">
-                          {new Date(event.starts_at).toLocaleDateString("fr-FR", { month: "short" })}
+                          {new Date(event.starts_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', { month: "short" })}
                         </span>
                         <span className="text-lg font-bold text-foreground">
-                          {new Date(event.starts_at).toLocaleDateString("fr-FR", { day: "numeric" })}
+                          {new Date(event.starts_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', { day: "numeric" })}
                         </span>
                       </div>
                       <div className="min-w-0 flex-1">
@@ -530,12 +530,12 @@ export default function DashboardHome() {
                         </p>
                         <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                           <Clock className="size-3" />
-                          {new Date(event.starts_at).toLocaleTimeString("fr-FR", {
+                          {new Date(event.starts_at).toLocaleTimeString(locale === 'en' ? 'en-US' : 'fr-FR', {
                             hour: "2-digit",
                             minute: "2-digit",
                           })}
                           {event.type && <> &middot; {event.type}</>}
-                          {event.pavillon && <> &middot; Pavillon {event.pavillon}</>}
+                          {event.pavillon && <> &middot; {t('annuaire.pavillon', { pavillon: event.pavillon })}</>}
                         </p>
                       </div>
                     </div>

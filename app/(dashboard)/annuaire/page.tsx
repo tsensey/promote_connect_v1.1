@@ -99,7 +99,7 @@ export default function AnnuairePage() {
   const activeFilters = useMemo(() => {
     const f: { label: string; onRemove: () => void }[] = [];
     if (secteur) f.push({ label: secteur, onRemove: () => { setSecteur(''); setPage(0); } });
-    if (pavillon) f.push({ label: `Espace ${pavillon}`, onRemove: () => { setPavillon(''); setPage(0); } });
+    if (pavillon) f.push({ label: `${t('annuaire.space')} ${pavillon}`, onRemove: () => { setPavillon(''); setPage(0); } });
     if (pays) f.push({ label: pays, onRemove: () => { setPays(''); setPage(0); } });
     return f;
   }, [secteur, pavillon, pays]);
@@ -404,7 +404,7 @@ export default function AnnuairePage() {
                         className="rounded-full border-white/30 bg-black/40 px-2.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm"
                       >
                         <MapPin className="mr-1 size-3" />
-                        Stand {exposant.stand}
+                        {t('annuaire.stand_label', { stand: exposant.stand })}
                       </Badge>
                     </div>
                   )}

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { UserBreadcrumb } from "@/components/ui/breadcrumb-nav";
+import { useTranslation } from '@/lib/i18n';
 
 export function UserTopbar({
   onToggleSidebar,
@@ -27,6 +28,7 @@ export function UserTopbar({
   onSignOut: () => void;
 }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const { unreadMessages } = useNotificationState();
 
   return (
@@ -95,7 +97,7 @@ export function UserTopbar({
                   {user?.name}
                 </p>
                 <p className="text-[11px] text-muted-foreground">
-                  {user?.role === "exposant" ? "Exposant" : "Visiteur"}
+                  {user?.role === "exposant" ? t('layout.topbar.exposant') : t('layout.topbar.visiteur')}
                 </p>
               </div>
               <ChevronDown className="hidden size-3.5 text-muted-foreground md:block" />
@@ -116,20 +118,20 @@ export function UserTopbar({
                 onClick={() => router.push("/app")}
                 className="rounded-lg"
               >
-                Accueil
+                {t('layout.topbar.home')}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => router.push("/support")}
                 className="rounded-lg"
               >
-                Support
+                {t('layout.topbar.support')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={onSignOut}
                 className="rounded-lg text-destructive focus:text-destructive"
               >
-                Deconnexion
+                {t('layout.topbar.signout')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

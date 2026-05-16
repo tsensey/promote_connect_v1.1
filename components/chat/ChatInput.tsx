@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { EnrichedMessage, ProductAttachment } from '@/hooks/useChat';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 
 export interface SendOptions {
   content: string;
@@ -46,7 +47,7 @@ export function ChatInput({
   onSend,
   onTyping,
   sending,
-  placeholder = 'Écrivez votre message…',
+  placeholder: placeholderProp,
   replyTo,
   onCancelReply,
   productContext,
@@ -55,6 +56,8 @@ export function ChatInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const docInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
+  const placeholder = placeholderProp ?? t('chat.input_placeholder');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -126,7 +129,7 @@ export function ChatInput({
           <Reply className="mt-0.5 size-3.5 shrink-0 text-primary" />
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-semibold text-primary">
-              {replyTo.author?.full_name ?? 'Utilisateur'}
+              {replyTo.author?.full_name ?? t('chat.user')}
             </p>
             <p className="truncate text-[11px] text-muted-foreground">
               {replyTo.attachment_type === 'image'
@@ -232,7 +235,7 @@ export function ChatInput({
           className="size-8 shrink-0 rounded-full text-muted-foreground hover:text-primary"
           onClick={() => imageInputRef.current?.click()}
           disabled={sending || !!selectedFile}
-          title="Envoyer une image"
+          title={t('chat.send_image')}
         >
           <ImagePlus className="size-4" />
         </Button>
@@ -245,7 +248,7 @@ export function ChatInput({
           className="size-8 shrink-0 rounded-full text-muted-foreground hover:text-primary"
           onClick={() => docInputRef.current?.click()}
           disabled={sending || !!selectedFile}
-          title="Envoyer un document"
+          title={t('chat.send_document')}
         >
           <Paperclip className="size-4" />
         </Button>

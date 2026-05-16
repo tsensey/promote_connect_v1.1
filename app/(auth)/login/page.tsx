@@ -50,7 +50,7 @@ function LoginPageContent() {
       } = await supabaseClient.auth.getUser();
 
       if (!user) {
-        throw new Error('Session introuvable apres la connexion.');
+        throw new Error(t('auth.login.error'));
       }
 
       const { data: profile } = await supabaseClient

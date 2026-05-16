@@ -52,14 +52,14 @@ const STATUS_DOTS: Record<string, string> = {
 
 const EVENT_TYPES = ["conference", "atelier", "networking", "keynote", "panel"];
 
-function formatDate(dateStr: string) {
+function formatDate(dateStr: string, locale: string) {
   const d = new Date(dateStr);
   return {
-    day: d.toLocaleDateString("fr-FR", { day: "numeric" }),
-    month: d.toLocaleDateString("fr-FR", { month: "short" }),
-    weekday: d.toLocaleDateString("fr-FR", { weekday: "short" }),
-    timeStart: d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
-    timeEnd: new Date(dateStr).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+    day: d.toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', { day: "numeric" }),
+    month: d.toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', { month: "short" }),
+    weekday: d.toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', { weekday: "short" }),
+    timeStart: d.toLocaleTimeString(locale === 'en' ? 'en-US' : 'fr-FR', { hour: "2-digit", minute: "2-digit" }),
+    timeEnd: new Date(dateStr).toLocaleTimeString(locale === 'en' ? 'en-US' : 'fr-FR', { hour: "2-digit", minute: "2-digit" }),
   };
 }
 
@@ -77,7 +77,7 @@ export default function AgendaPage() {
   const [eventSearch, setEventSearch] = useState("");
   const { user } = useAuth();
   const myUserId = user?.id;
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
 
   const STATUS_LABELS: Record<string, string> = {
     pending: t('agenda.rdv_pending'),
@@ -182,12 +182,12 @@ export default function AgendaPage() {
                     {rdv.other_user?.full_name || "Contact"}
                   </p>
                   <p className="text-xs text-muted-foreground/70">
-                    {new Date(rdv.starts_at).toLocaleDateString("fr-FR", {
+                    {new Date(rdv.starts_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', {
                       day: "numeric",
                       month: "short",
                     })}{" "}
-                    à{" "}
-                    {new Date(rdv.starts_at).toLocaleTimeString("fr-FR", {
+                    {locale === 'en' ? 'at ' : 'à '}
+                    {new Date(rdv.starts_at).toLocaleTimeString(locale === 'en' ? 'en-US' : 'fr-FR', {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
@@ -305,8 +305,8 @@ export default function AgendaPage() {
             <div className="space-y-3">
               {filteredEvenements.map((evt) => {
                 const typeConfig = evt.type ? EVENT_TYPE_CONFIG[evt.type] : null;
-                const date = formatDate(evt.starts_at);
-                const endTime = new Date(evt.ends_at).toLocaleTimeString("fr-FR", {
+                const date = formatDate(evt.starts_at, locale);
+                const endTime = new Date(evt.ends_at).toLocaleTimeString(locale === 'en' ? 'en-US' : 'fr-FR', {
                   hour: "2-digit",
                   minute: "2-digit",
                 });
@@ -379,7 +379,7 @@ export default function AgendaPage() {
                           {evt.pavillon && (
                             <span className="inline-flex items-center gap-1.5">
                               <MapPin className="size-3.5" />
-                              Pavillon {evt.pavillon}
+                              {t('annuaire.pavillon', { pavillon: evt.pavillon })}
                               {evt.salle && ` · Salle ${evt.salle}`}
                             </span>
                           )}
@@ -525,7 +525,7 @@ export default function AgendaPage() {
                             <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground/70">
                               <span className="inline-flex items-center gap-1">
                                 <CalendarDays className="size-3.5" />
-                                {date.toLocaleDateString("fr-FR", {
+                                {date.toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', {
                                   day: "numeric",
                                   month: "long",
                                   year: "numeric",
@@ -533,9 +533,9 @@ export default function AgendaPage() {
                               </span>
                               <span className="inline-flex items-center gap-1">
                                 <Clock className="size-3.5" />
-                                {date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                                {date.toLocaleTimeString(locale === 'en' ? 'en-US' : 'fr-FR', { hour: "2-digit", minute: "2-digit" })}
                                 {" - "}
-                                {endDate.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                                {endDate.toLocaleTimeString(locale === 'en' ? 'en-US' : 'fr-FR', { hour: "2-digit", minute: "2-digit" })}
                               </span>
                             </div>
                             {rdv.notes && (
@@ -639,7 +639,7 @@ function NewRdvDialog({
     notes?: string,
   ) => Promise<unknown>;
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [destinataireId, setDestinataireId] = useState("");
   const [date, setDate] = useState("");
   const [timeStart, setTimeStart] = useState("");
@@ -651,8 +651,8 @@ function NewRdvDialog({
   >([]);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!open) {
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
       setDestinataireId("");
       setDate("");
       setTimeStart("");
@@ -660,7 +660,8 @@ function NewRdvDialog({
       setNotes("");
       setSearchQuery("");
     }
-  }, [open]);
+    onOpenChange(nextOpen);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -696,7 +697,7 @@ function NewRdvDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md rounded-xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">

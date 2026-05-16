@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from '@/lib/i18n';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSupportTickets } from '@/hooks/useSupport';
@@ -28,30 +29,8 @@ interface FaqItem {
   answer: string;
 }
 
-const FAQ_DATA: FaqItem[] = [
-  {
-    question: 'Comment acceder a mon espace PROMOTE-CONNECT ?',
-    answer: 'Connectez-vous avec les identifiants envoyes par l administrateur PROMOTE-CONNECT. Si vous n avez rien recu, contactez le support pour qu un acces vous soit reprovisionne.',
-  },
-  {
-    question: 'Combien de temps dure mon acces ?',
-    answer: 'Les comptes provisionnes par l administrateur ont acces a l ensemble de la plateforme tant qu ils restent actifs dans l administration.',
-  },
-  {
-    question: 'Comment contacter un exposant ?',
-    answer: 'Rendez-vous dans l Annuaire, selectionnez un exposant et cliquez sur "Contacter". Une conversation privee sera creee automatiquement.',
-  },
-  {
-    question: 'Comment recevoir la newsletter ?',
-    answer: 'Inscrivez-vous dans la section Newsletter. Vous pouvez choisir la frequence et les secteurs qui vous interessent.',
-  },
-  {
-    question: 'Mes conversations sont-elles securisees ?',
-    answer: 'Oui, les conversations sont chiffrees et accessibles uniquement aux participants. Le contenu n est jamais partage avec des tiers.',
-  },
-];
-
 export default function SupportPage() {
+  const { t, locale } = useTranslation();
   const router = useRouter();
   const { tickets, createTicket } = useSupportTickets();
   const [activeTab, setActiveTab] = useState<'chat' | 'tickets' | 'faq'>('faq');
@@ -64,6 +43,29 @@ export default function SupportPage() {
   const [submitting, setSubmitting] = useState(false);
   const [faqSearch, setFaqSearch] = useState('');
 
+  const FAQ_DATA: FaqItem[] = [
+    {
+      question: t('support.faq1_q'),
+      answer: t('support.faq1_a'),
+    },
+    {
+      question: t('support.faq2_q'),
+      answer: t('support.faq2_a'),
+    },
+    {
+      question: t('support.faq3_q'),
+      answer: t('support.faq3_a'),
+    },
+    {
+      question: t('support.faq4_q'),
+      answer: t('support.faq4_a'),
+    },
+    {
+      question: t('support.faq5_q'),
+      answer: t('support.faq5_a'),
+    },
+  ];
+
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -75,10 +77,10 @@ export default function SupportPage() {
       );
       setShowNewTicket(false);
       setTicketForm({ subject: '', description: '', priority: 'medium' });
-      toast.success('Ticket cree avec succes');
+      toast.success(t('support.tickets.created'));
       router.push(`/support/${ticket.id}`);
     } catch {
-      toast.error('Erreur lors de la creation du ticket');
+      toast.error(t('support.tickets.create_error'));
     } finally {
       setSubmitting(false);
     }
@@ -97,9 +99,9 @@ export default function SupportPage() {
       resolved: 'bg-muted text-muted-foreground border-border/60',
     };
     const labels: Record<string, string> = {
-      open: 'Ouvert',
-      in_progress: 'En cours',
-      resolved: 'Resolu',
+      open: t('common.open'),
+      in_progress: t('common.in_progress'),
+      resolved: t('common.resolved'),
     };
     return (
       <Badge
@@ -120,9 +122,9 @@ export default function SupportPage() {
       low: 'bg-muted text-muted-foreground border-border/60',
     };
     const labels: Record<string, string> = {
-      high: 'Haute',
-      medium: 'Moyenne',
-      low: 'Basse',
+      high: t('support.tickets.priority_high'),
+      medium: t('support.tickets.priority_medium'),
+      low: t('support.tickets.priority_low'),
     };
     return (
       <Badge
@@ -140,10 +142,10 @@ export default function SupportPage() {
     <div className="space-y-6 pb-8 max-w-6xl mx-auto">
       <div className="space-y-1">
         <h1 className="text-3xl font-heading text-foreground">
-          Support technique
+          {t('support.title')}
         </h1>
         <p className="max-w-2xl text-base leading-7 text-muted-foreground">
-          Obtenez de l&apos;aide avant, pendant et apres le salon.
+          {t('support.desc')}
         </p>
       </div>
 
@@ -155,10 +157,10 @@ export default function SupportPage() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">
-                Assistance
+                {t('support.assistance')}
               </p>
               <h2 className="text-2xl font-heading text-foreground">
-                Comment pouvons-nous vous aider ?
+                {t('support.how_help')}
               </h2>
             </div>
           </div>
@@ -179,7 +181,7 @@ export default function SupportPage() {
                 ) : (
                   <MessageCircle className="mr-1.5 size-3.5" />
                 )}
-                {tab === 'faq' ? 'FAQ' : tab === 'tickets' ? 'Tickets' : 'Chat support'}
+                {tab === 'faq' ? t('support.tab_faq') : tab === 'tickets' ? t('support.tab_tickets') : t('support.tab_chat')}
               </Button>
             ))}
           </div>
@@ -192,7 +194,7 @@ export default function SupportPage() {
             <div className="relative">
               <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Rechercher une question..."
+                placeholder={t('support.faq_search')}
                 value={faqSearch}
                 onChange={(e) => setFaqSearch(e.target.value)}
                 className="h-11 rounded-xl border-border/70 bg-white/90 pl-11"
@@ -207,7 +209,7 @@ export default function SupportPage() {
                 <div className="flex flex-col items-center gap-3 py-12 text-center">
                   <BookOpen className="size-12 text-muted-foreground/30" />
                   <p className="text-base font-medium text-foreground">
-                    Aucun resultat pour &quot;{faqSearch}&quot;
+                    {t('support.faq_no_results', { query: faqSearch })}
                   </p>
                 </div>
               )}
@@ -221,7 +223,7 @@ export default function SupportPage() {
           <CardContent className="space-y-4 p-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-heading text-foreground">
-                Mes tickets
+                {t('support.tickets.title')}
               </h2>
               <Button
                 size="sm"
@@ -229,7 +231,7 @@ export default function SupportPage() {
                 className="rounded-xl"
               >
                 <Plus className="mr-1.5 size-4" />
-                Nouveau ticket
+                {t('support.tickets.new')}
               </Button>
             </div>
 
@@ -239,7 +241,7 @@ export default function SupportPage() {
                 className="rounded-xl border border-border/60 bg-muted/40 p-5 space-y-4"
               >
                 <Input
-                  placeholder="Sujet du ticket"
+                  placeholder={t('support.tickets.subject_placeholder')}
                   value={ticketForm.subject}
                   onChange={(e) =>
                     setTicketForm({ ...ticketForm, subject: e.target.value })
@@ -248,7 +250,7 @@ export default function SupportPage() {
                   className="rounded-xl"
                 />
                 <Textarea
-                  placeholder="Description du probleme..."
+                  placeholder={t('support.tickets.desc_placeholder')}
                   value={ticketForm.description}
                   onChange={(e) =>
                     setTicketForm({
@@ -272,10 +274,10 @@ export default function SupportPage() {
                       className="rounded-full"
                     >
                       {p === 'low'
-                        ? 'Basse'
+                        ? t('support.tickets.priority_low')
                         : p === 'medium'
-                          ? 'Moyenne'
-                          : 'Haute'}
+                          ? t('support.tickets.priority_medium')
+                          : t('support.tickets.priority_high')}
                     </Button>
                   ))}
                 </div>
@@ -289,7 +291,7 @@ export default function SupportPage() {
                     {submitting && (
                       <Loader2 className="mr-2 size-4 animate-spin" />
                     )}
-                    Creer le ticket
+                    {t('support.create')}
                   </Button>
                   <Button
                     type="button"
@@ -298,7 +300,7 @@ export default function SupportPage() {
                     onClick={() => setShowNewTicket(false)}
                     className="rounded-xl"
                   >
-                    Annuler
+                    {t('common.cancel')}
                   </Button>
                 </div>
               </form>
@@ -308,10 +310,10 @@ export default function SupportPage() {
               <div className="flex flex-col items-center gap-3 py-12 text-center">
                 <Ticket className="size-12 text-muted-foreground/30" />
                 <p className="text-base font-medium text-foreground">
-                  Aucun ticket ouvert
+                  {t('support.tickets.no_tickets')}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Creez un ticket pour obtenir de l&apos;aide.
+                  {t('support.tickets.no_tickets_hint')}
                 </p>
               </div>
             ) : (
@@ -327,15 +329,14 @@ export default function SupportPage() {
                         {ticket.subject}
                       </h3>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Cree le{' '}
+                        {t('support.ticket.created_on')}{' '}
                         {ticket.created_at
                           ? new Date(ticket.created_at).toLocaleDateString(
-                              'fr-FR',
+                              locale === 'en' ? 'en-US' : 'fr-FR',
                             )
                           : '-'}
-                        {' — '}
-                        {ticket.message_count} message
-                        {ticket.message_count !== 1 ? 's' : ''}
+                        {' \u2014 '}
+                        {t('support.ticket.message_count', { count: ticket.message_count, s: ticket.message_count !== 1 ? 's' : '' })}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -359,10 +360,10 @@ export default function SupportPage() {
               </div>
               <div>
                 <h2 className="text-2xl font-heading text-foreground">
-                  Chat support
+                  {t('support.chat.title')}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Notre equipe est disponible du lundi au vendredi, 9h-18h.
+                  {t('support.chat.desc')}
                 </p>
               </div>
             </div>
@@ -370,10 +371,10 @@ export default function SupportPage() {
             <div className="rounded-xl border border-border/60 bg-muted/40 p-8 text-center">
               <MessageCircle className="mx-auto size-12 text-muted-foreground/30" />
               <p className="mt-4 text-lg font-semibold text-foreground">
-                Chat support temporairement indisponible
+                {t('support.chat.unavailable')}
               </p>
               <p className="mt-2 text-sm text-muted-foreground">
-                Veuillez creer un ticket ou nous contacter par email.
+                {t('support.chat.unavailable_hint')}
               </p>
               <a
                 href="mailto:support@promote-connect.com"
@@ -415,5 +416,3 @@ function FaqAccordion({ item }: { item: FaqItem }) {
     </div>
   );
 }
-
-

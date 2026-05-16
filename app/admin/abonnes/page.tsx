@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useTranslation } from '@/lib/i18n';
 
 interface AccessRow {
   id: string;
@@ -23,6 +24,7 @@ interface AccessRow {
 }
 
 export default function AdminAccessPage() {
+  const { t, locale } = useTranslation();
   const [accounts, setAccounts] = useState<AccessRow[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -63,18 +65,18 @@ export default function AdminAccessPage() {
     <div className="space-y-6">
       <div className="space-y-2">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-600/80">
-          Administration des acces
+          {t('admin.abonnes.title')}
         </p>
-        <h1 className="text-4xl text-foreground">Vue globale des acces</h1>
+        <h1 className="text-4xl text-foreground">{t('admin.abonnes.subtitle')}</h1>
         <p className="max-w-3xl text-base leading-7 text-muted-foreground">
-          Le systeme d abonnement est desactive. Tous les comptes listes ici sont actives pour la plateforme.
+          {t('admin.abonnes.desc')}
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard title="Comptes" value={stats.total} icon={Users} />
-        <StatCard title="Administrateurs" value={stats.admins} icon={Shield} />
-        <StatCard title="Membres" value={stats.members} icon={Users} />
+        <StatCard title={t('admin.abonnes.comptes')} value={stats.total} icon={Users} />
+        <StatCard title={t('admin.abonnes.admins')} value={stats.admins} icon={Shield} />
+        <StatCard title={t('admin.abonnes.members')} value={stats.members} icon={Users} />
       </div>
 
       <div className="surface-panel">
@@ -84,7 +86,7 @@ export default function AdminAccessPage() {
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Rechercher un compte..."
+              placeholder={t('admin.abonnes.search')}
               className="pl-10"
             />
           </div>
@@ -92,11 +94,11 @@ export default function AdminAccessPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Utilisateur</TableHead>
-              <TableHead>Entreprise</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Acces</TableHead>
-              <TableHead>Creation</TableHead>
+              <TableHead>{t('admin.abonnes.col_user')}</TableHead>
+              <TableHead>{t('admin.abonnes.col_company')}</TableHead>
+              <TableHead>{t('admin.abonnes.col_role')}</TableHead>
+              <TableHead>{t('admin.abonnes.col_access')}</TableHead>
+              <TableHead>{t('admin.abonnes.col_creation')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -122,18 +124,18 @@ export default function AdminAccessPage() {
                   </TableCell>
                   <TableCell>
                     <Badge variant="default" className="rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
-                      Actif
+                      {t('admin.abonnes.active')}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {account.created_at ? new Date(account.created_at).toLocaleDateString('fr-FR') : '-'}
+                    {account.created_at ? new Date(account.created_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR') : '-'}
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
-                  Aucun compte trouve
+                  {t('admin.abonnes.no_results')}
                 </TableCell>
               </TableRow>
             )}

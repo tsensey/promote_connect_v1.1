@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useTranslation } from '@/lib/i18n';
 
 type Evenement = Database['public']['Tables']['evenements']['Row'];
 const EVENT_TYPES = ['conference', 'atelier', 'networking'];
@@ -35,6 +36,7 @@ const typeStyles: Record<string, string> = {
 };
 
 export default function AdminProgrammePage() {
+  const { t, locale } = useTranslation();
   const [evenements, setEvenements] = useState<Evenement[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -74,7 +76,7 @@ export default function AdminProgrammePage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Supprimer cet evenement ?')) return;
+    if (!confirm(t('admin.programme.delete_confirm'))) return;
     await supabaseClient.from('evenements').delete().eq('id', id);
     fetchEvenements();
   };
@@ -86,15 +88,15 @@ export default function AdminProgrammePage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-600/80">
-            Administration programme
+            {t('admin.programme.title')}
           </p>
-          <h1 className="text-4xl text-foreground">Programme du salon</h1>
+          <h1 className="text-4xl text-foreground">{t('admin.programme.subtitle')}</h1>
           <p className="max-w-3xl text-base leading-7 text-muted-foreground">
-            Publiez et gerez les evenements, ateliers et rendez-vous du salon.
+            {t('admin.programme.desc')}
           </p>
         </div>
         <Button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ titre: '', description: '', pavillon: '', salle: '', starts_at: '', ends_at: '', type: 'conference', speakers: '' }); }} className="rounded-xl">
-          <Plus className="mr-2 size-4" /> Ajouter
+          <Plus className="mr-2 size-4" /> {t('admin.programme.add')}
         </Button>
       </div>
 
@@ -104,7 +106,7 @@ export default function AdminProgrammePage() {
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Rechercher un evenement..."
+              placeholder={t('admin.programme.search')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
@@ -115,11 +117,11 @@ export default function AdminProgrammePage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Evenement</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Lieu</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t('admin.programme.col_evenement')}</TableHead>
+                <TableHead>{t('admin.programme.col_type')}</TableHead>
+                <TableHead>{t('admin.programme.col_lieu')}</TableHead>
+                <TableHead>{t('admin.programme.col_date')}</TableHead>
+                <TableHead className="text-right">{t('admin.programme.col_actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -148,12 +150,12 @@ export default function AdminProgrammePage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {evt.pavillon && <span>Pavillon {evt.pavillon} </span>}
-                      {evt.salle && <span>Salle {evt.salle}</span>}
+                      {evt.pavillon && <span>{t('admin.programme.pavillon_label')} {evt.pavillon} </span>}
+                      {evt.salle && <span>{t('admin.programme.salle_label')} {evt.salle}</span>}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {evt.starts_at && (
-                        <span>{new Date(evt.starts_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} - {new Date(evt.starts_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span>{new Date(evt.starts_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', { day: 'numeric', month: 'short' })} - {new Date(evt.starts_at).toLocaleTimeString(locale === 'en' ? 'en-US' : 'fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
@@ -172,7 +174,7 @@ export default function AdminProgrammePage() {
                 <TableRow>
                   <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
                     <Calendar className="mx-auto mb-3 size-10 text-muted-foreground" />
-                    Aucun evenement trouve
+                    {t('admin.programme.no_results')}
                   </TableCell>
                 </TableRow>
               )}
@@ -184,33 +186,33 @@ export default function AdminProgrammePage() {
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingId ? "Modifier l'evenement" : 'Nouvel evenement'}</DialogTitle>
+            <DialogTitle>{editingId ? t('admin.programme.form_edit') : t('admin.programme.form_new')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="grid gap-3 py-4">
-            <Input placeholder="Titre" value={formData.titre} onChange={(e) => setFormData({ ...formData, titre: e.target.value })} required className="col-span-full" />
-            <Textarea placeholder="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} className="col-span-full" />
+            <Input placeholder={t('admin.programme.form_titre')} value={formData.titre} onChange={(e) => setFormData({ ...formData, titre: e.target.value })} required className="col-span-full" />
+            <Textarea placeholder={t('admin.programme.form_description')} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} className="col-span-full" />
             <div className="grid grid-cols-2 gap-3">
-              <Input placeholder="Pavillon" value={formData.pavillon} onChange={(e) => setFormData({ ...formData, pavillon: e.target.value })} />
-              <Input placeholder="Salle" value={formData.salle} onChange={(e) => setFormData({ ...formData, salle: e.target.value })} />
+              <Input placeholder={t('admin.programme.form_pavillon')} value={formData.pavillon} onChange={(e) => setFormData({ ...formData, pavillon: e.target.value })} />
+              <Input placeholder={t('admin.programme.form_salle')} value={formData.salle} onChange={(e) => setFormData({ ...formData, salle: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm font-medium text-foreground">Date de debut</label>
+                <label className="text-sm font-medium text-foreground">{t('admin.programme.form_start')}</label>
                 <Input type="datetime-local" value={formData.starts_at} onChange={(e) => setFormData({ ...formData, starts_at: e.target.value })} required className="mt-1" />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground">Date de fin</label>
+                <label className="text-sm font-medium text-foreground">{t('admin.programme.form_end')}</label>
                 <Input type="datetime-local" value={formData.ends_at} onChange={(e) => setFormData({ ...formData, ends_at: e.target.value })} required className="mt-1" />
               </div>
             </div>
             <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} className="flex h-9 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm">
               {EVENT_TYPES.map((t) => (<option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>))}
             </select>
-            <Input placeholder="Speakers (separes par des virgules)" value={formData.speakers} onChange={(e) => setFormData({ ...formData, speakers: e.target.value })} />
+            <Input placeholder={t('admin.programme.form_speakers')} value={formData.speakers} onChange={(e) => setFormData({ ...formData, speakers: e.target.value })} />
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="rounded-xl">Annuler</Button>
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="rounded-xl">{t('common.cancel')}</Button>
               <Button type="submit" disabled={formLoading} className="rounded-xl">
-                {formLoading && <Loader2 className="mr-2 size-4 animate-spin" />} {editingId ? 'Sauvegarder' : 'Creer'}
+                {formLoading && <Loader2 className="mr-2 size-4 animate-spin" />} {editingId ? t('admin.programme.form_save') : t('admin.programme.form_create')}
               </Button>
             </DialogFooter>
           </form>

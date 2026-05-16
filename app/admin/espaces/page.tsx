@@ -35,6 +35,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { toast } from 'sonner';
+import { useTranslation } from '@/lib/i18n';
 
 interface Espace {
   id: string;
@@ -55,6 +56,7 @@ const defaultForm = {
 };
 
 export default function AdminEspacesPage() {
+  const { t } = useTranslation();
   const { session } = useAuth();
   const [espaces, setEspaces] = useState<Espace[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,10 +79,10 @@ export default function AdminEspacesPage() {
       if (res.ok) {
         setEspaces(data.espaces || []);
       } else {
-        toast.error(data.error || 'Erreur chargement espaces');
+        toast.error(data.error || t('admin.espaces.toast_load_error'));
       }
     } catch {
-      toast.error('Erreur reseau');
+      toast.error(t('admin.espaces.toast_network'));
     } finally {
       setLoading(false);
     }
@@ -131,7 +133,7 @@ export default function AdminEspacesPage() {
   const handleSave = async () => {
     if (!token) return;
     if (!form.code || !form.nom) {
-      toast.error('Code et nom sont requis');
+      toast.error(t('admin.espaces.toast_required'));
       return;
     }
 
@@ -152,15 +154,15 @@ export default function AdminEspacesPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || 'Erreur sauvegarde');
+        toast.error(data.error || t('admin.espaces.toast_save_error'));
         return;
       }
 
-      toast.success(editingId ? 'Espace modifie' : 'Espace cree');
+      toast.success(editingId ? t('admin.espaces.toast_updated') : t('admin.espaces.toast_created'));
       setShowForm(false);
       await fetchEspaces();
     } catch {
-      toast.error('Erreur serveur');
+      toast.error(t('admin.espaces.toast_server_error'));
     } finally {
       setSaving(false);
     }
@@ -168,7 +170,7 @@ export default function AdminEspacesPage() {
 
   const handleDelete = async (id: string) => {
     if (!token) return;
-    if (!window.confirm('Supprimer cet espace definitivement ?')) return;
+    if (!window.confirm(t('admin.espaces.delete_confirm'))) return;
 
     try {
       const res = await fetch(`/api/admin/espaces?id=${id}`, {
@@ -179,14 +181,14 @@ export default function AdminEspacesPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || 'Suppression impossible');
+        toast.error(data.error || t('admin.espaces.toast_delete_error'));
         return;
       }
 
-      toast.success('Espace supprime');
+      toast.success(t('admin.espaces.toast_deleted'));
       await fetchEspaces();
     } catch {
-      toast.error('Erreur reseau');
+      toast.error(t('admin.espaces.toast_network'));
     }
   };
 
@@ -195,16 +197,16 @@ export default function AdminEspacesPage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-600/80">
-            Configuration du salon
+            {t('admin.espaces.title')}
           </p>
-          <h1 className="text-4xl text-foreground">Espaces & Pavillons</h1>
+          <h1 className="text-4xl text-foreground">{t('admin.espaces.subtitle')}</h1>
           <p className="max-w-3xl text-base leading-7 text-muted-foreground">
-            Gérez les espaces et pavillons du salon PROMOTE. Chaque exposant est rattaché à un espace.
+            {t('admin.espaces.desc')}
           </p>
         </div>
         <Button onClick={openCreate} className="rounded-xl">
           <Plus className="mr-2 size-4" />
-          Ajouter un espace
+          {t('admin.espaces.add')}
         </Button>
       </div>
 
@@ -214,7 +216,7 @@ export default function AdminEspacesPage() {
             <Building2 className="size-5" />
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Total</p>
+            <p className="text-sm text-muted-foreground">{t('admin.espaces.total')}</p>
             <p className="text-2xl font-semibold text-foreground">{stats.total}</p>
           </div>
         </div>
@@ -223,7 +225,7 @@ export default function AdminEspacesPage() {
             <Building2 className="size-5" />
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Pavillons</p>
+            <p className="text-sm text-muted-foreground">{t('admin.espaces.pavillons')}</p>
             <p className="text-2xl font-semibold text-foreground">{stats.pavillons}</p>
           </div>
         </div>
@@ -232,7 +234,7 @@ export default function AdminEspacesPage() {
             <Building2 className="size-5" />
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Espaces</p>
+            <p className="text-sm text-muted-foreground">{t('admin.espaces.espaces_type')}</p>
             <p className="text-2xl font-semibold text-foreground">{stats.espaces}</p>
           </div>
         </div>
@@ -240,9 +242,9 @@ export default function AdminEspacesPage() {
 
       <Card className="surface-panel border-0">
         <CardHeader>
-          <CardTitle>Liste des espaces</CardTitle>
+          <CardTitle>{t('admin.espaces.list')}</CardTitle>
           <CardDescription>
-            Codes disponibles : pavillons (1-9) et espaces (A-K). Le format du stand suit le code espace (ex: &quot;3-1&quot; pour Numerique, &quot;H-10&quot; pour PAD).
+            {t('admin.espaces.list_desc')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -252,7 +254,7 @@ export default function AdminEspacesPage() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Rechercher par code, nom ou description..."
+                placeholder={t('admin.espaces.search')}
                 className="pl-10"
               />
             </div>
@@ -266,17 +268,17 @@ export default function AdminEspacesPage() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="surface-subtle py-12 text-center text-sm text-muted-foreground">
-              Aucun espace trouve.
+              {t('admin.espaces.no_results')}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-16">Code</TableHead>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Ordre</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="w-16">{t('admin.espaces.col_code')}</TableHead>
+                  <TableHead>{t('admin.espaces.col_nom')}</TableHead>
+                  <TableHead>{t('admin.espaces.col_type')}</TableHead>
+                  <TableHead>{t('admin.espaces.col_ordre')}</TableHead>
+                  <TableHead className="text-right">{t('admin.espaces.col_actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -302,7 +304,7 @@ export default function AdminEspacesPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary" className="rounded-full text-xs">
-                        {espace.type === 'pavillon' ? 'Pavillon' : 'Espace'}
+                        {espace.type === 'pavillon' ? t('admin.espaces.type_pavillon') : t('admin.espaces.type_espace')}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{espace.sort_order}</TableCell>
@@ -337,27 +339,26 @@ export default function AdminEspacesPage() {
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingId ? "Modifier l'espace" : 'Nouvel espace'}</DialogTitle>
+            <DialogTitle>{editingId ? t('admin.espaces.form_title_edit') : t('admin.espaces.form_title_new')}</DialogTitle>
             <DialogDescription>
-              Les codes existants sont deja preconfigures. Utilisez cette interface pour personnaliser
-              ou ajouter des espaces supplementaires.
+              {t('admin.espaces.form_desc')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-5 py-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="code">Code</Label>
+                <Label htmlFor="code">{t('admin.espaces.form_code')}</Label>
                 <Input
                   id="code"
                   value={form.code}
                   onChange={(e) => setForm({ ...form, code: e.target.value })}
-                  placeholder="Ex: 1, A, Z"
+                  placeholder={t('admin.espaces.form_code_placeholder')}
                   disabled={!!editingId}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="sort_order">Ordre d&apos;affichage</Label>
+                <Label htmlFor="sort_order">{t('admin.espaces.form_sort_order')}</Label>
                 <Input
                   id="sort_order"
                   type="number"
@@ -368,27 +369,27 @@ export default function AdminEspacesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="nom">Nom</Label>
+              <Label htmlFor="nom">{t('admin.espaces.form_nom')}</Label>
               <Input
                 id="nom"
                 value={form.nom}
                 onChange={(e) => setForm({ ...form, nom: e.target.value })}
-                placeholder="Ex: Numerique, Commerce & General"
+                placeholder={t('admin.espaces.form_nom_placeholder')}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description (optionnelle)</Label>
+              <Label htmlFor="description">{t('admin.espaces.form_description')}</Label>
               <Input
                 id="description"
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Ex: Pavillon 3 — Technologies Numeriques"
+                placeholder={t('admin.espaces.form_description_placeholder')}
               />
             </div>
 
             <div className="space-y-3">
-              <Label>Type</Label>
+              <Label>{t('admin.espaces.form_type')}</Label>
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   type="button"
@@ -396,7 +397,7 @@ export default function AdminEspacesPage() {
                   className="rounded-xl"
                   onClick={() => setForm({ ...form, type: 'pavillon' })}
                 >
-                  Pavillon
+                  {t('admin.espaces.form_type_pavillon')}
                 </Button>
                 <Button
                   type="button"
@@ -404,7 +405,7 @@ export default function AdminEspacesPage() {
                   className="rounded-xl"
                   onClick={() => setForm({ ...form, type: 'espace' })}
                 >
-                  Espace
+                  {t('admin.espaces.form_type_espace')}
                 </Button>
               </div>
             </div>
@@ -412,18 +413,18 @@ export default function AdminEspacesPage() {
 
           <DialogFooter>
             <Button type="button" variant="outline" className="rounded-xl" onClick={() => setShowForm(false)}>
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button type="button" className="rounded-xl" disabled={saving} onClick={handleSave}>
               {saving ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
-                  Sauvegarde...
+                  {t('admin.espaces.form_saving')}
                 </>
               ) : editingId ? (
-                'Sauvegarder'
+                t('admin.espaces.form_save')
               ) : (
-                'Creer'
+                t('admin.espaces.form_create')
               )}
             </Button>
           </DialogFooter>

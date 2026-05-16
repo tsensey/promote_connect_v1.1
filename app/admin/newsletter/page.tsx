@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { useTranslation } from '@/lib/i18n';
 
 interface NewsletterEdition {
   id: string;
@@ -21,6 +22,7 @@ interface NewsletterEdition {
 }
 
 export default function AdminNewsletterPage() {
+  const { t, locale } = useTranslation();
   const { session } = useAuth();
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -69,12 +71,12 @@ export default function AdminNewsletterPage() {
 
   const handleSend = async () => {
     if (!session?.access_token) {
-      toast.error('Session administrateur introuvable.');
+      toast.error(t('admin.newsletter.toast_session_error'));
       return;
     }
 
     if (!form.titre.trim() || !form.contenu.trim()) {
-      toast.error('Le titre et le contenu sont requis.');
+      toast.error(t('admin.newsletter.toast_required'));
       return;
     }
 
@@ -99,18 +101,18 @@ export default function AdminNewsletterPage() {
 
       const payload = await response.json();
       if (!response.ok) {
-        throw new Error(payload.error || 'Envoi impossible.');
+        throw new Error(payload.error || t('admin.newsletter.toast_send_error'));
       }
 
       toast.success(
         payload.queued
-          ? 'Edition enregistree. Aucun envoi email n a ete effectue.'
-          : `Newsletter envoyee a ${payload.delivered_count} destinataires.`
+          ? t('admin.newsletter.toast_queued')
+          : t('admin.newsletter.toast_sent', { count: payload.delivered_count })
       );
       setForm({ titre: '', contenu: '', sectors: '' });
       await loadEditions();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erreur lors de l envoi.');
+      toast.error(error instanceof Error ? error.message : t('admin.newsletter.toast_send_failed'));
     } finally {
       setSending(false);
     }
@@ -120,51 +122,51 @@ export default function AdminNewsletterPage() {
     <div className="space-y-6">
       <div className="space-y-2">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-600/80">
-          Administration newsletter
+          {t('admin.newsletter.title')}
         </p>
-        <h1 className="text-4xl text-foreground">Composer et archiver les editions</h1>
+        <h1 className="text-4xl text-foreground">{t('admin.newsletter.subtitle')}</h1>
         <p className="max-w-3xl text-base leading-7 text-muted-foreground">
-          Diffusez les actualites PROMOTE-CONNECT, segmentees par secteurs si besoin, et conservez l historique dans l espace membre.
+          {t('admin.newsletter.desc')}
         </p>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
         <Card className="surface-panel border-0">
           <CardHeader>
-            <CardTitle>Nouvelle edition</CardTitle>
+            <CardTitle>{t('admin.newsletter.new')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="titre">Titre</Label>
+              <Label htmlFor="titre">{t('admin.newsletter.form_title')}</Label>
               <Input
                 id="titre"
                 value={form.titre}
                 onChange={(event) => setForm((current) => ({ ...current, titre: event.target.value }))}
-                placeholder="Opportunites business de la semaine"
+                placeholder={t('admin.newsletter.form_title_placeholder')}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="sectors">Secteurs cibles</Label>
+              <Label htmlFor="sectors">{t('admin.newsletter.form_sectors')}</Label>
               <Input
                 id="sectors"
                 value={form.sectors}
                 onChange={(event) => setForm((current) => ({ ...current, sectors: event.target.value }))}
-                placeholder="Agriculture, Energie, Fintech"
+                placeholder={t('admin.newsletter.form_sectors_placeholder')}
               />
               <p className="text-xs text-muted-foreground">
-                Separez les secteurs par des virgules. Laissez vide pour toute la base active.
+                {t('admin.newsletter.form_sectors_hint')}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="contenu">Contenu</Label>
+              <Label htmlFor="contenu">{t('admin.newsletter.form_content')}</Label>
               <Textarea
                 id="contenu"
                 rows={10}
                 value={form.contenu}
                 onChange={(event) => setForm((current) => ({ ...current, contenu: event.target.value }))}
-                placeholder="Actualites, rendez-vous a ne pas manquer, nouveaux exposants, offres du moment..."
+                placeholder={t('admin.newsletter.form_content_placeholder')}
               />
             </div>
 
@@ -172,12 +174,12 @@ export default function AdminNewsletterPage() {
               {sending ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
-                  Envoi...
+                  {t('admin.newsletter.form_sending')}
                 </>
               ) : (
                 <>
                   <SendHorizonal className="mr-2 size-4" />
-                  Enregistrer et envoyer
+                  {t('admin.newsletter.form_send')}
                 </>
               )}
             </Button>
@@ -186,7 +188,7 @@ export default function AdminNewsletterPage() {
 
         <Card className="surface-panel border-0">
           <CardHeader>
-            <CardTitle>Dernieres editions</CardTitle>
+            <CardTitle>{t('admin.newsletter.recent')}</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -198,7 +200,7 @@ export default function AdminNewsletterPage() {
             ) : editions.length === 0 ? (
               <div className="surface-subtle py-12 text-center">
                 <Mail className="mx-auto mb-3 size-10 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Aucune edition envoyee pour le moment.</p>
+                <p className="text-sm text-muted-foreground">{t('admin.newsletter.no_editions')}</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -209,20 +211,20 @@ export default function AdminNewsletterPage() {
                         <h2 className="text-xl text-foreground">{edition.titre}</h2>
                         <p className="mt-1 text-xs text-muted-foreground">
                           {edition.sent_at
-                            ? new Date(edition.sent_at).toLocaleDateString('fr-FR', {
+                            ? new Date(edition.sent_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', {
                                 day: 'numeric',
                                 month: 'long',
                                 year: 'numeric',
                               })
-                            : 'Edition archivee sans envoi email'}
+                            : t('admin.newsletter.no_send')}
                         </p>
                       </div>
                       <Badge variant="secondary" className="rounded-full">
-                        {edition.recipient_count || 0} destinataire{edition.recipient_count && edition.recipient_count > 1 ? 's' : ''}
+                        {t('admin.newsletter.recipients', { count: edition.recipient_count || 0 })}
                       </Badge>
                     </div>
                     <p className="text-sm leading-7 text-muted-foreground">
-                      {edition.contenu || 'Contenu non disponible.'}
+                      {edition.contenu || t('admin.newsletter.no_content')}
                     </p>
                   </article>
                 ))}

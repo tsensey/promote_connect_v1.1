@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { supabaseClient } from '@/lib/supabase/client';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/lib/i18n';
 
 interface AdminStats {
   totalAccounts: number;
@@ -43,6 +44,7 @@ interface RecentExposant {
 }
 
 export default function AdminDashboard() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<AdminStats>({
     totalAccounts: 0,
     admins: 0,
@@ -116,36 +118,36 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-600/80">
-          Pilotage
+          {t('admin.dashboard.pilotage')}
         </p>
-        <h1 className="text-4xl text-foreground">Pilotage des acces</h1>
+        <h1 className="text-4xl text-foreground">{t('admin.dashboard.pilotage_desc')}</h1>
         <p className="mt-1 max-w-3xl text-base leading-7 text-muted-foreground">
-          Tous les comptes sont provisionnes par l administrateur et disposent d un acces complet.
+          {t('admin.dashboard.pilotage_hint')}
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard title="Comptes" value={stats.totalAccounts} icon={Users} href="/admin/users" />
-        <KpiCard title="Admins" value={stats.admins} icon={Shield} href="/admin/users" />
-        <KpiCard title="Exposants" value={stats.exposants} icon={UserPlus} href="/admin/exposants" />
-        <KpiCard title="Visiteurs" value={stats.visiteurs} icon={Users} href="/admin/users" />
+        <KpiCard title={t('admin.dashboard.counts')} value={stats.totalAccounts} icon={Users} href="/admin/users" />
+        <KpiCard title={t('admin.dashboard.admins')} value={stats.admins} icon={Shield} href="/admin/users" />
+        <KpiCard title={t('admin.dashboard.exposants')} value={stats.exposants} icon={UserPlus} href="/admin/exposants" />
+        <KpiCard title={t('admin.dashboard.visiteurs')} value={stats.visiteurs} icon={Users} href="/admin/users" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <MiniCard label="Evenements publies" value={stats.evenements} icon={CalendarDays} />
-        <MiniCard label="Conversations" value={stats.conversations} icon={MessageSquare} />
-        <MiniCard label="Tickets ouverts" value={stats.openTickets} icon={Ticket} />
+        <MiniCard label={t('admin.dashboard.events')} value={stats.evenements} icon={CalendarDays} />
+        <MiniCard label={t('admin.dashboard.conversations')} value={stats.conversations} icon={MessageSquare} />
+        <MiniCard label={t('admin.dashboard.open_tickets')} value={stats.openTickets} icon={Ticket} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="surface-panel">
           <div className="flex items-center justify-between border-b border-border/70 px-6 py-5">
             <div>
-              <h2 className="font-heading text-xl text-foreground">Derniers comptes crees</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Utilisateurs provisionnes recemment</p>
+              <h2 className="font-heading text-xl text-foreground">{t('admin.dashboard.recent_users')}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{t('admin.dashboard.recent_users_desc')}</p>
             </div>
             <Link href="/admin/users" className="flex items-center gap-1 text-sm font-medium text-primary">
-              Voir tout
+              {t('common.view_all')}
               <ArrowUpRight className="size-4" />
             </Link>
           </div>
@@ -153,8 +155,8 @@ export default function AdminDashboard() {
             {recentUsers.map((user) => (
               <div key={user.id} className="surface-subtle flex items-center justify-between gap-3 p-4">
                 <div>
-                  <p className="font-semibold text-foreground">{user.full_name || 'Utilisateur'}</p>
-                  <p className="text-sm text-muted-foreground">{user.company || 'Sans entreprise'}</p>
+                  <p className="font-semibold text-foreground">{user.full_name || t('admin.dashboard.default_user')}</p>
+                  <p className="text-sm text-muted-foreground">{user.company || t('admin.dashboard.no_company')}</p>
                 </div>
                 <Badge variant="secondary" className="rounded-full">
                   {user.role || 'visiteur'}
@@ -167,11 +169,11 @@ export default function AdminDashboard() {
         <div className="surface-panel">
           <div className="flex items-center justify-between border-b border-border/70 px-6 py-5">
             <div>
-              <h2 className="font-heading text-xl text-foreground">Exposants recents</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Fiches exposes dans l annuaire</p>
+              <h2 className="font-heading text-xl text-foreground">{t('admin.dashboard.recent_exposants')}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{t('admin.dashboard.recent_exposants_desc')}</p>
             </div>
             <Link href="/admin/exposants" className="flex items-center gap-1 text-sm font-medium text-primary">
-              Voir tout
+              {t('common.view_all')}
               <ArrowUpRight className="size-4" />
             </Link>
           </div>
@@ -181,12 +183,12 @@ export default function AdminDashboard() {
                 <div>
                   <p className="font-semibold text-foreground">{exposant.nom}</p>
                   <p className="text-sm text-muted-foreground">
-                    {[exposant.secteur, exposant.pays].filter(Boolean).join(' - ') || 'Profil exposant'}
+                    {[exposant.secteur, exposant.pays].filter(Boolean).join(' - ') || t('admin.dashboard.profile_exposant')}
                   </p>
                 </div>
                 {exposant.is_featured && (
                   <Badge variant="secondary" className="rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300">
-                    En vue
+                    {t('admin.dashboard.in_view')}
                   </Badge>
                 )}
               </div>

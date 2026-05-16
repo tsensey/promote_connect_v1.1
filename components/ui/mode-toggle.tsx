@@ -3,9 +3,11 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from '@/lib/i18n';
 
 export function ModeToggle() {
   const { theme, setTheme } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Button
@@ -16,7 +18,7 @@ export function ModeToggle() {
     >
       <Sun className="size-4 scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
       <Moon className="absolute size-4 scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
-      <span className="sr-only">Basculer le theme</span>
+      <span className="sr-only">{t('common.toggle_theme')}</span>
     </Button>
   );
 }
