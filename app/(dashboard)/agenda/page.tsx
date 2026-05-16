@@ -185,8 +185,8 @@ export default function AgendaPage() {
                     {new Date(rdv.starts_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', {
                       day: "numeric",
                       month: "short",
-                    })}{" "}
-                    {locale === 'en' ? 'at ' : 'à '}
+                    })}{' '}
+                    {t('agenda.rdv_at')}{' '}
                     {new Date(rdv.starts_at).toLocaleTimeString(locale === 'en' ? 'en-US' : 'fr-FR', {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -380,7 +380,7 @@ export default function AgendaPage() {
                             <span className="inline-flex items-center gap-1.5">
                               <MapPin className="size-3.5" />
                               {t('annuaire.pavillon', { pavillon: evt.pavillon })}
-                              {evt.salle && ` · Salle ${evt.salle}`}
+                              {evt.salle && t('agenda.event_room', { room: evt.salle })}
                             </span>
                           )}
                         </div>
@@ -481,7 +481,7 @@ export default function AgendaPage() {
                   className="rounded-xl"
                 >
                   <Plus className="mr-2 size-4" />
-                  Demander un RDV
+                  {t('agenda.request_rdv')}
                 </Button>
               </CardContent>
             </Card>

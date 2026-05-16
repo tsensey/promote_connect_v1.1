@@ -97,6 +97,12 @@ async function fromNetworkOrCache(request, cacheName) {
   }
 }
 
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener('push', (event) => {
   if (!event.data) return;
   try {
