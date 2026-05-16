@@ -91,10 +91,10 @@ export function UserSidebar({
     {
       title: t('layout.sidebar.plateforme'),
       items: [
-        { label: t('layout.sidebar.feed'), href: '/feed', icon: Rss, badge: 'Nouveau' },
+        { label: t('layout.sidebar.feed'), href: '/feed', icon: Rss, badge: t('layout.sidebar.new_badge') },
         { label: t('layout.sidebar.home'), href: '/app', icon: LayoutDashboard },
         { label: t('layout.sidebar.network'), href: '/annuaire', icon: Users },
-        { label: t('layout.sidebar.messages'), href: '/chat', icon: MessageSquare, badge: 'Live' },
+        { label: t('layout.sidebar.messages'), href: '/chat', icon: MessageSquare, badge: t('layout.sidebar.live_badge') },
         { label: t('layout.sidebar.agenda'), href: '/agenda', icon: CalendarDays },
       ],
     },
@@ -112,10 +112,10 @@ export function UserSidebar({
     {
       title: t('layout.sidebar.plateforme'),
       items: [
-        { label: t('layout.sidebar.feed'), href: '/feed', icon: Rss, badge: 'Nouveau' },
+        { label: t('layout.sidebar.feed'), href: '/feed', icon: Rss, badge: t('layout.sidebar.new_badge') },
         { label: t('layout.sidebar.home'), href: '/app', icon: LayoutDashboard },
         { label: t('layout.sidebar.network'), href: '/annuaire', icon: Users },
-        { label: t('layout.sidebar.messages'), href: '/chat', icon: MessageSquare, badge: 'Live' },
+        { label: t('layout.sidebar.messages'), href: '/chat', icon: MessageSquare, badge: t('layout.sidebar.live_badge') },
         { label: t('layout.sidebar.agenda'), href: '/agenda', icon: CalendarDays },
       ],
     },
@@ -148,8 +148,14 @@ export function UserSidebar({
         !mobile && (collapsed ? 'w-24' : 'w-64'),
       )}
     >
-      <div className="flex items-center justify-between border-b border-sidebar-border px-4 py-3.5">
-        <Link href="/feed" className="flex min-w-0 items-center gap-2.5">
+      <div className={cn(
+        'flex items-center border-b border-sidebar-border',
+        collapsed ? 'flex-col gap-2 py-3 px-2' : 'justify-between px-4 py-3.5'
+      )}>
+        <Link href="/feed" className={cn(
+          'flex min-w-0 items-center gap-2.5',
+          collapsed && 'flex-col gap-1'
+        )}>
           <div className="relative size-8 shrink-0 overflow-hidden rounded-lg shadow-sm shadow-primary/20 bg-primary/5">
             <Image
               src="/logo-promote.png"
@@ -160,7 +166,7 @@ export function UserSidebar({
             />
           </div>
           <LabelText collapsed={collapsed}>
-            <div className="min-w-0">
+            <div className="min-w-0 text-center">
               <p className="truncate text-[10px] font-bold uppercase tracking-[0.24em] text-primary/60">
                 Promote
               </p>
@@ -172,7 +178,10 @@ export function UserSidebar({
           type="button"
           variant="ghost"
           size="icon-sm"
-          className="shrink-0 text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          className={cn(
+            'shrink-0 text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground',
+            collapsed && 'rotate-90'
+          )}
           onClick={onToggle}
         >
           {collapsed ? (
@@ -184,31 +193,40 @@ export function UserSidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-4">
-        <div className="mb-5 rounded-xl border border-sidebar-border bg-sidebar-accent/50 p-3">
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-semibold text-primary">
-              {user?.name?.charAt(0).toUpperCase() || '?'}
-            </div>
-            <LabelText collapsed={collapsed}>
-              <div className="min-w-0">
-                <p className="truncate text-xs font-semibold text-sidebar-foreground">
-                  {user?.name}
-                </p>
-                <p className="truncate text-[11px] text-sidebar-foreground/50">
-                  {user?.company || t(role === 'exposant' ? 'layout.sidebar.exposant' : 'layout.sidebar.visiteur')}
-                </p>
-              </div>
-            </LabelText>
+        <div className={cn(
+        'rounded-xl border border-sidebar-border bg-sidebar-accent/50',
+        collapsed ? 'p-2 flex justify-center' : 'p-3'
+      )}>
+        <div className={cn(
+          'flex items-center gap-2.5',
+          collapsed && 'flex-col gap-1'
+        )}>
+          <div className={cn(
+            'flex shrink-0 items-center justify-center rounded-lg bg-primary/10 font-semibold text-primary',
+            collapsed ? 'size-10 text-sm' : 'size-9 text-xs'
+          )}>
+            {user?.name?.charAt(0).toUpperCase() || '?'}
           </div>
-          <LabelText collapsed={collapsed} className="mt-2.5 !delay-0">
-            <Badge
-              variant="secondary"
-              className="rounded-full bg-primary/10 px-2 py-px text-[10px] font-semibold text-primary hover:bg-primary/15"
-            >
-              {role === 'exposant' ? t('layout.sidebar.exposant_space') : t('layout.sidebar.visiteur_space')}
-            </Badge>
+          <LabelText collapsed={collapsed}>
+            <div className="min-w-0">
+              <p className="truncate text-xs font-semibold text-sidebar-foreground">
+                {user?.name}
+              </p>
+              <p className="truncate text-[11px] text-sidebar-foreground/50">
+                {user?.company || t(role === 'exposant' ? 'layout.sidebar.exposant' : 'layout.sidebar.visiteur')}
+              </p>
+            </div>
           </LabelText>
         </div>
+        <LabelText collapsed={collapsed} className="mt-2.5 !delay-0">
+          <Badge
+            variant="secondary"
+            className="rounded-full bg-primary/10 px-2 py-px text-[10px] font-semibold text-primary hover:bg-primary/15"
+          >
+            {role === 'exposant' ? t('layout.sidebar.exposant_space') : t('layout.sidebar.visiteur_space')}
+          </Badge>
+        </LabelText>
+      </div>
 
         <div className="space-y-5">
           {sections.map((section) => (
@@ -229,13 +247,16 @@ export function UserSidebar({
                       href={item.href}
                       onClick={() => { onNavigate?.(); onItemClick?.(); }}
                       className={cn(
-                        'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
+                        'group flex items-center gap-3 rounded-lg text-sm font-medium transition-all',
+                        collapsed
+                          ? 'justify-center px-0 py-2.5 mx-auto w-10'
+                          : 'px-3 py-2',
                         active
                           ? 'bg-primary text-primary-foreground shadow-sm'
                           : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground',
                       )}
                     >
-                      <Icon className="size-4 shrink-0" />
+                      <Icon className={cn('shrink-0', collapsed ? 'size-5' : 'size-4')} />
                       <LabelText collapsed={collapsed} className="flex items-center gap-2">
                         <span className="truncate">{item.label}</span>
                         {(item.href === '/chat' && unreadMessages > 0) ? (
@@ -277,8 +298,12 @@ export function UserSidebar({
         <Button
           type="button"
           variant="ghost"
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent/50 px-3 py-2 text-xs font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          className={cn(
+            'flex w-full items-center justify-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent/50 text-xs font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground',
+            collapsed ? 'p-2' : 'px-3 py-2'
+          )}
           onClick={onSignOut}
+          title={collapsed ? t('layout.sidebar.signout') : undefined}
         >
           <ChevronLeft className={cn('size-3.5 shrink-0 transition-transform duration-300', collapsed && 'rotate-180')} />
           <LabelText collapsed={collapsed}>{t('layout.sidebar.signout')}</LabelText>

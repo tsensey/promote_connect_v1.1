@@ -55,7 +55,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
         collapsed={collapsed}
         onToggle={() => setCollapsed((current) => !current)}
         user={{
-          name: profile?.full_name || user.email?.split('@')[0] || 'Participant',
+          name: profile?.full_name || user.email?.split('@')[0] || t('common.participant'),
           company: profile?.company || undefined,
         }}
         onSignOut={handleSignOut}
@@ -73,7 +73,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
               onToggle={() => setMobileOpen(false)}
               onNavigate={() => setMobileOpen(false)}
               user={{
-                name: profile?.full_name || user.email?.split('@')[0] || 'Participant',
+                name: profile?.full_name || user.email?.split('@')[0] || t('common.participant'),
                 company: profile?.company || undefined,
               }}
               onSignOut={handleSignOut}
@@ -94,7 +94,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
           collapsed={collapsed}
           onToggleSidebar={() => setMobileOpen(true)}
           user={{
-            name: profile?.full_name || user.email?.split('@')[0] || 'Participant',
+            name: profile?.full_name || user.email?.split('@')[0] || t('common.participant'),
             email: user.email || undefined,
             role,
           }}

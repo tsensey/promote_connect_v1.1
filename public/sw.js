@@ -6,7 +6,11 @@ const OFFLINE_URL = '/offline';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => cache.add(OFFLINE_URL)),
+    caches.open(STATIC_CACHE).then((cache) =>
+      cache.add(OFFLINE_URL).catch(() => {
+        console.warn('SW: failed to cache offline page, continuing');
+      })
+    ),
   );
   self.skipWaiting();
 });

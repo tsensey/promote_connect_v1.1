@@ -167,6 +167,8 @@ export const translations: Record<Locale, Record<string, string>> = {
     'layout.sidebar.visiteur_space': 'Espace visiteur',
     'layout.sidebar.exposant': 'Exposant',
     'layout.sidebar.visiteur': 'Visiteur',
+    'layout.sidebar.new_badge': 'Nouveau',
+    'layout.sidebar.live_badge': 'Live',
 
     // ─── Topbar ──────────────────────────────────────────────
     'layout.topbar.exposant': 'Exposant',
@@ -222,6 +224,8 @@ export const translations: Record<Locale, Record<string, string>> = {
     'layout.breadcrumb.settings': 'Paramètres',
     'layout.breadcrumb.espaces': 'Espaces & Pavillons',
     'layout.breadcrumb.produits': 'Produits',
+    'layout.breadcrumb.business': 'Business',
+    'layout.breadcrumb.account': 'Compte',
 
     // ─── Feed ────────────────────────────────────────────────
     'feed.your_activity': 'Votre activité',
@@ -472,6 +476,9 @@ export const translations: Record<Locale, Record<string, string>> = {
     'vitrine.contact_interest': 'Bonjour, je suis intéressé(e) par votre {type} : "{product}". Pourriez-vous m\'en dire plus ?',
     'vitrine.contact_error': 'Erreur lors de la création de la conversation',
     'vitrine.cannot_contact_direct': 'Cet exposant ne peut pas être contacté directement.',
+    'vitrine.type_produit': 'Produit',
+    'vitrine.type_service': 'Service',
+    'vitrine.manage_vitrine': 'Gérer ma vitrine',
 
     // ─── Vitrine Détail ──────────────────────────────────────
     'vitrine.detail.contact_error': 'Erreur lors de la création de la conversation',
@@ -1205,6 +1212,8 @@ export const translations: Record<Locale, Record<string, string>> = {
     'layout.sidebar.visiteur_space': 'Visitor space',
     'layout.sidebar.exposant': 'Exhibitor',
     'layout.sidebar.visiteur': 'Visitor',
+    'layout.sidebar.new_badge': 'New',
+    'layout.sidebar.live_badge': 'Live',
 
     // ─── Topbar ──────────────────────────────────────────────
     'layout.topbar.exposant': 'Exhibitor',
@@ -1260,6 +1269,8 @@ export const translations: Record<Locale, Record<string, string>> = {
     'layout.breadcrumb.settings': 'Settings',
     'layout.breadcrumb.espaces': 'Spaces & Pavilions',
     'layout.breadcrumb.produits': 'Products',
+    'layout.breadcrumb.business': 'Business',
+    'layout.breadcrumb.account': 'Account',
 
     // ─── Feed ────────────────────────────────────────────────
     'feed.your_activity': 'Your activity',
@@ -1509,6 +1520,9 @@ export const translations: Record<Locale, Record<string, string>> = {
     'vitrine.contact_interest': 'Hello, I am interested in your {type}: "{product}". Could you tell me more?',
     'vitrine.contact_error': 'Error creating conversation',
     'vitrine.cannot_contact_direct': 'This exhibitor cannot be contacted directly.',
+    'vitrine.type_produit': 'Product',
+    'vitrine.type_service': 'Service',
+    'vitrine.manage_vitrine': 'Manage my showcase',
 
     // ─── Vitrine Detail ──────────────────────────────────────
     'vitrine.detail.contact_error': 'Error creating conversation',

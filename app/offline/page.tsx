@@ -1,3 +1,4 @@
+import { WifiOff } from 'lucide-react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -8,7 +9,7 @@ export default function OfflinePage() {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-4 p-8 text-center">
       <div className="surface-card mx-auto max-w-md p-8">
-        <div className="mb-4 text-5xl">📡</div>
+        <WifiOff className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
         <h1 className="mb-2 text-2xl font-bold">Pas de connexion</h1>
         <p className="text-muted-foreground">
           Vous êtes actuellement hors ligne. Certaines fonctionnalités de PROMOTE-CONNECT
