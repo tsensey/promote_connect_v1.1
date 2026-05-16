@@ -46,10 +46,7 @@ export const metadata: Metadata = {
     email: true,
     address: false,
   },
-  other: {
-    'mobile-web-app-capable': 'yes',
-    'apple-touch-fullscreen': 'yes',
-  },
+
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
