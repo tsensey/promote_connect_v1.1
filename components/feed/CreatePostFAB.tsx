@@ -57,14 +57,18 @@ export function CreatePostFAB({ onSubmit, onUpload }: CreatePostFABProps) {
       {/* Modal - Sheet on mobile, Dialog on desktop */}
       {isMobile ? (
         <Sheet open={open} onOpenChange={handleOpenChange}>
-          <SheetContent side="bottom" className="max-h-[95vh] overflow-y-auto rounded-t-3xl px-0 pb-0 border-none">
-            <div className="px-4 pb-4 pt-2">
+          <SheetContent side="bottom" className="max-h-[95vh] overflow-y-auto rounded-t-3xl p-0 border-none">
+            <div className="bg-background px-4 pb-6 pt-4">
+              <div className="mb-4 text-center">
+                <div className="mx-auto h-1.5 w-12 rounded-full bg-muted-foreground/20" />
+              </div>
               <CreatePost
                 onSubmit={onSubmit}
                 onUpload={onUpload}
                 onSuccess={() => setOpen(false)}
                 onCancel={() => setOpen(false)}
                 initiallyExpanded={true}
+                variant="ghost"
               />
             </div>
           </SheetContent>
@@ -72,16 +76,17 @@ export function CreatePostFAB({ onSubmit, onUpload }: CreatePostFABProps) {
       ) : (
         <Dialog open={open} onOpenChange={handleOpenChange}>
           <DialogContent className={cn(
-            "fixed bottom-6 left-[50%] translate-x-[-50%] top-auto translate-y-0", // Stick to bottom
-            "max-w-2xl p-0 overflow-hidden border-none shadow-2xl rounded-3xl animate-in slide-in-from-bottom-5"
+            "fixed bottom-0 left-[50%] translate-x-[-50%] top-auto translate-y-0", // Stick to very bottom
+            "max-w-2xl p-0 overflow-hidden border-none shadow-2xl rounded-t-3xl animate-in slide-in-from-bottom-full duration-300"
           )}>
-            <div className="p-1">
+            <div className="bg-background p-6">
               <CreatePost
                 onSubmit={onSubmit}
                 onUpload={onUpload}
                 onSuccess={() => setOpen(false)}
                 onCancel={() => setOpen(false)}
                 initiallyExpanded={true}
+                variant="ghost"
               />
             </div>
           </DialogContent>

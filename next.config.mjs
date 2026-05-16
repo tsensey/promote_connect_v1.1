@@ -24,6 +24,7 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  transpilePackages: ['@base-ui/react'],
   poweredByHeader: false,
   images: {
     remotePatterns: [

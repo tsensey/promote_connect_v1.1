@@ -28,6 +28,7 @@ interface CreatePostProps {
   onSuccess?: () => void;
   onCancel?: () => void;
   initiallyExpanded?: boolean;
+  variant?: 'default' | 'ghost';
 }
 
 const POST_TYPES = [
@@ -69,7 +70,14 @@ const POST_TYPES = [
 
 const MAX_CHARS = 1200;
 
-export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
+export function CreatePost({
+  onSubmit,
+  onUpload,
+  onSuccess,
+  onCancel,
+  initiallyExpanded = false,
+  variant = 'default',
+}: CreatePostProps) {
   const { t } = useTranslation();
   const { profile } = useAuth();
   const [content, setContent] = useState("");
@@ -205,6 +213,229 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
   const selectedType =
     POST_TYPES.find((t) => t.value === postType) ?? POST_TYPES[0];
 
+  const formContent = (
+    <form onSubmit={handleSubmit}>
+      <div className="flex gap-3">
+        <div className="flex-1  min-w-0">
+          {/* Collapsed trigger */}
+          {!isExpanded ? (
+            <div className="flex flex-row gap-2 items-center">
+              {/* Avatar */}
+              <Avatar className="size-10 shrink-0 ring-2 ring-border/20">
+                {profile?.avatar_url ? (
+                  <AvatarImage src={profile.avatar_url} />
+                ) : (
+                  <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+                    {initials}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <button
+                type="button"
+                onClick={handleExpand}
+                className={cn(
+                  "w-full rounded-2xl border px-4 py-3 text-left text-sm text-muted-foreground transition-all duration-200",
+                  "border-border bg-muted/40 hover:bg-muted/70 hover:border-primary/30",
+                  profile?.role === "exposant" &&
+                    "border-primary/30 bg-primary/5 text-primary/70 hover:bg-primary/10",
+                )}
+              >
+                {profile?.role === "exposant"
+                  ? (isMobile ? t('feed.create.placeholder_mobile') : t('feed.create.placeholder_exposant'))
+                  : t('feed.create.placeholder_visitor')}
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Type selector pills */}
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                {POST_TYPES.map((pt) => {
+                  const Icon = pt.icon;
+                  const isActive = postType === pt.value;
+                  return (
+                    <button
+                      key={pt.value}
+                      type="button"
+                      onClick={() => setPostType(pt.value)}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150",
+                        isActive
+                          ? pt.active + " shadow-sm scale-105"
+                          : pt.color + " hover:opacity-80",
+                      )}
+                    >
+                      <Icon className="size-3" />
+                      {t(`feed.type.${pt.value}`)}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Textarea */}
+              <div
+                className={cn(
+                  "relative rounded-2xl border transition-all duration-200",
+                  "border-border/60 bg-muted/20 focus-within:border-primary/40 focus-within:bg-background focus-within:shadow-sm",
+                )}
+              >
+                <textarea
+                  ref={textareaRef}
+                  value={content}
+                  onChange={(e) => {
+                    setContent(e.target.value);
+                    autoResize(e.target);
+                  }}
+                  placeholder={
+                    postType === "announcement"
+                      ? t('feed.create.placeholder_announcement')
+                      : postType === "news"
+                        ? t('feed.create.placeholder_news')
+                        : postType === "job"
+                          ? t('feed.create.placeholder_job')
+                          : postType === "event"
+                            ? t('feed.create.placeholder_event')
+                            : t('feed.create.placeholder_general')
+                  }
+                  rows={3}
+                  className="w-full resize-none rounded-2xl bg-transparent px-4 pt-4 pb-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 leading-relaxed"
+                  style={{ minHeight: "100px" }}
+                />
+
+                {/* Char counter */}
+                <div className="flex items-center justify-end px-4 pb-2">
+                  <span
+                    className={cn(
+                      "text-[11px] tabular-nums transition-colors",
+                      isOverLimit
+                        ? "text-destructive font-semibold"
+                        : isNearLimit
+                          ? "text-amber-500"
+                          : "text-muted-foreground/40",
+                    )}
+                  >
+                    {charsLeft}
+                  </span>
+                </div>
+              </div>
+
+              {/* Image preview */}
+              {imagePreviews.length > 0 && (
+                <div className={cn("mt-3 grid gap-2", imagePreviews.length > 1 ? "grid-cols-2" : "grid-cols-1")}>
+                  {imagePreviews.map((preview, idx) => (
+                    <div key={preview} className="relative overflow-hidden rounded-2xl border border-border bg-muted/20">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={preview}
+                        alt={`${t('common.preview')} ${idx + 1}`}
+                        className="max-h-72 w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(idx)}
+                        className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Drag & drop zone */}
+              {imagePreviews.length < 4 && (
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOver(true);
+                  }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={cn(
+                    "mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed py-3 text-xs transition-all duration-150",
+                    dragOver
+                      ? "border-primary bg-primary/5 scale-[1.01]"
+                      : "border-border/60 text-muted-foreground hover:border-primary/40 hover:bg-muted/30",
+                  )}
+                >
+                  <ImagePlus
+                    className={cn(
+                      "size-4 transition-colors",
+                      dragOver && "text-primary",
+                    )}
+                  />
+                  <span>
+                    {dragOver
+                      ? t('feed.create.dropzone')
+                      : t('feed.create.dropzone_hint')}
+                  </span>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    onChange={(e) => handleFilesSelect(e.target.files)}
+                  />
+                </div>
+              )}
+
+              {/* Footer actions */}
+              <div className="mt-3 flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                      selectedType.color,
+                    )}
+                  >
+                    {t(`feed.type.${selectedType.value}`)}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={cancelCreate}
+                    className="rounded-full text-muted-foreground"
+                  >
+                    {t('common.cancel')}
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={!content.trim() || submitting || isOverLimit}
+                    className={cn(
+                      "rounded-full gap-1.5 font-semibold transition-all",
+                      content.trim() && !isOverLimit && "shadow-sm",
+                    )}
+                  >
+                    {submitting ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Send className="size-3.5" />
+                    )}
+                    {uploading
+                      ? t('feed.post.uploading')
+                      : submitting
+                        ? t('feed.create.publishing')
+                        : t('feed.create.publish')}
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </form>
+  );
+
+  if (variant === 'ghost') {
+    return formContent;
+  }
+
   return (
     <Card
       className={cn(
@@ -213,222 +444,7 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
       )}
     >
       <CardContent className="p-4">
-        <form onSubmit={handleSubmit}>
-          <div className="flex gap-3">
-            <div className="flex-1  min-w-0">
-              {/* Collapsed trigger */}
-              {!isExpanded ? (
-                <div className="flex flex-row gap-2 items-center">
-                  {/* Avatar */}
-                  <Avatar className="size-10 shrink-0 ring-2 ring-border/20">
-                    {profile?.avatar_url ? (
-                      <AvatarImage src={profile.avatar_url} />
-                    ) : (
-                      <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
-                        {initials}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  <button
-                    type="button"
-                    onClick={handleExpand}
-                    className={cn(
-                      "w-full rounded-2xl border px-4 py-3 text-left text-sm text-muted-foreground transition-all duration-200",
-                      "border-border bg-muted/40 hover:bg-muted/70 hover:border-primary/30",
-                      profile?.role === "exposant" &&
-                        "border-primary/30 bg-primary/5 text-primary/70 hover:bg-primary/10",
-                    )}
-                  >
-                    {profile?.role === "exposant"
-                      ? (isMobile ? t('feed.create.placeholder_mobile') : t('feed.create.placeholder_exposant'))
-                      : t('feed.create.placeholder_visitor')}
-                  </button>
-                </div>
-              ) : (
-                <>
-                  {/* Type selector pills */}
-                  <div className="mb-3 flex flex-wrap gap-1.5">
-                    {POST_TYPES.map((pt) => {
-                      const Icon = pt.icon;
-                      const isActive = postType === pt.value;
-                      return (
-                        <button
-                          key={pt.value}
-                          type="button"
-                          onClick={() => setPostType(pt.value)}
-                          className={cn(
-                            "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150",
-                            isActive
-                              ? pt.active + " shadow-sm scale-105"
-                              : pt.color + " hover:opacity-80",
-                          )}
-                        >
-                          <Icon className="size-3" />
-                          {t(`feed.type.${pt.value}`)}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Textarea */}
-                  <div
-                    className={cn(
-                      "relative rounded-2xl border transition-all duration-200",
-                      "border-border/60 bg-muted/20 focus-within:border-primary/40 focus-within:bg-background focus-within:shadow-sm",
-                    )}
-                  >
-                    <textarea
-                      ref={textareaRef}
-                      value={content}
-                      onChange={(e) => {
-                        setContent(e.target.value);
-                        autoResize(e.target);
-                      }}
-                      placeholder={
-                        postType === "announcement"
-                          ? t('feed.create.placeholder_announcement')
-                          : postType === "news"
-                            ? t('feed.create.placeholder_news')
-                            : postType === "job"
-                              ? t('feed.create.placeholder_job')
-                              : postType === "event"
-                                ? t('feed.create.placeholder_event')
-                                : t('feed.create.placeholder_general')
-                      }
-                      rows={3}
-                      className="w-full resize-none rounded-2xl bg-transparent px-4 pt-4 pb-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 leading-relaxed"
-                      style={{ minHeight: "100px" }}
-                    />
-
-                    {/* Char counter */}
-                    <div className="flex items-center justify-end px-4 pb-2">
-                      <span
-                        className={cn(
-                          "text-[11px] tabular-nums transition-colors",
-                          isOverLimit
-                            ? "text-destructive font-semibold"
-                            : isNearLimit
-                              ? "text-amber-500"
-                              : "text-muted-foreground/40",
-                        )}
-                      >
-                        {charsLeft}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Image preview */}
-                  {imagePreviews.length > 0 && (
-                    <div className={cn("mt-3 grid gap-2", imagePreviews.length > 1 ? "grid-cols-2" : "grid-cols-1")}>
-                      {imagePreviews.map((preview, idx) => (
-                        <div key={preview} className="relative overflow-hidden rounded-2xl border border-border bg-muted/20">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={preview}
-                            alt={`${t('common.preview')} ${idx + 1}`}
-                            className="max-h-72 w-full object-cover"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveImage(idx)}
-                            className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
-                          >
-                            <X className="size-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Drag & drop zone */}
-                  {imagePreviews.length < 4 && (
-                    <div
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        setDragOver(true);
-                      }}
-                      onDragLeave={() => setDragOver(false)}
-                      onDrop={handleDrop}
-                      onClick={() => fileInputRef.current?.click()}
-                      className={cn(
-                        "mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed py-3 text-xs transition-all duration-150",
-                        dragOver
-                          ? "border-primary bg-primary/5 scale-[1.01]"
-                          : "border-border/60 text-muted-foreground hover:border-primary/40 hover:bg-muted/30",
-                      )}
-                    >
-                      <ImagePlus
-                        className={cn(
-                          "size-4 transition-colors",
-                          dragOver && "text-primary",
-                        )}
-                      />
-                      <span>
-                        {dragOver
-                          ? t('feed.create.dropzone')
-                          : t('feed.create.dropzone_hint')}
-                      </span>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        accept="image/jpeg,image/png,image/webp,image/gif"
-                        className="hidden"
-                        onChange={(e) => handleFilesSelect(e.target.files)}
-                      />
-                    </div>
-                  )}
-
-                  {/* Footer actions */}
-                  <div className="mt-3 flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <span
-                        className={cn(
-                          "rounded-full px-2 py-0.5 text-[11px] font-medium",
-                          selectedType.color,
-                        )}
-                      >
-                        {t(`feed.type.${selectedType.value}`)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={cancelCreate}
-                        className="rounded-full text-muted-foreground"
-                      >
-                        {t('common.cancel')}
-                      </Button>
-                      <Button
-                        type="submit"
-                        size="sm"
-                        disabled={!content.trim() || submitting || isOverLimit}
-                        className={cn(
-                          "rounded-full gap-1.5 font-semibold transition-all",
-                          content.trim() && !isOverLimit && "shadow-sm",
-                        )}
-                      >
-                        {submitting ? (
-                          <Loader2 className="size-3.5 animate-spin" />
-                        ) : (
-                          <Send className="size-3.5" />
-                        )}
-                        {uploading
-                          ? t('feed.post.uploading')
-                          : submitting
-                            ? t('feed.create.publishing')
-                            : t('feed.create.publish')}
-                      </Button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </form>
+        {formContent}
       </CardContent>
     </Card>
   );
