@@ -17,6 +17,7 @@ import {
   Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { useTranslation } from '@/lib/i18n';
 import type { useFeed } from "@/hooks/useFeed";
@@ -78,6 +79,7 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
   const [dragOver, setDragOver] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
 
   const charsLeft = MAX_CHARS - content.length;
   const isOverLimit = charsLeft < 0;
@@ -233,7 +235,7 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
                     )}
                   >
                     {profile?.role === "exposant"
-                      ? t('feed.create.placeholder_exposant')
+                      ? (isMobile ? t('feed.create.placeholder_mobile') : t('feed.create.placeholder_exposant'))
                       : t('feed.create.placeholder_visitor')}
                   </button>
                 </div>

@@ -2,6 +2,7 @@
 
 import { useFeed } from '@/hooks/useFeed';
 import { CreatePost } from '@/components/feed/CreatePost';
+import { CreatePostFAB } from '@/components/feed/CreatePostFAB';
 import { PostCard } from '@/components/feed/PostCard';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -307,6 +308,7 @@ export default function FeedPage() {
           </div>
         </div>
       </div>
+      <CreatePostFAB onSubmit={createPost} onUpload={uploadImage} />
     </div>
   );
 }

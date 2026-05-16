@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAuth } from '@/lib/auth/context';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -46,6 +46,22 @@ export function CreatePostFAB({ onSubmit, onUpload }: CreatePostFABProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setVisible(true);
+      } else {
+        setVisible(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial check
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleFileSelect = useCallback((file: File | null) => {
     setError(null);
@@ -260,7 +276,10 @@ export function CreatePostFAB({ onSubmit, onUpload }: CreatePostFABProps) {
       <Button
         onClick={() => handleOpenChange(true)}
         size="lg"
-        className="fixed bottom-6 right-6 z-40 rounded-full shadow-lg hover:shadow-xl transition-shadow h-14 w-14 sm:h-auto sm:w-auto sm:px-4"
+        className={cn(
+          "fixed bottom-6 right-6 z-40 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 h-14 w-14 sm:h-auto sm:w-auto sm:px-4",
+          visible ? "translate-y-0 opacity-100 scale-100" : "translate-y-20 opacity-0 scale-90 pointer-events-none"
+        )}
       >
         <Send className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
         <span className="hidden sm:inline">Partager</span>
