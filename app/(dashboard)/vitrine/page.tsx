@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Database } from '@/types/database.types';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 
 type Produit = Database['public']['Tables']['produits']['Row'];
 type Exposant = Database['public']['Tables']['exposants']['Row'];
@@ -37,14 +38,14 @@ type ProduitWithExposant = Produit & {
 const TYPE_STYLES = {
   produit: {
     icon: Package,
-    label: 'Produit',
+    label: 'vitrine.type_produit',
     gradient: 'from-blue-600/20 via-blue-500/10 to-transparent',
     badge: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300',
     iconBg: 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300',
   },
   service: {
     icon: Sparkles,
-    label: 'Service',
+    label: 'vitrine.type_service',
     gradient: 'from-violet-600/20 via-violet-500/10 to-transparent',
     badge: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-300',
     iconBg: 'bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-300',
@@ -52,6 +53,7 @@ const TYPE_STYLES = {
 } as const;
 
 export default function VitrinePage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [produits, setProduits] = useState<ProduitWithExposant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,7 +108,7 @@ export default function VitrinePage() {
 
   const handleContact = async (exposantId: string, productName: string, exposantProfileId?: string) => {
     if (!exposantProfileId) {
-      toast.error('Cet exposant ne peut pas être contacté directement.');
+      toast.error(t('vitrine.cannot_contact_direct'));
       return;
     }
     setContacting(exposantId + productName);
@@ -114,16 +116,17 @@ export default function VitrinePage() {
     if (data) {
       const { data: session } = await supabaseClient.auth.getSession();
       if (session?.session?.user) {
+        const type = (produits.find(p => p.exposant_id === exposantId)?.type ?? 'produit') === 'service' ? 'service' : 'produit';
         await supabaseClient.from('messages').insert({
           conversation_id: data.id,
           sender_id: session.session.user.id,
-          content: `Bonjour, je suis intéressé(e) par votre ${(produits.find(p => p.exposant_id === exposantId)?.type ?? 'produit') === 'service' ? 'service' : 'produit'} : "${productName}". Pourriez-vous m'en dire plus ?`,
+          content: t('vitrine.contact_interest', { type, product: productName }),
           is_read: false,
         });
       }
       router.push(`/chat/${data.id}`);
     } else {
-      toast.error('Erreur lors de la création de la conversation');
+      toast.error(t('vitrine.contact_error'));
     }
     setContacting(null);
   };
@@ -148,12 +151,12 @@ export default function VitrinePage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                Catalogue produits & services
+                {t('vitrine.title')}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 {loading
-                  ? 'Chargement du catalogue...'
-                  : `${produits.length} offre${produits.length !== 1 ? 's' : ''} proposée${produits.length !== 1 ? 's' : ''} par les exposants`
+                  ? t('vitrine.loading')
+                  : t('vitrine.subtitle', { count: produits.length })
                 }
               </p>
             </div>
@@ -170,7 +173,7 @@ export default function VitrinePage() {
               <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Rechercher un produit, service ou exposant..."
+                placeholder={t('vitrine.search')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="h-11 rounded-xl border-border/70 bg-muted/30 pl-11 shadow-none focus:bg-background"
@@ -187,7 +190,7 @@ export default function VitrinePage() {
                 )}
               >
                 <SlidersHorizontal className="size-4" />
-                Catégories
+                {t('vitrine.categories')}
                 {categorie && (
                   <Badge variant="secondary" className="h-5 min-w-5 rounded-full px-1.5 text-[10px]">
                     1
@@ -202,7 +205,7 @@ export default function VitrinePage() {
                   className="gap-1.5 rounded-xl h-11 text-muted-foreground hover:text-foreground"
                 >
                   <X className="size-4" />
-                  <span className="hidden sm:inline">Réinitialiser</span>
+                  <span className="hidden sm:inline">{t('common.reset')}</span>
                 </Button>
               )}
             </div>
@@ -221,7 +224,7 @@ export default function VitrinePage() {
                       : 'bg-muted text-muted-foreground hover:text-foreground'
                   )}
                 >
-                  Toutes
+                  {t('vitrine.all')}
                 </button>
                 {categories.map((c) => (
                   <button
@@ -245,38 +248,38 @@ export default function VitrinePage() {
 
       {/* Type tabs */}
       <div className="flex flex-wrap items-center gap-2">
-        {(['all', 'produit', 'service'] as const).map((t) => {
-          const style = t !== 'all' ? TYPE_STYLES[t] : null;
+        {(['all', 'produit', 'service'] as const).map((type) => {
+          const style = type !== 'all' ? TYPE_STYLES[type] : null;
           const Icon = style?.icon ?? Filter;
           return (
             <button
-              key={t}
-              onClick={() => setTypeFilter(t)}
+              key={type}
+              onClick={() => setTypeFilter(type)}
               className={cn(
                 'inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all',
-                typeFilter === t
+                typeFilter === type
                   ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
               {style && <Icon className="size-4" />}
-              {t === 'all' ? 'Tout' : style?.label}
+              {type === 'all' ? t('common.all') : t(style?.label || '')}
               <Badge
-                variant={typeFilter === t ? 'secondary' : 'outline'}
+                variant={typeFilter === type ? 'secondary' : 'outline'}
                 className={cn(
                   'rounded-full px-1.5 py-px text-[10px] font-semibold',
-                  typeFilter === t
+                  typeFilter === type
                     ? 'bg-primary-foreground/15 text-primary-foreground'
                     : ''
                 )}
               >
-                {counts[t]}
+                {counts[type]}
               </Badge>
             </button>
           );
         })}
         <span className="ml-auto text-sm text-muted-foreground hidden sm:block">
-          {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
+          {t('vitrine.results', { count: filtered.length })}
         </span>
       </div>
 
@@ -313,27 +316,27 @@ export default function VitrinePage() {
             </div>
             <div>
               <p className="text-base font-semibold text-foreground">
-                {hasFilters
-                  ? 'Aucun résultat trouvé'
-                  : 'Aucune offre publiée pour le moment'}
+                  {hasFilters
+                    ? t('common.no_results')
+                    : t('vitrine.no_offers')}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                {hasFilters
-                  ? 'Essayez de modifier vos critères de recherche.'
-                  : 'Les exposants n\'ont pas encore publié de produits ou services.'}
+                  {hasFilters
+                    ? t('vitrine.no_results_hint_search')
+                    : t('vitrine.no_results_hint_general')}
               </p>
             </div>
             {hasFilters && (
               <Button variant="outline" size="sm" onClick={clearFilters} className="rounded-xl">
                 <X className="mr-1.5 size-3.5" />
-                Réinitialiser les filtres
+                {t('common.reset_filters')}
               </Button>
             )}
             {!hasFilters && (
               <Link href="/annuaire">
                 <Button variant="outline" size="sm" className="rounded-xl gap-1.5">
                   <Building2 className="size-3.5" />
-                  Parcourir les exposants
+                  {t('vitrine.browse_exposants')}
                 </Button>
               </Link>
             )}
@@ -367,7 +370,7 @@ export default function VitrinePage() {
                         </Badge>
                       )}
                       <Badge className={cn('rounded-full px-2.5 py-0.5 text-[10px] font-semibold shadow-sm ml-auto', typeStyle.badge)}>
-                        {typeStyle.label}
+                        {t(typeStyle.label)}
                       </Badge>
                     </div>
                   </div>
@@ -391,7 +394,7 @@ export default function VitrinePage() {
                         </Badge>
                       )}
                       <Badge className={cn('rounded-full px-2.5 py-0.5 text-[10px] font-semibold shadow-sm ml-auto', typeStyle.badge)}>
-                        {typeStyle.label}
+                        {t(typeStyle.label)}
                       </Badge>
                     </div>
                   </div>
@@ -413,7 +416,7 @@ export default function VitrinePage() {
 
                   {/* Description */}
                   <p className="line-clamp-2 flex-1 text-sm leading-relaxed text-muted-foreground/80">
-                    {produit.description || 'Aucune description disponible.'}
+                    {produit.description || t('vitrine.no_description')}
                   </p>
 
                   {/* Exposant */}
@@ -457,7 +460,7 @@ export default function VitrinePage() {
                         if (data?.profile_id) {
                           await handleContact(produit.exposants.id, produit.nom, data.profile_id);
                         } else {
-                          toast.error('Exposant non contactable.');
+                          toast.error(t('vitrine.cannot_contact'));
                         }
                       }}
                     >
@@ -465,7 +468,7 @@ export default function VitrinePage() {
                       {contacting === (produit.exposant_id + produit.nom) ? (
                         <span className="animate-pulse">...</span>
                       ) : (
-                        `Contacter l'exposant`
+                        t('vitrine.contact_exposant')
                       )}
                     </Button>
                     {produit.exposants && (
@@ -492,15 +495,15 @@ export default function VitrinePage() {
         <CardContent className="flex flex-col items-center gap-4 p-6 text-center sm:flex-row sm:justify-between sm:text-left">
           <div>
             <h2 className="text-lg font-semibold text-foreground">
-              Vous êtes exposant ?
+              {t('vitrine.you_are_exposant')}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Publiez vos produits et services pour être visible par toute la communauté.
+              {t('vitrine.you_are_exposant_desc')}
             </p>
           </div>
           <Link href="/exposant/ma-vitrine">
             <Button className="shrink-0 rounded-xl gap-1.5">
-              Gérer ma vitrine
+              {t('vitrine.manage_vitrine')}
               <ArrowRight className="size-4" />
             </Button>
           </Link>

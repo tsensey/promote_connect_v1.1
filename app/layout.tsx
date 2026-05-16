@@ -3,6 +3,7 @@ import { Manrope } from 'next/font/google';
 import { Suspense } from 'react';
 import { ThemeProvider } from 'next-themes';
 import { AuthProvider } from '@/lib/auth/context';
+import { I18nProvider } from '@/lib/i18n';
 import { QueryProvider } from '@/lib/query-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -44,14 +45,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <QueryProvider>
             <TooltipProvider>
               <AuthProvider>
-                <NotificationStateProvider>
-                  <NotificationProvider>
+                <I18nProvider>
+                  <NotificationStateProvider>
+                    <NotificationProvider>
                     <Suspense fallback={null}>
                       {children}
                     </Suspense>
                     <Toaster richColors position="top-right" />
                   </NotificationProvider>
                 </NotificationStateProvider>
+                </I18nProvider>
               </AuthProvider>
             </TooltipProvider>
           </QueryProvider>

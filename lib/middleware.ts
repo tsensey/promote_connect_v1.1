@@ -16,7 +16,7 @@ async function getUserRole(supabase: ReturnType<typeof createServerClient<Databa
 export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
-  let response = NextResponse.next({ request })
+  const response = NextResponse.next({ request })
 
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -52,14 +52,14 @@ export async function updateSession(request: NextRequest) {
 
   if (pathname === '/login' || pathname === '/register') {
     const url = request.nextUrl.clone()
-    url.pathname = isAdmin ? '/admin' : '/app'
+    url.pathname = isAdmin ? '/admin' : '/feed'
     url.searchParams.delete('redirect')
     return NextResponse.redirect(url)
   }
 
   if (pathname.startsWith('/admin') && !isAdmin) {
     const url = request.nextUrl.clone()
-    url.pathname = '/app'
+    url.pathname = '/feed'
     return NextResponse.redirect(url)
   }
 

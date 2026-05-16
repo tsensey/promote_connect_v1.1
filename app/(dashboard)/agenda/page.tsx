@@ -34,14 +34,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 
 type Speaker = { name: string; title?: string; company?: string };
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "En attente",
-  confirmed: "Confirmé",
-  cancelled: "Annulé",
-};
 
 const STATUS_STYLES: Record<string, string> = {
   pending: "bg-amber-50/80 text-amber-700 border-amber-200/60 dark:bg-amber-950/30 dark:text-amber-300",
@@ -55,15 +50,7 @@ const STATUS_DOTS: Record<string, string> = {
   cancelled: "bg-red-500",
 };
 
-const EVENT_TYPE_CONFIG: Record<string, { label: string; gradient: string; icon: string }> = {
-  conference:  { label: "Conférence",  gradient: "from-blue-500/20 to-blue-500/5",  icon: "🎤" },
-  atelier:     { label: "Atelier",     gradient: "from-emerald-500/20 to-emerald-500/5", icon: "🔧" },
-  networking:  { label: "Networking",  gradient: "from-violet-500/20 to-violet-500/5", icon: "🤝" },
-  keynote:     { label: "Keynote",     gradient: "from-amber-500/20 to-amber-500/5",  icon: "⭐" },
-  panel:       { label: "Panel",       gradient: "from-rose-500/20 to-rose-500/5",    icon: "💬" },
-};
-
-const EVENT_TYPES = Object.keys(EVENT_TYPE_CONFIG);
+const EVENT_TYPES = ["conference", "atelier", "networking", "keynote", "panel"];
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
@@ -90,6 +77,21 @@ export default function AgendaPage() {
   const [eventSearch, setEventSearch] = useState("");
   const { user } = useAuth();
   const myUserId = user?.id;
+  const { t } = useTranslation();
+
+  const STATUS_LABELS: Record<string, string> = {
+    pending: t('agenda.rdv_pending'),
+    confirmed: t('agenda.rdv_confirmed'),
+    cancelled: t('agenda.rdv_cancelled'),
+  };
+
+  const EVENT_TYPE_CONFIG: Record<string, { label: string; gradient: string; icon: string }> = {
+    conference:  { label: t('agenda.event_conference'), gradient: "from-blue-500/20 to-blue-500/5", icon: "🎤" },
+    atelier:     { label: t('agenda.event_atelier'), gradient: "from-emerald-500/20 to-emerald-500/5", icon: "🔧" },
+    networking:  { label: t('agenda.event_networking'), gradient: "from-violet-500/20 to-violet-500/5", icon: "🤝" },
+    keynote:     { label: t('agenda.event_keynote'), gradient: "from-amber-500/20 to-amber-500/5", icon: "⭐" },
+    panel:       { label: t('agenda.event_panel'), gradient: "from-rose-500/20 to-rose-500/5", icon: "💬" },
+  };
 
   const filteredEvenements = useMemo(() => {
     return evenements
@@ -135,12 +137,12 @@ export default function AgendaPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                  Agenda interactif
+                  {t('agenda.title')}
                 </h1>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {evenements.length > 0
-                    ? `${evenements.length} événement${evenements.length !== 1 ? 's' : ''} au programme · ${rdvs.length} rendez-vous`
-                    : 'Consultez le programme et gérez vos rendez-vous B2B'}
+                    ? t('agenda.subtitle', { events: evenements.length, rdvs: rdvs.length })
+                    : t('agenda.desc')}
                 </p>
               </div>
             </div>
@@ -149,7 +151,7 @@ export default function AgendaPage() {
               className="rounded-xl whitespace-nowrap shadow-sm"
             >
               <Plus className="mr-2 size-4" />
-              Demander un RDV
+              {t('agenda.request_rdv')}
             </Button>
           </div>
         </div>
@@ -161,7 +163,7 @@ export default function AgendaPage() {
           <div className="bg-gradient-to-r from-primary to-primary/80 px-5 py-3">
             <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
               <CalendarDays className="size-4" />
-              Prochains rendez-vous ({upcomingRdvs.length})
+              {t('agenda.upcoming_rdvs')} ({upcomingRdvs.length})
             </h3>
           </div>
           <CardContent className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -202,11 +204,11 @@ export default function AgendaPage() {
         <TabsList className="rounded-xl bg-muted/80 p-1 w-full sm:w-auto">
           <TabsTrigger value="programme" className="rounded-lg gap-2 data-[state=active]:shadow-sm">
             <Calendar className="size-4" />
-            Programme
+            {t('agenda.tab_programme')}
           </TabsTrigger>
           <TabsTrigger value="rdvs" className="rounded-lg gap-2 data-[state=active]:shadow-sm">
             <Users className="size-4" />
-            Mon planning
+            {t('agenda.tab_planning')}
             {rdvs.filter((r) => r.status === "pending" && r.destinataire_id === myUserId).length > 0 && (
               <Badge className="ml-1 rounded-full px-1.5 py-px text-[10px] bg-amber-500 text-white">
                 {rdvs.filter((r) => r.status === "pending" && r.destinataire_id === myUserId).length}
@@ -222,7 +224,7 @@ export default function AgendaPage() {
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Rechercher un événement..."
+                placeholder={t('agenda.search')}
                 value={eventSearch}
                 onChange={(e) => setEventSearch(e.target.value)}
                 className="h-11 rounded-xl border-border/70 bg-muted/30 pl-11 shadow-none focus:bg-background"
@@ -244,7 +246,7 @@ export default function AgendaPage() {
                     )}
                   >
                     {config && <span>{config.icon}</span>}
-                    {type === "all" ? "Tous" : config?.label}
+                    {type === "all" ? t('common.all') : config?.label}
                     <Badge
                       variant={isActive ? "secondary" : "outline"}
                       className={cn(
@@ -290,12 +292,12 @@ export default function AgendaPage() {
                   <Calendar className="size-8 text-muted-foreground/40" />
                 </div>
                 <div>
-                  <p className="text-base font-semibold text-foreground">
-                    Aucun événement trouvé
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Essayez de modifier vos filtres de recherche.
-                  </p>
+                    <p className="text-base font-semibold text-foreground">
+                      {t('agenda.no_events')}
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {t('agenda.no_events_hint')}
+                    </p>
                 </div>
               </CardContent>
             </Card>
@@ -425,7 +427,7 @@ export default function AgendaPage() {
                   {status !== "all" && (
                     <span className={cn("size-1.5 rounded-full", STATUS_DOTS[status])} />
                   )}
-                  {status === "all" ? "Tous" : STATUS_LABELS[status]}
+                  {status === "all" ? t('common.all') : STATUS_LABELS[status]}
                   {status !== "all" && (
                     <Badge
                       variant={rdvFilter === status ? "secondary" : "outline"}
@@ -466,12 +468,12 @@ export default function AgendaPage() {
                 </div>
                 <div>
                   <p className="text-base font-semibold text-foreground">
-                    Aucun rendez-vous
+                    {t('agenda.no_rdvs')}
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {rdvFilter !== "all"
-                      ? `Aucun rendez-vous ${STATUS_LABELS[rdvFilter]?.toLowerCase()}`
-                      : "Commencez par demander un rendez-vous à un exposant."}
+                      ? t('agenda.no_rdvs_filter', { status: STATUS_LABELS[rdvFilter]?.toLowerCase() })
+                      : t('agenda.no_rdvs_hint')}
                   </p>
                 </div>
                 <Button
@@ -567,11 +569,11 @@ export default function AgendaPage() {
                                   className="rounded-xl border-emerald-200 bg-emerald-50/80 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-950/30 dark:text-emerald-400"
                                   onClick={() => {
                                     updateRdvStatus(rdv.id, "confirmed")
-                                      .then(() => toast.success("RDV confirmé"))
-                                      .catch(() => toast.error("Erreur lors de l'acceptation"));
+                                      .then(() => toast.success(t('agenda.rdv_accepted')))
+                                      .catch(() => toast.error(t('agenda.rdv_accept_error')));
                                   }}
                                 >
-                                  <Check className="mr-1 size-4" /> Accepter
+                                  <Check className="mr-1 size-4" /> {t('agenda.rdv_accept')}
                                 </Button>
                                 <Button
                                   size="sm"
@@ -579,11 +581,11 @@ export default function AgendaPage() {
                                   className="rounded-xl border-red-200 bg-red-50/80 text-red-600 hover:bg-red-100 hover:text-red-700 dark:border-red-800/40 dark:bg-red-950/30 dark:text-red-400"
                                   onClick={() => {
                                     updateRdvStatus(rdv.id, "cancelled")
-                                      .then(() => toast.info("RDV refusé"))
-                                      .catch(() => toast.error("Erreur lors du refus"));
+                                      .then(() => toast.info(t('agenda.rdv_refused')))
+                                      .catch(() => toast.error(t('agenda.rdv_refuse_error')));
                                   }}
                                 >
-                                  <X className="mr-1 size-4" /> Refuser
+                                  <X className="mr-1 size-4" /> {t('agenda.rdv_refuse')}
                                 </Button>
                               </div>
                             )}
@@ -595,12 +597,12 @@ export default function AgendaPage() {
                               className="rounded-full text-xs text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
                               onClick={() => {
                                 updateRdvStatus(rdv.id, "cancelled")
-                                  .then(() => toast.info("RDV annulé"))
-                                  .catch(() => toast.error("Erreur lors de l'annulation"));
+                                  .then(() => toast.info(t('agenda.rdv_cancelled_msg')))
+                                  .catch(() => toast.error(t('agenda.rdv_cancel_error')));
                               }}
                             >
                               <X className="mr-1 size-3.5" />
-                              Annuler
+                              {t('agenda.rdv_cancel')}
                             </Button>
                           )}
                         </div>
@@ -637,6 +639,7 @@ function NewRdvDialog({
     notes?: string,
   ) => Promise<unknown>;
 }) {
+  const { t } = useTranslation();
   const [destinataireId, setDestinataireId] = useState("");
   const [date, setDate] = useState("");
   const [timeStart, setTimeStart] = useState("");
@@ -674,7 +677,7 @@ function NewRdvDialog({
 
   const handleSubmit = async () => {
     if (!destinataireId || !date || !timeStart || !timeEnd) {
-      toast.error("Veuillez remplir tous les champs obligatoires");
+      toast.error(t('agenda.rdv_form_required'));
       return;
     }
 
@@ -683,10 +686,10 @@ function NewRdvDialog({
       const startsAt = new Date(`${date}T${timeStart}`).toISOString();
       const endsAt = new Date(`${date}T${timeEnd}`).toISOString();
       await onCreate(destinataireId, startsAt, endsAt, notes || undefined);
-      toast.success("Demande de RDV envoyée");
+      toast.success(t('agenda.rdv_form_sent'));
       onOpenChange(false);
     } catch {
-      toast.error("Erreur lors de la création du RDV");
+      toast.error(t('agenda.rdv_form_error'));
     } finally {
       setSubmitting(false);
     }
@@ -697,18 +700,18 @@ function NewRdvDialog({
       <DialogContent className="sm:max-w-md rounded-xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
-            Demander un rendez-vous B2B
+            {t('agenda.rdv_form_title')}
           </DialogTitle>
           <DialogDescription>
-            Sélectionnez un contact et choisissez un créneau horaire.
+            {t('agenda.rdv_form_desc')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label className="text-xs font-medium">Contact</Label>
+            <Label className="text-xs font-medium">{t('agenda.rdv_form_contact')}</Label>
             <Input
-              placeholder="Rechercher par nom..."
+              placeholder={t('agenda.rdv_form_search')}
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -747,7 +750,7 @@ function NewRdvDialog({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs font-medium">Date</Label>
+            <Label className="text-xs font-medium">{t('agenda.rdv_form_date')}</Label>
             <Input
               type="date"
               value={date}
@@ -758,7 +761,7 @@ function NewRdvDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label className="text-xs font-medium">Heure début</Label>
+              <Label className="text-xs font-medium">{t('agenda.rdv_form_start')}</Label>
               <Input
                 type="time"
                 value={timeStart}
@@ -767,7 +770,7 @@ function NewRdvDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-xs font-medium">Heure fin</Label>
+              <Label className="text-xs font-medium">{t('agenda.rdv_form_end')}</Label>
               <Input
                 type="time"
                 value={timeEnd}
@@ -778,9 +781,9 @@ function NewRdvDialog({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs font-medium">Notes (optionnel)</Label>
+            <Label className="text-xs font-medium">{t('agenda.rdv_form_notes')}</Label>
             <Textarea
-              placeholder="Sujet du rendez-vous, points à aborder..."
+              placeholder={t('agenda.rdv_form_notes_placeholder')}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
@@ -795,7 +798,7 @@ function NewRdvDialog({
             onClick={() => onOpenChange(false)}
             className="rounded-xl"
           >
-            Annuler
+            {t('common.cancel')}
           </Button>
           <Button
             onClick={handleSubmit}
@@ -803,9 +806,9 @@ function NewRdvDialog({
             className="rounded-xl gap-1.5"
           >
             {submitting ? (
-              <><span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> Envoi...</>
+              <><span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> {t('agenda.rdv_form_sending')}</>
             ) : (
-              "Envoyer la demande"
+              t('agenda.rdv_form_send')
             )}
           </Button>
         </DialogFooter>

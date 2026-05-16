@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { useTranslation } from "@/lib/i18n";
 import type { Database } from "@/types/database.types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -109,6 +110,7 @@ export default function ManageVitrinePage() {
   const [loading, setLoading] = useState(true);
   const [savingShowcase, setSavingShowcase] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
+  const { t } = useTranslation();
   const [deletingProductId, setDeletingProductId] = useState<string | null>(
     null,
   );

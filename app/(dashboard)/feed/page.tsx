@@ -19,9 +19,11 @@ import {
   Package,
 } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 import { createConversation } from '@/hooks/useChat';
 import { toast } from 'sonner';
+import { useTranslation } from '@/lib/i18n';
 import type { Database } from '@/types/database.types';
 
 type Product = Database['public']['Tables']['produits']['Row'] & {
@@ -29,6 +31,8 @@ type Product = Database['public']['Tables']['produits']['Row'] & {
 };
 
 export default function FeedPage() {
+  const { t } = useTranslation();
+  const router = useRouter();
   const {
     posts,
     loading,
@@ -83,7 +87,8 @@ export default function FeedPage() {
           content: `Bonjour, je suis intéressé(e) par votre ${type} : "${product.nom}". Pourriez-vous m'en dire plus ?`,
           is_read: false,
         });
-        toast.success("Message envoyé !");
+        // Redirige vers la conversation
+        router.push(`/chat/${data.id}`);
       }
     } else {
       toast.error("Erreur lors de la création de la conversation");
@@ -133,16 +138,16 @@ export default function FeedPage() {
                 <div className="mb-4 flex items-center gap-2">
                   <Rss className="size-4 text-primary" />
                   <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground/70">
-                    Votre activité
+                    {t('feed.your_activity')}
                   </h3>
                 </div>
                 <div className="space-y-1">
                   {[
-                    { icon: Sparkles, label: 'Publications', value: myPosts },
-                    { icon: Heart, label: 'Reactions', value: totalLikes },
-                    { icon: MessageSquare, label: 'Commentaires', value: totalComments },
-                    { icon: Share2, label: 'Partages', value: totalShares },
-                    { icon: Repeat2, label: 'Republications', value: totalReposts },
+                    { icon: Sparkles, label: t('feed.posts'), value: myPosts },
+                    { icon: Heart, label: t('feed.reactions'), value: totalLikes },
+                    { icon: MessageSquare, label: t('feed.comments'), value: totalComments },
+                    { icon: Share2, label: t('feed.shares'), value: totalShares },
+                    { icon: Repeat2, label: t('feed.reposts'), value: totalReposts },
                   ].map(({ icon: Icon, label, value }) => (
                     <div
                       key={label}
@@ -164,15 +169,15 @@ export default function FeedPage() {
             <Card className="border-border/60 p-0">
               <CardContent className="p-3">
                 <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground/70">
-                  Types de publication
+                  {t('feed.post_types')}
                 </h3>
                 <div className="space-y-2.5 text-xs">
                   {[
-                    { color: 'bg-blue-500', label: 'Annonces' },
-                    { color: 'bg-emerald-500', label: 'Actualites' },
-                    { color: 'bg-violet-500', label: 'Offres d emploi' },
-                    { color: 'bg-amber-500', label: 'Evenements' },
-                    { color: 'bg-muted-foreground', label: 'General' },
+                    { color: 'bg-blue-500', label: t('feed.type.announcement') },
+                    { color: 'bg-emerald-500', label: t('feed.type.news') },
+                    { color: 'bg-violet-500', label: t('feed.type.job') },
+                    { color: 'bg-amber-500', label: t('feed.type.event') },
+                    { color: 'bg-muted-foreground', label: t('feed.type.general') },
                   ].map(({ color, label }) => (
                     <div key={label} className="flex items-center gap-2.5">
                       <span className={`size-2.5 rounded-full ${color}`} />
@@ -193,7 +198,7 @@ export default function FeedPage() {
               <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
                 <Loader2 className="size-8 animate-spin text-primary" />
                 <p className="text-sm text-muted-foreground">
-                  Chargement du fil...
+                  {t('feed.loading')}
                 </p>
               </CardContent>
             </Card>
@@ -205,11 +210,10 @@ export default function FeedPage() {
                 </div>
                 <div>
                   <p className="text-lg font-heading font-semibold text-foreground">
-                    Aucune publication pour le moment
+                    {t('feed.empty')}
                   </p>
                   <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
-                    Soyez le premier à partager une actualité ou une annonce
-                    avec la communauté PROMOTE.
+                    {t('feed.empty_hint')}
                   </p>
                 </div>
               </CardContent>
@@ -241,7 +245,7 @@ export default function FeedPage() {
                     className="rounded-xl"
                   >
                     {loading && <Loader2 className="mr-2 size-4 animate-spin" />}
-                    Charger plus
+                    {t('common.load_more')}
                   </Button>
                 </div>
               )}
@@ -251,27 +255,6 @@ export default function FeedPage() {
 
         <div className="hidden space-y-4 lg:col-span-3 lg:block">
           <div className="sticky top-20 space-y-4">
-            <Card className="border-border/60 p-0">
-              <CardContent className="p-3">
-                <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground/70">
-                  Conseils de publication
-                </h3>
-                <ul className="space-y-3 text-xs text-muted-foreground">
-                  {[
-                    'Partagez vos actualites d entreprise',
-                    'Annoncez vos nouveaux produits',
-                    'Proposez des opportunites B2B',
-                    'Relatez vos experiences du salon',
-                  ].map((tip) => (
-                    <li key={tip} className="flex gap-2.5">
-                      <span className="mt-0.5 size-1.5 shrink-0 rounded-full bg-primary" />
-                      {tip}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-
             {randomProducts.slice(0, 3).map((product) => {
               return (
                 <Card key={product.id} className="border-border/60 p-0 overflow-hidden group shadow-sm hover:shadow-md transition-all">
@@ -283,10 +266,10 @@ export default function FeedPage() {
                   <CardContent className={product.image_url ? "p-3" : "p-3"}>
                     <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary">
                       <Package className="size-3" />
-                      Sponsorisé
+                      {t('feed.sponsored')}
                     </div>
                     <h4 className="font-semibold text-sm text-foreground line-clamp-1">{product.nom}</h4>
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{product.description || 'Découvrez ce produit.'}</p>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{product.description || t('feed.discover_product')}</p>
 
                     {/* Exposant + CTA */}
                     <div className="mt-3 flex items-center gap-2 border-t border-border/40 pt-2.5">
@@ -300,7 +283,7 @@ export default function FeedPage() {
                         )}
                       </Avatar>
                       <span className="truncate text-[11px] font-medium text-muted-foreground flex-1">
-                        {product.exposants?.nom || 'Exposant'}
+                        {product.exposants?.nom || t('common.exposant')}
                       </span>
                       <Button
                         size="sm"
@@ -314,7 +297,7 @@ export default function FeedPage() {
                         ) : (
                           <Send className="size-3" />
                         )}
-                        Contacter
+                        {t('feed.contact')}
                       </Button>
                     </div>
                   </CardContent>

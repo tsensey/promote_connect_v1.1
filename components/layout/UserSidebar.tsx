@@ -14,6 +14,7 @@ import {
   Users,
   Rss,
   LayoutDashboard,
+  Settings,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -49,6 +50,7 @@ const VISITOR_SECTIONS: NavSection[] = [
     title: 'Compte',
     items: [
       { label: 'Newsletter', href: '/newsletter', icon: Mail },
+      { label: 'Paramètres', href: '/parametres', icon: Settings },
       { label: 'Support', href: '/support', icon: LifeBuoy },
     ],
   },
@@ -76,6 +78,7 @@ const EXHIBITOR_SECTIONS: NavSection[] = [
     title: 'Compte',
     items: [
       { label: 'Newsletter', href: '/newsletter', icon: Mail },
+      { label: 'Paramètres', href: '/parametres', icon: Settings },
       { label: 'Support', href: '/support', icon: LifeBuoy },
     ],
   },
@@ -139,7 +142,7 @@ export function UserSidebar({
       )}
     >
       <div className="flex items-center justify-between border-b border-sidebar-border px-4 py-3.5">
-        <Link href="/app" className="flex min-w-0 items-center gap-2.5">
+        <Link href="/feed" className="flex min-w-0 items-center gap-2.5">
           <div className="relative size-8 shrink-0 overflow-hidden rounded-lg shadow-sm shadow-primary/20 bg-primary/5">
             <Image
               src="/logo-promote.png"

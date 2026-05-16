@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 import type { Database } from '@/types/database.types';
 
 // ── Icônes de marque SVG inline ──
@@ -61,6 +62,7 @@ type Produit = Database['public']['Tables']['produits']['Row'];
 type Post = Database['public']['Tables']['posts']['Row'];
 
 export default function ExposantDetailPage() {
+  const { t } = useTranslation();
   const params = useParams();
   const exposantId = params.exposantId as string;
 
@@ -130,19 +132,19 @@ export default function ExposantDetailPage() {
       }
       window.location.href = `/chat/${data.id}`;
     } else {
-      toast.error('Erreur lors de la création de la conversation');
+      toast.error(t('annuaire.detail.conversation_error'));
     }
     setContacting(false);
   };
 
   const handleShare = async () => {
     const url = window.location.href;
-    const title = exposant?.nom || 'Profil PROMOTE-CONNECT';
+    const title = exposant?.nom || t('annuaire.detail.profile_title');
     if (navigator.share) {
       try {
         await navigator.share({
           title,
-          text: exposant?.description || `Découvrez ${exposant?.nom} sur PROMOTE-CONNECT`,
+          text: exposant?.description || t('annuaire.detail.discover', { name: exposant?.nom || '' }),
           url,
         });
       } catch {
@@ -150,7 +152,7 @@ export default function ExposantDetailPage() {
       }
     } else {
       await navigator.clipboard.writeText(url);
-      toast.success('Lien copié dans le presse-papier');
+      toast.success(t('annuaire.detail.link_copied'));
     }
   };
 
@@ -173,14 +175,14 @@ export default function ExposantDetailPage() {
         <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
           <Building2 className="size-16 text-muted-foreground/30" />
           <div>
-            <h1 className="text-2xl font-heading text-foreground">Exposant non trouvé</h1>
+            <h1 className="text-2xl font-heading text-foreground">{t('annuaire.detail.not_found')}</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Cet exposant n&apos;existe pas ou a été retiré.
+              {t('annuaire.detail.not_found_desc')}
             </p>
           </div>
           <Link href="/annuaire" className={cn(buttonVariants({ variant: 'outline' }), 'rounded-xl')}>
             <ArrowLeft className="mr-2 size-4" />
-            Retour à l&apos;annuaire
+            {t('annuaire.detail.back_to_annuaire')}
           </Link>
         </CardContent>
       </Card>
@@ -196,11 +198,11 @@ export default function ExposantDetailPage() {
           className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="size-4" />
-          Retour à l&apos;annuaire
+          {t('annuaire.detail.back_to_annuaire')}
         </Link>
         <Button variant="ghost" size="sm" className="rounded-full" onClick={handleShare}>
           <Share2 className="mr-2 size-4" />
-          Partager
+          {t('annuaire.detail.share')}
         </Button>
       </div>
 
@@ -230,7 +232,7 @@ export default function ExposantDetailPage() {
               {exposant.profile_id && (
                 <Button className="rounded-full px-6 shadow-sm" onClick={() => handleContact()} disabled={contacting}>
                   <MessageSquare className="mr-2 size-4" />
-                  Contacter
+                  {t('annuaire.detail.contact')}
                 </Button>
               )}
               {exposant.website && (
@@ -241,7 +243,7 @@ export default function ExposantDetailPage() {
                   className={cn(buttonVariants({ variant: 'outline' }), 'rounded-full shadow-sm')}
                 >
                   <Globe className="mr-2 size-4" />
-                  Visiter le site
+                  {t('annuaire.detail.visit_website')}
                   <ExternalLink className="ml-2 size-3" />
                 </a>
               )}
@@ -258,13 +260,13 @@ export default function ExposantDetailPage() {
               {exposant.secteur && exposant.pays && <span>•</span>}
               {exposant.pays && <span>{exposant.pays}</span>}
               {(exposant.secteur || exposant.pays) && exposant.nombre_employes && <span>•</span>}
-              {exposant.nombre_employes && <span>{exposant.nombre_employes} employés</span>}
+              {exposant.nombre_employes && <span>{exposant.nombre_employes} {t('annuaire.detail.employees')}</span>}
             </div>
 
             {(exposant.pavillon || exposant.stand) && (
               <div className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 text-sm font-medium text-primary">
                 <MapPin className="size-4" />
-                Pavillon {exposant.pavillon} {exposant.stand && `— Stand ${exposant.stand}`}
+                {t('annuaire.detail.pavillon')} {exposant.pavillon} {exposant.stand && `— ${t('annuaire.detail.stand')} ${exposant.stand}`}
               </div>
             )}
           </div>
@@ -277,9 +279,9 @@ export default function ExposantDetailPage() {
         <div className="space-y-6">
           {/* About Section */}
           {(exposant.long_description || exposant.video_url || exposant.brochure_url) && (
-            <Card className="surface-panel border-0">
+            <Card className="surface-panel border-0 py-0">
               <CardContent className="space-y-6 p-6">
-                <h2 className="text-xl font-semibold text-foreground">À propos</h2>
+                <h2 className="text-xl font-semibold text-foreground">{t('annuaire.detail.about')}</h2>
                 {exposant.long_description && (
                   <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/80">
                     {exposant.long_description}
@@ -294,7 +296,7 @@ export default function ExposantDetailPage() {
                     className="inline-flex items-center gap-2 rounded-lg border border-border/70 bg-muted/30 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
                   >
                     <Download className="size-4 text-muted-foreground" />
-                    Télécharger la brochure commerciale
+                    {t('annuaire.detail.download_brochure')}
                   </a>
                 )}
 
@@ -302,7 +304,7 @@ export default function ExposantDetailPage() {
                   <div className="mt-4 overflow-hidden rounded-lg border border-border/50">
                     <div className="flex items-center gap-2 border-b border-border/50 bg-muted/30 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       <Video className="size-3.5" />
-                      Vidéo de présentation
+                      {t('annuaire.detail.presentation_video')}
                     </div>
                     <div className="aspect-video w-full">
                       <iframe
@@ -320,9 +322,9 @@ export default function ExposantDetailPage() {
 
           {/* Gallery Section */}
           {exposant.gallery_urls && exposant.gallery_urls.length > 0 && (
-            <Card className="surface-panel border-0">
+            <Card className="surface-panel border-0 py-0">
               <CardContent className="space-y-4 p-6">
-                <h2 className="text-xl font-semibold text-foreground">Galerie multimédia</h2>
+                <h2 className="text-xl font-semibold text-foreground">{t('annuaire.detail.gallery')}</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {exposant.gallery_urls.map((url: string, i: number) => (
                     <div key={i} className="aspect-square rounded-xl overflow-hidden bg-muted border border-border/50">
@@ -336,10 +338,10 @@ export default function ExposantDetailPage() {
           )}
 
           {/* Publications Section */}
-          <Card className="surface-panel border-0">
+          <Card className="surface-panel border-0 py-0">
             <CardContent className="space-y-4 p-6">
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-semibold text-foreground">Publications</h2>
+                <h2 className="text-xl font-semibold text-foreground">{t('annuaire.detail.posts')}</h2>
                 <span className="flex size-6 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
                   {publications.length}
                 </span>
@@ -348,7 +350,7 @@ export default function ExposantDetailPage() {
               {publications.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-border/60 py-12 text-center text-muted-foreground">
                   <Rss className="mx-auto mb-3 size-8 opacity-20" />
-                  <p className="text-sm">Aucune publication pour le moment.</p>
+                  <p className="text-sm">{t('annuaire.detail.no_posts')}</p>
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -407,13 +409,13 @@ export default function ExposantDetailPage() {
         {/* Right Column (Sidebar) */}
         <div className="space-y-6">
           {/* Details Sidebar */}
-          <Card className="surface-panel border-0">
+          <Card className="surface-panel border-0 py-0">
             <CardContent className="space-y-5 p-6">
-              <h2 className="text-lg font-semibold text-foreground">Détails de l&apos;entreprise</h2>
+              <h2 className="text-lg font-semibold text-foreground">{t('annuaire.detail.company_details')}</h2>
               <dl className="space-y-4 text-sm">
                 {exposant.website && (
                   <div>
-                    <dt className="font-medium text-muted-foreground">Site web</dt>
+                    <dt className="font-medium text-muted-foreground">{t('annuaire.detail.website')}</dt>
                     <dd className="mt-1 font-medium text-primary hover:underline">
                       <a href={exposant.website} target="_blank" rel="noopener noreferrer">
                         {exposant.website.replace(/^https?:\/\//, '')}
@@ -423,25 +425,25 @@ export default function ExposantDetailPage() {
                 )}
                 {exposant.secteur && (
                   <div>
-                    <dt className="font-medium text-muted-foreground">Secteur d&apos;activité</dt>
+                    <dt className="font-medium text-muted-foreground">{t('annuaire.detail.sector')}</dt>
                     <dd className="mt-1 text-foreground">{exposant.secteur}</dd>
                   </div>
                 )}
                 {exposant.nombre_employes && (
                   <div>
-                    <dt className="font-medium text-muted-foreground">Taille de l&apos;entreprise</dt>
-                    <dd className="mt-1 text-foreground">{exposant.nombre_employes} employés</dd>
+                    <dt className="font-medium text-muted-foreground">{t('annuaire.detail.company_size')}</dt>
+                    <dd className="mt-1 text-foreground">{exposant.nombre_employes} {t('annuaire.detail.employees')}</dd>
                   </div>
                 )}
                 {exposant.annee_creation && (
                   <div>
-                    <dt className="font-medium text-muted-foreground">Fondée en</dt>
+                    <dt className="font-medium text-muted-foreground">{t('annuaire.detail.founded_in')}</dt>
                     <dd className="mt-1 text-foreground">{exposant.annee_creation}</dd>
                   </div>
                 )}
                 {exposant.chiffre_affaires && (
                   <div>
-                    <dt className="font-medium text-muted-foreground">Chiffre d&apos;affaires</dt>
+                    <dt className="font-medium text-muted-foreground">{t('annuaire.detail.revenue')}</dt>
                     <dd className="mt-1 text-foreground">{exposant.chiffre_affaires}</dd>
                   </div>
                 )}
@@ -449,7 +451,7 @@ export default function ExposantDetailPage() {
                 {/* Contacts Section */}
                 {(exposant.email_contact || exposant.phone_contact) && (
                   <div className="border-t border-border/50 pt-4">
-                    <dt className="mb-2 font-medium text-muted-foreground">Contacts</dt>
+                    <dt className="mb-2 font-medium text-muted-foreground">{t('annuaire.detail.contacts')}</dt>
                     <dd className="space-y-2 text-foreground">
                       {exposant.email_contact && (
                         <a href={`mailto:${exposant.email_contact}`} className="flex items-center gap-2 transition-colors hover:text-primary">
@@ -495,17 +497,17 @@ export default function ExposantDetailPage() {
           </Card>
 
           {/* Products Sidebar */}
-          <Card className="surface-panel border-0">
+          <Card className="surface-panel border-0 py-0">
             <CardContent className="space-y-4 p-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-foreground">Produits & Services</h2>
+                <h2 className="text-lg font-semibold text-foreground">{t('annuaire.detail.products_services')}</h2>
                 <span className="flex size-6 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
                   {produits.length}
                 </span>
               </div>
               
               {produits.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Aucun produit publié.</p>
+                <p className="text-sm text-muted-foreground">{t('annuaire.detail.no_products')}</p>
               ) : (
                 <div className="space-y-4">
                   {produits.map((prod) => (
@@ -525,7 +527,7 @@ export default function ExposantDetailPage() {
                           </h3>
                           {(prod as any).type && (
                             <span className="inline-flex shrink-0 items-center rounded-sm bg-secondary px-1.5 py-0.5 text-[9px] font-medium text-secondary-foreground">
-                              {(prod as any).type === 'service' ? 'Service' : 'Produit'}
+                              {(prod as any).type === 'service' ? t('annuaire.detail.type_service') : t('annuaire.detail.type_product')}
                             </span>
                           )}
                         </div>
@@ -544,7 +546,7 @@ export default function ExposantDetailPage() {
                             disabled={contacting}
                           >
                             <MessageSquare className="size-3" />
-                            Se renseigner
+                            {t('annuaire.detail.inquire')}
                           </button>
                         )}
                       </div>

@@ -9,8 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Eye, EyeOff, Loader2, UserPlus, CheckCircle2 } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 
 export default function RegisterPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -28,12 +30,12 @@ export default function RegisterPage() {
     setError(null);
 
     if (!form.full_name.trim() || !form.email.trim() || !form.password.trim()) {
-      setError('Veuillez remplir tous les champs obligatoires.');
+      setError(t('auth.register.required_fields'));
       return;
     }
 
     if (form.password.length < 8) {
-      setError('Le mot de passe doit contenir au moins 8 caractères.');
+      setError(t('auth.register.password_length'));
       return;
     }
 
@@ -55,7 +57,7 @@ export default function RegisterPage() {
 
     if (signUpError) {
       if (signUpError.message.includes('already registered') || signUpError.message.includes('already been registered')) {
-        setError('Un compte existe déjà avec cet email. Veuillez vous connecter.');
+        setError(t('auth.register.email_exists'));
       } else {
         setError(signUpError.message);
       }
@@ -78,10 +80,10 @@ export default function RegisterPage() {
               <CheckCircle2 className="size-8 text-emerald-500" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Compte créé !</h1>
+              <h1 className="text-2xl font-bold text-foreground">{t('auth.register.success')}</h1>
               <p className="mt-2 text-sm text-muted-foreground leading-6">
-                Bienvenue sur PROMOTE-CONNECT. Un email de confirmation vous a été envoyé.
-                Vérifiez votre boîte de réception et cliquez sur le lien pour activer votre compte.
+                {t('auth.register.success_desc')}
+                {t('auth.register.success_hint')}
               </p>
             </div>
             <Loader2 className="size-5 animate-spin text-muted-foreground" />
@@ -98,9 +100,9 @@ export default function RegisterPage() {
           <div className="inline-flex size-14 items-center justify-center rounded-2xl bg-primary/10 mb-2">
             <UserPlus className="size-7 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground">Créer un compte</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t('auth.register.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            Rejoignez la communauté PROMOTE-CONNECT en tant que visiteur.
+            {t('auth.register.subtitle')}
           </p>
         </div>
 
@@ -108,11 +110,11 @@ export default function RegisterPage() {
           <CardContent className="p-6 sm:p-8">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="full_name">Nom complet <span className="text-destructive">*</span></Label>
+                <Label htmlFor="full_name">{t('auth.register.full_name')} <span className="text-destructive">*</span></Label>
                 <Input
                   id="full_name"
                   type="text"
-                  placeholder="Jean Dupont"
+                  placeholder={t('auth.register.full_name_placeholder')}
                   value={form.full_name}
                   onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
                   required
@@ -120,22 +122,22 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="company">Entreprise / Organisation</Label>
+                <Label htmlFor="company">{t('auth.register.company')}</Label>
                 <Input
                   id="company"
                   type="text"
-                  placeholder="Nom de votre entreprise (optionnel)"
+                  placeholder={t('auth.register.company_placeholder')}
                   value={form.company}
                   onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Adresse email <span className="text-destructive">*</span></Label>
+                <Label htmlFor="email">{t('auth.register.email')} <span className="text-destructive">*</span></Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="vous@exemple.com"
+                  placeholder={t('auth.register.email_placeholder')}
                   value={form.email}
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                   required
@@ -143,12 +145,12 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Mot de passe <span className="text-destructive">*</span></Label>
+                <Label htmlFor="password">{t('auth.register.password')} <span className="text-destructive">*</span></Label>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="8 caractères minimum"
+                    placeholder={t('auth.register.password_placeholder')}
                     value={form.password}
                     onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                     required
@@ -174,12 +176,12 @@ export default function RegisterPage() {
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 size-4 animate-spin" />
-                    Création du compte...
+                    {t('auth.register.creating')}
                   </>
                 ) : (
                   <>
                     <UserPlus className="mr-2 size-4" />
-                    Créer mon compte
+                    {t('auth.register.create')}
                   </>
                 )}
               </Button>
@@ -188,14 +190,14 @@ export default function RegisterPage() {
         </Card>
 
         <p className="text-center text-sm text-muted-foreground">
-          Vous avez déjà un compte ?{' '}
+          {t('auth.register.has_account')}{' '}
           <Link href="/login" className="font-medium text-primary hover:underline">
-            Se connecter
+            {t('auth.register.sign_in')}
           </Link>
         </p>
 
         <p className="text-center text-xs text-muted-foreground/60">
-          En créant un compte, vous acceptez les conditions d&apos;utilisation de la plateforme PROMOTE-CONNECT.
+          {t('auth.register.tos')}
         </p>
       </div>
     </div>

@@ -64,6 +64,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 import type { Database } from '@/types/database.types';
 
 type Exposant = Database['public']['Tables']['exposants']['Row'];
@@ -76,6 +77,7 @@ export default function VitrineExposantPage() {
   const [exposant, setExposant] = useState<Exposant | null>(null);
   const [produits, setProduits] = useState<Produit[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
   const [contacting, setContacting] = useState(false);
   const router = useRouter();
 
@@ -130,7 +132,7 @@ export default function VitrineExposantPage() {
       }
       router.push(url);
     } else {
-      toast.error('Erreur lors de la création de la conversation');
+      toast.error(t('vitrine.detail.contact_error'));
     }
     setContacting(false);
   };
@@ -146,7 +148,7 @@ export default function VitrineExposantPage() {
       }
     } else {
       await navigator.clipboard.writeText(url);
-      toast.success('Lien copié dans le presse-papier');
+      toast.success(t('vitrine.detail.link_copied'));
     }
   };
 
@@ -171,14 +173,14 @@ export default function VitrineExposantPage() {
         <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
           <Package className="size-16 text-muted-foreground/30" />
           <div>
-            <h1 className="text-2xl font-heading text-foreground">Exposant non trouvé</h1>
+            <h1 className="text-2xl font-heading text-foreground">{t('vitrine.detail.not_found')}</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Cet exposant n&apos;existe pas ou a été retiré.
+              {t('vitrine.detail.not_found_desc')}
             </p>
           </div>
           <Link href="/vitrine" className={cn(buttonVariants({ variant: 'outline' }), 'rounded-xl')}>
             <ArrowLeft className="mr-2 size-4" />
-            Retour à la vitrine
+            {t('vitrine.detail.back')}
           </Link>
         </CardContent>
       </Card>
@@ -198,7 +200,7 @@ export default function VitrineExposantPage() {
           className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="size-4" />
-          Retour à la vitrine
+          {t('vitrine.detail.back')}
         </Link>
         <Button variant="ghost" size="sm" className="rounded-full" onClick={handleShare}>
           <Share2 className="mr-2 size-4" />
@@ -228,7 +230,7 @@ export default function VitrineExposantPage() {
           {exposant.is_featured && (
             <div className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-amber-400/90 px-3 py-1 text-xs font-bold text-amber-900 backdrop-blur-sm">
               <Star className="size-3.5" />
-              Exposant vedette
+              {t('vitrine.detail.featured')}
             </div>
           )}
         </div>
@@ -253,7 +255,7 @@ export default function VitrineExposantPage() {
                 {exposant.nom}
               </h1>
               <p className="mt-1 text-base leading-7 text-muted-foreground">
-                {exposant.description || 'Bienvenue sur la vitrine de cet exposant PROMOTE-CONNECT.'}
+                {exposant.description || t('vitrine.detail.welcome')}
               </p>
             </div>
 
@@ -265,7 +267,7 @@ export default function VitrineExposantPage() {
                 disabled={contacting}
               >
                 <MessageSquare className="mr-2 size-4" />
-                Contacter
+                {t('vitrine.detail.contact')}
               </Button>
             )}
           </div>
@@ -286,8 +288,7 @@ export default function VitrineExposantPage() {
             )}
             {exposant.pavillon && (
               <Badge variant="secondary" className="rounded-full">
-                Pavillon {exposant.pavillon}
-                {exposant.stand && ` — Stand ${exposant.stand}`}
+                {t('vitrine.detail.pavillon_stand', { pavillon: exposant.pavillon, stand: exposant.stand || '' })}
               </Badge>
             )}
             {exposant.website && (
@@ -298,7 +299,7 @@ export default function VitrineExposantPage() {
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
               >
                 <Globe className="size-3" />
-                Site web
+                {t('vitrine.detail.website')}
                 <ExternalLink className="size-3" />
               </a>
             )}
@@ -315,7 +316,7 @@ export default function VitrineExposantPage() {
                 <Calendar className="size-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Fondée en</p>
+                <p className="text-xs text-muted-foreground">{t('vitrine.detail.founded')}</p>
                 <p className="text-xl font-bold text-foreground">{exposant.annee_creation}</p>
               </div>
             </div>
@@ -326,7 +327,7 @@ export default function VitrineExposantPage() {
                 <Users className="size-5 text-violet-600" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Effectif</p>
+                <p className="text-xs text-muted-foreground">{t('vitrine.detail.employees')}</p>
                 <p className="text-xl font-bold text-foreground">{exposant.nombre_employes}</p>
               </div>
             </div>
@@ -337,7 +338,7 @@ export default function VitrineExposantPage() {
                 <TrendingUp className="size-5 text-emerald-600" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Chiffre d&apos;affaires</p>
+                <p className="text-xs text-muted-foreground">{t('vitrine.detail.revenue')}</p>
                 <p className="text-xl font-bold text-foreground">{exposant.chiffre_affaires}</p>
               </div>
             </div>
@@ -351,7 +352,7 @@ export default function VitrineExposantPage() {
           <CardContent className="p-6 space-y-3">
             <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-primary/70">
               <Tag className="size-4" />
-              À propos
+              {t('vitrine.detail.about')}
             </div>
             <p className="text-base leading-8 text-muted-foreground whitespace-pre-wrap">
               {exposant.long_description}
@@ -366,7 +367,7 @@ export default function VitrineExposantPage() {
           <CardContent className="p-6 space-y-3">
             <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-primary/70">
               <Play className="size-4" />
-              Vidéo de présentation
+              {t('vitrine.detail.video')}
             </div>
             <div className="aspect-video w-full overflow-hidden rounded-xl">
               <iframe
@@ -384,7 +385,7 @@ export default function VitrineExposantPage() {
       {(hasContact || hasSocials || exposant.brochure_url) && (
         <Card className="surface-panel border-0">
           <CardContent className="p-6 space-y-5">
-            <div className="text-sm font-semibold uppercase tracking-widest text-primary/70">Contacts & Liens</div>
+            <div className="text-sm font-semibold uppercase tracking-widest text-primary/70">{t('vitrine.detail.contacts')}</div>
             <div className="flex flex-wrap gap-3">
               {exposant.email_contact && (
                 <a
@@ -431,7 +432,7 @@ export default function VitrineExposantPage() {
               {exposant.brochure_url && (
                 <a href={exposant.brochure_url} target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/30 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors">
-                  <FileText className="size-4 text-muted-foreground" /> Télécharger la brochure
+                  <FileText className="size-4 text-muted-foreground" /> {t('vitrine.detail.brochure')}
                 </a>
               )}
             </div>
@@ -450,7 +451,7 @@ export default function VitrineExposantPage() {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">Catalogue</p>
                 <h2 className="text-2xl font-heading text-foreground">
-                  Produits & Services ({produits.length})
+                  {t('vitrine.detail.products', { count: produits.length })}
                 </h2>
               </div>
             </div>
@@ -459,9 +460,9 @@ export default function VitrineExposantPage() {
           {produits.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-12 text-center">
               <Package className="size-12 text-muted-foreground/30" />
-              <p className="text-base font-medium text-foreground">Aucun produit ou service publié</p>
+              <p className="text-base font-medium text-foreground">{t('vitrine.detail.no_products')}</p>
               <p className="text-sm text-muted-foreground">
-                Cet exposant n&apos;a pas encore ajouté de produits à sa vitrine.
+                {t('vitrine.detail.no_products_hint')}
               </p>
             </div>
           ) : (
@@ -505,11 +506,11 @@ export default function VitrineExposantPage() {
                       )}
                       {prod.categorie && <Badge>{prod.categorie}</Badge>}
                       <p className="text-sm leading-7 text-muted-foreground">
-                        {prod.description || 'Aucune description détaillée.'}
+                        {prod.description || t('vitrine.detail.no_description')}
                       </p>
                       {prod.prix_indicatif && (
                         <div className="rounded-xl bg-primary/5 px-4 py-3">
-                          <p className="text-xs text-muted-foreground">Prix indicatif</p>
+                          <p className="text-xs text-muted-foreground">{t('vitrine.detail.price')}</p>
                           <p className="text-2xl font-bold text-foreground">{prod.prix_indicatif}</p>
                         </div>
                       )}
@@ -519,7 +520,7 @@ export default function VitrineExposantPage() {
                         disabled={contacting}
                       >
                         <MessageSquare className="mr-2 size-4" />
-                        Contacter l&apos;exposant à propos de ceci
+                        {t('vitrine.detail.contact_about')}
                       </Button>
                     </div>
                   </DialogContent>
@@ -536,10 +537,10 @@ export default function VitrineExposantPage() {
           <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-heading font-semibold text-foreground">
-                Intéressé par cet exposant ?
+                {t('vitrine.detail.interested')}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Contactez-le directement via le chat PROMOTE-CONNECT pour discuter de vos besoins.
+                {t('vitrine.detail.interested_desc')}
               </p>
             </div>
             <Button
@@ -548,7 +549,7 @@ export default function VitrineExposantPage() {
               disabled={contacting}
             >
               <MessageSquare className="mr-2 size-4" />
-              Démarrer une conversation
+              {t('vitrine.detail.start_conversation')}
             </Button>
           </CardContent>
         </Card>

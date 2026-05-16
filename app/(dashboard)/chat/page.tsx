@@ -16,6 +16,7 @@ import {
   type EnrichedMessage, type ProductAttachment,
 } from '@/hooks/useChat';
 import { useNotificationState } from '@/lib/notification-context';
+import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -24,7 +25,7 @@ function getInitials(name: string | null | undefined) {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
-function formatRelativeTime(dateStr: string | null) {
+function formatRelativeTime(dateStr: string | null | undefined, t: any) {
   if (!dateStr) return '';
   const date = new Date(dateStr);
   const now = new Date();
@@ -33,10 +34,10 @@ function formatRelativeTime(dateStr: string | null) {
   const diffHr = Math.floor(diffMin / 60);
   const diffDay = Math.floor(diffHr / 24);
 
-  if (diffMin < 1) return 'maintenant';
+  if (diffMin < 1) return t('chat.now');
   if (diffMin < 60) return `${diffMin}m`;
   if (diffHr < 24) return `${diffHr}h`;
-  if (diffDay === 1) return 'hier';
+  if (diffDay === 1) return t('chat.yesterday');
   return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
 
@@ -52,6 +53,7 @@ function ConversationList({
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const { conversations, loading } = useConversations();
   const { contacts, loading: loadingContacts, load: loadContacts } = useContacts();
   const [search, setSearch] = useState('');
@@ -97,7 +99,7 @@ function ConversationList({
       {/* Header */}
       <div className="border-b border-border/50 px-4 py-3">
         <div className="mb-3 flex items-center justify-between">
-          <h1 className="text-base font-semibold text-foreground">Messages</h1>
+          <h1 className="text-base font-semibold text-foreground">{t('chat.title')}</h1>
           <Button
             size="sm"
             variant="outline"
@@ -105,7 +107,7 @@ function ConversationList({
             onClick={() => setShowNew((v) => !v)}
           >
             {showNew ? <X className="mr-1 size-3.5" /> : <Plus className="mr-1 size-3.5" />}
-            {showNew ? 'Fermer' : 'Nouveau'}
+            {showNew ? t('chat.close') : t('chat.new_chat')}
           </Button>
         </div>
 
@@ -124,7 +126,7 @@ function ConversationList({
                 )}
               >
                 <Building2 className="size-3.5" />
-                Exposants
+                {t('chat.exposants_tab')}
               </button>
               <button
                 onClick={() => setContactTab('visiteur')}
@@ -136,14 +138,14 @@ function ConversationList({
                 )}
               >
                 <User className="size-3.5" />
-                Visiteurs
+                {t('chat.visitors_tab')}
               </button>
             </div>
 
             <div className="relative">
               <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder={`Rechercher un ${contactTab}…`}
+                placeholder={t('chat.search_contact', { role: contactTab })}
                 value={contactSearch}
                 onChange={(e) => setContactSearch(e.target.value)}
                 className="h-8 pl-8 text-xs"
@@ -157,7 +159,7 @@ function ConversationList({
                 </div>
               ) : filteredContacts.length === 0 ? (
                 <p className="py-3 text-center text-xs text-muted-foreground">
-                  Aucun {contactTab} trouvé
+                  {t('chat.no_contact_found', { role: contactTab })}
                 </p>
               ) : (
                 filteredContacts.map((contact) => (
@@ -198,7 +200,7 @@ function ConversationList({
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher une conversation…"
+            placeholder={t('chat.search_conversation')}
             className="h-9 pl-9 text-sm"
           />
         </div>
@@ -222,12 +224,12 @@ function ConversationList({
           <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
             <MessageSquare className="size-10 text-muted-foreground/40" />
             <p className="text-sm text-muted-foreground">
-              {search ? 'Aucune conversation trouvée.' : "Aucune conversation pour l'instant."}
+              {search ? t('chat.no_conversation_found') : t('chat.no_conversation_yet')}
             </p>
             {!search && (
               <Button variant="outline" size="sm" className="rounded-lg" onClick={() => setShowNew(true)}>
                 <Plus className="mr-1 size-3.5" />
-                Démarrer un chat
+                {t('chat.start_chat')}
               </Button>
             )}
           </div>
@@ -236,7 +238,7 @@ function ConversationList({
             const other = conv.other_user;
             const isSelected = conv.id === selectedId;
             const isUnread = conv.unread_count > 0;
-            const displayName = conv.other_exposant_nom ?? other?.full_name ?? 'Utilisateur';
+            const displayName = conv.other_exposant_nom ?? other?.full_name ?? t('chat.default_user_name');
             const subName = conv.other_exposant_nom ? other?.full_name : (other?.company ?? null);
             const avatarUrl = conv.other_exposant_logo ?? other?.avatar_url;
 
@@ -272,7 +274,7 @@ function ConversationList({
                       {displayName}
                     </span>
                     <span className="shrink-0 text-[11px] text-muted-foreground/60">
-                      {formatRelativeTime(conv.last_message_at)}
+                      {formatRelativeTime(conv.last_message_at, t)}
                     </span>
                   </div>
                   {subName && (
@@ -303,6 +305,7 @@ function MessageThread({
   onBack: () => void;
   initialProduct?: ProductAttachment | null;
 }) {
+  const { t } = useTranslation();
   const {
     messages, loading, sendMessage, markAsRead, myUserId,
     otherUser, otherExposant, typingUser, sendTypingEvent,
@@ -357,7 +360,7 @@ function MessageThread({
     [sendTypingEvent]
   );
 
-  const displayName = otherExposant?.nom ?? otherUser?.full_name ?? 'Conversation';
+  const displayName = otherExposant?.nom ?? otherUser?.full_name ?? t('chat.default_conversation_name');
   const subName = otherExposant ? otherUser?.full_name : otherUser?.company;
   const avatarUrl = otherExposant?.logo_url ?? otherUser?.avatar_url;
 
@@ -386,7 +389,7 @@ function MessageThread({
         </div>
         {otherExposant && (
           <Badge variant="secondary" className="shrink-0 text-[10px]">
-            Exposant
+            {t('chat.exposant_badge')}
           </Badge>
         )}
       </div>
@@ -400,7 +403,7 @@ function MessageThread({
         ) : messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
             <MessageSquare className="size-10 text-muted-foreground/30" />
-            <p className="text-sm text-muted-foreground">Démarrez la conversation.</p>
+            <p className="text-sm text-muted-foreground">{t('chat.start_conversation')}</p>
           </div>
         ) : (
           <div className="space-y-1">
@@ -436,7 +439,7 @@ function MessageThread({
                     />
                   ))}
                 </div>
-                <span className="text-xs text-muted-foreground/60">{`est en train d'écrire…`}</span>
+                <span className="text-xs text-muted-foreground/60">{t('chat.typing')}</span>
               </div>
             )}
             <div ref={bottomRef} />
@@ -464,15 +467,16 @@ function MessageThread({
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
 function EmptyState() {
+  const { t } = useTranslation();
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 text-center px-8">
       <div className="flex size-16 items-center justify-center rounded-2xl bg-primary/10">
         <MessageSquare className="size-8 text-primary" />
       </div>
       <div>
-        <p className="text-sm font-medium text-foreground">Sélectionnez une conversation</p>
+        <p className="text-sm font-medium text-foreground">{t('chat.select_conversation')}</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Choisissez une conversation dans la liste pour afficher les messages.
+          {t('chat.select_conversation_hint')}
         </p>
       </div>
     </div>
@@ -481,6 +485,7 @@ function EmptyState() {
 
 // ─── Page principale ──────────────────────────────────────────────────────────
 export default function ChatPage() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { setActiveConversationId } = useNotificationState();

@@ -692,6 +692,53 @@ export interface Database {
           },
         ];
       };
+      user_preferences: {
+        Row: {
+          id: string;
+          profile_id: string;
+          language: string;
+          notify_messages: boolean;
+          notify_rdv: boolean;
+          notify_newsletter: boolean;
+          notify_feed: boolean;
+          notify_sound: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          language?: string;
+          notify_messages?: boolean;
+          notify_rdv?: boolean;
+          notify_newsletter?: boolean;
+          notify_feed?: boolean;
+          notify_sound?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          profile_id?: string;
+          language?: string;
+          notify_messages?: boolean;
+          notify_rdv?: boolean;
+          notify_newsletter?: boolean;
+          notify_feed?: boolean;
+          notify_sound?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_preferences_profile_id_fkey';
+            columns: ['profile_id'];
+            isRelationOneToOne: true;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
       espaces: {
         Row: {
           id: string;

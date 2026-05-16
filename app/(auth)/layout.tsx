@@ -1,28 +1,33 @@
-import { CalendarDays, MessageSquare, Users } from "lucide-react";
+'use client';
 
-const trustPoints = [
-  {
-    icon: Users,
-    title: "Reseau qualifie",
-    copy: "Retrouvez exposants, visiteurs et partenaires dans un meme espace professionnel.",
-  },
-  {
-    icon: MessageSquare,
-    title: "Echanges directs",
-    copy: "Demarrez une conversation ou un rendez-vous B2B sans sortir de la plateforme.",
-  },
-  {
-    icon: CalendarDays,
-    title: "Acces administre",
-    copy: "Recevez vos identifiants par email et retrouvez agenda, vitrine et opportunites business dans un meme espace.",
-  },
-];
+import { CalendarDays, MessageSquare, Users } from "lucide-react";
+import { useTranslation } from '@/lib/i18n';
 
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
+
+  const trustPoints = [
+    {
+      icon: Users,
+      title: t('auth.layout.qualify'),
+      copy: t('auth.layout.qualify_desc'),
+    },
+    {
+      icon: MessageSquare,
+      title: t('auth.layout.exchanges'),
+      copy: t('auth.layout.exchanges_desc'),
+    },
+    {
+      icon: CalendarDays,
+      title: t('auth.layout.access'),
+      copy: t('auth.layout.access_desc'),
+    },
+  ];
+
   return (
     <div className="relative overflow-hidden bg-background">
       <div className="relative mx-auto grid min-h-screen w-full md:grid-cols-2">
@@ -35,18 +40,15 @@ export default function AuthLayout({
                 <span className="flex size-9 items-center justify-center rounded-full bg-white/20 font-bold">
                   P
                 </span>
-                Salon PROMOTE 2026
+                {t('auth.layout.salon')}
               </div>
 
               <div className="max-w-2xl space-y-5">
                 <h1 className="font-heading text-4xl leading-[1.05] text-white xl:text-5xl">
-                  Le reseau professionnel PROMOTE-CONNECT, pense pour conclure
-                  plus vite.
+                  {t('auth.layout.tagline')}
                 </h1>
                 <p className="max-w-xl text-base leading-8 text-white/80 xl:text-lg">
-                  Authentification securisee, annuaire intelligent, messagerie
-                  privee, agenda B2B et vitrine exposants dans une experience
-                  claire, premium et mobile-first.
+                  {t('auth.layout.description')}
                 </p>
               </div>
             </div>

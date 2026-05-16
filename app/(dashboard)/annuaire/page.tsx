@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 const COVER_GRADIENTS = [
@@ -51,6 +52,7 @@ function getGradient(id: string) {
 }
 
 export default function AnnuairePage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -116,7 +118,7 @@ export default function AnnuairePage() {
       const { data: session } = await supabaseClient.auth.getSession();
       const myId = session?.session?.user?.id;
       if (!myId) {
-        toast.error('Vous devez etre connecte');
+        toast.error(t('annuaire.must_be_logged'));
         return;
       }
 
@@ -127,7 +129,7 @@ export default function AnnuairePage() {
         .single();
 
       if (!exposant?.profile_id) {
-        toast.error('Cet exposant ne peut pas etre contacte');
+        toast.error(t('annuaire.cannot_contact'));
         return;
       }
 
@@ -144,7 +146,7 @@ export default function AnnuairePage() {
       if (convError) throw convError;
       router.push(`/chat/${conv.id}`);
     } catch {
-      toast.error('Erreur lors de la creation de la conversation');
+      toast.error(t('annuaire.conversation_error'));
     } finally {
       setContactingId(null);
     }
@@ -170,12 +172,12 @@ export default function AnnuairePage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                Annuaire des exposants
+                {t('annuaire.title')}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 {totalCount
-                  ? `${totalCount} exposant${totalCount !== 1 ? 's' : ''} participent au salon`
-                  : 'Parcourez les exposants du salon PROMOTE'}
+                  ? t('annuaire.subtitle', { count: totalCount })
+                  : t('annuaire.desc')}
               </p>
             </div>
           </div>
@@ -191,7 +193,7 @@ export default function AnnuairePage() {
               <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Rechercher par nom, secteur ou pays..."
+                placeholder={t('annuaire.search')}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -211,7 +213,7 @@ export default function AnnuairePage() {
                 )}
               >
                 <SlidersHorizontal className="size-4" />
-                Filtres
+                {t('annuaire.filters')}
                 {activeFiltersCount > 0 && (
                   <Badge
                     variant="secondary"
@@ -229,7 +231,7 @@ export default function AnnuairePage() {
                   className="gap-1.5 rounded-xl h-11 text-muted-foreground hover:text-foreground"
                 >
                   <X className="size-4" />
-                  <span className="hidden sm:inline">Réinitialiser</span>
+                  <span className="hidden sm:inline">{t('annuaire.reset')}</span>
                 </Button>
               )}
             </div>
@@ -246,10 +248,10 @@ export default function AnnuairePage() {
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Tous les secteurs" />
+                  <SelectValue placeholder={t('annuaire.all_sectors')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous les secteurs</SelectItem>
+                  <SelectItem value="all">{t('annuaire.all_sectors')}</SelectItem>
                   {filterOptions.secteurs.map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
                   ))}
@@ -264,13 +266,13 @@ export default function AnnuairePage() {
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Tous les espaces" />
+                  <SelectValue placeholder={t('annuaire.all_spaces')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous les espaces</SelectItem>
+                  <SelectItem value="all">{t('annuaire.all_spaces')}</SelectItem>
                   {filterOptions.espaces.map((espace) => (
                     <SelectItem key={espace.id} value={espace.code}>
-                      {espace.type === 'pavillon' ? 'Pav.' : 'Espace'} {espace.code} — {espace.nom}
+                      {espace.type === 'pavillon' ? t('annuaire.pavillon_prefix') : t('annuaire.space')} {espace.code} — {espace.nom}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -284,10 +286,10 @@ export default function AnnuairePage() {
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Tous les pays" />
+                  <SelectValue placeholder={t('annuaire.all_countries')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous les pays</SelectItem>
+                  <SelectItem value="all">{t('annuaire.all_countries')}</SelectItem>
                   {filterOptions.pays.map((c) => (
                     <SelectItem key={c} value={c}>{c}</SelectItem>
                   ))}
@@ -299,7 +301,7 @@ export default function AnnuairePage() {
           {/* Tags actifs */}
           {activeFilters.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-muted-foreground">Filtres actifs :</span>
+              <span className="text-xs text-muted-foreground">{t('annuaire.active_filters')}</span>
               {activeFilters.map((f, i) => (
                 <Badge
                   key={i}
@@ -316,7 +318,7 @@ export default function AnnuairePage() {
                 onClick={clearFilters}
                 className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
               >
-                Tout effacer
+                {t('annuaire.clear_all')}
               </button>
             </div>
           )}
@@ -348,7 +350,7 @@ export default function AnnuairePage() {
           ))
         ) : error ? (
           <div className="col-span-full rounded-xl border border-destructive/20 bg-destructive/5 p-6 text-center text-sm text-destructive">
-            Erreur : {error.message}
+            {t('annuaire.load_error', { error: error.message })}
           </div>
         ) : exposants.length > 0 ? (
           exposants.map((exposant) => {
@@ -384,12 +386,12 @@ export default function AnnuairePage() {
                     {exposant.is_featured && (
                       <Badge className="rounded-full border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 shadow-sm">
                         <Star className="mr-0.5 size-3 fill-amber-500 text-amber-500" />
-                        Vedette
+                        {t('annuaire.featured')}
                       </Badge>
                     )}
                     {isOwn && (
                       <Badge className="rounded-full border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 shadow-sm">
-                        Votre stand
+                        {t('annuaire.your_stand')}
                       </Badge>
                     )}
                   </div>
@@ -410,8 +412,8 @@ export default function AnnuairePage() {
 
                 <CardContent className="space-y-3.5 p-5">
                   {/* Logo + Nom */}
-                  <div className="flex items-start gap-3">
-                    <Avatar className="size-12 -mt-8 ring-2 ring-background shadow-md shrink-0">
+                  <div className="flex items-start gap-3 -mt-8">
+                    <Avatar className="size-12  ring-2 ring-background shadow-md shrink-0">
                       {exposant.logo_url ? (
                         <AvatarImage src={exposant.logo_url} />
                       ) : (
@@ -428,7 +430,7 @@ export default function AnnuairePage() {
                         <p className="truncate text-xs text-muted-foreground/70">
                           <MapPin className="mr-0.5 inline size-3" />
                           {exposant.pays}
-                          {exposant.pavillon && ` — Pavillon ${exposant.pavillon}`}
+                          {exposant.pavillon && ` — ${t('annuaire.pavillon_prefix')} ${exposant.pavillon}`}
                         </p>
                       )}
                     </div>
@@ -436,7 +438,7 @@ export default function AnnuairePage() {
 
                   {/* Description */}
                   <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground/80">
-                    {exposant.description || 'Aucune description renseignée.'}
+                    {exposant.description || t('annuaire.no_description')}
                   </p>
 
                   {/* Tags */}
@@ -449,7 +451,7 @@ export default function AnnuairePage() {
                     )}
                     {exposant.pavillon && (
                       <Badge variant="outline" className="rounded-full border-border/60 text-[11px] font-normal">
-                        Pav. {exposant.pavillon}
+                        {t('annuaire.pavillon_prefix')} {exposant.pavillon}
                       </Badge>
                     )}
                   </div>
@@ -462,7 +464,7 @@ export default function AnnuairePage() {
                       onClick={() => router.push(`/annuaire/${exposant.id}`)}
                     >
                       <Eye className="mr-1.5 size-3.5" />
-                      Voir la fiche
+                      {t('common.view_profile')}
                     </Button>
                     {!isOwn && (
                       <Button
@@ -476,7 +478,7 @@ export default function AnnuairePage() {
                         {contactingId === exposant.id ? (
                           <span className="animate-pulse">...</span>
                         ) : (
-                          'Contacter'
+                          t('annuaire.contact_btn')
                         )}
                       </Button>
                     )}
@@ -498,16 +500,16 @@ export default function AnnuairePage() {
               </div>
               <div>
                 <p className="text-base font-semibold text-foreground">
-                  Aucun résultat trouvé
+                  {t('common.no_results')}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Essayez de modifier vos filtres ou votre recherche.
+                  {t('common.no_results_hint')}
                 </p>
               </div>
               {hasFilters && (
                 <Button variant="outline" size="sm" onClick={clearFilters} className="rounded-xl">
                   <X className="mr-1.5 size-3.5" />
-                  Réinitialiser les filtres
+                  {t('common.reset_filters')}
                 </Button>
               )}
             </div>

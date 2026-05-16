@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useTranslation } from '@/lib/i18n';
 
 interface DashboardStats {
   networkSize: number;
@@ -71,13 +72,14 @@ interface DashboardData {
   exposantSnapshot: ExposantSnapshot | null;
 }
 
-const getQuickActions = (role: string) => [
-  { label: role === "exposant" ? "Prospecter (Annuaire)" : "Explorer l annuaire", href: "/annuaire", icon: Users },
-  { label: role === "exposant" ? "Gerer mes leads" : "Ouvrir la messagerie", href: "/chat", icon: MessageSquare },
-  { label: role === "exposant" ? "Mon planning B2B" : "Consulter l agenda", href: "/agenda", icon: CalendarDays },
+const getQuickActions = (role: string, t: any) => [
+  { label: role === "exposant" ? t('dashboard.home.prospecting') : t('dashboard.home.prospecting_desc'), href: "/annuaire", icon: Users },
+  { label: role === "exposant" ? t('dashboard.home.leads') : t('dashboard.home.leads_desc'), href: "/chat", icon: MessageSquare },
+  { label: role === "exposant" ? t('dashboard.home.schedule') : t('dashboard.home.schedule_desc'), href: "/agenda", icon: CalendarDays },
 ];
 
 export default function DashboardHome() {
+  const { t } = useTranslation();
   const { user, profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
@@ -183,7 +185,7 @@ export default function DashboardHome() {
           const lastMsg = lastMsgMap.get(conversation.id);
           recentConversations.push({
             id: conversation.id,
-            other_name: profileMap.get(otherId) || "Contact PROMOTE",
+            other_name: profileMap.get(otherId) || t('common.contact_promote'),
             last_message: lastMsg?.content || null,
             last_message_at: lastMsg?.created_at || conversation.last_message_at,
           });
@@ -210,7 +212,7 @@ export default function DashboardHome() {
 
   if (loading || !data || !profile) {
     return (
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px]">
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px] max-w-6xl mx-auto">
         <div className="space-y-6 flex min-w-0 flex-col">
           {/* Welcome card skeleton */}
           <div className="surface-panel overflow-hidden border-0 p-0 animate-pulse">
@@ -242,8 +244,8 @@ export default function DashboardHome() {
     );
   }
 
-  const roleLabel = profile.role === "exposant" ? "Exposant" : "Visiteur";
-  const firstName = profile.full_name?.split(" ")[0] || "participant";
+  const roleLabel = profile.role === "exposant" ? t('dashboard.home.exposant_label') : t('dashboard.home.visiteur_label');
+  const firstName = profile.full_name?.split(" ")[0] || t('common.participant');
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px] max-w-6xl mx-auto">
@@ -252,47 +254,45 @@ export default function DashboardHome() {
           <div className="brand-gradient relative px-6 pb-12 pt-8">
             <Badge className="mb-4 inline-flex rounded-full bg-white/15 text-white backdrop-blur-sm hover:bg-white/20">
               <Sparkles className="mr-1 size-3.5" />
-              Hub de networking PROMOTE
+              {t('dashboard.home.title')}
             </Badge>
             <h1 className="text-3xl font-heading font-extrabold text-white sm:text-4xl">
-              Bonjour, {firstName}.
+              {t('dashboard.home.greeting', { name: firstName })}
             </h1>
             <p className="mt-3 max-w-xl text-base text-white/80">
-              Retrouvez ici vos conversations, les prochains rendez-vous et les
-              exposants a suivre pour prolonger la dynamique du salon toute
-              l&apos;annee.
+              {t('dashboard.home.subtitle')}
             </p>
           </div>
           <CardContent className="relative -mt-6 space-y-5 p-6">
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <MetricCard
                 icon={Users}
-                label={profile.role === "exposant" ? "Réseau exposants" : "Exposants disponibles"}
+                label={profile.role === "exposant" ? t('dashboard.home.quick_network') : t('dashboard.home.quick_exposants')}
                 value={data.stats.networkSize}
                 tone="blue"
               />
               <MetricCard
                 icon={MessageSquare}
-                label={profile.role === "exposant" ? "Contacts & Leads" : "Conversations ouvertes"}
+                label={profile.role === "exposant" ? t('dashboard.home.quick_contacts') : t('dashboard.home.quick_conversations')}
                 value={data.stats.conversationCount}
                 tone="emerald"
               />
               <MetricCard
                 icon={CalendarDays}
-                label={profile.role === "exposant" ? "Rendez-vous B2B" : "Événements à venir"}
+                label={profile.role === "exposant" ? t('dashboard.home.quick_rdv') : t('dashboard.home.quick_events')}
                 value={data.stats.upcomingCount}
                 tone="amber"
               />
               <MetricCard
                 icon={BriefcaseBusiness}
-                label={profile.role === "exposant" ? "Produits en vitrine" : "Espace business"}
+                label={profile.role === "exposant" ? t('dashboard.home.quick_products') : t('dashboard.home.quick_business')}
                 value={profile.role === "exposant" ? data.stats.productCount : data.stats.networkSize}
                 tone="violet"
               />
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              {getQuickActions(profile.role || "visiteur").map((action) => (
+              {getQuickActions(profile.role || "visiteur", t).map((action) => (
                 <Link
                   key={action.href}
                   href={action.href}
@@ -310,15 +310,15 @@ export default function DashboardHome() {
           </CardContent>
         </Card>
 
-        <Card className="surface-panel border-0">
+        <Card className="surface-panel border-0 py-0">
           <CardContent className="space-y-5 p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">
-                  Opportunités
+                  {t('dashboard.home.opportunities')}
                 </p>
                 <h2 className="mt-1 text-2xl font-heading text-foreground">
-                  Exposants à suivre
+                  {t('dashboard.home.exposants_to_follow')}
                 </h2>
               </div>
               <Link
@@ -328,7 +328,7 @@ export default function DashboardHome() {
                   "rounded-full text-sm",
                 )}
               >
-                Voir tout
+                {t('common.see_all')}
                 <ArrowRight className="size-4" />
               </Link>
             </div>
@@ -350,24 +350,24 @@ export default function DashboardHome() {
                           {exposant.nom}
                         </h3>
                         <p className="text-xs text-muted-foreground">
-                          {exposant.secteur || "Secteur non renseigne"}
+                          {exposant.secteur || t('common.unknown_sector')}
                         </p>
                       </div>
                     </div>
                     {exposant.is_featured && (
                       <Badge className="rounded-full bg-primary/10 text-primary hover:bg-primary/15">
-                        En vue
+                        {t('common.featured')}
                       </Badge>
                     )}
                   </div>
                   <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
                     {exposant.description ||
-                      "Nouvelle presence entreprise sur PROMOTE-CONNECT."}
+                      t('dashboard.home.new_exposant')}
                   </p>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <MapPin className="size-3" />
-                      {exposant.pays || "International"}
+                      {exposant.pays || t('dashboard.home.international')}
                     </span>
                     {exposant.pavillon && (
                       <span className="flex items-center gap-1">
@@ -376,7 +376,7 @@ export default function DashboardHome() {
                       </span>
                     )}
                     <span className="ml-auto text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
-                      Voir la fiche &rarr;
+                      {t('dashboard.home.view_profile')} &rarr;
                     </span>
                   </div>
                 </Link>
@@ -385,15 +385,15 @@ export default function DashboardHome() {
           </CardContent>
         </Card>
 
-        <Card className="surface-panel border-0">
+        <Card className="surface-panel border-0 py-0">
           <CardContent className="space-y-5 p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">
-                  Messagerie
+                  {t('dashboard.home.messaging')}
                 </p>
                 <h2 className="mt-1 text-2xl font-heading text-foreground">
-                  Conversations récentes
+                  {t('dashboard.home.recent_conversations')}
                 </h2>
               </div>
               <Link
@@ -403,7 +403,7 @@ export default function DashboardHome() {
                   "rounded-full text-sm",
                 )}
               >
-                Ouvrir le chat
+                {t('dashboard.home.open_chat')}
                 <ArrowRight className="size-4" />
               </Link>
             </div>
@@ -413,8 +413,7 @@ export default function DashboardHome() {
                 <div className="surface-subtle flex items-center gap-3 p-5 text-sm text-muted-foreground">
                   <Send className="size-5 shrink-0 text-primary/50" />
                   <span>
-                    Aucune conversation pour le moment. Lancez un premier contact
-                    depuis l&apos;annuaire exposants.
+                    {t('dashboard.home.no_conversations')}
                   </span>
                 </div>
               ) : (
@@ -446,7 +445,7 @@ export default function DashboardHome() {
                         )}
                       </div>
                       <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                        {conversation.last_message || "Conversation ouverte"}
+                        {conversation.last_message || t('dashboard.home.conversation_open')}
                       </p>
                     </div>
                   </Link>
@@ -469,44 +468,44 @@ export default function DashboardHome() {
               <div className="text-white">
                 <p className="text-lg font-heading font-bold">{profile.full_name}</p>
                 <p className="text-sm text-white/80">
-                  {profile.company || "Participant PROMOTE-CONNECT"}
+                  {profile.company || t('common.participant')}
                 </p>
               </div>
             </div>
           </div>
           <CardContent className="space-y-4 p-5">
             <div className="flex items-center justify-between rounded-xl bg-muted/70 px-4 py-3">
-              <span className="text-sm text-muted-foreground">Rôle</span>
+              <span className="text-sm text-muted-foreground">{t('dashboard.home.role')}</span>
               <Badge variant="secondary" className="rounded-full">
                 {roleLabel}
               </Badge>
             </div>
             <div className="flex items-center justify-between rounded-xl bg-muted/70 px-4 py-3">
-              <span className="text-sm text-muted-foreground">Statut</span>
+              <span className="text-sm text-muted-foreground">{t('dashboard.home.status')}</span>
               <div className="flex items-center gap-1.5">
                 <span className="size-2 rounded-full bg-emerald-500" />
-                <span className="font-medium text-foreground">Actif</span>
+                <span className="font-medium text-foreground">{t('common.active')}</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="surface-panel border-0">
+        <Card className="surface-panel border-0 py-0">
           <CardContent className="space-y-5 p-6">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">
-                Agenda
-              </p>
-              <h2 className="mt-1 text-2xl font-heading text-foreground">
-                Prochains événements
-              </h2>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">
+                  {t('dashboard.home.agenda')}
+                </p>
+                <h2 className="mt-1 text-2xl font-heading text-foreground">
+                  {t('dashboard.home.upcoming_events')}
+                </h2>
             </div>
             <div className="space-y-2">
               {data.upcomingEvents.length === 0 ? (
                 <div className="surface-subtle flex items-center gap-3 p-4 text-sm text-muted-foreground">
                   <CalendarDays className="size-5 shrink-0 text-primary/50" />
                   <span>
-                    Aucun événement programme.
+                    {t('dashboard.home.no_events')}
                   </span>
                 </div>
               ) : (
@@ -547,14 +546,14 @@ export default function DashboardHome() {
           </CardContent>
         </Card>
 
-        <Card className="surface-panel border-0">
+        <Card className="surface-panel border-0 py-0">
           <CardContent className="space-y-5 p-6">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">
-                Focus business
+                {t('dashboard.home.focus_business')}
               </p>
               <h2 className="mt-1 text-2xl font-heading text-foreground">
-                {profile.role === "exposant" ? "Votre vitrine" : "Votre presence"}
+                {profile.role === "exposant" ? t('dashboard.home.your_vitrine') : t('dashboard.home.your_presence')}
               </h2>
             </div>
 
@@ -570,14 +569,14 @@ export default function DashboardHome() {
                         {data.exposantSnapshot.nom}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {data.exposantSnapshot.secteur || "Secteur non renseigne"}
+                        {data.exposantSnapshot.secteur || t('common.unknown_sector')}
                       </p>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-xl border border-border/60 bg-background/50 p-4">
                       <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                        Produits
+                        {t('dashboard.home.products')}
                       </p>
                       <p className="mt-1 text-2xl font-bold text-foreground">
                         {data.exposantSnapshot.produitsCount}
@@ -585,7 +584,7 @@ export default function DashboardHome() {
                     </div>
                     <div className="rounded-xl border border-border/60 bg-background/50 p-4">
                       <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                        Portée
+                        {t('dashboard.home.reach')}
                       </p>
                       <p className="mt-1 text-2xl font-bold text-foreground">
                         {data.stats.networkSize}
@@ -600,7 +599,7 @@ export default function DashboardHome() {
                     )}
                   >
                     <Eye className="size-4" />
-                    Gérer ma vitrine
+                    {t('dashboard.home.manage_vitrine')}
                   </Link>
                 </div>
               </div>
@@ -611,11 +610,10 @@ export default function DashboardHome() {
                     <TrendingUp className="mt-0.5 size-5 text-primary" />
                     <div>
                       <p className="font-semibold text-foreground">
-                        Réseau en croissance
+                        {t('dashboard.home.growing_network')}
                       </p>
                       <p className="text-sm leading-6 text-muted-foreground">
-                        {data.stats.networkSize} exposants sont déjà accessibles
-                        pour vos prises de contact et vos rendez-vous B2B.
+                        {t('dashboard.home.growing_network_desc', { count: data.stats.networkSize })}
                       </p>
                     </div>
                   </div>
@@ -627,7 +625,7 @@ export default function DashboardHome() {
                     )}
                   >
                     <Users className="size-4" />
-                    Trouver des exposants
+                    {t('dashboard.home.find_exposants')}
                   </Link>
                 </div>
               </div>
@@ -668,7 +666,7 @@ function MetricCard({
     <div className="group rounded-xl border border-border/60 bg-background/50 p-5 shadow-sm transition-all hover:border-primary/20 hover:bg-background hover:shadow-md dark:bg-muted/40 dark:hover:bg-muted/60">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="text-xs font-medium uppercase tracking-[0.03em] text-muted-foreground">
             {label}
           </p>
           <p className="text-2xl font-heading font-bold text-foreground">
@@ -677,12 +675,12 @@ function MetricCard({
         </div>
         <div
           className={cn(
-            "flex size-12 shrink-0 items-center justify-center rounded-xl shadow-sm",
+            "flex size-10 shrink-0 items-center justify-center rounded-xl shadow-sm",
             bgStyles[tone],
             styles[tone],
           )}
         >
-          <Icon className="size-5" />
+          <Icon className="size-4" />
         </div>
       </div>
     </div>

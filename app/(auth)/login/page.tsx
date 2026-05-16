@@ -17,10 +17,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Image from 'next/image';
-
-
+import { useTranslation } from '@/lib/i18n';
 
 function LoginPageContent() {
+  const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signIn } = useAuth();
@@ -60,12 +60,12 @@ function LoginPageContent() {
         .single();
 
       const role = (profile as { role: string | null } | null)?.role;
-      router.replace(role === 'admin' ? '/admin' : '/app');
+      router.replace(role === 'admin' ? '/admin' : '/feed');
     } catch (loginError) {
       setError(
         loginError instanceof Error
           ? loginError.message
-          : 'Erreur de connexion',
+          : t('auth.login.error'),
       );
     } finally {
       setLoading(false);
@@ -85,10 +85,10 @@ function LoginPageContent() {
         </div>
         <div className="space-y-2 text-center">
           <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
-            Bienvenue
+            {t('auth.login.title')}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Connectez-vous à votre espace personnel
+            {t('auth.login.subtitle')}
           </p>
         </div>
 
@@ -97,8 +97,7 @@ function LoginPageContent() {
         {adminOnly && (
           <Alert className="rounded-2xl border-amber-200 bg-amber-50 text-amber-900">
             <AlertDescription>
-              La creation de compte est reservee a l administrateur. Contactez
-              l equipe PROMOTE pour recevoir vos identifiants par email.
+              {t('auth.login.restricted')}
             </AlertDescription>
           </Alert>
         )}
@@ -111,7 +110,7 @@ function LoginPageContent() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="email">Email professionnel</Label>
+            <Label htmlFor="email">{t('auth.login.email')}</Label>
             <div className="relative">
               <Mail className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -120,7 +119,7 @@ function LoginPageContent() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 required
-                placeholder="prenom.nom@entreprise.com"
+                placeholder={t('auth.login.email_placeholder')}
                 className="pl-11"
               />
             </div>
@@ -128,9 +127,9 @@ function LoginPageContent() {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-3">
-              <Label htmlFor="password">Mot de passe</Label>
+              <Label htmlFor="password">{t('auth.login.password')}</Label>
               <span className="text-xs text-muted-foreground">
-                8 caracteres minimum
+                {t('auth.login.password_hint')}
               </span>
             </div>
             <div className="relative">
@@ -141,7 +140,7 @@ function LoginPageContent() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
-                placeholder="Votre mot de passe temporaire ou personnel"
+                placeholder={t('auth.login.password_placeholder')}
                 className="pl-11 pr-12"
               />
               <button
@@ -150,8 +149,8 @@ function LoginPageContent() {
                 className="absolute right-3 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground"
                 aria-label={
                   showPassword
-                    ? 'Masquer le mot de passe'
-                    : 'Afficher le mot de passe'
+                    ? t('auth.login.hide_password')
+                    : t('auth.login.show_password')
                 }
               >
                 {showPassword ? (
@@ -171,7 +170,7 @@ function LoginPageContent() {
             size="lg"
             className="w-full"
           >
-            {loading ? 'Connexion en cours...' : 'Se connecter'}
+            {loading ? t('auth.login.logging_in') : t('auth.login.sign_in')}
             {!loading && <ArrowRight className="size-4" />}
           </Button>
         </form>
@@ -180,7 +179,7 @@ function LoginPageContent() {
             href="mailto:support@promote-connect.com"
             className="text-center text-sm font-medium text-muted-foreground transition hover:text-primary"
           >
-            {`Pas d'accès ? Contacter le support`}
+            {t('auth.login.no_access')}
           </Link>
         </div>
     </div>

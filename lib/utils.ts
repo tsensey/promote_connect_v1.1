@@ -5,8 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function toEmbedUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
+export function toEmbedUrl(url?: string | undefined): string | undefined {
+  if (!url) return undefined;
 
   if (url.includes("youtube.com/watch") || url.includes("youtu.be")) {
     const match = url.match(
