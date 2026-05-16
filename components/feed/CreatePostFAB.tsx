@@ -155,7 +155,7 @@ export function CreatePostFAB({ onSubmit, onUpload }: CreatePostFABProps) {
     : '?';
 
   const modalContent = (
-    <form onSubmit={handleSubmit} className="space-y-4 max-h-[80vh] overflow-y-auto">
+    <form onSubmit={handleSubmit} className="space-y-4 max-h-[80vh] overflow-y-auto px-1 sm:px-2">
       <div className="flex gap-3 pb-4 border-b">
         <Avatar className="h-10 w-10 shrink-0">
           {profile?.avatar_url ? (
@@ -178,7 +178,7 @@ export function CreatePostFAB({ onSubmit, onUpload }: CreatePostFABProps) {
         ref={textareaRef}
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        placeholder="De quoi voulez-vous parler ?"
+        placeholder={profile?.role === 'exposant' && isMobile ? "Partager avec nous..." : "De quoi voulez-vous parler ?"}
         className="min-h-[120px] w-full resize-none rounded-lg border border-border bg-transparent p-3 text-base placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/50"
       />
 
@@ -288,7 +288,7 @@ export function CreatePostFAB({ onSubmit, onUpload }: CreatePostFABProps) {
       {/* Modal - Sheet on mobile, Dialog on desktop */}
       {isMobile ? (
         <Sheet open={open} onOpenChange={handleOpenChange}>
-          <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto rounded-t-2xl">
+          <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto rounded-t-2xl px-6 pb-6">
             <SheetHeader className="mb-4">
               <SheetTitle>Créer une publication</SheetTitle>
             </SheetHeader>
@@ -299,7 +299,7 @@ export function CreatePostFAB({ onSubmit, onUpload }: CreatePostFABProps) {
         </Sheet>
       ) : (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
             <DialogHeader>
               <DialogTitle>Créer une publication</DialogTitle>
             </DialogHeader>

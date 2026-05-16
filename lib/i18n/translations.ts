@@ -250,7 +250,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     'feed.create.placeholder_job': 'Décrivez le poste et le profil recherché...',
     'feed.create.placeholder_event': 'Présentez votre événement (lieu, date, horaires)...',
     'feed.create.placeholder_exposant': 'Partagez une actualité avec la communauté...',
-    'feed.create.placeholder_mobile': 'Partager avec nous',
+    'feed.create.placeholder_mobile': 'Partager avec nous...',
     'feed.create.placeholder_visitor': 'Quoi de neuf ?',
     'feed.create.dropzone': 'Déposez vos images ici',
     'feed.create.dropzone_hint': 'Ajouter des images (max 4) — glisser-déposer ou cliquer',
