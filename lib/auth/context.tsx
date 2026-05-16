@@ -7,16 +7,8 @@ import type { Database } from '@/types/database.types';
 
 export type AppProfile = Pick<
   Database['public']['Tables']['profiles']['Row'],
-  | 'id'
-  | 'full_name'
-  | 'company'
-  | 'role'
-  | 'sector'
-  | 'country'
-  | 'pavillon'
-  | 'avatar_url'
-  | 'is_active'
-  | 'suspended_at'
+  'id' | 'full_name' | 'company' | 'role' | 'sector' | 'country' 
+  | 'pavillon' | 'avatar_url' | 'is_active' | 'suspended_at' | 'created_at'
 >;
 
 
@@ -36,7 +28,7 @@ async function loadProfile(userId: string) {
   const { data, error } = await supabaseClient
     .from('profiles')
     .select(
-      'id, full_name, company, role, sector, country, pavillon, avatar_url, is_active, suspended_at'
+      'id, full_name, company, role, sector, country, pavillon, avatar_url, is_active, suspended_at, created_at'
     )
     .eq('id', userId)
     .single();

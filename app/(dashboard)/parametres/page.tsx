@@ -59,6 +59,7 @@ function ProfileTab() {
   const { t } = useTranslation();
   const { profile, refreshProfile } = useAuth();
   const { updateProfile, saving } = useSettings();
+  const isExposant = profile?.role === 'exposant';
   const [fullName, setFullName] = useState(profile?.full_name ?? '');
   const [company, setCompany] = useState(profile?.company ?? '');
   const [sector, setSector] = useState(profile?.sector ?? '');
@@ -69,9 +70,12 @@ function ProfileTab() {
 
   const handleSave = async () => {
     const result = await updateProfile({
-      full_name: fullName, company,
-      sector: sector || null, country: country || null,
-      pavillon: pavillon || null, avatar_url: avatarUrl,
+      full_name: fullName,
+      ...(isExposant ? { company } : {}),
+      ...(isExposant ? { sector: sector || null } : {}),
+      country: country || null,
+      ...(isExposant ? { pavillon: pavillon || null } : {}),
+      avatar_url: avatarUrl,
     });
     if (result.success) {
       await refreshProfile();
@@ -101,9 +105,12 @@ function ProfileTab() {
   const removeAvatar = () => setAvatarUrl(null);
 
   const hasChanges =
-    profile?.full_name !== fullName || profile?.company !== company ||
-    profile?.sector !== sector || profile?.country !== country ||
-    profile?.pavillon !== pavillon || profile?.avatar_url !== avatarUrl;
+    profile?.full_name !== fullName ||
+    profile?.country !== country ||
+    profile?.avatar_url !== avatarUrl ||
+    (isExposant && (profile?.company !== company ||
+    profile?.sector !== sector ||
+    profile?.pavillon !== pavillon));
 
   return (
     <div className="space-y-6">
@@ -116,7 +123,7 @@ function ProfileTab() {
             </div>
             <div>
               <CardTitle className="text-lg">{t('settings.profile')}</CardTitle>
-              <CardDescription>{t('settings.profile.description')}</CardDescription>
+              <CardDescription>{isExposant ? t('settings.profile.description.exposant') : t('settings.profile.description.visiteur')}</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -151,31 +158,37 @@ function ProfileTab() {
               <Label htmlFor="fullName">{t('profile.full_name')}</Label>
               <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t('profile.full_name.placeholder')} />
             </Field>
-            <Field>
-              <Label htmlFor="company">{t('profile.company')}</Label>
-              <Input id="company" value={company} onChange={(e) => setCompany(e.target.value)} placeholder={t('profile.company.placeholder')} />
-            </Field>
-            <Field>
-              <Label htmlFor="sector">{t('profile.sector')}</Label>
-              <Select value={sector} onValueChange={(v: string | null) => setSector(v ?? '')}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('profile.sector.placeholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {SECTORS.map((s) => (
-                    <SelectItem key={s} value={s}>{t(`sector.${s}`)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
+            {isExposant && (
+              <Field>
+                <Label htmlFor="company">{t('profile.company')}</Label>
+                <Input id="company" value={company} onChange={(e) => setCompany(e.target.value)} placeholder={t('profile.company.placeholder')} />
+              </Field>
+            )}
+            {isExposant && (
+              <Field>
+                <Label htmlFor="sector">{t('profile.sector')}</Label>
+                <Select value={sector} onValueChange={(v: string | null) => setSector(v ?? '')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('profile.sector.placeholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SECTORS.map((s) => (
+                      <SelectItem key={s} value={s}>{t(`sector.${s}`)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            )}
             <Field>
               <Label htmlFor="country">{t('profile.country')}</Label>
               <Input id="country" value={country} onChange={(e) => setCountry(e.target.value)} placeholder={t('profile.country.placeholder')} />
             </Field>
-            <Field>
-              <Label htmlFor="pavillon">{t('profile.pavillon')}</Label>
-              <Input id="pavillon" value={pavillon} onChange={(e) => setPavillon(e.target.value)} placeholder={t('profile.pavillon.placeholder')} />
-            </Field>
+            {isExposant && (
+              <Field>
+                <Label htmlFor="pavillon">{t('profile.pavillon')}</Label>
+                <Input id="pavillon" value={pavillon} onChange={(e) => setPavillon(e.target.value)} placeholder={t('profile.pavillon.placeholder')} />
+              </Field>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -319,22 +332,18 @@ function LanguageTab() {
 function AccountTab() {
   const { t, locale } = useTranslation();
   const { user, profile, signOut } = useAuth();
+  const isExposant = profile?.role === 'exposant';
 
   const handleSignOut = async () => {
     await signOut();
     window.location.href = '/login';
   };
 
-  const statusLabel = (status: string | null | undefined) => {
-    if (!status || status === 'none') return t('account.subscription.none');
-    return t(`account.subscription.${status}`);
-  };
-
-  const statusBadge = (status: string | null | undefined) => {
-    if (!status || status === 'none' || status === 'expired') return 'destructive' as const;
-    if (status === 'trial') return 'secondary' as const;
-    return 'default' as const;
-  };
+  const memberSince = profile?.created_at
+    ? new Date(profile.created_at).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
+        year: 'numeric', month: 'long', day: 'numeric',
+      })
+    : null;
 
   return (
     <div className="space-y-6">
@@ -347,7 +356,7 @@ function AccountTab() {
             </div>
             <div>
               <CardTitle className="text-lg">{t('settings.account')}</CardTitle>
-              <CardDescription>{t('settings.account.description')}</CardDescription>
+              <CardDescription>{isExposant ? t('settings.account.description.exposant') : t('settings.account.description.visiteur')}</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -365,6 +374,9 @@ function AccountTab() {
                 {profile?.is_active === false ? 'Suspendu' : 'Actif'}
               </Badge>
             } />
+            {memberSince && (
+              <InfoItem label={t('account.member_since')} value={memberSince} />
+            )}
           </div>
         </CardContent>
       </Card>

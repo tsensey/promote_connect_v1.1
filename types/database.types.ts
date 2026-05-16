@@ -824,6 +824,53 @@ export interface Database {
         ];
       };
     };
+    audit_logs: {
+      Row: {
+        id: string;
+        actor_id: string;
+        actor_email: string | null;
+        actor_role: string;
+        action: string;
+        entity_type: string;
+        entity_id: string | null;
+        metadata: Record<string, unknown> | null;
+        ip_address: string | null;
+        created_at: string;
+      };
+      Insert: {
+        id?: string;
+        actor_id: string;
+        actor_email?: string | null;
+        actor_role?: string;
+        action: string;
+        entity_type: string;
+        entity_id?: string | null;
+        metadata?: Record<string, unknown> | null;
+        ip_address?: string | null;
+        created_at?: string;
+      };
+      Update: {
+        id?: string;
+        actor_id?: string;
+        actor_email?: string | null;
+        actor_role?: string;
+        action?: string;
+        entity_type?: string;
+        entity_id?: string | null;
+        metadata?: Record<string, unknown> | null;
+        ip_address?: string | null;
+        created_at?: string;
+      };
+      Relationships: [
+        {
+          foreignKeyName: 'audit_logs_actor_id_fkey';
+          columns: ['actor_id'];
+          isRelationOneToOne: false;
+          referencedRelation: 'profiles';
+          referencedColumns: ['id'];
+        }
+      ];
+    };
     Views: Record<string, never>;
     Functions: Record<string, never>;
     Enums: Record<string, never>;

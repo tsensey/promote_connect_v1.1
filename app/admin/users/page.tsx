@@ -7,7 +7,9 @@ import {
   CheckCircle2,
   Copy,
   Globe2,
+  KeyRound,
   Loader2,
+  Mail,
   MoreVertical,
   Search,
   Shield,
@@ -136,6 +138,8 @@ export default function AdminUsersPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
   const [showRoleDialog, setShowRoleDialog] = useState<UserRow | null>(null);
   const [newRole, setNewRole] = useState('');
+  const [showPasswordDialog, setShowPasswordDialog] = useState<UserRow | null>(null);
+  const [passwordResult, setPasswordResult] = useState<{ new_password: string; email_sent: boolean } | null>(null);
 
   const token = session?.access_token || null;
 
@@ -329,6 +333,39 @@ export default function AdminUsersPage() {
       await fetchUsers();
     } catch {
       toast.error('Erreur reseau');
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleResetPassword(userId: string) {
+    if (!token) return;
+    setActionLoading(userId);
+
+    try {
+      const response = await fetch('/api/admin/users/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ user_id: userId, send_email: true }),
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        toast.error(payload.error || 'Erreur réinitialisation mot de passe');
+        return;
+      }
+
+      setPasswordResult({
+        new_password: payload.new_password,
+        email_sent: payload.email_sent,
+      });
+      toast.success('Mot de passe réinitialisé');
+    } catch {
+      toast.error('Erreur réseau');
     } finally {
       setActionLoading(null);
     }
@@ -549,6 +586,20 @@ export default function AdminUsersPage() {
                           >
                             <UserCheck className="mr-2 size-4" />
                             Changer le role
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setShowPasswordDialog(user);
+                              setPasswordResult(null);
+                            }}
+                            disabled={actionLoading === user.id}
+                          >
+                            {actionLoading === user.id ? (
+                              <Loader2 className="mr-2 size-4 animate-spin" />
+                            ) : (
+                              <KeyRound className="mr-2 size-4" />
+                            )}
+                            Réinitialiser mot de passe
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleToggleSuspend(user.id, user.is_active)}
@@ -845,6 +896,77 @@ export default function AdminUsersPage() {
               )}
               Supprimer definitivement
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!showPasswordDialog} onOpenChange={(open) => { if (!open) { setShowPasswordDialog(null); setPasswordResult(null); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Réinitialiser le mot de passe</DialogTitle>
+            <DialogDescription>
+              {showPasswordDialog
+                ? `Nouveau mot de passe pour ${showPasswordDialog.full_name}`
+                : ''}
+            </DialogDescription>
+          </DialogHeader>
+          {passwordResult ? (
+            <div className="space-y-4 py-4">
+              <p className="text-sm text-muted-foreground">
+                {passwordResult.email_sent
+                  ? 'Un email contenant le nouveau mot de passe a été envoyé.'
+                  : 'Aucun email na pas pu être envoyé. Copiez le mot de passe ci-dessous et transmettez-le manuellement.'}
+              </p>
+              <div className="rounded-xl border bg-muted/50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                  Nouveau mot de passe
+                </p>
+                <p className="text-2xl font-bold tracking-wider text-foreground text-center select-all">
+                  {passwordResult.new_password}
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                className="w-full rounded-xl"
+                onClick={() => {
+                  navigator.clipboard.writeText(passwordResult.new_password);
+                  toast.success('Mot de passe copié');
+                }}
+              >
+                <Copy className="mr-2 size-4" />
+                Copier le mot de passe
+              </Button>
+            </div>
+          ) : (
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground">
+                Un nouveau mot de passe temporaire sera généré et envoyé par email à l'utilisateur.
+                Confirmez-vous cette action ?
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => { setShowPasswordDialog(null); setPasswordResult(null); }}
+            >
+              {passwordResult ? 'Fermer' : 'Annuler'}
+            </Button>
+            {!passwordResult && (
+              <Button
+                className="rounded-xl"
+                disabled={actionLoading === showPasswordDialog?.id || !showPasswordDialog}
+                onClick={() => showPasswordDialog && handleResetPassword(showPasswordDialog.id)}
+              >
+                {actionLoading === showPasswordDialog?.id ? (
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                ) : (
+                  <KeyRound className="mr-2 size-4" />
+                )}
+                Confirmer
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

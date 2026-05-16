@@ -7,6 +7,7 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  History,
   Layers,
   Megaphone,
   Shield,
@@ -84,6 +85,7 @@ export function AdminSidebar({
         { label: t('layout.admin.sidebar.exposants'), href: '/admin/exposants', icon: Users },
         { label: t('layout.admin.sidebar.espaces'), href: '/admin/espaces', icon: Layers },
         { label: t('layout.admin.sidebar.programme'), href: '/admin/programme', icon: CalendarDays },
+        { label: t('layout.admin.sidebar.logs'), href: '/admin/logs', icon: History },
       ],
     },
     {
