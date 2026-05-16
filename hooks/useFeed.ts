@@ -6,20 +6,23 @@ type PostRow = Database['public']['Tables']['posts']['Row'];
 type PostInsert = Database['public']['Tables']['posts']['Insert'];
 type PostCommentRow = Database['public']['Tables']['post_comments']['Row'];
 type PostCommentInsert = Database['public']['Tables']['post_comments']['Insert'];
-type PostLikeInsert = Database['public']['Tables']['post_likes']['Insert'];
 type PostShareInsert = Database['public']['Tables']['post_shares']['Insert'];
-type ProfileRow = Database['public']['Tables']['profiles']['Row'] & {
-  exposants?: { id: string }[];
-};
+type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 
 type PostWithAuthor = PostRow & {
   author: Pick<ProfileRow, 'id' | 'full_name' | 'company' | 'avatar_url' | 'role'> & { exposants?: { id: string }[] };
 };
 
-type Post = PostWithAuthor & {
+export type Post = PostWithAuthor & {
   is_liked: boolean;
   is_shared: boolean;
   is_reposted: boolean;
+  is_saved: boolean;
+  reaction_type: string | null;
+  author: PostWithAuthor['author'] & { is_following: boolean };
+  repost_of?: (PostRow & {
+    author: Pick<ProfileRow, 'id' | 'full_name' | 'company' | 'avatar_url' | 'role'> & { exposants?: { id: string }[] };
+  }) | null;
 };
 
 export type Comment = PostCommentRow & {
@@ -28,15 +31,7 @@ export type Comment = PostCommentRow & {
   replies?: Comment[];
 };
 
-/** Fisher–Yates shuffle — randomise un tableau */
-function shuffleArray<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
+export type FeedFilter = 'top' | 'recent';
 
 export function useFeed(limit = 20) {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -44,6 +39,8 @@ export function useFeed(limit = 20) {
   const [error, setError] = useState<Error | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [feedFilter, setFeedFilter] = useState<FeedFilter>('recent');
+  const [followingIds, setFollowingIds] = useState<string[]>([]);
 
   const fetchPosts = useCallback(
     async (cursor?: string) => {
@@ -59,8 +56,17 @@ export function useFeed(limit = 20) {
             *,
             author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
           `)
-          .order('created_at', { ascending: false })
           .limit(limit);
+
+        if (feedFilter === 'top') {
+          query = query
+            .order('is_pinned', { ascending: false })
+            .order('likes_count', { ascending: false })
+            .order('comments_count', { ascending: false })
+            .order('created_at', { ascending: false });
+        } else {
+          query = query.order('created_at', { ascending: false });
+        }
 
         if (cursor) {
           query = query.lt('created_at', cursor);
@@ -70,11 +76,30 @@ export function useFeed(limit = 20) {
         if (error) throw error;
 
         const postIds = (data || []).map((p: PostWithAuthor) => p.id);
+        const repostOfIds = ((data || []) as any[]).filter((p: any) => p.repost_of_id).map((p: any) => p.repost_of_id);
+        const authorIds = [...new Set((data || []).map((p: PostWithAuthor) => p.author_id))];
 
-        const [likesResult, sharesResult] = await Promise.all([
+        const [likesResult, sharesResult, savesResult, reactionsResult, followsResult] = await Promise.all([
           supabaseClient.from('post_likes').select('post_id').in('post_id', postIds).eq('user_id', myId),
           supabaseClient.from('post_shares').select('post_id, type').in('post_id', postIds).eq('user_id', myId),
+          supabaseClient.from('post_saves').select('post_id').in('post_id', postIds).eq('user_id', myId),
+          supabaseClient.from('post_reactions').select('post_id, type').in('post_id', postIds).eq('user_id', myId),
+          supabaseClient.from('user_follows').select('following_id').in('following_id', authorIds).eq('follower_id', myId),
         ]);
+
+        let repostOfMap = new Map<string, PostWithAuthor>();
+        if (repostOfIds.length > 0) {
+          const { data: repostData } = await supabaseClient
+            .from('posts')
+            .select(`
+              *,
+              author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+            `)
+            .in('id', repostOfIds);
+          if (repostData) {
+            repostOfMap = new Map(repostData.map((r) => [r.id, r as unknown as PostWithAuthor]));
+          }
+        }
 
         const likedPostIds = new Set((likesResult.data || []).map((l: { post_id: string }) => l.post_id));
         const sharedPostIds = new Set(
@@ -83,21 +108,28 @@ export function useFeed(limit = 20) {
         const repostedPostIds = new Set(
           (sharesResult.data || []).filter((s: { type: string }) => s.type === 'repost').map((s: { post_id: string }) => s.post_id)
         );
+        const savedPostIds = new Set((savesResult.data || []).map((s: { post_id: string }) => s.post_id));
+        const reactionMap = new Map((reactionsResult.data || []).map((r: { post_id: string; type: string }) => [r.post_id, r.type]));
+        const followingSet = new Set((followsResult.data || []).map((f: { following_id: string }) => f.following_id));
 
-        const enriched = (data || []).map((post: PostWithAuthor) => ({
+        const enriched: Post[] = (data || []).map((post: PostWithAuthor & { repost_of_id?: string }) => ({
           ...post,
-          is_liked: likedPostIds.has(post.id),
+          is_liked: likedPostIds.has(post.id) || reactionMap.has(post.id),
           is_shared: sharedPostIds.has(post.id),
           is_reposted: repostedPostIds.has(post.id),
+          is_saved: savedPostIds.has(post.id),
+          reaction_type: reactionMap.get(post.id) || null,
+          author: {
+            ...post.author,
+            is_following: followingSet.has(post.author_id),
+          },
+          repost_of: post.repost_of_id ? (repostOfMap.get(post.repost_of_id) ?? null) : undefined,
         }));
 
-        // Randomise le fil uniquement pour la première page
-        const ordered = cursor ? enriched : shuffleArray(enriched);
-
         if (!cursor) {
-          setPosts(ordered);
+          setPosts(enriched);
         } else {
-          setPosts((prev) => [...prev, ...ordered]);
+          setPosts((prev) => [...prev, ...enriched]);
         }
 
         setHasMore((data || []).length === limit);
@@ -107,21 +139,82 @@ export function useFeed(limit = 20) {
         setLoading(false);
       }
     },
-    [limit]
+    [limit, feedFilter]
   );
 
   useEffect(() => {
+    setLoading(true);
+    setPosts([]);
+    setHasMore(true);
     fetchPosts();
+  }, [fetchPosts]);
 
+  useEffect(() => {
     const channel = supabaseClient
       .channel('feed-changes')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () => { fetchPosts(); })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'post_likes' }, () => { fetchPosts(); })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'post_likes' }, () => { fetchPosts(); })
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'posts' },
+        async (payload: unknown) => {
+          try {
+            const row = (payload as { new: { id: string; author_id: string } }).new;
+            const { data: session } = await supabaseClient.auth.getSession();
+            const myId = session?.session?.user?.id;
+            if (!myId || row.author_id === myId) return;
+
+            const { data } = await supabaseClient
+              .from('posts')
+              .select(`
+                *,
+                author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+              `)
+              .eq('id', row.id)
+              .single();
+
+            if (data) {
+              let repostOfData = undefined;
+              const d = data as PostWithAuthor & { repost_of_id?: string };
+              if (d.repost_of_id) {
+                const { data: rData } = await supabaseClient
+                  .from('posts')
+                  .select(`
+                    *,
+                    author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+                  `)
+                  .eq('id', d.repost_of_id)
+                  .single();
+                if (rData) repostOfData = rData as unknown as PostWithAuthor;
+              }
+
+              const [likesRes, sharesRes, savesRes, reactionsRes] = await Promise.all([
+                supabaseClient.from('post_likes').select('post_id').eq('post_id', data.id).eq('user_id', myId),
+                supabaseClient.from('post_shares').select('post_id, type').eq('post_id', data.id).eq('user_id', myId),
+                (supabaseClient as any).from('post_saves').select('post_id').eq('post_id', data.id).eq('user_id', myId),
+                (supabaseClient as any).from('post_reactions').select('post_id, type').eq('post_id', data.id).eq('user_id', myId),
+              ]);
+
+              const enriched: Post = {
+                ...(data as PostWithAuthor),
+                is_liked: (likesRes.data?.length ?? 0) > 0,
+                is_shared: (sharesRes.data || []).some((s: { type: string }) => s.type === 'share'),
+                is_reposted: (sharesRes.data || []).some((s: { type: string }) => s.type === 'repost'),
+                is_saved: (savesRes.data?.length ?? 0) > 0,
+                reaction_type: ((reactionsRes.data as { type: string }[] | null)?.[0]?.type) || null,
+                author: {
+                  ...(data as PostWithAuthor).author,
+                  is_following: false,
+                },
+                repost_of: repostOfData ?? null,
+              };
+
+              setPosts((prev) => [enriched, ...prev]);
+            }
+          } catch { /* ignore */ }
+        }
+      )
       .subscribe();
 
     return () => { supabaseClient.removeChannel(channel); };
-  }, [fetchPosts]);
+  }, []);
 
   const loadMore = useCallback(() => {
     if (!hasMore || loading) return;
@@ -167,6 +260,13 @@ export function useFeed(limit = 20) {
           is_liked: false,
           is_shared: false,
           is_reposted: false,
+          is_saved: false,
+          reaction_type: null,
+          author: {
+            ...(newPost as unknown as PostWithAuthor).author,
+            is_following: false,
+          },
+          repost_of: undefined,
         };
         setPosts((prev) => [enriched, ...prev]);
       }
@@ -176,11 +276,102 @@ export function useFeed(limit = 20) {
     []
   );
 
+  const repostPost = useCallback(async (content: string, originalPostId: string) => {
+    const { data: session } = await supabaseClient.auth.getSession();
+    const myId = session?.session?.user?.id;
+    if (!myId) return { error: new Error('Not authenticated') };
+
+    const insertData = {
+      author_id: myId,
+      content: content.trim(),
+      type: 'repost',
+      repost_of_id: originalPostId,
+    };
+
+    const { data: newPost, error } = await (supabaseClient as any)
+      .from('posts')
+      .insert(insertData)
+      .select(`
+        *,
+        author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+      `)
+      .single();
+
+    if (!error && newPost) {
+      let repostOfData = undefined;
+      const d = newPost as PostWithAuthor & { repost_of_id?: string };
+      if (d.repost_of_id) {
+        const { data: rData } = await supabaseClient
+          .from('posts')
+          .select(`
+            *,
+            author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+          `)
+          .eq('id', d.repost_of_id)
+          .single();
+        if (rData) repostOfData = rData as unknown as PostWithAuthor;
+      }
+
+      const enriched: Post = {
+        ...(newPost as PostWithAuthor),
+        is_liked: false,
+        is_shared: false,
+        is_reposted: false,
+        is_saved: false,
+        reaction_type: null,
+        author: {
+          ...(newPost as PostWithAuthor).author,
+          is_following: false,
+        },
+        repost_of: repostOfData ?? null,
+      };
+      setPosts((prev) => [enriched, ...prev]);
+
+      await supabaseClient.from('post_shares').insert({ post_id: originalPostId, user_id: myId, type: 'repost' });
+      const originalPost = posts.find((p) => p.id === originalPostId);
+      const newCount = (originalPost?.reposts_count || 0) + 1;
+      await supabaseClient.from('posts').update({ reposts_count: newCount }).eq('id', originalPostId);
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === originalPostId ? { ...p, is_reposted: true, reposts_count: newCount } : p
+        )
+      );
+    }
+
+    return { error };
+  }, [posts]);
+
   const deletePost = useCallback(async (postId: string) => {
     const { error } = await supabaseClient.from('posts').delete().eq('id', postId);
     if (!error) setPosts((prev) => prev.filter((p) => p.id !== postId));
     return { error };
   }, []);
+
+  const updatePost = useCallback(
+    async (postId: string, content: string, type: string, category?: string, imageUrl?: string | null) => {
+      const { data: session } = await supabaseClient.auth.getSession();
+      const myId = session?.session?.user?.id;
+      if (!myId) return { error: new Error('Not authenticated') };
+
+      const updateData: Partial<PostInsert> = {
+        content: content.trim(),
+        type,
+        category: category || null,
+        ...(imageUrl !== undefined ? { image_url: imageUrl } : {}),
+      };
+
+      const { error } = await supabaseClient.from('posts').update(updateData).eq('id', postId).eq('author_id', myId);
+      if (!error) {
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === postId ? { ...p, ...updateData } as unknown as Post : p
+          )
+        );
+      }
+      return { error };
+    },
+    []
+  );
 
   const toggleLike = useCallback(async (postId: string) => {
     const { data: session } = await supabaseClient.auth.getSession();
@@ -193,71 +384,147 @@ export function useFeed(limit = 20) {
 
     setPosts((prev) =>
       prev.map((p) =>
-        p.id === postId ? { ...p, is_liked: !isLiked, likes_count: Math.max(0, p.likes_count + (isLiked ? -1 : 1)) } : p
+        p.id === postId ? { ...p, is_liked: !isLiked, likes_count: Math.max(0, p.likes_count + (isLiked ? -1 : 1)), reaction_type: isLiked ? null : 'like' } : p
       )
     );
 
     if (isLiked) {
-      await supabaseClient.from('post_likes').delete().eq('post_id', postId).eq('user_id', myId);
-      await supabaseClient.from('posts').update({ likes_count: Math.max(0, (post.likes_count || 0) - 1) }).eq('id', postId);
+        await Promise.all([
+          supabaseClient.from('post_likes').delete().eq('post_id', postId).eq('user_id', myId),
+          (supabaseClient as any).from('post_reactions').delete().eq('post_id', postId).eq('user_id', myId),
+          supabaseClient.from('posts').update({ likes_count: Math.max(0, (post.likes_count || 0) - 1) }).eq('id', postId),
+        ]);
     } else {
-      const likeData: PostLikeInsert = { post_id: postId, user_id: myId };
-      await supabaseClient.from('post_likes').insert(likeData);
+      const { error } = await (supabaseClient as any).from('post_reactions').insert({ post_id: postId, user_id: myId, type: 'like' });
+      if (error && error.code === '23505') {
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === postId ? { ...p, is_liked: true, likes_count: (p.likes_count || 0) + 1, reaction_type: 'like' } : p
+          )
+        );
+      }
+      await (supabaseClient as any).from('post_likes').upsert({ post_id: postId, user_id: myId }, { onConflict: 'post_id,user_id' });
       await supabaseClient.from('posts').update({ likes_count: (post.likes_count || 0) + 1 }).eq('id', postId);
     }
   }, [posts]);
 
-  const toggleShare = useCallback(async (postId: string) => {
+  const sharePost = useCallback(async (postId: string) => {
     const { data: session } = await supabaseClient.auth.getSession();
     const myId = session?.session?.user?.id;
     if (!myId) return;
 
     const post = posts.find((p) => p.id === postId);
     if (!post) return;
-    const isShared = post.is_shared;
+    if (post.is_shared) return;
 
     setPosts((prev) =>
       prev.map((p) =>
-        p.id === postId ? { ...p, is_shared: !isShared, shares_count: Math.max(0, (p.shares_count ?? 0) + (isShared ? -1 : 1)) } : p
+        p.id === postId ? { ...p, is_shared: true, shares_count: (p.shares_count ?? 0) + 1 } : p
       )
     );
 
-    if (isShared) {
-      await supabaseClient.from('post_shares').delete().eq('post_id', postId).eq('user_id', myId).eq('type', 'share');
-      await supabaseClient.from('posts').update({ shares_count: Math.max(0, (post.shares_count || 0) - 1) }).eq('id', postId);
+    const shareData: PostShareInsert = { post_id: postId, user_id: myId, type: 'share' };
+    const { error } = await supabaseClient.from('post_shares').insert(shareData);
+    if (!error) {
+      await supabaseClient.from('posts').update({ shares_count: (post.shares_count ?? 0) + 1 }).eq('id', postId);
     } else {
-      const shareData: PostShareInsert = { post_id: postId, user_id: myId, type: 'share' };
-      await supabaseClient.from('post_shares').insert(shareData);
-      await supabaseClient.from('posts').update({ shares_count: (post.shares_count || 0) + 1 }).eq('id', postId);
+      if (error.code === '23505') {
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === postId ? { ...p, is_shared: true } : p
+          )
+        );
+      } else {
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === postId ? { ...p, is_shared: false, shares_count: Math.max(0, (p.shares_count ?? 0) - 1) } : p
+          )
+        );
+      }
     }
   }, [posts]);
 
-  const toggleRepost = useCallback(async (postId: string) => {
+  const toggleSave = useCallback(async (postId: string) => {
     const { data: session } = await supabaseClient.auth.getSession();
     const myId = session?.session?.user?.id;
     if (!myId) return;
 
     const post = posts.find((p) => p.id === postId);
     if (!post) return;
-    const isReposted = post.is_reposted;
+    const isSaved = post.is_saved;
 
     setPosts((prev) =>
       prev.map((p) =>
-        p.id === postId ? { ...p, is_reposted: !isReposted, reposts_count: Math.max(0, (p.reposts_count ?? 0) + (isReposted ? -1 : 1)) } : p
+        p.id === postId ? { ...p, is_saved: !isSaved } : p
       )
     );
 
-    if (isReposted) {
-      await supabaseClient.from('post_shares').delete().eq('post_id', postId).eq('user_id', myId).eq('type', 'repost');
-      await supabaseClient.from('posts').update({ reposts_count: Math.max(0, (post.reposts_count || 0) - 1) }).eq('id', postId);
+    if (isSaved) {
+      await (supabaseClient as any).from('post_saves').delete().eq('post_id', postId).eq('user_id', myId);
     } else {
-      const repostData: PostShareInsert = { post_id: postId, user_id: myId, type: 'repost' };
-      await supabaseClient.from('post_shares').insert(repostData);
-      await supabaseClient.from('posts').update({ reposts_count: (post.reposts_count || 0) + 1 }).eq('id', postId);
+      await (supabaseClient as any).from('post_saves').insert({ post_id: postId, user_id: myId });
     }
   }, [posts]);
 
-  /** Charge les commentaires en arbre (commentaires racines + leurs réponses) */
+  const toggleReaction = useCallback(async (postId: string, reactionType: string) => {
+    const { data: session } = await supabaseClient.auth.getSession();
+    const myId = session?.session?.user?.id;
+    if (!myId) return;
+
+    const post = posts.find((p) => p.id === postId);
+    if (!post) return;
+    const currentReaction = post.reaction_type;
+
+    if (currentReaction === reactionType) {
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId ? { ...p, is_liked: false, reaction_type: null, likes_count: Math.max(0, p.likes_count - 1) } : p
+        )
+      );
+      await Promise.all([
+        (supabaseClient as any).from('post_reactions').delete().eq('post_id', postId).eq('user_id', myId),
+        supabaseClient.from('posts').update({ likes_count: Math.max(0, (post.likes_count || 0) - 1) }).eq('id', postId),
+      ]);
+    } else {
+      const wasLiked = post.is_liked;
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId ? { ...p, is_liked: true, reaction_type: reactionType, likes_count: wasLiked ? p.likes_count : (p.likes_count + 1) } : p
+        )
+      );
+      await (supabaseClient as any).from('post_reactions').upsert(
+        { post_id: postId, user_id: myId, type: reactionType },
+        { onConflict: 'post_id,user_id' }
+      );
+      if (!wasLiked) {
+        await supabaseClient.from('posts').update({ likes_count: (post.likes_count || 0) + 1 }).eq('id', postId);
+      }
+    }
+  }, [posts]);
+
+  const toggleFollow = useCallback(async (targetUserId: string) => {
+    const { data: session } = await supabaseClient.auth.getSession();
+    const myId = session?.session?.user?.id;
+    if (!myId || myId === targetUserId) return;
+
+    const post = posts.find((p) => p.author_id === targetUserId);
+    const currentlyFollowing = post?.author.is_following ?? followingIds.includes(targetUserId);
+
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.author_id === targetUserId ? { ...p, author: { ...p.author, is_following: !currentlyFollowing } } : p
+      )
+    );
+
+    if (currentlyFollowing) {
+      await (supabaseClient as any).from('user_follows').delete().eq('follower_id', myId).eq('following_id', targetUserId);
+      setFollowingIds((prev) => prev.filter((id) => id !== targetUserId));
+    } else {
+      await (supabaseClient as any).from('user_follows').insert({ follower_id: myId, following_id: targetUserId });
+      setFollowingIds((prev) => [...prev, targetUserId]);
+    }
+  }, [posts, followingIds]);
+
   const getComments = useCallback(async (postId: string): Promise<Comment[]> => {
     const { data, error } = await supabaseClient
       .from('post_comments')
@@ -272,7 +539,6 @@ export function useFeed(limit = 20) {
 
     const allComments = (data || []) as Comment[];
 
-    // Construire l'arbre : parent → replies[]
     const map = new Map<string, Comment>();
     allComments.forEach((c) => map.set(c.id, { ...c, replies: [] }));
 
@@ -311,7 +577,6 @@ export function useFeed(limit = 20) {
         .single();
 
       if (!error && data) {
-        // Incrémenter le compteur uniquement pour les commentaires racine
         if (!parentCommentId) {
           const currentPost = posts.find((p) => p.id === postId);
           const newCount = (currentPost?.comments_count || 0) + 1;
@@ -325,38 +590,24 @@ export function useFeed(limit = 20) {
     [posts]
   );
 
-  const updatePost = useCallback(
-    async (postId: string, content: string, type: string, category?: string, imageUrl?: string | null) => {
-      const { data: session } = await supabaseClient.auth.getSession();
-      const myId = session?.session?.user?.id;
-      if (!myId) return { error: new Error('Not authenticated') };
-
-      const updateData: Partial<PostInsert> = {
-        content: content.trim(),
-        type,
-        category: category || null,
-        ...(imageUrl !== undefined ? { image_url: imageUrl } : {}),
-      };
-
-      const { error } = await supabaseClient.from('posts').update(updateData).eq('id', postId).eq('author_id', myId);
-      if (!error) await fetchPosts();
-      return { error };
-    },
-    [fetchPosts]
-  );
-
   return {
     posts,
     loading,
     error,
     hasMore,
     loadMore,
+    feedFilter,
+    setFeedFilter,
     createPost,
+    repostPost,
     updatePost,
     deletePost,
     toggleLike,
-    toggleShare,
-    toggleRepost,
+    sharePost,
+    toggleSave,
+    toggleReaction,
+    toggleFollow,
+    followingIds,
     getComments,
     addComment,
     uploadImage,

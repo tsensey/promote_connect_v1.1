@@ -84,7 +84,7 @@ export function CreatePost({
   const [postType, setPostType] = useState("general");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
+  const [isExpanded, setIsExpanded] = useState(initiallyExpanded ?? false);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -170,7 +170,7 @@ export function CreatePost({
           setContent("");
           setImageFiles([]);
           setImagePreviews([]);
-          setIsExpanded(initiallyExpanded);
+          setIsExpanded(initiallyExpanded ?? false);
           setPostType("general");
           toast.success(t('feed.create.posted'));
           if (onSuccess) onSuccess();
@@ -191,7 +191,7 @@ export function CreatePost({
     setContent("");
     setImageFiles([]);
     setImagePreviews([]);
-    setIsExpanded(initiallyExpanded);
+    setIsExpanded(initiallyExpanded ?? false);
     setPostType("general");
     if (onCancel) onCancel();
   };

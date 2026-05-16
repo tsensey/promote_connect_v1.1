@@ -18,6 +18,8 @@ import {
   Repeat2,
   Send,
   Package,
+  Flame,
+  Clock,
 } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -25,6 +27,7 @@ import { supabaseClient } from '@/lib/supabase/client';
 import { createConversation } from '@/hooks/useChat';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 import type { Database } from '@/types/database.types';
 
 type Product = Database['public']['Tables']['produits']['Row'] & {
@@ -39,12 +42,17 @@ export default function FeedPage() {
     loading,
     hasMore,
     loadMore,
+    feedFilter,
+    setFeedFilter,
     createPost,
+    repostPost,
     updatePost,
     deletePost,
     toggleLike,
-    toggleShare,
-    toggleRepost,
+    sharePost,
+    toggleSave,
+    toggleReaction,
+    toggleFollow,
     getComments,
     addComment,
     uploadImage,
@@ -194,6 +202,28 @@ export default function FeedPage() {
         <div className="col-span-12 space-y-4 lg:col-span-6">
           <CreatePost onSubmit={createPost} onUpload={uploadImage} />
 
+          {/* Filter tabs */}
+          <div className="flex gap-1 rounded-xl border border-border/60 bg-card p-1">
+            {[
+              { key: 'top' as const, icon: Flame, label: t('feed.filter.top') },
+              { key: 'recent' as const, icon: Clock, label: t('feed.filter.recent') },
+            ].map(({ key, icon: Icon, label }) => (
+              <button
+                key={key}
+                onClick={() => setFeedFilter(key)}
+                className={cn(
+                  'flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all',
+                  feedFilter === key
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                )}
+              >
+                <Icon className="size-3.5" />
+                {label}
+              </button>
+            ))}
+          </div>
+
           {loading && posts.length === 0 ? (
             <Card className="border-border/60 p-0">
               <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
@@ -227,8 +257,11 @@ export default function FeedPage() {
                   post={post}
                   isOwner={post.author_id === myUserId}
                   onLike={() => toggleLike(post.id)}
-                  onShare={() => toggleShare(post.id)}
-                  onRepost={() => toggleRepost(post.id)}
+                  onShare={() => sharePost(post.id)}
+                  onRepost={(content, originalId) => repostPost(content, originalId)}
+                  onSave={() => toggleSave(post.id)}
+                  onFollow={() => toggleFollow(post.author_id)}
+                  onReaction={(type) => toggleReaction(post.id, type)}
                   onEdit={updatePost}
                   createPost={createPost}
                   onDelete={() => deletePost(post.id)}

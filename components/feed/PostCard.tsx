@@ -20,6 +20,16 @@ import {
   CornerDownRight,
   Link2,
   X,
+  Bookmark,
+  BookmarkCheck,
+  UserPlus,
+  UserMinus,
+  ThumbsUp,
+  HeartHandshake,
+  PartyPopper,
+  Lightbulb,
+  Star,
+  Loader2,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
@@ -38,7 +48,10 @@ interface PostCardProps {
   isOwner: boolean;
   onLike: () => void;
   onShare: () => void;
-  onRepost: () => void;
+  onRepost: (content: string, originalPostId: string) => Promise<{ error: any }>;
+  onSave: () => void;
+  onFollow: () => void;
+  onReaction: (type: string) => void;
   onEdit: (postId: string, content: string, type: string, category?: string, imageUrl?: string | null) => Promise<{error: any}>;
   createPost: (content: string, type?: string, category?: string, imageUrls?: string[]) => Promise<{error: any}>;
   onDelete: () => void;
@@ -46,19 +59,27 @@ interface PostCardProps {
   onAddComment: (content: string, parentCommentId?: string) => Promise<{ data: Comment | null; error: unknown }>;
 }
 
+const REACTIONS = [
+  { type: 'like', icon: ThumbsUp, label: 'J\'aime', color: 'text-blue-500' },
+  { type: 'love', icon: Heart, label: 'Adorer', color: 'text-red-500' },
+  { type: 'celebrate', icon: PartyPopper, label: 'Célébrer', color: 'text-emerald-500' },
+  { type: 'support', icon: HeartHandshake, label: 'Soutenir', color: 'text-amber-500' },
+  { type: 'insightful', icon: Lightbulb, label: 'Pertinent', color: 'text-violet-500' },
+];
+
 const TYPE_BADGE: Record<string, string> = {
-  annonce:   'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
-  actualite: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300',
-  offre:     'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300',
-  evenement: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
-  general:   'bg-muted text-muted-foreground',
+  announcement: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
+  news:         'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300',
+  job:          'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300',
+  event:        'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
+  general:      'bg-muted text-muted-foreground',
 };
 
 const TYPE_KEYS: Record<string, string> = {
-  annonce: 'feed.type.announcement',
-  actualite: 'feed.type.news',
-  offre: 'feed.type.offer',
-  evenement: 'feed.type.event',
+  announcement: 'feed.type.announcement',
+  news: 'feed.type.news',
+  job: 'feed.type.job',
+  event: 'feed.type.event',
   general: 'feed.type.general',
 };
 
@@ -195,6 +216,9 @@ export const PostCard = memo(function PostCard({
   onLike,
   onShare,
   onRepost,
+  onSave,
+  onFollow,
+  onReaction,
   onEdit,
   createPost,
   onDelete,
@@ -212,11 +236,14 @@ export const PostCard = memo(function PostCard({
   const [loadingComments, setLoadingComments] = useState(false);
   const [likeAnim, setLikeAnim] = useState(false);
   const [repostAnim, setRepostAnim] = useState(false);
+  const [showReactions, setShowReactions] = useState(false);
+  const [saveAnim, setSaveAnim] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
-  const [isReposting, setIsReposting] = useState(false);
-  const [repostContent, setRepostContent] = useState(`${t('feed.post.repost_prefix', { name: post.author.full_name || '' })}\n"${post.content}"\n\n`);
+  const [showRepostDialog, setShowRepostDialog] = useState(false);
+  const [repostText, setRepostText] = useState('');
+  const [repostSubmitting, setRepostSubmitting] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -239,10 +266,6 @@ export const PostCard = memo(function PostCard({
     setTimeout(() => setLikeAnim(false), 400);
   }, [onLike]);
 
-  const handleRepost = useCallback(() => {
-    setIsReposting(true);
-  }, []);
-
   const handleEditSubmit = async () => {
     if (!editContent.trim()) return;
     const { error } = await onEdit(post.id, editContent, post.type, post.category ?? undefined, post.image_url);
@@ -254,29 +277,57 @@ export const PostCard = memo(function PostCard({
     }
   };
 
+  const handleRepost = useCallback(() => {
+    setRepostText('');
+    setShowRepostDialog(true);
+  }, []);
+
   const submitRepost = async () => {
-    if (!repostContent.trim()) return;
-    const { error } = await createPost(repostContent, post.type, undefined, post.image_url ? [post.image_url] : undefined);
+    setRepostSubmitting(true);
+    const { error } = await onRepost(repostText, post.id);
     if (!error) {
-      setIsReposting(false);
-      onRepost();
-      toast.success(t('feed.post.reposted'));
+      setShowRepostDialog(false);
+      setRepostText('');
+      if (repostText.trim()) {
+        toast.success(t('feed.post.reposted_with_note'));
+      } else {
+        toast.success(t('feed.post.reposted'));
+      }
     } else {
       toast.error(t('feed.post.repost_error'));
     }
+    setRepostSubmitting(false);
   };
 
   const handleNativeShare = useCallback(async () => {
     const url = `${window.location.origin}/feed#${post.id}`;
     const shareData = { title: t('feed.post.share_title', { name: post.author.full_name || '' }), text: post.content.slice(0, 120), url };
     if (navigator.share) {
-      try { await navigator.share(shareData); } catch { /* annulé */ }
+      try {
+        await navigator.share(shareData);
+        onShare();
+      } catch { /* annulé */ }
     } else {
       await navigator.clipboard.writeText(url);
       toast.success(t('feed.post.copied'));
+      onShare();
     }
-    onShare();
   }, [post, onShare]);
+
+  const handleSaveToggle = useCallback(() => {
+    setSaveAnim(true);
+    onSave();
+    setTimeout(() => setSaveAnim(false), 400);
+  }, [onSave]);
+
+  const handleReactionSelect = useCallback((type: string) => {
+    setShowReactions(false);
+    if (type === 'like' && !post.is_liked) {
+      setLikeAnim(true);
+      setTimeout(() => setLikeAnim(false), 400);
+    }
+    onReaction(type);
+  }, [onReaction, post.is_liked]);
 
   const handleToggleComments = useCallback(async () => {
     if (!showComments) {
@@ -284,13 +335,15 @@ export const PostCard = memo(function PostCard({
       try {
         const data = await onGetComments();
         setComments(data);
+      } catch {
+        toast.error(t('feed.post.load_error'));
       } finally {
         setLoadingComments(false);
       }
     }
     setShowComments((prev) => !prev);
     setTimeout(() => commentInputRef.current?.focus(), 100);
-  }, [showComments, onGetComments]);
+  }, [showComments, onGetComments, t]);
 
   const handleAddComment = useCallback(
     async (e: React.FormEvent) => {
@@ -391,6 +444,26 @@ export const PostCard = memo(function PostCard({
             </div>
           </div>
 
+          {/* Follow button */}
+          {!isOwner && (
+            <button
+              onClick={onFollow}
+              className={cn(
+                'shrink-0 rounded-full p-1.5 transition-all',
+                post.author.is_following
+                  ? 'text-primary bg-primary/10 hover:bg-primary/20'
+                  : 'text-muted-foreground hover:text-primary hover:bg-muted'
+              )}
+              title={post.author.is_following ? t('feed.post.unfollow') : t('feed.post.follow')}
+            >
+              {post.author.is_following ? (
+                <UserMinus className="size-3.5" />
+              ) : (
+                <UserPlus className="size-3.5" />
+              )}
+            </button>
+          )}
+
           {isOwner && (
             <div className="relative" ref={menuRef}>
               <Button
@@ -438,23 +511,14 @@ export const PostCard = memo(function PostCard({
                 <Button size="sm" onClick={handleEditSubmit}>{t('common.save')}</Button>
               </div>
             </div>
-          ) : isReposting ? (
-            <div className="space-y-3 border-l-2 border-primary/40 pl-3 ml-1 mb-3">
-              <p className="text-xs font-semibold text-primary mb-1">{t('feed.post.repost_quote')}</p>
-              <textarea
-                value={repostContent}
-                onChange={(e) => setRepostContent(e.target.value)}
-                className="w-full resize-none rounded-xl border border-border bg-muted/20 px-3 py-2 text-sm text-foreground outline-none focus:border-primary/50"
-                rows={5}
-                autoFocus
-              />
-              <div className="flex gap-2 justify-end">
-                <Button variant="ghost" size="sm" onClick={() => setIsReposting(false)}>{t('common.cancel')}</Button>
-                <Button size="sm" onClick={submitRepost}>{t('feed.post.repost_btn')}</Button>
-              </div>
-            </div>
           ) : (
             <>
+              {post.type === 'repost' && (
+                <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground border-b border-border/30 pb-2 mb-3">
+                  <Repeat2 className="size-3.5 text-violet-500" />
+                  <span>{t('feed.post.repost_notice', { name: post.author.full_name || t('feed.post.user') })}</span>
+                </div>
+              )}
               <p className="whitespace-pre-wrap text-sm text-foreground/90 leading-relaxed">
                 {displayContent}
               </p>
@@ -499,6 +563,46 @@ export const PostCard = memo(function PostCard({
           </div>
         )}
 
+        {/* Embedded original post (repost) */}
+        {post.repost_of && (
+          <div className="mx-4 mb-3 rounded-xl border border-border/50 bg-muted/20 overflow-hidden hover:bg-muted/30 transition-colors cursor-pointer">
+            <div className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Avatar className="size-6 shrink-0">
+                  {post.repost_of.author?.avatar_url ? (
+                    <AvatarImage src={post.repost_of.author.avatar_url} />
+                  ) : (
+                    <AvatarFallback className="bg-muted text-[9px] font-semibold">
+                      {getInitials(post.repost_of.author?.full_name)}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-foreground truncate">
+                    {post.repost_of.author?.full_name || t('feed.post.user')}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground truncate">
+                    {post.repost_of.author?.company}
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-foreground/80 leading-relaxed line-clamp-3 whitespace-pre-wrap">
+                {post.repost_of.content}
+              </p>
+              {post.repost_of.image_url && (
+                <div className="mt-2 overflow-hidden rounded-lg border border-border/40">
+                  <img
+                    src={post.repost_of.image_url.split(',')[0]}
+                    alt=""
+                    className="max-h-32 w-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Stats bar */}
         {(post.likes_count > 0 || post.comments_count > 0 || (post.shares_count ?? 0) > 0 || (post.reposts_count ?? 0) > 0) && (
           <div className="mx-4 mb-1 flex items-center gap-3 text-[11px] text-muted-foreground border-b border-border/40 pb-2">
@@ -527,24 +631,69 @@ export const PostCard = memo(function PostCard({
 
         {/* Action buttons */}
         <div className="flex items-center px-2 pb-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              'flex-1 gap-1.5 text-muted-foreground rounded-xl transition-all',
-              post.is_liked && 'text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-950/30'
-            )}
-            onClick={handleLike}
-          >
-            <Heart
+          {/* Like / Reaction button */}
+          <div className="relative flex-1">
+            <Button
+              variant="ghost"
+              size="sm"
               className={cn(
-                'size-4 transition-all duration-300',
-                post.is_liked && 'fill-current',
-                likeAnim && 'scale-125'
+                'w-full gap-1.5 text-muted-foreground rounded-xl transition-all',
+                post.is_liked && (post.reaction_type === 'like' ? 'text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-950/30' :
+                  post.reaction_type === 'love' ? 'text-red-500 bg-red-50 dark:bg-red-950/30' :
+                  post.reaction_type === 'celebrate' ? 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' :
+                  post.reaction_type === 'support' ? 'text-amber-500 bg-amber-50 dark:bg-amber-950/30' :
+                  'text-violet-500 bg-violet-50 dark:bg-violet-950/30')
               )}
-            />
-            <span className="text-xs hidden sm:inline">{t('feed.post.like')}</span>
-          </Button>
+              onClick={() => {
+                if (post.is_liked && post.reaction_type === 'like') {
+                  onLike();
+                } else if (post.is_liked) {
+                  onReaction(post.reaction_type!);
+                } else {
+                  setShowReactions(!showReactions);
+                }
+              }}
+              onMouseEnter={() => setShowReactions(true)}
+              onMouseLeave={() => setShowReactions(false)}
+            >
+              {post.reaction_type === 'love' ? (
+                <Heart className={cn('size-4 fill-current', likeAnim && 'scale-125')} />
+              ) : post.reaction_type === 'celebrate' ? (
+                <PartyPopper className="size-4" />
+              ) : post.reaction_type === 'support' ? (
+                <HeartHandshake className="size-4" />
+              ) : post.reaction_type === 'insightful' ? (
+                <Lightbulb className="size-4" />
+              ) : (
+                <Heart className={cn('size-4 transition-all duration-300', post.is_liked && 'fill-current', likeAnim && 'scale-125')} />
+              )}
+              <span className="text-xs hidden sm:inline">{t('feed.post.like')}</span>
+            </Button>
+
+            {/* Reaction picker */}
+            {showReactions && (
+              <div
+                className="absolute bottom-full left-0 mb-2 flex gap-1 rounded-full border border-border bg-card px-2 py-1.5 shadow-xl z-30"
+                onMouseEnter={() => setShowReactions(true)}
+                onMouseLeave={() => setShowReactions(false)}
+              >
+                {REACTIONS.map(({ type, icon: Icon, color }) => (
+                  <button
+                    key={type}
+                    onClick={() => handleReactionSelect(type)}
+                    className={cn(
+                      'rounded-full p-1.5 transition-all hover:scale-125 hover:-translate-y-1',
+                      post.reaction_type === type && 'bg-muted ring-1 ring-border',
+                      color
+                    )}
+                    title={type}
+                  >
+                    <Icon className="size-5" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <Button
             variant="ghost"
@@ -565,7 +714,7 @@ export const PostCard = memo(function PostCard({
             )}
             onClick={handleNativeShare}
           >
-            {post.is_shared ? <Check className="size-4" /> : <Link2 className="size-4" />}
+            <Link2 className="size-4" />
             <span className="text-xs hidden sm:inline">{t('feed.post.share')}</span>
           </Button>
 
@@ -580,6 +729,25 @@ export const PostCard = memo(function PostCard({
           >
             <Repeat2 className={cn('size-4 transition-all', repostAnim && 'rotate-180')} />
             <span className="text-xs hidden sm:inline">{t('feed.post.repost_btn')}</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              'flex-1 gap-1.5 text-muted-foreground rounded-xl transition-all',
+              post.is_saved && 'text-amber-500 bg-amber-50 dark:bg-amber-950/30'
+            )}
+            onClick={handleSaveToggle}
+          >
+            {post.is_saved ? (
+              <BookmarkCheck className={cn('size-4', saveAnim && 'scale-125')} />
+            ) : (
+              <Bookmark className="size-4" />
+            )}
+            <span className="text-xs hidden sm:inline">
+              {post.is_saved ? t('feed.post.saved') : t('feed.post.save')}
+            </span>
           </Button>
         </div>
 
@@ -697,7 +865,7 @@ export const PostCard = memo(function PostCard({
                <div className="flex items-center justify-between py-2 border-b border-border/40">
                   <button onClick={onLike} className={cn("flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-muted", "text-muted-foreground")}><Heart className="size-4" /> {t('feed.post.like')}</button>
                   <button onClick={() => {}} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"><MessageSquare className="size-4" /> {t('feed.post.comment')}</button>
-                  <button onClick={() => { setIsImageModalOpen(false); handleRepost(); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"><Repeat2 className="size-4" /> {t('feed.post.repost_btn')}</button>
+                  <button onClick={() => { setIsImageModalOpen(false); setShowRepostDialog(true); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"><Repeat2 className="size-4" /> {t('feed.post.repost_btn')}</button>
                </div>
                
                {/* Comments section */}
@@ -733,15 +901,97 @@ export const PostCard = memo(function PostCard({
                  e.preventDefault();
                  if(!newComment.trim()) return;
                  const res = await onAddComment(newComment);
-                 if(!res.error) { 
-                   setNewComment(''); 
-                   setLoadingComments(true);
-                   onGetComments().then(data => { setComments(data); setLoadingComments(false); });
-                 }
+                  if(!res.error) {
+                    setNewComment('');
+                    setLoadingComments(true);
+                    onGetComments().then(data => { setComments(data); setLoadingComments(false); }).catch(() => { setLoadingComments(false); });
+                  }
                }}>
                  <input type="text" value={newComment} onChange={e => setNewComment(e.target.value)} placeholder={t('feed.post.comment_placeholder')} className="flex-1 bg-muted/50 rounded-full px-4 text-sm outline-none focus:ring-1 focus:ring-primary/40 border border-transparent focus:border-primary/30" />
                  <button type="submit" disabled={!newComment.trim()} className="shrink-0 p-2 text-primary hover:bg-primary/10 rounded-full disabled:opacity-50"><Send className="size-4" /></button>
                </form>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Repost Dialog */}
+      <Dialog open={showRepostDialog} onOpenChange={setShowRepostDialog}>
+        <DialogContent className="!max-w-lg p-0 overflow-hidden rounded-2xl border-border/40 gap-0">
+          <div className="p-5">
+            <h3 className="font-heading font-semibold text-lg text-foreground mb-1">{t('feed.post.repost_title')}</h3>
+            <p className="text-xs text-muted-foreground mb-4">{t('feed.post.repost_subtitle')}</p>
+
+            <textarea
+              value={repostText}
+              onChange={(e) => setRepostText(e.target.value)}
+              placeholder={t('feed.post.repost_placeholder')}
+              className="w-full resize-none rounded-xl border border-border bg-muted/20 px-4 py-3 text-sm text-foreground outline-none focus:border-primary/50 focus:bg-muted/30 leading-relaxed transition-all"
+              rows={3}
+              autoFocus
+            />
+
+            {/* Compact original post preview */}
+            <div className="mt-3 rounded-xl border border-border/50 bg-muted/30 p-3">
+              <div className="flex items-center gap-2.5">
+                <Avatar className="size-8 shrink-0 ring-2 ring-border/20">
+                  {post.author.avatar_url ? (
+                    <AvatarImage src={post.author.avatar_url} />
+                  ) : (
+                    <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+                      {authorInitials}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {post.author.full_name || t('feed.post.user')}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {post.author.company} · {timeAgo}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-foreground/80 leading-relaxed line-clamp-2 whitespace-pre-wrap">
+                {post.content}
+              </p>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowRepostDialog(false)}
+                className="rounded-full text-muted-foreground"
+              >
+                {t('common.cancel')}
+              </Button>
+              <div className="flex gap-2">
+                {!repostText.trim() && (
+                  <Button
+                    size="sm"
+                    onClick={submitRepost}
+                    disabled={repostSubmitting}
+                    className="rounded-full gap-1.5"
+                  >
+                    <Repeat2 className="size-3.5" />
+                    {t('feed.post.repost_now')}
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  onClick={submitRepost}
+                  disabled={repostSubmitting || (!repostText.trim())}
+                  className="rounded-full gap-1.5"
+                >
+                  {repostSubmitting ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Repeat2 className="size-3.5" />
+                  )}
+                  {repostText.trim() ? t('feed.post.repost_with_note_btn') : t('feed.post.repost_btn')}
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>
