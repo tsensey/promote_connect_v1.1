@@ -23,8 +23,11 @@ import { useTranslation } from '@/lib/i18n';
 import type { useFeed } from "@/hooks/useFeed";
 
 interface CreatePostProps {
-  onSubmit: ReturnType<typeof useFeed>["createPost"];
-  onUpload: ReturnType<typeof useFeed>["uploadImage"];
+  onSubmit: (content: string, type?: string, category?: string, imageUrls?: string[]) => Promise<{ error: any }>;
+  onUpload: (files: File[]) => Promise<string[]>;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+  initiallyExpanded?: boolean;
 }
 
 const POST_TYPES = [
@@ -36,27 +39,27 @@ const POST_TYPES = [
     active: "bg-slate-600 text-white",
   },
   {
-    value: "annonce",
+    value: "announcement",
     icon: Megaphone,
     color: "bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300",
     active: "bg-blue-600 text-white",
   },
   {
-    value: "actualite",
+    value: "news",
     icon: Newspaper,
     color:
       "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300",
     active: "bg-emerald-600 text-white",
   },
   {
-    value: "offre",
+    value: "job",
     icon: Briefcase,
     color:
       "bg-violet-50 text-violet-600 dark:bg-violet-900/40 dark:text-violet-300",
     active: "bg-violet-600 text-white",
   },
   {
-    value: "evenement",
+    value: "event",
     icon: CalendarDays,
     color:
       "bg-amber-50 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300",
@@ -73,7 +76,7 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
   const [postType, setPostType] = useState("general");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -159,9 +162,10 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
           setContent("");
           setImageFiles([]);
           setImagePreviews([]);
-          setIsExpanded(false);
+          setIsExpanded(initiallyExpanded);
           setPostType("general");
           toast.success(t('feed.create.posted'));
+          if (onSuccess) onSuccess();
         } else if (result && result.error) {
           toast.error(result.error.message || t('feed.create.post_error'));
         }
@@ -175,12 +179,13 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
     [content, postType, imageFiles, submitting, isOverLimit, onSubmit, onUpload, t],
   );
 
-  const handleCancel = () => {
+  const cancelCreate = () => {
     setContent("");
     setImageFiles([]);
     setImagePreviews([]);
-    setIsExpanded(false);
+    setIsExpanded(initiallyExpanded);
     setPostType("general");
+    if (onCancel) onCancel();
   };
 
   const handleExpand = () => {
@@ -280,13 +285,13 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
                         autoResize(e.target);
                       }}
                       placeholder={
-                        postType === "annonce"
+                        postType === "announcement"
                           ? t('feed.create.placeholder_announcement')
-                          : postType === "actualite"
+                          : postType === "news"
                             ? t('feed.create.placeholder_news')
-                            : postType === "offre"
+                            : postType === "job"
                               ? t('feed.create.placeholder_job')
-                              : postType === "evenement"
+                              : postType === "event"
                                 ? t('feed.create.placeholder_event')
                                 : t('feed.create.placeholder_general')
                       }
@@ -392,7 +397,7 @@ export function CreatePost({ onSubmit, onUpload }: CreatePostProps) {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={handleCancel}
+                        onClick={cancelCreate}
                         className="rounded-full text-muted-foreground"
                       >
                         {t('common.cancel')}
