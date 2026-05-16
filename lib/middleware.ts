@@ -8,9 +8,9 @@ function isPublicRoute(pathname: string) {
   return PUBLIC_ROUTES.has(pathname)
 }
 
-async function getUserRole(supabase: ReturnType<typeof createServerClient<Database>>, userId: string): Promise<string | null> {
+async function getUserProfile(supabase: ReturnType<typeof createServerClient<Database>>, userId: string) {
   const { data } = await supabase.from('profiles').select('role').eq('id', userId).single()
-  return data?.role ?? null
+  return data ? { role: data.role, is_active: true } : null
 }
 
 export async function updateSession(request: NextRequest) {
@@ -43,21 +43,45 @@ export async function updateSession(request: NextRequest) {
     return response
   }
 
-  const needsRoleCheck = pathname === '/login' || pathname === '/register' || pathname.startsWith('/admin')
-  let isAdmin = false
-  if (needsRoleCheck) {
-    const role = await getUserRole(supabase, user.id)
-    isAdmin = role === 'admin'
+  const needsProfileCheck = pathname === '/login' || pathname === '/register' || pathname === '/' || pathname.startsWith('/admin') || pathname.startsWith('/exposant')
+
+  let profile: { role: string | null; is_active: boolean } | null = null
+  if (needsProfileCheck) {
+    profile = await getUserProfile(supabase, user.id)
+  }
+
+  const role = profile?.role ?? null
+  const isAdmin = role === 'admin'
+  const isExposant = role === 'exposant'
+  const isActive = profile?.is_active ?? true
+
+  if (!isActive) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    url.searchParams.set('suspended', 'true')
+    return NextResponse.redirect(url)
   }
 
   if (pathname === '/login' || pathname === '/register') {
     const url = request.nextUrl.clone()
-    url.pathname = isAdmin ? '/admin' : '/feed'
+    url.pathname = isAdmin ? '/admin' : '/app'
     url.searchParams.delete('redirect')
     return NextResponse.redirect(url)
   }
 
+  if (pathname === '/') {
+    const url = request.nextUrl.clone()
+    url.pathname = isAdmin ? '/admin' : '/app'
+    return NextResponse.redirect(url)
+  }
+
   if (pathname.startsWith('/admin') && !isAdmin) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/feed'
+    return NextResponse.redirect(url)
+  }
+
+  if (pathname.startsWith('/exposant') && !isExposant) {
     const url = request.nextUrl.clone()
     url.pathname = '/feed'
     return NextResponse.redirect(url)

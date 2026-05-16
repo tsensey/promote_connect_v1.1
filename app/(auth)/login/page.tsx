@@ -60,7 +60,8 @@ function LoginPageContent() {
         .single();
 
       const role = (profile as { role: string | null } | null)?.role;
-      router.replace(role === 'admin' ? '/admin' : '/feed');
+      const redirectPath = role === 'admin' ? '/admin' : '/app';
+      router.replace(redirectPath);
     } catch (loginError) {
       setError(
         loginError instanceof Error

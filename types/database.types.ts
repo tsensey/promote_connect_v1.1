@@ -19,9 +19,9 @@ export interface Database {
           country: string | null;
           pavillon: string | null;
           avatar_url: string | null;
-          subscription_status: string | null;
-          subscription_ends_at: string | null;
-          stripe_customer_id: string | null;
+          is_active: boolean;
+          suspended_at: string | null;
+          suspended_reason: string | null;
           created_at: string | null;
         };
         Insert: {
@@ -33,9 +33,9 @@ export interface Database {
           country?: string | null;
           pavillon?: string | null;
           avatar_url?: string | null;
-          subscription_status?: string | null;
-          subscription_ends_at?: string | null;
-          stripe_customer_id?: string | null;
+          is_active?: boolean;
+          suspended_at?: string | null;
+          suspended_reason?: string | null;
           created_at?: string | null;
         };
         Update: {
@@ -47,9 +47,9 @@ export interface Database {
           country?: string | null;
           pavillon?: string | null;
           avatar_url?: string | null;
-          subscription_status?: string | null;
-          subscription_ends_at?: string | null;
-          stripe_customer_id?: string | null;
+          is_active?: boolean;
+          suspended_at?: string | null;
+          suspended_reason?: string | null;
           created_at?: string | null;
         };
         Relationships: [];
@@ -368,36 +368,6 @@ export interface Database {
           ends_at?: string;
           status?: string | null;
           notes?: string | null;
-          created_at?: string | null;
-        };
-        Relationships: [];
-      };
-      subscriptions: {
-        Row: {
-          id: string;
-          profile_id: string | null;
-          stripe_customer_id: string | null;
-          stripe_subscription_id: string | null;
-          status: string | null;
-          current_period_end: string | null;
-          created_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          profile_id?: string | null;
-          stripe_customer_id?: string | null;
-          stripe_subscription_id?: string | null;
-          status?: string | null;
-          current_period_end?: string | null;
-          created_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          profile_id?: string | null;
-          stripe_customer_id?: string | null;
-          stripe_subscription_id?: string | null;
-          status?: string | null;
-          current_period_end?: string | null;
           created_at?: string | null;
         };
         Relationships: [];

@@ -360,20 +360,11 @@ function AccountTab() {
                  profile?.role === 'visiteur' ? t('account.role.visiteur') : t('account.role.admin')}
               </Badge>
             } />
-            <InfoItem label={t('account.subscription')} badge={
-              <Badge variant={statusBadge(profile?.subscription_status)}>
-                {statusLabel(profile?.subscription_status)}
+            <InfoItem label={t('account.status')} badge={
+              <Badge variant={profile?.is_active === false ? 'destructive' : 'default'} className={profile?.is_active !== false ? 'bg-emerald-500/15 text-emerald-700' : ''}>
+                {profile?.is_active === false ? 'Suspendu' : 'Actif'}
               </Badge>
             } />
-            {profile?.subscription_ends_at && (
-              <InfoItem
-                label={t('account.subscription.ends_at')}
-                value={new Date(profile.subscription_ends_at).toLocaleDateString(
-                  locale === 'en' ? 'en-US' : 'fr-FR',
-                  { day: 'numeric', month: 'long', year: 'numeric' }
-                )}
-              />
-            )}
           </div>
         </CardContent>
       </Card>

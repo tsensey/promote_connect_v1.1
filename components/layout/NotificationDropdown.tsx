@@ -75,19 +75,15 @@ export function NotificationDropdown() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="relative rounded-full text-muted-foreground hover:text-foreground"
-        >
-          <Bell className="size-4" />
-          {unreadNotificationsCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-primary px-1 py-px text-[10px] font-bold text-primary-foreground ring-2 ring-background">
-              {unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount}
-            </span>
-          )}
-        </Button>
+      <DropdownMenuTrigger
+        className="relative inline-flex shrink-0 items-center justify-center rounded-full text-muted-foreground hover:text-foreground size-9"
+      >
+        <Bell className="size-4" />
+        {unreadNotificationsCount > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-primary px-1 py-px text-[10px] font-bold text-primary-foreground ring-2 ring-background">
+            {unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount}
+          </span>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 rounded-xl p-0 shadow-2xl border-border/40 overflow-hidden">
         <div className="flex items-center justify-between p-4 bg-muted/30 border-b border-border/40">

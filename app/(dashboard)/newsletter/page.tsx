@@ -10,16 +10,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
-const SECTORS = [
-  "Technology",
-  "Energy",
-  "Fashion",
-  "Healthcare",
-  "Construction",
-  "Agriculture",
-  "Finance",
-  "Logistics",
-];
+interface SectorItem {
+  value: string;
+  labelKey: string;
+}
 
 interface NewsletterEdition {
   id: string;
@@ -30,6 +24,16 @@ interface NewsletterEdition {
 
 export default function NewsletterPage() {
   const { t, locale } = useTranslation();
+  const SECTORS: SectorItem[] = [
+    { value: "Technology", labelKey: "sector.it" },
+    { value: "Energy", labelKey: "sector.energie" },
+    { value: "Fashion", labelKey: "sector.fashion" },
+    { value: "Healthcare", labelKey: "sector.sante" },
+    { value: "Construction", labelKey: "sector.batiment" },
+    { value: "Agriculture", labelKey: "sector.agriculture" },
+    { value: "Finance", labelKey: "sector.finance" },
+    { value: "Logistics", labelKey: "sector.logistique" },
+  ];
   const FREQUENCIES = [
     { value: "daily", label: t("newsletter.daily") },
     { value: "weekly", label: t("newsletter.weekly") },
@@ -63,11 +67,11 @@ export default function NewsletterPage() {
     checkSubscription();
   }, []);
 
-  const toggleSector = (sector: string) => {
+  const toggleSector = (sector: SectorItem) => {
     setSectors((prev) =>
-      prev.includes(sector)
-        ? prev.filter((s) => s !== sector)
-        : [...prev, sector],
+      prev.includes(sector.value)
+        ? prev.filter((s) => s !== sector.value)
+        : [...prev, sector.value],
     );
   };
 
@@ -165,7 +169,7 @@ export default function NewsletterPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder={t("newsletter.email_placeholder")}
-                  className="h-11 rounded-xl border-border/70 bg-white/90"
+                  className="h-11 rounded-xl border-border/70 bg-card"
                 />
               </div>
 
@@ -196,17 +200,17 @@ export default function NewsletterPage() {
                 <div className="flex flex-wrap gap-2">
                   {SECTORS.map((sector) => (
                     <Badge
-                      key={sector}
+                      key={sector.value}
                       variant={
-                        sectors.includes(sector) ? "default" : "secondary"
+                        sectors.includes(sector.value) ? "default" : "secondary"
                       }
                       className="cursor-pointer rounded-full transition-all hover:opacity-80"
                       onClick={() => toggleSector(sector)}
                     >
-                      {sectors.includes(sector) && (
+                      {sectors.includes(sector.value) && (
                         <Check className="mr-1 size-3" />
                       )}
-                      {sector}
+                      {t(sector.labelKey)}
                     </Badge>
                   ))}
                 </div>
@@ -219,7 +223,7 @@ export default function NewsletterPage() {
               )}
 
               {success && (
-                <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                <div className="rounded-xl bg-emerald-500/10 px-4 py-3 text-sm text-emerald-600 dark:text-emerald-400">
                   {t("newsletter.success_desc")}
                 </div>
               )}
@@ -264,7 +268,7 @@ export default function NewsletterPage() {
               editions.map((edition) => (
                 <article
                   key={edition.id}
-                  className="rounded-xl border border-border/60 bg-white/80 p-5 transition-all hover:border-primary/20 hover:shadow-md"
+                  className="rounded-xl border border-border/60 bg-card p-5 transition-all hover:border-primary/20 hover:shadow-md"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>

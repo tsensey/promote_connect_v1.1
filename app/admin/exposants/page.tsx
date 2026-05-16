@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { supabaseClient } from '@/lib/supabase/client';
+import { useCallback, useEffect, useState } from 'react';
+import { useAuth } from '@/lib/auth/context';
 import { Plus, Search, Edit, Trash2, Loader2, Users } from 'lucide-react';
 import type { Database } from '@/types/database.types';
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,7 @@ interface Espace {
 
 export default function AdminExposantsPage() {
   const { t } = useTranslation();
+  const { session } = useAuth();
   const [exposants, setExposants] = useState<Exposant[]>([]);
   const [espaces, setEspaces] = useState<Espace[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,18 +50,32 @@ export default function AdminExposantsPage() {
     nom: '', description: '', secteur: '', espace_id: '', pavillon: '', stand: '', pays: '', website: '', is_featured: false,
   });
 
-  const fetchData = async () => {
-    setLoading(true);
-    const [expRes, espRes] = await Promise.all([
-      supabaseClient.from('exposants').select('*').order('created_at', { ascending: false }),
-      supabaseClient.from('espaces').select('*').order('sort_order', { ascending: true }),
-    ]);
-    if (expRes.data) setExposants(expRes.data);
-    if (espRes.data) setEspaces(espRes.data);
-    setLoading(false);
-  };
+  const token = session?.access_token || null;
 
-  useEffect(() => { fetchData(); }, []);
+  const fetchData = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+
+    try {
+      const [expRes, espRes] = await Promise.all([
+        fetch('/api/admin/espaces/exposants', {
+          headers: { Authorization: `Bearer ${token}` },
+        }).then((r) => r.json()).catch(() => ({ exposants: [] })),
+        fetch('/api/admin/espaces', {
+          headers: { Authorization: `Bearer ${token}` },
+        }).then((r) => r.json()).catch(() => ({ espaces: [] })),
+      ]);
+
+      setExposants(expRes.exposants || []);
+      setEspaces(espRes.espaces || []);
+    } catch {
+      toast.error('Erreur de chargement');
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => { void fetchData(); }, [fetchData]);
 
   const resetForm = () => {
     setFormData({ nom: '', description: '', secteur: '', espace_id: '', pavillon: '', stand: '', pays: '', website: '', is_featured: false });
@@ -69,38 +84,37 @@ export default function AdminExposantsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!token) return;
     setFormLoading(true);
 
-    if (editingId) {
-      const updatePayload: Database['public']['Tables']['exposants']['Update'] = {
-        nom: formData.nom,
-        description: formData.description || null,
-        secteur: formData.secteur || null,
-        pavillon: formData.pavillon || null,
-        stand: formData.stand || null,
-        pays: formData.pays || null,
-        website: formData.website || null,
-        is_featured: formData.is_featured,
-        espace_id: formData.espace_id || null,
-      };
-      const { error } = await supabaseClient.from('exposants').update(updatePayload).eq('id', editingId);
-      if (error) { toast.error(error.message); } else { setShowForm(false); resetForm(); fetchData(); }
-    } else {
-      const insertPayload: Database['public']['Tables']['exposants']['Insert'] = {
-        nom: formData.nom,
-        description: formData.description || null,
-        secteur: formData.secteur || null,
-        pavillon: formData.pavillon || null,
-        stand: formData.stand || null,
-        pays: formData.pays || null,
-        website: formData.website || null,
-        is_featured: formData.is_featured,
-        espace_id: formData.espace_id || null,
-      };
-      const { error } = await supabaseClient.from('exposants').insert(insertPayload);
-      if (error) { toast.error(error.message); } else { setShowForm(false); resetForm(); fetchData(); }
+    try {
+      const method = editingId ? 'PATCH' : 'POST';
+      const body = editingId
+        ? { id: editingId, ...formData }
+        : formData;
+
+      const response = await fetch('/api/admin/espaces/exposants', {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (response.ok) {
+        setShowForm(false);
+        resetForm();
+        await fetchData();
+      } else {
+        const payload = await response.json();
+        toast.error(payload.error || 'Erreur');
+      }
+    } catch {
+      toast.error('Erreur reseau');
+    } finally {
+      setFormLoading(false);
     }
-    setFormLoading(false);
   };
 
   const handleEdit = (exp: Exposant) => {
@@ -120,10 +134,24 @@ export default function AdminExposantsPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!token) return;
     if (!confirm(t('admin.exposants.delete_confirm'))) return;
-    const { error } = await supabaseClient.from('exposants').delete().eq('id', id);
-    if (error) toast.error(error.message);
-    else fetchData();
+
+    try {
+      const response = await fetch(`/api/admin/espaces/exposants?id=${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        await fetchData();
+      } else {
+        const payload = await response.json();
+        toast.error(payload.error || 'Erreur');
+      }
+    } catch {
+      toast.error('Erreur reseau');
+    }
   };
 
   const filtered = exposants.filter((exp) => exp.nom.toLowerCase().includes(search.toLowerCase()));
@@ -165,7 +193,7 @@ export default function AdminExposantsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>{t('admin.exposants.col_exposant')}</TableHead>
-                <TableHead>{t('admin.exposants.col_secteur')}</TableHead>
+                <TableHead>{t('admin.exposants.col_sector')}</TableHead>
                 <TableHead>{t('admin.exposants.col_espace')}</TableHead>
                 <TableHead>{t('admin.exposants.col_stand')}</TableHead>
                 <TableHead>{t('admin.exposants.col_status')}</TableHead>
@@ -200,7 +228,7 @@ export default function AdminExposantsPage() {
                             {espace.type === 'pavillon' ? 'P' : 'E'}{espace.code}
                           </Badge>
                         ) : exp.pavillon ? (
-                          <span className="text-muted-foreground">{t('admin.exposants.pavillon_prefix')} {exp.pavillon}</span>
+                          <span className="text-muted-foreground">{exp.pavillon}</span>
                         ) : '-'}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">{exp.stand || '-'}</TableCell>
@@ -241,7 +269,7 @@ export default function AdminExposantsPage() {
             <DialogTitle>{editingId ? t('admin.exposants.form_edit') : t('admin.exposants.form_new')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="grid gap-3 py-4">
-            <Input placeholder={t('admin.exposants.form_nom')} value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} required />
+            <Input placeholder={t('admin.exposants.form_nom') || t('admin.exposants.form_name_placeholder')} value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} required />
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
@@ -261,7 +289,7 @@ export default function AdminExposantsPage() {
                   <option value="">{t('admin.exposants.form_none')}</option>
                   {espaces.map((espace) => (
                     <option key={espace.id} value={espace.id}>
-                      {espace.type === 'pavillon' ? t('admin.exposants.select_pavillon') : t('admin.exposants.select_espace')} {espace.code} — {espace.nom}
+                      {espace.type === 'pavillon' ? t('admin.exposants.form_type_pavillon') : t('admin.exposants.form_type_espace')} {espace.code} — {espace.nom}
                     </option>
                   ))}
                 </select>
@@ -278,13 +306,13 @@ export default function AdminExposantsPage() {
 
             {selectedEspace && (
               <div className="rounded-xl bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-                {t('admin.exposants.form_space_code')} <strong>{selectedEspace.code}</strong> — {selectedEspace.type === 'pavillon' ? t('admin.exposants.form_space_pavillon') : t('admin.exposants.form_space_espace')} {selectedEspace.code} — {selectedEspace.nom}
+                {t('admin.exposants.form_pavillon_code')} <strong>{selectedEspace.code}</strong> — {selectedEspace.type === 'pavillon' ? t('admin.exposants.form_type_pavillon') : t('admin.exposants.form_type_espace')} {selectedEspace.code} — {selectedEspace.nom}
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-3">
-              <Input placeholder={t('admin.exposants.form_secteur')} value={formData.secteur} onChange={(e) => setFormData({ ...formData, secteur: e.target.value })} />
-              <Input placeholder={t('admin.exposants.form_pays')} value={formData.pays} onChange={(e) => setFormData({ ...formData, pays: e.target.value })} />
+              <Input placeholder={t('admin.exposants.form_sector')} value={formData.secteur} onChange={(e) => setFormData({ ...formData, secteur: e.target.value })} />
+              <Input placeholder={t('admin.exposants.form_country')} value={formData.pays} onChange={(e) => setFormData({ ...formData, pays: e.target.value })} />
             </div>
             <Input placeholder={t('admin.exposants.form_website')} value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} />
             <Textarea placeholder={t('admin.exposants.form_description')} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} />

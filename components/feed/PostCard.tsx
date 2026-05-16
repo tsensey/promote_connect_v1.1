@@ -237,6 +237,7 @@ export const PostCard = memo(function PostCard({
   const [likeAnim, setLikeAnim] = useState(false);
   const [repostAnim, setRepostAnim] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [saveAnim, setSaveAnim] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -653,8 +654,13 @@ export const PostCard = memo(function PostCard({
                   setShowReactions(!showReactions);
                 }
               }}
-              onMouseEnter={() => setShowReactions(true)}
-              onMouseLeave={() => setShowReactions(false)}
+              onMouseEnter={() => {
+                if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+                setShowReactions(true);
+              }}
+              onMouseLeave={() => {
+                hoverTimeoutRef.current = setTimeout(() => setShowReactions(false), 200);
+              }}
             >
               {post.reaction_type === 'love' ? (
                 <Heart className={cn('size-4 fill-current', likeAnim && 'scale-125')} />
@@ -674,7 +680,10 @@ export const PostCard = memo(function PostCard({
             {showReactions && (
               <div
                 className="absolute bottom-full left-0 mb-2 flex gap-1 rounded-full border border-border bg-card px-2 py-1.5 shadow-xl z-30"
-                onMouseEnter={() => setShowReactions(true)}
+                onMouseEnter={() => {
+                  if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+                  setShowReactions(true);
+                }}
                 onMouseLeave={() => setShowReactions(false)}
               >
                 {REACTIONS.map(({ type, icon: Icon, color }) => (

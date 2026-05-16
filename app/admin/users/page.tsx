@@ -2,13 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  Ban,
   Building2,
+  CheckCircle2,
   Copy,
   Globe2,
   Loader2,
   MoreVertical,
   Search,
+  Shield,
   Trash2,
+  UserCheck,
   UserPlus,
   Users,
 } from 'lucide-react';
@@ -29,10 +33,18 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -52,6 +64,7 @@ interface UserRow {
   sector: string | null;
   country: string | null;
   pavillon: string | null;
+  is_active: boolean;
   created_at: string;
 }
 
@@ -78,34 +91,11 @@ const SECTORS = [
 ];
 
 const COUNTRIES = [
-  'Algerie',
-  'Allemagne',
-  'Belgique',
-  'Benin',
-  'Burkina Faso',
-  'Cameroun',
-  'Canada',
-  'Chine',
-  'Congo',
-  "Cote d'Ivoire",
-  'Egypte',
-  'Espagne',
-  'Etats-Unis',
-  'France',
-  'Gabon',
-  'Ghana',
-  'Guinee',
-  'Inde',
-  'Italie',
-  'Japon',
-  'Mali',
-  'Maroc',
-  'Nigeria',
-  'Royaume-Uni',
-  'Senegal',
-  'Togo',
-  'Tunisie',
-  'Turquie',
+  'Algerie', 'Allemagne', 'Belgique', 'Benin', 'Burkina Faso', 'Cameroun',
+  'Canada', 'Chine', 'Congo', "Cote d'Ivoire", 'Egypte', 'Espagne',
+  'Etats-Unis', 'France', 'Gabon', 'Ghana', 'Guinee', 'Inde', 'Italie',
+  'Japon', 'Mali', 'Maroc', 'Nigeria', 'Royaume-Uni', 'Senegal', 'Togo',
+  'Tunisie', 'Turquie',
 ];
 
 const NOMBRE_EMPLOYES = ['1-10', '11-50', '51-200', '200+'];
@@ -117,12 +107,12 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [lastInvite, setLastInvite] = useState<{
     email: string;
-    password: string;
     emailSent: boolean;
   } | null>(null);
   const [espaces, setEspaces] = useState<{ id: string; code: string; nom: string; type: string }[]>([]);
@@ -130,7 +120,7 @@ export default function AdminUsersPage() {
     full_name: '',
     email: '',
     company: '',
-    role: 'visiteur' as 'visiteur' | 'exposant',
+    role: 'visiteur' as string,
     espace_id: '',
     sector: '',
     country: '',
@@ -140,8 +130,12 @@ export default function AdminUsersPage() {
     website: '',
     annee_creation: '',
     nombre_employes: '',
-    generate_exposant: true,
+    generate_exposant: false,
   });
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
+  const [showRoleDialog, setShowRoleDialog] = useState<UserRow | null>(null);
+  const [newRole, setNewRole] = useState('');
 
   const token = session?.access_token || null;
 
@@ -150,9 +144,12 @@ export default function AdminUsersPage() {
       const haystack = `${user.full_name} ${user.company || ''} ${user.sector || ''}`.toLowerCase();
       const matchesSearch = haystack.includes(search.toLowerCase());
       const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-      return matchesSearch && matchesRole;
+      const matchesStatus = statusFilter === 'all'
+        || (statusFilter === 'active' && user.is_active)
+        || (statusFilter === 'suspended' && !user.is_active);
+      return matchesSearch && matchesRole && matchesStatus;
     });
-  }, [roleFilter, search, users]);
+  }, [roleFilter, search, statusFilter, users]);
 
   const stats = useMemo(
     () => ({
@@ -160,14 +157,13 @@ export default function AdminUsersPage() {
       admins: users.filter((user) => user.role === 'admin').length,
       exposants: users.filter((user) => user.role === 'exposant').length,
       visiteurs: users.filter((user) => user.role === 'visiteur').length,
+      suspended: users.filter((user) => !user.is_active).length,
     }),
     [users]
   );
 
   const fetchUsers = useCallback(async () => {
-    if (!token) {
-      return;
-    }
+    if (!token) return;
 
     setLoading(true);
 
@@ -179,17 +175,17 @@ export default function AdminUsersPage() {
       const payload = await response.json();
 
       if (!response.ok) {
-        toast.error(payload.error || t('admin.users.toast_load_error'));
+        toast.error(t('admin.users.load_error'));
         return;
       }
 
       setUsers(payload.users || []);
     } catch {
-      toast.error(t('admin.users.toast_network_error'));
+      toast.error(t('admin.users.network_error'));
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, t]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -213,12 +209,12 @@ export default function AdminUsersPage() {
 
   async function handleCreate() {
     if (!token) {
-      toast.error(t('admin.users.toast_session_error'));
+      toast.error(t('admin.users.no_session'));
       return;
     }
 
     if (!form.full_name || !form.email) {
-      toast.error(t('admin.users.toast_required_fields'));
+      toast.error(t('admin.users.validation'));
       return;
     }
 
@@ -237,13 +233,12 @@ export default function AdminUsersPage() {
       const payload = await response.json();
 
       if (!response.ok) {
-        toast.error(payload.error || t('admin.users.toast_create_error'));
+        toast.error(payload.error || t('admin.users.create_error'));
         return;
       }
 
       setLastInvite({
         email: form.email,
-        password: payload.temporary_password,
         emailSent: payload.email_sent,
       });
 
@@ -261,33 +256,88 @@ export default function AdminUsersPage() {
         website: '',
         annee_creation: '',
         nombre_employes: '',
-        generate_exposant: true,
+        generate_exposant: false,
       });
       setShowCreateDialog(false);
       toast.success(
         payload.email_sent
-          ? t('admin.users.toast_create_sent')
-          : t('admin.users.toast_create_no_email')
+          ? t('admin.users.created_email')
+          : t('admin.users.created_manual')
       );
       await fetchUsers();
     } catch {
-      toast.error(t('admin.users.toast_create_server_error'));
+      toast.error(t('admin.users.create_server_error'));
     } finally {
       setCreating(false);
     }
   }
 
+  async function handleChangeRole(userId: string, newRoleValue: string) {
+    if (!token) return;
+    setActionLoading(userId);
+
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id: userId, role: newRoleValue }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json();
+        toast.error(payload.error || 'Erreur lors du changement de role');
+        return;
+      }
+
+      toast.success('Role modifie avec succes');
+      setShowRoleDialog(null);
+      await fetchUsers();
+    } catch {
+      toast.error('Erreur reseau');
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleToggleSuspend(userId: string, currentlyActive: boolean) {
+    if (!token) return;
+    setActionLoading(userId);
+
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          id: userId,
+          is_active: !currentlyActive,
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json();
+        toast.error(payload.error || 'Erreur');
+        return;
+      }
+
+      toast.success(currentlyActive ? 'Compte suspendu' : 'Compte reactive');
+      await fetchUsers();
+    } catch {
+      toast.error('Erreur reseau');
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
   async function handleDelete(userId: string) {
-    if (!token) {
-      toast.error(t('admin.users.toast_session_error'));
-      return;
-    }
+    if (!token) return;
 
-    if (!window.confirm(t('admin.users.toast_confirm_delete'))) {
-      return;
-    }
-
-    setDeleting(userId);
+    setActionLoading(userId);
 
     try {
       const response = await fetch(`/api/admin/users?id=${userId}`, {
@@ -298,25 +348,24 @@ export default function AdminUsersPage() {
       const payload = await response.json();
 
       if (!response.ok) {
-        toast.error(payload.error || t('admin.users.toast_delete_error'));
+        toast.error(payload.error || t('admin.users.delete_error'));
         return;
       }
 
-      toast.success(t('admin.users.toast_delete_success'));
+      toast.success(t('admin.users.deleted'));
+      setShowDeleteDialog(null);
       await fetchUsers();
     } catch {
-      toast.error(t('admin.users.toast_delete_network'));
+      toast.error(t('admin.users.delete_network_error'));
     } finally {
-      setDeleting(null);
+      setActionLoading(null);
     }
   }
 
   async function copyInvite() {
-    if (!lastInvite) {
-      return;
-    }
+    if (!lastInvite) return;
 
-    const message = `Email: ${lastInvite.email}\n${t('admin.users.temp_password')} ${lastInvite.password}`;
+    const message = `Email: ${lastInvite.email}\n${t('admin.users.credentials_copied')}`;
     await navigator.clipboard.writeText(message);
     toast.success(t('admin.users.toast_copy_success'));
   }
@@ -339,11 +388,12 @@ export default function AdminUsersPage() {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <StatCard label={t('admin.users.total')} value={stats.total} icon={Users} tone="blue" />
-        <StatCard label={t('admin.users.admins')} value={stats.admins} icon={UserPlus} tone="amber" />
+        <StatCard label={t('admin.users.admins')} value={stats.admins} icon={Shield} tone="amber" />
         <StatCard label={t('admin.users.exposants')} value={stats.exposants} icon={Building2} tone="violet" />
         <StatCard label={t('admin.users.visiteurs')} value={stats.visiteurs} icon={Globe2} tone="emerald" />
+        <StatCard label="Suspendus" value={stats.suspended} icon={Ban} tone="red" />
       </div>
 
       {lastInvite && (
@@ -354,9 +404,6 @@ export default function AdminUsersPage() {
                 {t('admin.users.last_created')}
               </p>
               <p className="text-lg font-semibold text-foreground">{lastInvite.email}</p>
-              <p className="text-sm text-muted-foreground">
-                {t('admin.users.temp_password')} <span className="font-semibold text-foreground">{lastInvite.password}</span>
-              </p>
               <p className="text-sm text-muted-foreground">
                 {lastInvite.emailSent
                   ? t('admin.users.email_sent')
@@ -395,6 +442,18 @@ export default function AdminUsersPage() {
                 </Button>
               ))}
             </div>
+            <div className="flex gap-2">
+              {(['all', 'active', 'suspended'] as const).map((status) => (
+                <Button
+                  key={status}
+                  variant={statusFilter === status ? 'default' : 'outline'}
+                  className="rounded-full"
+                  onClick={() => setStatusFilter(status)}
+                >
+                  {status === 'all' ? t('admin.users.all_roles') : status === 'active' ? 'Actifs' : 'Suspendus'}
+                </Button>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -424,6 +483,7 @@ export default function AdminUsersPage() {
                 <TableRow>
                   <TableHead>{t('admin.users.col_user')}</TableHead>
                   <TableHead>{t('admin.users.col_role')}</TableHead>
+                  <TableHead>Statut</TableHead>
                   <TableHead>{t('admin.users.col_profile')}</TableHead>
                   <TableHead>{t('admin.users.col_creation')}</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -454,6 +514,19 @@ export default function AdminUsersPage() {
                         {user.role || 'visiteur'}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      {user.is_active ? (
+                        <Badge variant="default" className="rounded-full bg-emerald-500/15 text-emerald-700">
+                          <CheckCircle2 className="mr-1 size-3" />
+                          Actif
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive" className="rounded-full">
+                          <Ban className="mr-1 size-3" />
+                          Suspendu
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {user.role === 'exposant'
                         ? t('admin.users.pavillon', { pavillon: user.pavillon || '-' })
@@ -469,15 +542,33 @@ export default function AdminUsersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="rounded-xl">
                           <DropdownMenuItem
-                            onClick={() => handleDelete(user.id)}
-                            className="text-destructive"
-                            disabled={deleting === user.id}
+                            onClick={() => {
+                              setShowRoleDialog(user);
+                              setNewRole(user.role || 'visiteur');
+                            }}
                           >
-                            {deleting === user.id ? (
+                            <UserCheck className="mr-2 size-4" />
+                            Changer le role
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleToggleSuspend(user.id, user.is_active)}
+                            disabled={actionLoading === user.id}
+                          >
+                            {actionLoading === user.id ? (
                               <Loader2 className="mr-2 size-4 animate-spin" />
+                            ) : user.is_active ? (
+                              <Ban className="mr-2 size-4" />
                             ) : (
-                              <Trash2 className="mr-2 size-4" />
+                              <CheckCircle2 className="mr-2 size-4" />
                             )}
+                            {user.is_active ? 'Suspendre' : 'Reactiv er'}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => setShowDeleteDialog(user.id)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="mr-2 size-4" />
                             {t('admin.users.delete_btn')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -535,7 +626,7 @@ export default function AdminUsersPage() {
 
             <div className="space-y-3">
               <Label>{t('admin.users.form_role')}</Label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <Button
                   type="button"
                   variant={form.role === 'visiteur' ? 'default' : 'outline'}
@@ -545,10 +636,6 @@ export default function AdminUsersPage() {
                       ...form,
                       role: 'visiteur',
                       generate_exposant: false,
-                      espace_id: '',
-                      sector: '',
-                      country: '',
-                      pavillon: '',
                     })
                   }
                 >
@@ -568,6 +655,20 @@ export default function AdminUsersPage() {
                 >
                   {t('admin.users.form_exposant')}
                 </Button>
+                <Button
+                  type="button"
+                  variant={form.role === 'admin' ? 'default' : 'outline'}
+                  className="rounded-xl"
+                  onClick={() =>
+                    setForm({
+                      ...form,
+                      role: 'admin',
+                      generate_exposant: false,
+                    })
+                  }
+                >
+                  Admin
+                </Button>
               </div>
             </div>
 
@@ -584,9 +685,7 @@ export default function AdminUsersPage() {
                     >
                       <option value="">{t('admin.users.form_select')}</option>
                       {SECTORS.map((sector) => (
-                        <option key={sector} value={sector}>
-                          {sector}
-                        </option>
+                        <option key={sector} value={sector}>{sector}</option>
                       ))}
                     </select>
                   </div>
@@ -600,9 +699,7 @@ export default function AdminUsersPage() {
                     >
                       <option value="">{t('admin.users.form_select')}</option>
                       {COUNTRIES.map((country) => (
-                        <option key={country} value={country}>
-                          {country}
-                        </option>
+                        <option key={country} value={country}>{country}</option>
                       ))}
                     </select>
                   </div>
@@ -626,7 +723,7 @@ export default function AdminUsersPage() {
                     <option value="">{t('admin.users.form_select_space')}</option>
                     {espaces.map((espace) => (
                       <option key={espace.id} value={espace.id}>
-                        {t(espace.type === 'pavillon' ? 'admin.espaces.type_pavillon' : 'admin.espaces.type_espace')} {espace.code} — {espace.nom}
+                        {espace.type === 'pavillon' ? 'Pavillon' : 'Espace'} {espace.code} — {espace.nom}
                       </option>
                     ))}
                   </select>
@@ -688,9 +785,7 @@ export default function AdminUsersPage() {
                     >
                       <option value="">{t('admin.users.form_employees_placeholder')}</option>
                       {NOMBRE_EMPLOYES.map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
+                        <option key={n} value={n}>{n}</option>
                       ))}
                     </select>
                   </div>
@@ -724,6 +819,75 @@ export default function AdminUsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!showDeleteDialog} onOpenChange={(open) => !open && setShowDeleteDialog(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Cette action est irreversible. Toutes les donnees liees a ce compte (messages, publications, rendez-vous) seront supprimees definitivement.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-xl" onClick={() => setShowDeleteDialog(null)}>
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              className="rounded-xl"
+              disabled={actionLoading === showDeleteDialog}
+              onClick={() => showDeleteDialog && handleDelete(showDeleteDialog)}
+            >
+              {actionLoading === showDeleteDialog ? (
+                <Loader2 className="mr-2 size-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 size-4" />
+              )}
+              Supprimer definitivement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!showRoleDialog} onOpenChange={(open) => !open && setShowRoleDialog(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Changer le role</DialogTitle>
+            <DialogDescription>
+              {showRoleDialog ? `Modifier le role de ${showRoleDialog.full_name}` : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Select value={newRole} onValueChange={(value) => value && setNewRole(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selectionner un role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="visiteur">Visiteur</SelectItem>
+                <SelectItem value="exposant">Exposant</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-xl" onClick={() => setShowRoleDialog(null)}>
+              Annuler
+            </Button>
+            <Button
+              className="rounded-xl"
+              disabled={actionLoading === showRoleDialog?.id || !showRoleDialog}
+              onClick={() => showRoleDialog && handleChangeRole(showRoleDialog.id, newRole)}
+            >
+              {actionLoading === showRoleDialog?.id ? (
+                <Loader2 className="mr-2 size-4 animate-spin" />
+              ) : (
+                <UserCheck className="mr-2 size-4" />
+              )}
+              Confirmer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -737,13 +901,14 @@ function StatCard({
   label: string;
   value: number;
   icon: React.ComponentType<{ className?: string }>;
-  tone: 'blue' | 'emerald' | 'violet' | 'amber';
+  tone: 'blue' | 'emerald' | 'violet' | 'amber' | 'red';
 }) {
-  const toneClasses = {
+  const toneClasses: Record<string, string> = {
     blue: 'bg-blue-500/10 text-blue-700 dark:text-blue-300',
     emerald: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
     violet: 'bg-violet-500/10 text-violet-700 dark:text-violet-300',
     amber: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
+    red: 'bg-red-500/10 text-red-700 dark:text-red-300',
   };
 
   return (

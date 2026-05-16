@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from 'next';
+import { cookies } from 'next/headers';
 import { Manrope } from 'next/font/google';
 import { Suspense } from 'react';
 import { ThemeProvider } from 'next-themes';
 import { AuthProvider } from '@/lib/auth/context';
 import { I18nProvider } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
 import { QueryProvider } from '@/lib/query-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -49,10 +51,13 @@ export const metadata: Metadata = {
 
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies();
+  const initialLocale = (cookieStore.get('NEXT_LOCALE')?.value === 'en' ? 'en' : 'fr') as Locale;
+
   return (
     <html
-      lang="fr"
+      lang={initialLocale}
       suppressHydrationWarning
       data-scroll-behavior="smooth"
       className={cn(manrope.variable)}
@@ -67,7 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <QueryProvider>
             <TooltipProvider>
               <AuthProvider>
-                <I18nProvider>
+                <I18nProvider initialLocale={initialLocale}>
                   <NotificationStateProvider>
                     <NotificationProvider>
                     <Suspense fallback={null}>

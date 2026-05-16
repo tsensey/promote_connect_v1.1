@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverContent } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
 
@@ -40,11 +40,16 @@ export const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(({
   const [search, setSearch] = useState('');
   const [exhibitors, setExhibitors] = useState<Exhibitor[]>([]);
   const [loading, setLoading] = useState(false);
-  const internalRef = useRef<HTMLInputElement>(null);
-  const triggerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const anchorRef = useRef<HTMLInputElement | null>(null);
   const { t } = useTranslation();
 
-  useImperativeHandle(ref, () => internalRef.current!);
+  useImperativeHandle(ref, () => inputRef.current!);
+
+  const setInputRef = useCallback((el: HTMLInputElement | null) => {
+    inputRef.current = el;
+    anchorRef.current = el;
+  }, []);
 
   // Search exhibitors when search string changes
   useEffect(() => {
@@ -110,7 +115,7 @@ export const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(({
   };
 
   const insertMention = (exposant: Exhibitor) => {
-    const cursorPosition = internalRef.current?.selectionStart || 0;
+    const cursorPosition = inputRef.current?.selectionStart || 0;
     const textBeforeCursor = value.slice(0, cursorPosition);
     const textAfterCursor = value.slice(cursorPosition);
     
@@ -124,16 +129,16 @@ export const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(({
     
     // Focus back and set cursor
     setTimeout(() => {
-      internalRef.current?.focus();
+      inputRef.current?.focus();
       const newPos = startOfMention.length + exposant.nom.length + 2;
-      internalRef.current?.setSelectionRange(newPos, newPos);
+      inputRef.current?.setSelectionRange(newPos, newPos);
     }, 0);
   };
 
   return (
-    <div className="relative flex-1" ref={triggerRef}>
+    <div className="relative flex-1">
       <input
-        ref={internalRef}
+        ref={setInputRef}
         type="text"
         value={value}
         onChange={handleInputChange}
@@ -145,15 +150,13 @@ export const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(({
           className
         )}
       />
-
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <div className="absolute bottom-full left-4 h-0 w-0 pointer-events-none" />
-        </PopoverTrigger>
         <PopoverContent 
-          className="p-0 w-[240px] shadow-xl border-border/40" 
+          className="p-0 w-[280px] shadow-xl border-border/40" 
           align="start" 
           side="top"
+          sideOffset={4}
+          anchor={anchorRef}
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <Command className="rounded-xl overflow-hidden">

@@ -1,10 +1,43 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Search, Shield, Users } from 'lucide-react';
-import { supabaseClient } from '@/lib/supabase/client';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Ban,
+  CheckCircle2,
+  Loader2,
+  MoreVertical,
+  Search,
+  Shield,
+  Trash2,
+  UserCheck,
+  Users,
+} from 'lucide-react';
+import { useAuth } from '@/lib/auth/context';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -13,6 +46,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
 
 interface AccessRow {
@@ -20,28 +54,43 @@ interface AccessRow {
   full_name: string | null;
   company: string | null;
   role: string | null;
+  is_active: boolean;
   created_at: string | null;
 }
 
 export default function AdminAccessPage() {
   const { t, locale } = useTranslation();
+  const { session } = useAuth();
   const [accounts, setAccounts] = useState<AccessRow[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
+  const [showRoleDialog, setShowRoleDialog] = useState<AccessRow | null>(null);
+  const [newRole, setNewRole] = useState('');
 
-  useEffect(() => {
-    const loadAccounts = async () => {
-      const { data } = await supabaseClient
-        .from('profiles')
-        .select('id, full_name, company, role, created_at')
-        .order('created_at', { ascending: false });
+  const token = session?.access_token || null;
 
-      setAccounts((data || []) as AccessRow[]);
+  const fetchAccounts = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/admin/users', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const payload = await response.json();
+      if (response.ok) {
+        setAccounts(payload.users || []);
+      }
+    } catch {
+      toast.error('Erreur de chargement');
+    } finally {
       setLoading(false);
-    };
+    }
+  }, [token]);
 
-    void loadAccounts();
-  }, []);
+  useEffect(() => { void fetchAccounts(); }, [fetchAccounts]);
 
   const filteredAccounts = useMemo(() => {
     const query = search.toLowerCase();
@@ -57,9 +106,86 @@ export default function AdminAccessPage() {
       total: accounts.length,
       admins: accounts.filter((account) => account.role === 'admin').length,
       members: accounts.filter((account) => account.role !== 'admin').length,
+      suspended: accounts.filter((account) => !account.is_active).length,
     }),
     [accounts]
   );
+
+  async function handleChangeRole(userId: string, role: string) {
+    if (!token) return;
+    setActionLoading(userId);
+
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id: userId, role }),
+      });
+
+      if (response.ok) {
+        toast.success('Role modifie');
+        setShowRoleDialog(null);
+        await fetchAccounts();
+      } else {
+        const payload = await response.json();
+        toast.error(payload.error || 'Erreur');
+      }
+    } catch {
+      toast.error('Erreur reseau');
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleToggleSuspend(userId: string, currentlyActive: boolean) {
+    if (!token) return;
+    setActionLoading(userId);
+
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id: userId, is_active: !currentlyActive }),
+      });
+
+      if (response.ok) {
+        toast.success(currentlyActive ? 'Compte suspendu' : 'Compte reactive');
+        await fetchAccounts();
+      }
+    } catch {
+      toast.error('Erreur reseau');
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleDelete(userId: string) {
+    if (!token) return;
+    setActionLoading(userId);
+
+    try {
+      const response = await fetch(`/api/admin/users?id=${userId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        toast.success('Compte supprime');
+        setShowDeleteDialog(null);
+        await fetchAccounts();
+      }
+    } catch {
+      toast.error('Erreur reseau');
+    } finally {
+      setActionLoading(null);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -73,10 +199,11 @@ export default function AdminAccessPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-4">
         <StatCard title={t('admin.abonnes.comptes')} value={stats.total} icon={Users} />
         <StatCard title={t('admin.abonnes.admins')} value={stats.admins} icon={Shield} />
         <StatCard title={t('admin.abonnes.members')} value={stats.members} icon={Users} />
+        <StatCard title="Suspendus" value={stats.suspended} icon={Ban} />
       </div>
 
       <div className="surface-panel">
@@ -98,7 +225,8 @@ export default function AdminAccessPage() {
               <TableHead>{t('admin.abonnes.col_company')}</TableHead>
               <TableHead>{t('admin.abonnes.col_role')}</TableHead>
               <TableHead>{t('admin.abonnes.col_access')}</TableHead>
-              <TableHead>{t('admin.abonnes.col_creation')}</TableHead>
+              <TableHead>{t('admin.abonnes.col_date')}</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -110,6 +238,7 @@ export default function AdminAccessPage() {
                   <TableCell><div className="h-5 w-16 animate-pulse rounded bg-muted" /></TableCell>
                   <TableCell><div className="h-5 w-20 animate-pulse rounded bg-muted" /></TableCell>
                   <TableCell><div className="h-5 w-20 animate-pulse rounded bg-muted" /></TableCell>
+                  <TableCell><div className="h-5 w-20 animate-pulse rounded bg-muted ml-auto" /></TableCell>
                 </TableRow>
               ))
             ) : filteredAccounts.length > 0 ? (
@@ -123,18 +252,63 @@ export default function AdminAccessPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="default" className="rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
-                      {t('admin.abonnes.active')}
-                    </Badge>
+                    {account.is_active ? (
+                      <Badge className="rounded-full bg-emerald-500/15 text-emerald-700">
+                        <CheckCircle2 className="mr-1 size-3" />
+                        {t('admin.abonnes.active')}
+                      </Badge>
+                    ) : (
+                      <Badge variant="destructive" className="rounded-full">
+                        <Ban className="mr-1 size-3" />
+                        Suspendu
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {account.created_at ? new Date(account.created_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR') : '-'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" className="rounded-full" />}>
+                        <MoreVertical className="size-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="rounded-xl">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setShowRoleDialog(account);
+                            setNewRole(account.role || 'visiteur');
+                          }}
+                        >
+                          <UserCheck className="mr-2 size-4" />
+                          Changer le role
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleToggleSuspend(account.id, account.is_active)}
+                          disabled={actionLoading === account.id}
+                        >
+                          {account.is_active ? (
+                            <Ban className="mr-2 size-4" />
+                          ) : (
+                            <CheckCircle2 className="mr-2 size-4" />
+                          )}
+                          {account.is_active ? 'Suspendre' : 'Reactiv er'}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => setShowDeleteDialog(account.id)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="mr-2 size-4" />
+                          Supprimer
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
                   {t('admin.abonnes.no_results')}
                 </TableCell>
               </TableRow>
@@ -142,6 +316,75 @@ export default function AdminAccessPage() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={!!showDeleteDialog} onOpenChange={(open) => !open && setShowDeleteDialog(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Cette action est irreversible. Toutes les donnees liees seront supprimees.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-xl" onClick={() => setShowDeleteDialog(null)}>
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              className="rounded-xl"
+              disabled={actionLoading === showDeleteDialog}
+              onClick={() => showDeleteDialog && handleDelete(showDeleteDialog)}
+            >
+              {actionLoading === showDeleteDialog ? (
+                <Loader2 className="mr-2 size-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 size-4" />
+              )}
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!showRoleDialog} onOpenChange={(open) => !open && setShowRoleDialog(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Changer le role</DialogTitle>
+            <DialogDescription>
+              {showRoleDialog ? `Role de ${showRoleDialog.full_name}` : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Select value={newRole} onValueChange={(value) => value && setNewRole(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selectionner un role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="visiteur">Visiteur</SelectItem>
+                <SelectItem value="exposant">Exposant</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-xl" onClick={() => setShowRoleDialog(null)}>
+              Annuler
+            </Button>
+            <Button
+              className="rounded-xl"
+              disabled={actionLoading === showRoleDialog?.id || !showRoleDialog}
+              onClick={() => showRoleDialog && handleChangeRole(showRoleDialog.id, newRole)}
+            >
+              {actionLoading === showRoleDialog?.id ? (
+                <Loader2 className="mr-2 size-4 animate-spin" />
+              ) : (
+                <UserCheck className="mr-2 size-4" />
+              )}
+              Confirmer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

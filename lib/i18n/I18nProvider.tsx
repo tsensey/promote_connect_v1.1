@@ -15,17 +15,19 @@ interface I18nContextValue {
 const i18nContext = createContext<I18nContextValue | undefined>(undefined);
 
 const STORAGE_KEY = 'promote-connect-locale';
+const COOKIE_NAME = 'NEXT_LOCALE';
 
-function getInitialLocale(): Locale {
-  if (typeof window === 'undefined') return defaultLocale;
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === 'fr' || stored === 'en') return stored;
-  return defaultLocale;
-}
-
-export function I18nProvider({ children }: { children: React.ReactNode }) {
+export function I18nProvider({ children, initialLocale }: { children: React.ReactNode; initialLocale?: Locale }) {
   const { user } = useAuth();
-  const [locale, setLocaleState] = useState<Locale>(getInitialLocale);
+  const [locale, setLocaleState] = useState<Locale>(initialLocale || defaultLocale);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === 'fr' || stored === 'en') {
+      setLocaleState(stored);
+      document.cookie = `${COOKIE_NAME}=${stored};path=/;max-age=31536000;SameSite=Lax`;
+    }
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -41,6 +43,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
         if (data?.language === 'fr' || data?.language === 'en') {
           setLocaleState(data.language);
           localStorage.setItem(STORAGE_KEY, data.language);
+          document.cookie = `${COOKIE_NAME}=${data.language};path=/;max-age=31536000;SameSite=Lax`;
         }
       });
 
@@ -52,6 +55,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const setLocale = useCallback(async (newLocale: Locale) => {
     setLocaleState(newLocale);
     localStorage.setItem(STORAGE_KEY, newLocale);
+    document.cookie = `${COOKIE_NAME}=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
 
     const { data: session } = await supabaseClient.auth.getSession();
     const userId = session?.session?.user?.id;

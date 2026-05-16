@@ -3,8 +3,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { verifyAdmin } from '@/lib/admin';
 import type { Database } from '@/types/database.types';
 
-type EspaceInsert = Database['public']['Tables']['espaces']['Insert'];
-type EspaceUpdate = Database['public']['Tables']['espaces']['Update'];
+type ExposantUpdate = Database['public']['Tables']['exposants']['Update'];
+type ExposantInsert = Database['public']['Tables']['exposants']['Insert'];
 
 export async function GET(request: Request) {
   const auth = await verifyAdmin(request);
@@ -12,16 +12,17 @@ export async function GET(request: Request) {
 
   const supabase = createAdminClient();
   void auth;
+
   const { data, error } = await supabase
-    .from('espaces')
+    .from('exposants')
     .select('*')
-    .order('sort_order', { ascending: true });
+    .order('created_at', { ascending: false });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ espaces: data });
+  return NextResponse.json({ exposants: data });
 }
 
 export async function POST(request: Request) {
@@ -29,51 +30,67 @@ export async function POST(request: Request) {
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { code, nom, description, type, sort_order } = body;
+  const { nom, description, secteur, espace_id, pavillon, stand, pays, website, is_featured } = body;
 
-  if (!code || !nom) {
-    return NextResponse.json({ error: 'code et nom sont requis' }, { status: 400 });
+  if (!nom) {
+    return NextResponse.json({ error: 'nom requis' }, { status: 400 });
   }
 
   const supabase = createAdminClient();
-  const insertData: EspaceInsert = {
-    code,
+  void auth;
+
+  const insertData: ExposantInsert = {
     nom,
     description: description || null,
-    type: type || 'pavillon',
-    sort_order: sort_order || 0,
+    secteur: secteur || null,
+    espace_id: espace_id || null,
+    pavillon: pavillon || null,
+    stand: stand || null,
+    pays: pays || null,
+    website: website || null,
+    is_featured: is_featured || false,
   };
+
   const { data, error } = await supabase
-    .from('espaces')
+    .from('exposants')
     .insert(insertData)
     .select()
     .single();
 
   if (error) {
-    if (error.message?.includes('duplicate') || error.code === '23505') {
-      return NextResponse.json({ error: 'Ce code existe deja' }, { status: 409 });
-    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ espace: data }, { status: 201 });
+  return NextResponse.json({ exposant: data }, { status: 201 });
 }
 
-export async function PUT(request: Request) {
+export async function PATCH(request: Request) {
   const auth = await verifyAdmin(request);
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { id, code, nom, description, type, sort_order } = body;
+  const { id, nom, description, secteur, espace_id, pavillon, stand, pays, website, is_featured } = body;
 
   if (!id) {
     return NextResponse.json({ error: 'id requis' }, { status: 400 });
   }
 
   const supabase = createAdminClient();
-  const updateData: EspaceUpdate = { code, nom, description: description || null, type, sort_order };
+  void auth;
+
+  const updateData: ExposantUpdate = {};
+  if (nom !== undefined) updateData.nom = nom;
+  if (description !== undefined) updateData.description = description;
+  if (secteur !== undefined) updateData.secteur = secteur;
+  if (espace_id !== undefined) updateData.espace_id = espace_id;
+  if (pavillon !== undefined) updateData.pavillon = pavillon;
+  if (stand !== undefined) updateData.stand = stand;
+  if (pays !== undefined) updateData.pays = pays;
+  if (website !== undefined) updateData.website = website;
+  if (is_featured !== undefined) updateData.is_featured = is_featured;
+
   const { data, error } = await supabase
-    .from('espaces')
+    .from('exposants')
     .update(updateData)
     .eq('id', id)
     .select()
@@ -83,7 +100,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ espace: data });
+  return NextResponse.json({ exposant: data });
 }
 
 export async function DELETE(request: Request) {
@@ -98,20 +115,9 @@ export async function DELETE(request: Request) {
   }
 
   const supabase = createAdminClient();
+  void auth;
 
-  const { count } = await supabase
-    .from('exposants')
-    .select('id', { count: 'exact', head: true })
-    .eq('espace_id', id);
-
-  if (count && count > 0) {
-    return NextResponse.json(
-      { error: `Cet espace est utilise par ${count} exposant(s). Reaffectez-les avant de supprimer.` },
-      { status: 409 }
-    );
-  }
-
-  const { error } = await supabase.from('espaces').delete().eq('id', id);
+  const { error } = await supabase.from('exposants').delete().eq('id', id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

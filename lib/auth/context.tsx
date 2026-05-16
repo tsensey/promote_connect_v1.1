@@ -15,9 +15,10 @@ export type AppProfile = Pick<
   | 'country'
   | 'pavillon'
   | 'avatar_url'
-  | 'subscription_status'
-  | 'subscription_ends_at'
+  | 'is_active'
+  | 'suspended_at'
 >;
+
 
 interface AuthContextValue {
   user: User | null;
@@ -35,7 +36,7 @@ async function loadProfile(userId: string) {
   const { data, error } = await supabaseClient
     .from('profiles')
     .select(
-      'id, full_name, company, role, sector, country, pavillon, avatar_url, subscription_status, subscription_ends_at'
+      'id, full_name, company, role, sector, country, pavillon, avatar_url, is_active, suspended_at'
     )
     .eq('id', userId)
     .single();

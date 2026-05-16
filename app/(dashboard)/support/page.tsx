@@ -94,8 +94,8 @@ export default function SupportPage() {
 
   const getStatusBadge = (status: string | null) => {
     const colors: Record<string, string> = {
-      open: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      in_progress: 'bg-blue-50 text-blue-700 border-blue-200',
+      open: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+      in_progress: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
       resolved: 'bg-muted text-muted-foreground border-border/60',
     };
     const labels: Record<string, string> = {
@@ -117,8 +117,8 @@ export default function SupportPage() {
 
   const getPriorityBadge = (priority: string | null) => {
     const colors: Record<string, string> = {
-      high: 'bg-red-50 text-red-700 border-red-200',
-      medium: 'bg-amber-50 text-amber-700 border-amber-200',
+      high: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
+      medium: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
       low: 'bg-muted text-muted-foreground border-border/60',
     };
     const labels: Record<string, string> = {
@@ -197,7 +197,7 @@ export default function SupportPage() {
                 placeholder={t('support.faq_search')}
                 value={faqSearch}
                 onChange={(e) => setFaqSearch(e.target.value)}
-                className="h-11 rounded-xl border-border/70 bg-white/90 pl-11"
+                className="h-11 rounded-xl border-border/70 bg-card pl-11"
               />
             </div>
 
@@ -322,7 +322,7 @@ export default function SupportPage() {
                   <Link
                     key={ticket.id}
                     href={`/support/${ticket.id}`}
-                    className="group flex flex-col gap-3 rounded-xl border border-border/60 bg-white/80 p-5 transition-all hover:border-primary/20 hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
+                    className="group flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-5 transition-all hover:border-primary/20 hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex-1">
                       <h3 className="font-heading text-lg font-semibold text-foreground group-hover:text-primary">
@@ -394,7 +394,7 @@ function FaqAccordion({ item }: { item: FaqItem }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="rounded-xl border border-border/60 bg-white/80 transition-all hover:border-primary/20">
+    <div className="rounded-xl border border-border/60 bg-card transition-all hover:border-primary/20">
       <button
         onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between px-5 py-4 text-left transition-colors hover:bg-muted/30"

@@ -27,6 +27,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
     if (profile?.role === 'admin') {
       router.replace('/admin');
+      return;
     }
   }, [loading, profile?.role, router, user]);
 

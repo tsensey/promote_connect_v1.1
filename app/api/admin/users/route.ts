@@ -1,51 +1,105 @@
+import { randomBytes } from 'crypto';
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { verifyAdmin } from '@/lib/admin';
 import type { Database } from '@/types/database.types';
 
 const resendApiKey = process.env.RESEND_API_KEY || '';
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-async function verifyAdmin(request: Request) {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }), user: null };
-  }
+function generatePassword(): string {
+  return randomBytes(9).toString('base64url').slice(0, 12);
+}
 
-  const token = authHeader.split('Bearer ')[1];
-  const supabase = createAdminClient();
+function buildCredentialsHtml({
+  fullName,
+  email,
+  password,
+  role,
+  company,
+  pavillon,
+  stand,
+}: {
+  fullName: string;
+  email: string;
+  password: string;
+  role: string;
+  company?: string | null;
+  pavillon?: string | null;
+  stand?: string | null;
+}) {
+  const loginUrl = `${appUrl}/login`;
+  const isExposant = role === 'exposant';
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser(token);
+  return `
+    <div style="margin:0;background:#eef4ff;padding:32px 16px;font-family:Arial,sans-serif;color:#172554">
+      <div style="max-width:620px;margin:0 auto;background:#ffffff;border-radius:28px;overflow:hidden;box-shadow:0 30px 80px rgba(15,23,42,0.12)">
+        <div style="padding:36px;background:#2563eb;color:#ffffff">
+          <p style="margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;opacity:0.78">
+            PROMOTE-CONNECT
+          </p>
+          <h1 style="margin:0;font-size:30px;line-height:1.2">Votre acces est pret</h1>
+          <p style="margin:14px 0 0;font-size:15px;line-height:1.7;color:rgba(255,255,255,0.8)">
+            L administrateur a cree votre compte pour rejoindre le reseau professionnel PROMOTE-CONNECT.
+          </p>
+        </div>
 
-  if (authError || !user) {
-    return { error: NextResponse.json({ error: 'Invalid token' }, { status: 401 }), user: null };
-  }
+        <div style="padding:32px">
+          <h2 style="margin:0 0 14px;font-size:22px;color:#0f172a">Bienvenue, ${fullName}</h2>
+          <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#475569">
+            Vous pouvez maintenant acceder a la plateforme pour consulter l annuaire,
+            dialoguer avec les autres participants et suivre le programme du salon.
+          </p>
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
+          <div style="border:1px solid #dbeafe;background:#f8fbff;border-radius:22px;padding:22px;margin-bottom:24px">
+            <p style="margin:0 0 14px;font-size:12px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#64748b">
+              Vos identifiants
+            </p>
+            <p style="margin:0 0 10px;font-size:14px;color:#64748b">Email</p>
+            <p style="margin:0 0 16px;font-size:16px;font-weight:700;color:#0f172a">${email}</p>
+            <p style="margin:0 0 10px;font-size:14px;color:#64748b">Mot de passe temporaire</p>
+            <p style="display:inline-block;margin:0 0 18px;padding:10px 14px;border-radius:14px;background:#0f172a;color:#ffffff;font-size:16px;font-weight:700;letter-spacing:0.04em">
+              ${password}
+            </p>
+            <p style="margin:0 0 10px;font-size:14px;color:#64748b">Role</p>
+            <p style="margin:0 0 18px;font-size:16px;font-weight:700;color:#0f172a">
+              ${isExposant ? 'Exposant' : role === 'admin' ? 'Administrateur' : 'Visiteur'}
+            </p>
+            ${isExposant ? `
+            <p style="margin:12px 0 8px;font-size:14px;color:#64748b">Entreprise</p>
+            <p style="margin:0 0 18px;font-size:16px;font-weight:700;color:#0f172a">${company || fullName}</p>
+            ${pavillon ? `<p style="margin:0 0 8px;font-size:14px;color:#64748b">Pavillon</p>
+            <p style="margin:0 0 18px;font-size:16px;font-weight:700;color:#0f172a">${pavillon}</p>` : ''}
+            ${stand ? `<p style="margin:0 0 8px;font-size:14px;color:#64748b">Stand</p>
+            <p style="margin:0 0 18px;font-size:16px;font-weight:700;color:#0f172a">${stand}</p>` : ''}
+            ` : ''}
+            <p style="margin:0;font-size:14px;color:#475569">
+              Votre compte dispose d un acces complet a la plateforme.
+            </p>
+          </div>
 
-  if (profile?.role !== 'admin') {
-    return { error: NextResponse.json({ error: 'Admin access required' }, { status: 403 }), user: null };
-  }
+          <a href="${loginUrl}" style="display:inline-block;padding:14px 24px;border-radius:999px;background:#2563eb;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700">
+            Se connecter a PROMOTE-CONNECT
+          </a>
 
-  return { error: null, user };
+          <p style="margin:22px 0 0;font-size:13px;line-height:1.7;color:#64748b">
+            Pour des raisons de securite, nous vous recommandons de changer ce mot de passe
+            lors de votre premiere connexion.
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 export async function GET(request: Request) {
   const auth = await verifyAdmin(request);
-  if (auth.error) {
-    return auth.error;
-  }
+  if (auth.error) return auth.error;
 
   const supabase = createAdminClient();
   const { data: users, error } = await supabase
     .from('profiles')
-    .select('id, full_name, company, role, sector, country, pavillon, created_at')
+    .select('id, full_name, company, role, sector, country, pavillon, is_active, created_at')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -57,11 +111,10 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const auth = await verifyAdmin(request);
-  if (auth.error) {
-    return auth.error;
-  }
+  if (auth.error) return auth.error;
 
   const body = await request.json();
+
   const {
     full_name,
     email,
@@ -82,6 +135,14 @@ export async function POST(request: Request) {
   if (!full_name || !email || !role) {
     return NextResponse.json(
       { error: 'full_name, email et role sont requis' },
+      { status: 400 }
+    );
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return NextResponse.json(
+      { error: 'Format d\'email invalide' },
       { status: 400 }
     );
   }
@@ -202,8 +263,8 @@ export async function POST(request: Request) {
       });
 
       emailSent = true;
-    } catch (emailError) {
-      console.error('Failed to send credentials email:', emailError);
+    } catch {
+      // Email non critique, ne pas bloquer la creation
     }
   }
 
@@ -211,15 +272,63 @@ export async function POST(request: Request) {
     success: true,
     user_id: userId,
     email_sent: emailSent,
-    temporary_password: password,
   });
+}
+
+export async function PATCH(request: Request) {
+  const auth = await verifyAdmin(request);
+  if (auth.error) return auth.error;
+
+  const body = await request.json();
+  const { id, role, full_name, company, sector, country, pavillon, is_active } = body;
+
+  if (!id) {
+    return NextResponse.json({ error: 'User ID requis' }, { status: 400 });
+  }
+
+  const supabaseAdmin = createAdminClient();
+
+  const updateData: Database['public']['Tables']['profiles']['Update'] = {};
+
+  if (role !== undefined) {
+    if (!['visiteur', 'exposant', 'admin'].includes(role)) {
+      return NextResponse.json({ error: 'Role invalide' }, { status: 400 });
+    }
+    updateData.role = role;
+  }
+
+  if (full_name !== undefined) updateData.full_name = full_name;
+  if (company !== undefined) updateData.company = company;
+  if (sector !== undefined) updateData.sector = sector;
+  if (country !== undefined) updateData.country = country;
+  if (pavillon !== undefined) updateData.pavillon = pavillon;
+
+  if (is_active !== undefined) {
+    updateData.is_active = is_active;
+    if (!is_active) {
+      updateData.suspended_at = new Date().toISOString();
+      updateData.suspended_reason = body.suspension_reason || null;
+    } else {
+      updateData.suspended_at = null;
+      updateData.suspended_reason = null;
+    }
+  }
+
+  const { error: updateError } = await supabaseAdmin
+    .from('profiles')
+    .update(updateData)
+    .eq('id', id);
+
+  if (updateError) {
+    return NextResponse.json({ error: updateError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
 }
 
 export async function DELETE(request: Request) {
   const auth = await verifyAdmin(request);
-  if (auth.error) {
-    return auth.error;
-  }
+  if (auth.error) return auth.error;
 
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('id');
@@ -233,6 +342,57 @@ export async function DELETE(request: Request) {
   }
 
   const supabaseAdmin = createAdminClient();
+
+  const { error: notifError } = await supabaseAdmin
+    .from('notifications')
+    .delete()
+    .eq('profile_id', userId);
+
+  if (notifError) {
+    return NextResponse.json({ error: notifError.message }, { status: 500 });
+  }
+
+  const { error: chatMsgError } = await supabaseAdmin
+    .from('messages')
+    .delete()
+    .eq('sender_id', userId);
+
+  if (chatMsgError) {
+    return NextResponse.json({ error: chatMsgError.message }, { status: 500 });
+  }
+
+  const { data: conversations } = await supabaseAdmin
+    .from('conversations')
+    .select('id')
+    .or(`participant_a.eq.${userId},participant_b.eq.${userId}`);
+
+  if (conversations && conversations.length > 0) {
+    const convoIds = conversations.map((c) => c.id);
+
+    await supabaseAdmin.from('messages').delete().in('conversation_id', convoIds);
+    await supabaseAdmin.from('conversations').delete().in('id', convoIds);
+  }
+
+  await supabaseAdmin.from('post_comments').delete().eq('author_id', userId);
+
+  await supabaseAdmin.from('post_likes').delete().eq('user_id', userId);
+
+  await supabaseAdmin.from('post_shares').delete().eq('user_id', userId);
+
+  await supabaseAdmin.from('posts').delete().eq('author_id', userId);
+
+  await supabaseAdmin.from('rendez_vous').delete().or(`demandeur_id.eq.${userId},destinataire_id.eq.${userId}`);
+
+  await supabaseAdmin.from('support_messages').delete().eq('sender_id', userId);
+
+  await supabaseAdmin.from('support_tickets').delete().eq('profile_id', userId);
+
+  await supabaseAdmin.from('exposants').delete().eq('profile_id', userId);
+
+  await supabaseAdmin.from('user_preferences').delete().eq('profile_id', userId);
+
+  await supabaseAdmin.from('profiles').delete().eq('id', userId);
+
   const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
   if (deleteError) {
@@ -240,96 +400,4 @@ export async function DELETE(request: Request) {
   }
 
   return NextResponse.json({ success: true });
-}
-
-function generatePassword(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*';
-  let password = '';
-
-  for (let index = 0; index < 12; index += 1) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-
-  return password;
-}
-
-function buildCredentialsHtml({
-  fullName,
-  email,
-  password,
-  role,
-  company,
-  pavillon,
-  stand,
-}: {
-  fullName: string;
-  email: string;
-  password: string;
-  role: string;
-  company?: string | null;
-  pavillon?: string | null;
-  stand?: string | null;
-}) {
-  const loginUrl = `${appUrl}/login`;
-  const isExposant = role === 'exposant';
-
-  return `
-    <div style="margin:0;background:#eef4ff;padding:32px 16px;font-family:Arial,sans-serif;color:#172554">
-      <div style="max-width:620px;margin:0 auto;background:#ffffff;border-radius:28px;overflow:hidden;box-shadow:0 30px 80px rgba(15,23,42,0.12)">
-        <div style="padding:36px;background:#2563eb;color:#ffffff">
-          <p style="margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;opacity:0.78">
-            PROMOTE-CONNECT
-          </p>
-          <h1 style="margin:0;font-size:30px;line-height:1.2">Votre acces est pret</h1>
-          <p style="margin:14px 0 0;font-size:15px;line-height:1.7;color:rgba(255,255,255,0.8)">
-            L administrateur a cree votre compte pour rejoindre le reseau professionnel PROMOTE-CONNECT.
-          </p>
-        </div>
-
-        <div style="padding:32px">
-          <h2 style="margin:0 0 14px;font-size:22px;color:#0f172a">Bienvenue, ${fullName}</h2>
-          <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#475569">
-            Vous pouvez maintenant acceder a la plateforme pour consulter l annuaire,
-            dialoguer avec les autres participants et suivre le programme du salon.
-          </p>
-
-          <div style="border:1px solid #dbeafe;background:#f8fbff;border-radius:22px;padding:22px;margin-bottom:24px">
-            <p style="margin:0 0 14px;font-size:12px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#64748b">
-              Vos identifiants
-            </p>
-            <p style="margin:0 0 10px;font-size:14px;color:#64748b">Email</p>
-            <p style="margin:0 0 16px;font-size:16px;font-weight:700;color:#0f172a">${email}</p>
-            <p style="margin:0 0 10px;font-size:14px;color:#64748b">Mot de passe temporaire</p>
-            <p style="display:inline-block;margin:0 0 18px;padding:10px 14px;border-radius:14px;background:#0f172a;color:#ffffff;font-size:16px;font-weight:700;letter-spacing:0.04em">
-              ${password}
-            </p>
-            <p style="margin:0 0 10px;font-size:14px;color:#64748b">Role</p>
-            <p style="margin:0 0 18px;font-size:16px;font-weight:700;color:#0f172a">
-              ${isExposant ? 'Exposant' : role === 'admin' ? 'Administrateur' : 'Visiteur'}
-            </p>
-            ${isExposant ? `
-            <p style="margin:12px 0 8px;font-size:14px;color:#64748b">Entreprise</p>
-            <p style="margin:0 0 18px;font-size:16px;font-weight:700;color:#0f172a">${company || fullName}</p>
-            ${pavillon ? `<p style="margin:0 0 8px;font-size:14px;color:#64748b">Pavillon</p>
-            <p style="margin:0 0 18px;font-size:16px;font-weight:700;color:#0f172a">${pavillon}</p>` : ''}
-            ${stand ? `<p style="margin:0 0 8px;font-size:14px;color:#64748b">Stand</p>
-            <p style="margin:0 0 18px;font-size:16px;font-weight:700;color:#0f172a">${stand}</p>` : ''}
-            ` : ''}
-            <p style="margin:0;font-size:14px;color:#475569">
-              Votre compte dispose d un acces complet a la plateforme.
-            </p>
-          </div>
-
-          <a href="${loginUrl}" style="display:inline-block;padding:14px 24px;border-radius:999px;background:#2563eb;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700">
-            Se connecter a PROMOTE-CONNECT
-          </a>
-
-          <p style="margin:22px 0 0;font-size:13px;line-height:1.7;color:#64748b">
-            Pour des raisons de securite, nous vous recommandons de changer ce mot de passe
-            lors de votre premiere connexion.
-          </p>
-        </div>
-      </div>
-    </div>
-  `;
 }

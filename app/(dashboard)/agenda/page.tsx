@@ -133,7 +133,7 @@ export default function AgendaPage() {
 
       {/* Prochains RDV */}
       {upcomingRdvs.length > 0 && (
-        <Card className="overflow-hidden border-primary/10 shadow-sm">
+        <Card className="overflow-hidden border-primary/10 shadow-sm py-0">
           <div className="bg-gradient-to-r from-primary to-primary/80 px-5 py-3">
             <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
               <CalendarDays className="size-4" />
