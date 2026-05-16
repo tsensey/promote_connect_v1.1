@@ -133,9 +133,9 @@ export function ChatInput({
             </p>
             <p className="truncate text-[11px] text-muted-foreground">
               {replyTo.attachment_type === 'image'
-                ? '📷 Photo'
+                ? t('chat.photo')
                 : replyTo.attachment_type === 'document'
-                ? '📄 Document'
+                ? t('chat.document')
                 : replyTo.content}
             </p>
           </div>
@@ -178,7 +178,7 @@ export function ChatInput({
           {previewUrl ? (
             <img
               src={previewUrl}
-              alt="preview"
+              alt={t('common.preview')}
               className="size-14 rounded-lg object-cover ring-1 ring-border/40"
             />
           ) : (
@@ -189,7 +189,7 @@ export function ChatInput({
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-medium text-foreground">{selectedFile.name}</p>
             <p className="text-[11px] text-muted-foreground">
-              {(selectedFile.size / 1024).toFixed(0)} Ko
+              {(selectedFile.size / 1024).toFixed(0)} {t('chat.kb')}
             </p>
           </div>
           <Button

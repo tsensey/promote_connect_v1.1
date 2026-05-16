@@ -156,7 +156,7 @@ export default function ManageVitrinePage() {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         if (file.size > 5 * 1024 * 1024) {
-          toast.error(`L'image ${file.name} est trop volumineuse (max 5 Mo)`);
+          toast.error(t('exposant.vitrine.image_name_too_large', { name: file.name }));
           continue;
         }
         
@@ -191,7 +191,7 @@ export default function ManageVitrinePage() {
     if (!file || !user) return;
     
     if (file.size > 5 * 1024 * 1024) {
-      toast.error(`L'image est trop volumineuse (max 5 Mo)`);
+      toast.error(t('exposant.vitrine.image_too_large'));
       return;
     }
     const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -316,7 +316,7 @@ export default function ManageVitrinePage() {
     if (!user) return;
 
     if (!showcaseForm.nom.trim()) {
-      toast.error("Le nom de la vitrine est requis.");
+      toast.error(t('exposant.vitrine.name_required'));
       return;
     }
 
@@ -374,7 +374,7 @@ export default function ManageVitrinePage() {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Erreur lors de l'enregistrement de la vitrine.",
+          : t('exposant.vitrine.save_error'),
       );
     } finally {
       setSavingShowcase(false);
@@ -383,12 +383,12 @@ export default function ManageVitrinePage() {
 
   const saveProduct = async () => {
     if (!exposant) {
-      toast.error("Enregistrez d'abord votre vitrine.");
+      toast.error(t('exposant.vitrine.save_vitrine_first'));
       return;
     }
 
     if (!productForm.nom.trim()) {
-      toast.error("Le nom du produit est requis.");
+      toast.error(t('exposant.vitrine.product_name_required'));
       return;
     }
 
@@ -430,7 +430,7 @@ export default function ManageVitrinePage() {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Erreur lors de l'enregistrement du produit.",
+          : t('exposant.vitrine.product_save_error'),
       );
     } finally {
       setSavingProduct(false);
@@ -461,7 +461,7 @@ export default function ManageVitrinePage() {
       toast.success(t('exposant.vitrine.product_deleted'));
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Suppression impossible.",
+        error instanceof Error ? error.message : t('exposant.vitrine.delete_error'),
       );
     } finally {
       setDeletingProductId(null);
@@ -478,8 +478,7 @@ export default function ManageVitrinePage() {
               {t('exposant.vitrine.restricted')}
             </h1>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              La gestion de la vitrine est disponible uniquement pour les
-              comptes exposants.
+              {t('exposant.vitrine.restricted_desc')}
             </p>
           </div>
           <Link href="/app">
@@ -519,7 +518,7 @@ export default function ManageVitrinePage() {
           <TabsTrigger value="presentation">
             {t('exposant.vitrine.presentation')}
           </TabsTrigger>
-          <TabsTrigger value="produits">Mes produits</TabsTrigger>
+          <TabsTrigger value="produits">{t('exposant.vitrine.my_products')}</TabsTrigger>
           <TabsTrigger value="gallery">{t('exposant.vitrine.gallery')}</TabsTrigger>
         </TabsList>
         <TabsContent value="presentation">
@@ -595,19 +594,19 @@ export default function ManageVitrinePage() {
             <Card className="surface-panel border-0">
               <CardHeader className="border-b border-border/50 pb-4">
                 <CardTitle className="text-lg">{t('exposant.vitrine.visual_identity')}</CardTitle>
-                <p className="text-sm text-muted-foreground">Personnalisez l&apos;apparence de votre vitrine.</p>
+                <p className="text-sm text-muted-foreground">{t('exposant.vitrine.personalize')}</p>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
                 <div className="grid gap-6 md:grid-cols-2">
                   <Field
-                    label="Logo"
+                    label={t('exposant.vitrine.logo_label')}
                     hint={t('exposant.vitrine.logo_hint')}
                   >
                     <div className="flex items-center gap-4">
                       {showcaseForm.logo_url && (
                         <div className="relative size-16 overflow-hidden rounded-xl border border-border/50 shrink-0 bg-white">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={showcaseForm.logo_url} className="size-full object-contain" alt="Logo" />
+                          <img src={showcaseForm.logo_url} className="size-full object-contain" alt={t('exposant.vitrine.logo_label')} />
                           <button type="button" onClick={() => setShowcaseForm(f => ({ ...f, logo_url: '' }))} className="absolute -right-1 -top-1 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"><X className="size-3" /></button>
                         </div>
                       )}
@@ -625,14 +624,14 @@ export default function ManageVitrinePage() {
                     </div>
                   </Field>
                   <Field
-                    label="Image de couverture"
+                    label={t('exposant.vitrine.cover_label')}
                     hint={t('exposant.vitrine.cover_hint')}
                   >
                     <div className="flex flex-col gap-3">
                       {showcaseForm.cover_url && (
                         <div className="relative h-24 w-full overflow-hidden rounded-xl border border-border/50 shrink-0 bg-muted">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={showcaseForm.cover_url} className="h-full w-full object-cover" alt="Cover" />
+                          <img src={showcaseForm.cover_url} className="h-full w-full object-cover" alt={t('exposant.vitrine.cover_label')} />
                           <button type="button" onClick={() => setShowcaseForm(f => ({ ...f, cover_url: '' }))} className="absolute right-2 top-2 rounded-full bg-black/50 p-1.5 text-white hover:bg-black/70"><X className="size-3" /></button>
                         </div>
                       )}
@@ -655,7 +654,7 @@ export default function ManageVitrinePage() {
 
             <Card className="surface-panel border-0">
               <CardHeader className="border-b border-border/50 pb-4">
-                <CardTitle className="text-lg">Localisation &amp; Salon</CardTitle>
+                <CardTitle className="text-lg">{t('exposant.vitrine.location_title')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
               <div className="grid gap-4 md:grid-cols-4">
@@ -671,7 +670,7 @@ export default function ManageVitrinePage() {
                     placeholder="Agroalimentaire"
                   />
                 </Field>
-                <Field label="Pavillon">
+                <Field label={t('exposant.vitrine.pavillon_label')}>
                   <Input
                     value={showcaseForm.pavillon}
                     onChange={(e) =>
@@ -683,7 +682,7 @@ export default function ManageVitrinePage() {
                     placeholder="A"
                   />
                 </Field>
-                <Field label="Stand">
+                <Field label={t('exposant.vitrine.stand_label')}>
                   <Input
                     value={showcaseForm.stand}
                     onChange={(e) =>
@@ -736,7 +735,7 @@ export default function ManageVitrinePage() {
                     placeholder={t('exposant.vitrine.employees_placeholder')}
                   />
                 </Field>
-                <Field label="Chiffre d'affaires">
+                <Field label={t('exposant.vitrine.revenue_label')}>
                   <Input
                     value={showcaseForm.chiffre_affaires}
                     onChange={(e) =>
@@ -758,9 +757,9 @@ export default function ManageVitrinePage() {
                 <CardTitle className="text-lg">{t('exposant.vitrine.contacts_social')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
-                <SectionTitle>Contacts directs</SectionTitle>
+                <SectionTitle>{t('exposant.vitrine.direct_contacts')}</SectionTitle>
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Email de contact">
+                <Field label={t('exposant.vitrine.contact_email')}>
                   <Input
                     type="email"
                     value={showcaseForm.email_contact}
@@ -932,13 +931,13 @@ export default function ManageVitrinePage() {
               <CardHeader>
                 <CardTitle>
                   {productForm.id
-                    ? "Modifier un produit"
-                    : "Ajouter un produit"}
+                    ? t('exposant.vitrine.edit_product')
+                    : t('exposant.vitrine.add_product')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <Field label="Nom">
+                  <Field label={t('exposant.vitrine.name_label')}>
                     <Input
                       value={productForm.nom}
                       onChange={(e) =>
@@ -947,14 +946,14 @@ export default function ManageVitrinePage() {
                       placeholder="Catalogue premium"
                     />
                   </Field>
-                  <Field label="Type">
+                  <Field label={t('exposant.vitrine.type_label')}>
                     <Select value={productForm.type || "produit"} onValueChange={v => setProductForm(f => ({ ...f, type: v }))}>
                       <SelectTrigger>
                         <SelectValue placeholder={t('exposant.vitrine.product_type_placeholder')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="produit">Produit</SelectItem>
-                        <SelectItem value="service">Service</SelectItem>
+                        <SelectItem value="produit">{t('exposant.vitrine.product_type_produit')}</SelectItem>
+                        <SelectItem value="service">{t('exposant.vitrine.product_type_service')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </Field>
@@ -972,7 +971,7 @@ export default function ManageVitrinePage() {
                       placeholder="Logiciel / Conseil..."
                     />
                   </Field>
-                  <Field label="Prix indicatif (optionnel)">
+                  <Field label={t('exposant.vitrine.price_label')}>
                     <Input
                       value={productForm.prix_indicatif}
                       onChange={(e) =>
@@ -981,16 +980,16 @@ export default function ManageVitrinePage() {
                           prix_indicatif: e.target.value,
                         }))
                       }
-                      placeholder="Sur devis / À partir de 500€"
+                      placeholder={t('exposant.vitrine.price_placeholder')}
                     />
                   </Field>
                 </div>
-                <Field label="Image du produit / service (optionnel)">
+                <Field label={t('exposant.vitrine.product_image_label')}>
                   <div className="flex items-center gap-3">
                     {productForm.image_url && (
                       <div className="relative size-16 overflow-hidden rounded-xl border border-border/50 shrink-0 bg-muted">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={productForm.image_url} className="size-full object-cover" alt="Produit" />
+                        <img src={productForm.image_url} className="size-full object-cover" alt={t('exposant.vitrine.product_type_produit')} />
                         <button type="button" onClick={() => setProductForm(f => ({ ...f, image_url: '' }))} className="absolute -right-1 -top-1 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"><X className="size-3" /></button>
                       </div>
                     )}
@@ -1007,7 +1006,7 @@ export default function ManageVitrinePage() {
                     </div>
                   </div>
                 </Field>
-                <Field label="Description">
+                <Field label={t('exposant.vitrine.description_label')}>
                   <Textarea
                     rows={5}
                     value={productForm.description}
@@ -1057,7 +1056,7 @@ export default function ManageVitrinePage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <CardTitle>{t('exposant.vitrine.catalogue_published')}</CardTitle>
                   <Badge variant="secondary" className="rounded-full">
-                    {products.length} produit{products.length > 1 ? "s" : ""}
+                    {t('exposant.vitrine.products_count', { count: products.length })}
                   </Badge>
                 </div>
               </CardHeader>
@@ -1094,7 +1093,7 @@ export default function ManageVitrinePage() {
                                 <div className="mt-1 flex flex-wrap gap-1">
                                   {product.type && (
                                     <Badge variant="secondary" className="rounded-full shrink-0 text-[10px]">
-                                      {product.type === 'service' ? 'Service' : 'Produit'}
+                                      {product.type === 'service' ? t('exposant.vitrine.product_type_service') : t('exposant.vitrine.product_type_produit')}
                                     </Badge>
                                   )}
                                   {product.categorie && (
@@ -1167,9 +1166,9 @@ export default function ManageVitrinePage() {
                       <Upload className="size-8 text-muted-foreground mb-3" />
                     )}
                     <p className="mb-2 text-sm text-muted-foreground">
-                      <span className="font-semibold text-foreground">{t('exposant.vitrine.gallery_click')}</span> ou glissez-déposez
+                      <span className="font-semibold text-foreground">{t('exposant.vitrine.gallery_click')}</span> {t('exposant.vitrine.drag_drop')}
                     </p>
-                    <p className="text-xs text-muted-foreground">PNG, JPG, WebP (Max. 5Mo par image)</p>
+                    <p className="text-xs text-muted-foreground">{t('exposant.vitrine.upload_hint')}</p>
                   </div>
                   <input 
                     id="gallery-upload" 

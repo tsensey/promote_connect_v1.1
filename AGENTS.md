@@ -6,8 +6,8 @@
 Elle permet aux exposants et visiteurs de se connecter, échanger et générer des affaires pendant **12 mois** après le salon.
 
 - **Organisation** : BBIT-IT
-- **Version CdC** : 1.0 — Mai 2025
-- **Stack** : Next.js 14 + Supabase + n8n + Stripe + Resend + FCM
+- **Version CdC** : 1.1 — Mai 2026
+- **Stack** : Next.js 16 + Supabase + n8n + Stripe + Resend + FCM + PWA
 
 ---
 
@@ -15,7 +15,7 @@ Elle permet aux exposants et visiteurs de se connecter, échanger et générer d
 
 | Couche | Technologie | Notes |
 |--------|------------|-------|
-| Frontend | Next.js 14 (App Router) | SSR + SSG, TypeScript strict |
+| Frontend | Next.js 16 (App Router) | SSR + SSG, TypeScript strict |
 | Styling | Tailwind CSS + shadcn/ui | Design system interne |
 | State | Zustand + React Query (TanStack) | Cache serveur via RQ |
 | Backend | Supabase (PostgreSQL + Auth + Realtime + Storage) | Self-hosted sur VPS OVH |
@@ -27,6 +27,8 @@ Elle permet aux exposants et visiteurs de se connecter, échanger et générer d
 | Automation | n8n (self-hosted) | Workflows newsletters, relances |
 | CI/CD | GitHub Actions | Deploy auto Vercel + VPS |
 | Monitoring | Sentry + Plausible | Erreurs + analytics RGPD |
+| PWA | Serwist / Service Worker | Offline support, push notifications |
+| Store | Play Store (TWA) / App Store (WKWebView) | Wrapper PWABuilder |
 
 ---
 
@@ -98,6 +100,11 @@ promote-connect/
 │   ├── NewsletterEmail.tsx
 │   └── RdvConfirmationEmail.tsx
 ├── CLAUDE.md                   # Ce fichier
+├── public/
+│   ├── sw.js                   # Service Worker (cache, offline, push)
+│   └── icons/                  # Icônes PWA (générées par script)
+├── scripts/
+│   └── generate-pwa-icons.mjs  # Génération des icônes PWA via sharp
 ├── .env.local                  # Variables d'environnement (jamais en git)
 ├── .env.example                # Template variables
 └── middleware.ts               # Auth middleware Next.js
@@ -335,6 +342,10 @@ supabase db push                # Appliquer les migrations
 supabase gen types typescript --local > types/database.types.ts
 supabase functions serve        # Tester les Edge Functions localement
 
+# PWA
+npm install -D sharp            # Dépendance pour génération d'icônes
+node scripts/generate-pwa-icons.mjs  # Générer les icônes PWA
+
 # Tests
 npm run test                    # Vitest
 npm run test:e2e                # Playwright
@@ -350,6 +361,9 @@ npm run test:e2e                # Playwright
 4. **Abonnement** : Vérifier `subscription_status === 'active'` avant tout accès aux données protégées
 5. **Chat** : Données sensibles — ne jamais logger le contenu des messages
 6. **Stripe Webhooks** : Toujours valider la signature (`stripe.webhooks.constructEvent`)
+7. **PWA** : Vérifier le Service Worker après chaque build (`public/sw.js`) — tester offline et push
+8. **CSP** : La `worker-src 'self' blob:` doit être présente pour le Service Worker
+9. **Icônes PWA** : Générer les PNG via `node scripts/generate-pwa-icons.mjs` avant déploiement
 
 ---
 

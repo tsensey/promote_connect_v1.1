@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Manrope } from 'next/font/google';
 import { Suspense } from 'react';
 import { ThemeProvider } from 'next-themes';
@@ -9,6 +9,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { NotificationStateProvider } from '@/lib/notification-context';
 import { NotificationProvider } from '@/components/shared/NotificationProvider';
+import { PwaRegister } from '@/components/shared/PwaRegister';
 import { cn } from '@/lib/utils';
 import './globals.css';
 
@@ -17,14 +18,38 @@ const manrope = Manrope({
   variable: '--font-sans',
 });
 
-
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0f0f0f' },
+  ],
+  colorScheme: 'light dark',
+  width: 'device-width',
+  initialScale: 1,
+  minimumScale: 1,
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   title: {
     default: 'PROMOTE-CONNECT',
     template: '%s | PROMOTE-CONNECT',
   },
-  description: 'Plateforme digitale de networking pour salons professionnels PROMOTE'
+  description: 'Plateforme digitale de networking pour salons professionnels PROMOTE',
+  appleWebApp: {
+    capable: true,
+    title: 'PROMOTE-CONNECT',
+    statusBarStyle: 'black-translucent',
+  },
+  formatDetection: {
+    telephone: true,
+    email: true,
+    address: false,
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-touch-fullscreen': 'yes',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -52,6 +77,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       {children}
                     </Suspense>
                     <Toaster richColors position="top-right" />
+                    <PwaRegister />
                   </NotificationProvider>
                 </NotificationStateProvider>
                 </I18nProvider>

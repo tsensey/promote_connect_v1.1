@@ -221,7 +221,7 @@ export default function VitrineExposantPage() {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={exposant.cover_url}
-              alt={`Image de couverture de ${exposant.nom}`}
+              alt={t('vitrine.detail.cover_alt', { name: exposant.nom })}
               className="h-full w-full object-cover"
             />
           ) : (

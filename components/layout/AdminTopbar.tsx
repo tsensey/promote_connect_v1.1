@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ModeToggle } from '@/components/ui/mode-toggle';
+import { LocaleToggle } from '@/components/ui/locale-toggle';
 import { AdminBreadcrumb } from '@/components/ui/breadcrumb-nav';
 import { useTranslation } from '@/lib/i18n';
 
@@ -40,6 +41,7 @@ export function AdminTopbar({
         </div>
 
         <div className="flex items-center gap-1.5">
+          <LocaleToggle />
           <ModeToggle />
           <Button
             variant="ghost"

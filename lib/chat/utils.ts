@@ -5,7 +5,8 @@ export function getInitials(name: string | null | undefined): string {
 
 export function formatRelativeTime(
   dateStr: string | null | undefined,
-  t: (key: string) => string
+  t: (key: string) => string,
+  locale: string = 'fr'
 ): string {
   if (!dateStr) return '';
   const date = new Date(dateStr);
@@ -19,7 +20,7 @@ export function formatRelativeTime(
   if (diffMin < 60) return `${diffMin}m`;
   if (diffHr < 24) return `${diffHr}h`;
   if (diffDay === 1) return t('chat.yesterday');
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  return date.toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', { day: 'numeric', month: 'short' });
 }
 
 export function isSameDay(a: string, b: string): boolean {

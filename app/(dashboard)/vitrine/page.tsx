@@ -477,7 +477,7 @@ export default function VitrinePage() {
                         size="sm"
                         className="rounded-xl h-9 w-9 p-0"
                         onClick={() => router.push(`/annuaire/${produit.exposants!.id}`)}
-                        title="Voir la fiche exposant"
+                        title={t('vitrine.view_exposant_sheet')}
                       >
                         <Building2 className="size-3.5" />
                       </Button>

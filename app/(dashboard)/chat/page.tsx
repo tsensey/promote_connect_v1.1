@@ -28,7 +28,7 @@ function ConversationList({
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { conversations, loading } = useConversations();
   const { contacts, loading: loadingContacts, load: loadContacts } = useContacts();
   const [search, setSearch] = useState('');
@@ -120,7 +120,7 @@ function ConversationList({
             <div className="relative">
               <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder={t('chat.search_contact', { role: contactTab })}
+                placeholder={t('chat.search_contacts', { tab: contactTab })}
                 value={contactSearch}
                 onChange={(e) => setContactSearch(e.target.value)}
                 className="h-8 pl-8 text-xs"
@@ -134,7 +134,7 @@ function ConversationList({
                 </div>
               ) : filteredContacts.length === 0 ? (
                 <p className="py-3 text-center text-xs text-muted-foreground">
-                  {t('chat.no_contact_found', { role: contactTab })}
+                  {t('chat.no_contacts', { tab: contactTab })}
                 </p>
               ) : (
                 filteredContacts.map((contact) => (
@@ -249,7 +249,7 @@ function ConversationList({
                       {displayName}
                     </span>
                     <span className="shrink-0 text-[11px] text-muted-foreground/60">
-                      {formatRelativeTime(conv.last_message_at, t)}
+                      {formatRelativeTime(conv.last_message_at, t, locale)}
                     </span>
                   </div>
                   {subName && (

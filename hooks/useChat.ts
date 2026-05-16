@@ -50,7 +50,7 @@ export function useContacts() {
         const exp = exposantByProfile.get(p.id);
         return {
           profile_id: p.id,
-          display_name: p.full_name ?? 'Utilisateur',
+          display_name: p.full_name ?? 'User',
           company: exp ? exp.nom : p.company,
           avatar_url: exp ? exp.logo_url : p.avatar_url,
           role: p.role,

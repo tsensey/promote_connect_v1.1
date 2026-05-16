@@ -38,9 +38,9 @@ function ReplyQuote({ replyTo, isMine }: { replyTo: EnrichedMessage['reply_to'];
   if (!replyTo) return null;
   const text =
     replyTo.attachment_type === 'image'
-      ? '📷 Photo'
+      ? t('chat.photo')
       : replyTo.attachment_type === 'document'
-      ? '📄 Document'
+      ? t('chat.document')
       : replyTo.content ?? '';
 
   return (
