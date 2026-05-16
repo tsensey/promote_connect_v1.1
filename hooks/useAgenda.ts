@@ -42,15 +42,6 @@ export function useRendezVous() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const loadProfileByUserId = useCallback(async (userId: string): Promise<Profile | null> => {
-    const { data } = await supabaseClient
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-    return data;
-  }, []);
-
   const fetchRdvs = useCallback(async () => {
     try {
       const { data: session } = await supabaseClient.auth.getSession();

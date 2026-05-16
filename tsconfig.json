@@ -34,6 +34,9 @@
       ],
       "@/hooks/*": [
         "hooks/*"
+      ],
+      "@/store/*": [
+        "store/*"
       ]
     },
     "plugins": [
