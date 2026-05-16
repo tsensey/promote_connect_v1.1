@@ -100,6 +100,9 @@ function CommentItem({
   onAddComment: PostCardProps['onAddComment'];
 }) {
   const { t, locale } = useTranslation();
+  const [replyText, setReplyText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [localReplies, setLocalReplies] = useState<Comment[]>([]);
   const [showReply, setShowReply] = useState(false);
   const [mentionedProfiles, setMentionedProfiles] = useState<string[]>([]);
   const { user } = useAuth();
@@ -115,7 +118,7 @@ function CommentItem({
       if (comment.author_id !== user?.id) {
         await supabaseClient.from('notifications').insert({
           profile_id: comment.author_id,
-          sender_id: user?.id,
+          sender_id: user!.id,
           type: 'comment',
           data: { post_id: comment.post_id, comment_id: data.id, content_preview: replyText.slice(0, 50) }
         });
@@ -126,12 +129,12 @@ function CommentItem({
         const uniqueMentions = Array.from(new Set(mentionedProfiles)).filter(id => id !== user?.id);
         if (uniqueMentions.length > 0) {
           await supabaseClient.from('notifications').insert(
-            uniqueMentions.map(profile_id => ({
-              profile_id,
-              sender_id: user?.id,
-              type: 'mention_comment',
-              data: { post_id: comment.post_id, comment_id: data.id, content_preview: replyText.slice(0, 50) }
-            }))
+              uniqueMentions.map(profile_id => ({
+                profile_id,
+                sender_id: user!.id,
+                type: 'mention_comment',
+                data: { post_id: comment.post_id, comment_id: data.id, content_preview: replyText.slice(0, 50) }
+              }))
           );
         }
       }
@@ -145,7 +148,7 @@ function CommentItem({
   };
 
   const authorInitials = getInitials(comment.author.full_name);
-  const authorExposantId = comment.author.exposants?.[0]?.id;
+  const authorExposantId = (comment.author as { exposants?: Array<{ id: string }> }).exposants?.[0]?.id;
 
   return (
     <div className={cn('flex gap-2', depth > 0 && 'ml-8 mt-2')}>
@@ -358,7 +361,7 @@ export const PostCard = memo(function PostCard({
         if (post.author_id !== user?.id) {
           await supabaseClient.from('notifications').insert({
             profile_id: post.author_id,
-            sender_id: user?.id,
+            sender_id: user!.id,
             type: 'comment',
             data: { post_id: post.id, comment_id: data.id, content_preview: newComment.slice(0, 50) }
           });
@@ -369,12 +372,12 @@ export const PostCard = memo(function PostCard({
           const uniqueMentions = Array.from(new Set(mentionedProfiles)).filter(id => id !== user?.id);
           if (uniqueMentions.length > 0) {
             await supabaseClient.from('notifications').insert(
-              uniqueMentions.map(profile_id => ({
-                profile_id,
-                sender_id: user?.id,
-                type: 'mention_comment',
-                data: { post_id: post.id, comment_id: data.id, content_preview: newComment.slice(0, 50) }
-              }))
+            uniqueMentions.map(profile_id => ({
+              profile_id,
+              sender_id: user!.id,
+              type: 'mention_comment',
+              data: { post_id: post.id, comment_id: data.id, content_preview: newComment.slice(0, 50) }
+            }))
             );
           }
         }

@@ -157,7 +157,6 @@ export const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(({
           side="top"
           sideOffset={4}
           anchor={anchorRef}
-          onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <Command className="rounded-xl overflow-hidden">
             <CommandList>
