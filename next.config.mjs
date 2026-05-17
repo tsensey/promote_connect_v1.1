@@ -1,3 +1,25 @@
+const isProduction = process.env.NODE_ENV === 'production';
+
+const scriptSrc = [
+  "script-src 'self' 'unsafe-inline'",
+  !isProduction ? "'unsafe-eval'" : null,
+  'https://js.stripe.com',
+  !isProduction ? 'https://vercel.live' : null,
+  'https://plausible.io',
+].filter(Boolean).join(' ');
+
+const connectSrc = [
+  "connect-src 'self'",
+  'https://*.supabase.co',
+  'wss://*.supabase.co',
+  'https://api.stripe.com',
+  'https://*.resend.com',
+  'https://*.sentry.io',
+  'https://*.ingest.sentry.io',
+  'https://plausible.io',
+  !isProduction ? 'https://vercel.live' : null,
+].filter(Boolean).join(' ');
+
 const securityHeaders = [
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
@@ -9,13 +31,17 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://vercel.live",
+      scriptSrc,
       "frame-src 'self' https://js.stripe.com https://www.youtube.com https://player.vimeo.com",
-      "connect-src 'self' https://*.supabase.co https://api.stripe.com https://*.resend.com https://vercel.live wss://*.supabase.co",
+      connectSrc,
       "worker-src 'self' blob:",
       "img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com",
       "style-src 'self' 'unsafe-inline'",
       "font-src 'self'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
     ].join('; '),
   },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },

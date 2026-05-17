@@ -1,5 +1,14 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -96,7 +105,7 @@ export async function GET(request: Request) {
   <div class="icon">✓</div>
   <h1>Désabonnement réussi</h1>
   <p>Vous avez bien été désinscrit de la newsletter PROMOTE-CONNECT.</p>
-  <p class="email">${subscription.email}</p>
+  <p class="email">${escapeHtml(subscription.email)}</p>
   <p style="color:#94a3b8;font-size:13px">Vous pouvez vous réinscrire à tout moment depuis votre espace.</p>
   <a href="/newsletter" class="btn">Retour à la newsletter</a>
 </div>

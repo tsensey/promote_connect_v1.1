@@ -17,6 +17,11 @@ Prototype Next.js + Supabase pour la plateforme PROMOTE-CONNECT.
 - `npm run build`
 - `npm run lint`
 - `npm run type-check`
+- `npm run check:prod-env`
+
+## Production
+
+Voir [docs/production-deployment.md](docs/production-deployment.md) pour la checklist et la procedure de deploiement.
 
 ## Objectif
 
