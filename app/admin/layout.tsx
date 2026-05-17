@@ -74,7 +74,7 @@ export default function AdminLayoutWrapper({ children }: { children: React.React
           collapsed={collapsed}
           onToggleSidebar={() => setMobileOpen(true)}
           user={{
-            name: profile?.full_name || user.email?.split('@')[0] || 'Admin',
+            name: profile?.full_name || user.email?.split('@')[0] || t('admin.dashboard.default_user'),
             email: user.email || undefined,
           }}
           onSignOut={handleSignOut}

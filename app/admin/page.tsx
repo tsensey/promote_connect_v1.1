@@ -159,7 +159,7 @@ export default function AdminDashboard() {
                   <p className="text-sm text-muted-foreground">{user.company || t('admin.dashboard.no_company')}</p>
                 </div>
                 <Badge variant="secondary" className="rounded-full">
-                  {user.role || 'visiteur'}
+                  {user.role === 'admin' ? t('admin.logs.role_admin') : user.role === 'exposant' ? t('admin.logs.role_exposant') : t('admin.logs.role_visitor')}
                 </Badge>
               </div>
             ))}

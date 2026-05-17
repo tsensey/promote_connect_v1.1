@@ -7,7 +7,6 @@ import {
   Download,
   Filter,
   History,
-  Loader2,
   RefreshCw,
   Search,
   User,
@@ -49,26 +48,26 @@ interface AuditLog {
 }
 
 const ACTION_LABELS: Record<string, string> = {
-  create_profiles: 'Création compte',
-  update_profiles: 'Modification compte',
-  delete_profiles: 'Suppression compte',
-  create_exposants: 'Création exposant',
-  update_exposants: 'Modification exposant',
-  delete_exposants: 'Suppression exposant',
-  create_espaces: 'Création espace',
-  update_espaces: 'Modification espace',
-  delete_espaces: 'Suppression espace',
-  create_evenements: 'Création événement',
-  update_evenements: 'Modification événement',
-  delete_evenements: 'Suppression événement',
-  create_support_tickets: 'Création ticket',
-  update_support_tickets: 'Modification ticket',
-  delete_support_tickets: 'Suppression ticket',
-  create_messages: 'Envoi message',
-  create_rendez_vous: 'Création RDV',
-  update_rendez_vous: 'Modification RDV',
-  delete_rendez_vous: 'Suppression RDV',
-  create_posts: 'Création publication',
+  create_profiles: 'admin.logs.action_create_profiles',
+  update_profiles: 'admin.logs.action_update_profiles',
+  delete_profiles: 'admin.logs.action_delete_profiles',
+  create_exposants: 'admin.logs.action_create_exposants',
+  update_exposants: 'admin.logs.action_update_exposants',
+  delete_exposants: 'admin.logs.action_delete_exposants',
+  create_espaces: 'admin.logs.action_create_espaces',
+  update_espaces: 'admin.logs.action_update_espaces',
+  delete_espaces: 'admin.logs.action_delete_espaces',
+  create_evenements: 'admin.logs.action_create_evenements',
+  update_evenements: 'admin.logs.action_update_evenements',
+  delete_evenements: 'admin.logs.action_delete_evenements',
+  create_support_tickets: 'admin.logs.action_create_tickets',
+  update_support_tickets: 'admin.logs.action_update_tickets',
+  delete_support_tickets: 'admin.logs.action_delete_tickets',
+  create_messages: 'admin.logs.action_create_messages',
+  create_rendez_vous: 'admin.logs.action_create_rdv',
+  update_rendez_vous: 'admin.logs.action_update_rdv',
+  delete_rendez_vous: 'admin.logs.action_delete_rdv',
+  create_posts: 'admin.logs.action_create_posts',
 };
 
 function getActionColor(action: string): string {
@@ -80,14 +79,14 @@ function getActionColor(action: string): string {
 
 function getEntityLabel(type: string): string {
   const labels: Record<string, string> = {
-    profiles: 'Compte',
-    exposants: 'Exposant',
-    espaces: 'Espace',
-    evenements: 'Événement',
-    support_tickets: 'Ticket',
-    messages: 'Message',
-    rendez_vous: 'RDV',
-    posts: 'Publication',
+    profiles: 'admin.logs.entity_profiles',
+    exposants: 'admin.logs.entity_exposants',
+    espaces: 'admin.logs.entity_espaces',
+    evenements: 'admin.logs.entity_evenements',
+    support_tickets: 'admin.logs.entity_tickets',
+    messages: 'admin.logs.entity_messages',
+    rendez_vous: 'admin.logs.entity_rdv',
+    posts: 'admin.logs.entity_posts',
   };
   return labels[type] || type;
 }
@@ -169,14 +168,14 @@ export default function AdminLogsPage() {
       const payload = await response.json();
 
       if (!response.ok) {
-        toast.error('Erreur chargement logs');
+        toast.error(t('admin.logs.toast_load_error'));
         return;
       }
 
       setLogs(payload.logs || []);
       setTotal(payload.total || 0);
     } catch {
-      toast.error('Erreur réseau');
+      toast.error(t('admin.logs.toast_network_error'));
     } finally {
       setLoading(false);
     }
@@ -217,10 +216,10 @@ export default function AdminLogsPage() {
       const payload = await response.json();
       const allLogs: AuditLog[] = payload.logs || [];
 
-      const header = 'Date;Acteur;Email;Role;Action;Type;Entité ID';
+      const header = t('admin.logs.csv_header');
       const rows = allLogs.map((log) =>
         [
-          new Date(log.created_at).toLocaleString('fr-FR'),
+          new Date(log.created_at).toLocaleString(locale === 'en' ? 'en-US' : 'fr-FR'),
           log.actor_id,
           log.actor_email || '',
           log.actor_role,
@@ -239,7 +238,7 @@ export default function AdminLogsPage() {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      toast.error('Erreur export');
+      toast.error(t('admin.logs.toast_export_error'));
     }
   }
 
@@ -248,22 +247,21 @@ export default function AdminLogsPage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-600/80">
-            Audits & Traçabilité
+            {t('admin.logs.title')}
           </p>
-          <h1 className="text-4xl text-foreground">Journal d&apos;activité</h1>
+          <h1 className="text-4xl text-foreground">{t('admin.logs.subtitle')}</h1>
           <p className="max-w-3xl text-base leading-7 text-muted-foreground">
-            Consultez l&apos;historique de toutes les actions effectuées sur la plateforme
-            (admin, exposants, visiteurs) avec filtres avancés.
+            {t('admin.logs.desc')}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="rounded-xl" onClick={handleExportCSV}>
             <Download className="mr-2 size-4" />
-            Export CSV
+            {t('admin.logs.export')}
           </Button>
           <Button variant="outline" className="rounded-xl" onClick={() => { setPage(1); void fetchLogs(); }}>
             <RefreshCw className="mr-2 size-4" />
-            Actualiser
+            {t('admin.logs.refresh')}
           </Button>
         </div>
       </div>
@@ -271,7 +269,7 @@ export default function AdminLogsPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <div className="surface-panel flex items-center justify-between p-5">
           <div>
-            <p className="text-sm text-muted-foreground">Total actions</p>
+            <p className="text-sm text-muted-foreground">{t('admin.logs.total_actions')}</p>
             <p className="mt-2 text-3xl font-semibold text-foreground">{stats.total}</p>
           </div>
           <div className="flex size-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-700 dark:text-blue-300">
@@ -280,7 +278,7 @@ export default function AdminLogsPage() {
         </div>
         <div className="surface-panel flex items-center justify-between p-5">
           <div>
-            <p className="text-sm text-muted-foreground">Créations</p>
+            <p className="text-sm text-muted-foreground">{t('admin.logs.creates')}</p>
             <p className="mt-2 text-3xl font-semibold text-foreground">{stats.creates}</p>
           </div>
           <div className="flex size-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
@@ -289,7 +287,7 @@ export default function AdminLogsPage() {
         </div>
         <div className="surface-panel flex items-center justify-between p-5">
           <div>
-            <p className="text-sm text-muted-foreground">Modifications</p>
+            <p className="text-sm text-muted-foreground">{t('admin.logs.updates')}</p>
             <p className="mt-2 text-3xl font-semibold text-foreground">{stats.updates}</p>
           </div>
           <div className="flex size-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300">
@@ -298,7 +296,7 @@ export default function AdminLogsPage() {
         </div>
         <div className="surface-panel flex items-center justify-between p-5">
           <div>
-            <p className="text-sm text-muted-foreground">Suppressions</p>
+            <p className="text-sm text-muted-foreground">{t('admin.logs.deletes')}</p>
             <p className="mt-2 text-3xl font-semibold text-foreground">{stats.deletes}</p>
           </div>
           <div className="flex size-12 items-center justify-center rounded-xl bg-red-500/10 text-red-700 dark:text-red-300">
@@ -315,7 +313,7 @@ export default function AdminLogsPage() {
               <Input
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                placeholder="Rechercher par email, action, type..."
+                placeholder={t('admin.logs.search_placeholder')}
                 className="pl-10"
               />
             </div>
@@ -323,12 +321,12 @@ export default function AdminLogsPage() {
               <Select value={actionFilter} onValueChange={(v) => { if (v !== null) { setActionFilter(v); setPage(1); } }}>
                 <SelectTrigger className="w-48">
                   <Filter className="mr-2 size-4" />
-                  <SelectValue placeholder="Action" />
+                  <SelectValue placeholder={t('admin.logs.filter_action_placeholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {ACTIONS.map((a) => (
                     <SelectItem key={a} value={a}>
-                      {a === 'all' ? 'Toutes les actions' : (ACTION_LABELS[a] || a)}
+                      {a === 'all' ? t('admin.logs.filter_all_actions') : t(ACTION_LABELS[a] || a)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -336,12 +334,12 @@ export default function AdminLogsPage() {
 
               <Select value={entityFilter} onValueChange={(v) => { if (v !== null) { setEntityFilter(v); setPage(1); } }}>
                 <SelectTrigger className="w-44">
-                  <SelectValue placeholder="Type d'entité" />
+                  <SelectValue placeholder={t('admin.logs.filter_entity_placeholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {ENTITY_TYPES.map((e) => (
                     <SelectItem key={e} value={e}>
-                      {e === 'all' ? 'Tous les types' : getEntityLabel(e)}
+                      {e === 'all' ? t('admin.logs.filter_all_types') : t(getEntityLabel(e))}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -350,12 +348,12 @@ export default function AdminLogsPage() {
               <Select value={roleFilter} onValueChange={(v) => { if (v !== null) { setRoleFilter(v); setPage(1); } }}>
                 <SelectTrigger className="w-40">
                   <User className="mr-2 size-4" />
-                  <SelectValue placeholder="Rôle" />
+                  <SelectValue placeholder={t('admin.logs.filter_role_placeholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {ROLES.map((r) => (
                     <SelectItem key={r} value={r}>
-                      {r === 'all' ? 'Tous les rôles' : r === 'admin' ? 'Admin' : r === 'exposant' ? 'Exposant' : 'Visiteur'}
+                      {r === 'all' ? t('admin.logs.filter_all_roles') : r === 'admin' ? t('admin.logs.role_admin') : r === 'exposant' ? t('admin.logs.role_exposant') : t('admin.logs.role_visitor')}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -384,9 +382,9 @@ export default function AdminLogsPage() {
 
       <Card className="surface-panel border-0">
         <CardHeader>
-          <CardTitle>Journal d&apos;activité</CardTitle>
+          <CardTitle>{t('admin.logs.list_title')}</CardTitle>
           <CardDescription>
-            {total} entrée(s) — Page {page}/{totalPages || 1}
+            {t('admin.logs.entries_count', { total })} — {t('admin.logs.page_info', { page, total: totalPages || 1 })}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -399,19 +397,19 @@ export default function AdminLogsPage() {
           ) : logs.length === 0 ? (
             <div className="surface-subtle py-12 text-center">
               <History className="mx-auto mb-3 size-10 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Aucune entrée trouvée</p>
+              <p className="text-sm text-muted-foreground">{t('admin.logs.no_results')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Acteur</TableHead>
-                    <TableHead>Rôle</TableHead>
-                    <TableHead>Action</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Détails</TableHead>
+                    <TableHead>{t('admin.logs.col_date')}</TableHead>
+                    <TableHead>{t('admin.logs.col_actor')}</TableHead>
+                    <TableHead>{t('admin.logs.col_role')}</TableHead>
+                    <TableHead>{t('admin.logs.col_action')}</TableHead>
+                    <TableHead>{t('admin.logs.col_type')}</TableHead>
+                    <TableHead className="text-right">{t('admin.logs.col_details')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -428,7 +426,7 @@ export default function AdminLogsPage() {
                           <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
                             {(log.actor_email || '?').charAt(0).toUpperCase()}
                           </div>
-                          <span className="text-sm font-medium">{log.actor_email || 'Inconnu'}</span>
+                          <span className="text-sm font-medium">{log.actor_email || t('admin.logs.unknown')}</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -438,11 +436,11 @@ export default function AdminLogsPage() {
                       </TableCell>
                       <TableCell>
                         <Badge className={`rounded-full ${getActionColor(log.action)}`}>
-                          {ACTION_LABELS[log.action] || log.action}
+                          {t(ACTION_LABELS[log.action] || log.action)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {getEntityLabel(log.entity_type)}
+                        {t(getEntityLabel(log.entity_type))}
                       </TableCell>
                       <TableCell className="text-right">
                         <span className="text-xs text-muted-foreground font-mono">
@@ -465,10 +463,10 @@ export default function AdminLogsPage() {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
               >
-                Précédent
+                {t('admin.logs.prev')}
               </Button>
               <span className="text-sm text-muted-foreground">
-                Page {page} / {totalPages}
+                {t('admin.logs.page_info', { page, total: totalPages })}
               </span>
               <Button
                 variant="outline"
@@ -477,7 +475,7 @@ export default function AdminLogsPage() {
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
               >
-                Suivant
+                {t('admin.logs.next')}
               </Button>
             </div>
           )}

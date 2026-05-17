@@ -17,56 +17,62 @@ vi.mock('@/lib/supabase/admin', () => ({
       }),
     },
     from: vi.fn((table: string) => {
-      const baseQuery = {
-        select: vi.fn().mockReturnThis(),
-        insert: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        in: vi.fn().mockReturnThis(),
-        overlaps: vi.fn().mockReturnThis(),
-        order: vi.fn().mockReturnThis(),
-        single: vi.fn(),
-        maybeSingle: vi.fn(),
-        data: null,
-        error: null,
+      const buildChain = (overrides = {}) => {
+        const chain: Record<string, ReturnType<typeof vi.fn>> = {
+          select: vi.fn().mockReturnThis(),
+          insert: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          overlaps: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          is: vi.fn().mockReturnThis(),
+          single: vi.fn(),
+          maybeSingle: vi.fn(),
+          ...overrides,
+        };
+        return chain;
       };
 
       if (table === 'profiles') {
-        return {
-          ...baseQuery,
-          select: vi.fn().mockReturnValue({
-            ...baseQuery,
-            eq: vi.fn().mockReturnValue({
-              ...baseQuery,
+        return buildChain({
+          select: vi.fn().mockReturnValue(buildChain({
+            eq: vi.fn().mockReturnValue(buildChain({
               single: vi.fn().mockResolvedValue({ data: { role: 'admin' }, error: null }),
-            }),
-          }),
-        };
+            })),
+          })),
+        });
       }
 
       if (table === 'newsletter_subscriptions') {
-        return {
-          ...baseQuery,
-          select: vi.fn().mockReturnValue({
-            ...baseQuery,
+        return buildChain({
+          select: vi.fn().mockReturnValue(buildChain({
             eq: vi.fn().mockReturnThis(),
             overlaps: vi.fn().mockReturnThis(),
-          }),
-        };
+          })),
+        });
       }
 
       if (table === 'newsletter_editions') {
-        return {
-          ...baseQuery,
+        return buildChain({
           insert: vi.fn().mockReturnThis(),
           select: vi.fn().mockReturnThis(),
           single: vi.fn().mockResolvedValue({
             data: { id: 'edition-1', titre: 'Test', contenu: 'Content', sent_at: null, recipient_count: 2 },
             error: null,
           }),
-        };
+        });
       }
 
-      return baseQuery;
+      if (table === 'user_preferences') {
+        return buildChain({
+          select: vi.fn().mockReturnValue(buildChain({
+            eq: vi.fn().mockReturnThis(),
+            in: vi.fn().mockReturnThis(),
+          })),
+        });
+      }
+
+      return buildChain();
     }),
   })),
 }));
@@ -77,7 +83,7 @@ describe('POST /api/newsletter', () => {
   });
 
   it('validates required fields', async () => {
-    const { POST } = await import('@/app/api/newsletter/route');
+    const { POST } = await import('../app/api/newsletter/route');
 
     const req = new Request('http://localhost:3000/api/newsletter', {
       method: 'POST',

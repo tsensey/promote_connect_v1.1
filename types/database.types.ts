@@ -440,6 +440,7 @@ export interface Database {
           sectors: string[] | null;
           frequency: string | null;
           is_active: boolean;
+          unsubscribe_token: string | null;
           created_at: string | null;
         };
         Insert: {
@@ -449,6 +450,7 @@ export interface Database {
           sectors?: string[] | null;
           frequency?: string | null;
           is_active?: boolean;
+          unsubscribe_token?: string | null;
           created_at?: string | null;
         };
         Update: {
@@ -458,6 +460,7 @@ export interface Database {
           sectors?: string[] | null;
           frequency?: string | null;
           is_active?: boolean;
+          unsubscribe_token?: string | null;
           created_at?: string | null;
         };
         Relationships: [];

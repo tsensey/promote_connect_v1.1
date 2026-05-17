@@ -3,14 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Building2,
-  Check,
-  GripVertical,
   Loader2,
   Pencil,
   Plus,
   Search,
   Trash2,
-  X,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/context';
 import { Button } from '@/components/ui/button';
@@ -79,10 +76,10 @@ export default function AdminEspacesPage() {
       if (res.ok) {
         setEspaces(data.espaces || []);
       } else {
-        toast.error(data.error || t('admin.espaces.toast_load_error'));
+        toast.error(data.error || t('admin.espaces.load_error'));
       }
     } catch {
-      toast.error(t('admin.espaces.toast_network'));
+      toast.error(t('admin.espaces.network_error'));
     } finally {
       setLoading(false);
     }
@@ -133,7 +130,7 @@ export default function AdminEspacesPage() {
   const handleSave = async () => {
     if (!token) return;
     if (!form.code || !form.nom) {
-      toast.error(t('admin.espaces.toast_required'));
+      toast.error(t('admin.espaces.validation'));
       return;
     }
 
@@ -154,15 +151,15 @@ export default function AdminEspacesPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || t('admin.espaces.toast_save_error'));
+        toast.error(data.error || t('admin.espaces.server_error'));
         return;
       }
 
-      toast.success(editingId ? t('admin.espaces.toast_updated') : t('admin.espaces.toast_created'));
+      toast.success(editingId ? t('admin.espaces.updated') : t('admin.espaces.created'));
       setShowForm(false);
       await fetchEspaces();
     } catch {
-      toast.error(t('admin.espaces.toast_server_error'));
+      toast.error(t('admin.espaces.server_error'));
     } finally {
       setSaving(false);
     }
@@ -181,11 +178,11 @@ export default function AdminEspacesPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || t('admin.espaces.toast_delete_error'));
+        toast.error(data.error || t('admin.espaces.server_error'));
         return;
       }
 
-      toast.success(t('admin.espaces.toast_deleted'));
+      toast.success(t('admin.espaces.deleted'));
       await fetchEspaces();
     } catch {
       toast.error(t('admin.espaces.toast_network'));
@@ -244,7 +241,7 @@ export default function AdminEspacesPage() {
         <CardHeader>
           <CardTitle>{t('admin.espaces.list')}</CardTitle>
           <CardDescription>
-            {t('admin.espaces.list_desc')}
+            {t('admin.espaces.list_hint')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -271,11 +268,12 @@ export default function AdminEspacesPage() {
               {t('admin.espaces.no_results')}
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-16">{t('admin.espaces.col_code')}</TableHead>
-                  <TableHead>{t('admin.espaces.col_nom')}</TableHead>
+                  <TableHead>{t('admin.espaces.col_name')}</TableHead>
                   <TableHead>{t('admin.espaces.col_type')}</TableHead>
                   <TableHead>{t('admin.espaces.col_ordre')}</TableHead>
                   <TableHead className="text-right">{t('admin.espaces.col_actions')}</TableHead>
@@ -332,6 +330,7 @@ export default function AdminEspacesPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -358,7 +357,7 @@ export default function AdminEspacesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="sort_order">{t('admin.espaces.form_sort_order')}</Label>
+                <Label htmlFor="sort_order">{t('admin.espaces.form_order')}</Label>
                 <Input
                   id="sort_order"
                   type="number"
@@ -369,12 +368,12 @@ export default function AdminEspacesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="nom">{t('admin.espaces.form_nom')}</Label>
+                <Label htmlFor="nom">{t('admin.espaces.form_name')}</Label>
               <Input
                 id="nom"
                 value={form.nom}
                 onChange={(e) => setForm({ ...form, nom: e.target.value })}
-                placeholder={t('admin.espaces.form_nom_placeholder')}
+                placeholder={t('admin.espaces.form_name_placeholder')}
               />
             </div>
 

@@ -11,7 +11,6 @@ import {
   Layers,
   Megaphone,
   Shield,
-  Store,
   Ticket,
   UserPlus,
   Users,
@@ -91,8 +90,6 @@ export function AdminSidebar({
     {
       title: t('layout.admin.sidebar.operationnel'),
       items: [
-        { label: t('layout.admin.sidebar.access'), href: '/admin/abonnes', icon: Shield },
-        { label: t('layout.admin.sidebar.products'), href: '/admin/exposants', icon: Store },
         { label: t('layout.admin.sidebar.newsletter'), href: '/admin/newsletter', icon: Megaphone },
         { label: t('layout.admin.sidebar.tickets'), href: '/admin/tickets', icon: Ticket },
       ],

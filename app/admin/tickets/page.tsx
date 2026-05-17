@@ -204,7 +204,7 @@ export default function AdminTicketsPage() {
                         className="rounded-full"
                       >
                         <MessageSquare className="size-3.5 mr-1.5" />
-                        Conversation
+                        {t('admin.tickets.conversation_btn')}
                       </Button>
                     </Link>
                     <Button

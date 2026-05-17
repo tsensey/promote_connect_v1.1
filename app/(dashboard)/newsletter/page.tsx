@@ -3,7 +3,16 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/lib/i18n";
 import { supabaseClient } from "@/lib/supabase/client";
-import { Mail, Check, Loader2, Newspaper, CalendarDays } from "lucide-react";
+import {
+  Mail,
+  Check,
+  Loader2,
+  Newspaper,
+  CalendarDays,
+  BellRing,
+  Settings2,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,15 +53,39 @@ export default function NewsletterPage() {
   const [frequency, setFrequency] = useState("weekly");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [isSubscribed, setIsSubscribed] = useState(false);
   const [editions, setEditions] = useState<NewsletterEdition[]>([]);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<{
+    subscribed: boolean;
+    frequency: string;
+    sectors: string[];
+  } | null>(null);
 
   useEffect(() => {
-    const checkSubscription = async () => {
+    const init = async () => {
       const { data: session } = await supabaseClient.auth.getSession();
+
       if (session.session?.user) {
-        setEmail(session.session.user.email || "");
+        const userEmail = session.session.user.email || "";
+        setEmail(userEmail);
+
+        const { data: sub } = await supabaseClient
+          .from("newsletter_subscriptions")
+          .select("is_active, frequency, sectors")
+          .eq("email", userEmail)
+          .maybeSingle();
+
+        if (sub) {
+          setIsSubscribed(sub.is_active);
+          setSubscriptionStatus({
+            subscribed: sub.is_active,
+            frequency: sub.frequency || "weekly",
+            sectors: sub.sectors || [],
+          });
+          if (sub.is_active) {
+            setFrequency(sub.frequency || "weekly");
+            setSectors(sub.sectors || []);
+          }
+        }
       }
 
       const { data } = await supabaseClient
@@ -64,7 +97,7 @@ export default function NewsletterPage() {
       if (data) setEditions(data);
     };
 
-    checkSubscription();
+    init();
   }, []);
 
   const toggleSector = (sector: SectorItem) => {
@@ -79,7 +112,6 @@ export default function NewsletterPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setSuccess(false);
 
     try {
       const { data: session } = await supabaseClient.auth.getSession();
@@ -101,52 +133,123 @@ export default function NewsletterPage() {
         throw new Error(err.error || "Failed to subscribe");
       }
 
-      setSuccess(true);
-      setIsSubscribed(true);
+      setSubscriptionStatus({
+        subscribed: true,
+        frequency,
+        sectors,
+      });
       toast.success(t("newsletter.success"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('common.error'));
+      setError(err instanceof Error ? err.message : t("common.error"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUnsubscribe = async () => {
+    if (!email) return;
+    setLoading(true);
+    try {
+      const response = await fetch("/api/newsletter/subscribe", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) throw new Error("Failed to unsubscribe");
+
+      setSubscriptionStatus(null);
+      toast.success("Désabonnement réussi");
+    } catch {
+      toast.error("Erreur lors du désabonnement");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6 pb-8 max-w-6xl mx-auto">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-heading text-foreground">
-          {t("newsletter.title")}
-        </h1>
+    <div className="space-y-8 pb-8 max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-3">
+          <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10">
+            <Newspaper className="size-6 text-primary" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">
+              {t("newsletter.subscription")}
+            </p>
+            <h1 className="text-3xl font-heading text-foreground">
+              {t("newsletter.title")}
+            </h1>
+          </div>
+        </div>
         <p className="max-w-2xl text-base leading-7 text-muted-foreground">
           {t("newsletter.desc")}
         </p>
       </div>
 
-      {isSubscribed ? (
-        <Card className="surface-panel overflow-hidden border-0">
-          <div className="brand-gradient px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-white/20">
-                <Check className="size-5 text-white" />
-              </div>
-              <div className="text-white">
-                <h2 className="font-heading text-lg font-semibold">
-                  {t("newsletter.subscribed")}
-                </h2>
-                <p className="text-sm text-white/80">
-                  {email} —{" "}
-                  {FREQUENCIES.find((f) => f.value === frequency)?.label}
-                </p>
+      {/* Subscription Status / Form */}
+      <Card className="surface-panel border-0 overflow-hidden">
+        {subscriptionStatus?.subscribed ? (
+          <div className="divide-y divide-border/60">
+            <div className="brand-gradient p-6">
+              <div className="flex items-center gap-4">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/20">
+                  <Check className="size-6 text-white" />
+                </div>
+                <div className="text-white min-w-0">
+                  <h2 className="font-heading text-xl font-semibold">
+                    {t("newsletter.subscribed")}
+                  </h2>
+                  <p className="text-sm text-white/80 truncate">
+                    {email}
+                  </p>
+                </div>
               </div>
             </div>
+            <div className="p-6 space-y-4">
+              <div className="flex flex-wrap gap-6 text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <BellRing className="size-4" />
+                  <span>
+                    {t("newsletter.frequency")} :{" "}
+                    <span className="font-medium text-foreground">
+                      {FREQUENCIES.find((f) => f.value === subscriptionStatus.frequency)?.label}
+                    </span>
+                  </span>
+                </div>
+                {subscriptionStatus.sectors.length > 0 && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Settings2 className="size-4" />
+                    <span>
+                      Secteurs :{" "}
+                      <span className="font-medium text-foreground">
+                        {subscriptionStatus.sectors.join(", ")}
+                      </span>
+                    </span>
+                  </div>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleUnsubscribe}
+                disabled={loading}
+                className="text-destructive border-destructive/30 hover:bg-destructive/5"
+              >
+                {loading ? (
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                ) : null}
+                Se désabonner
+              </Button>
+            </div>
           </div>
-        </Card>
-      ) : (
-        <Card className="surface-panel border-0">
-          <CardContent className="space-y-5 p-6">
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
-                <Mail className="size-5 text-primary" />
+        ) : (
+          <CardContent className="space-y-6 p-6">
+            <div className="flex items-center gap-4">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+                <Mail className="size-6 text-primary" />
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">
@@ -204,7 +307,7 @@ export default function NewsletterPage() {
                       variant={
                         sectors.includes(sector.value) ? "default" : "secondary"
                       }
-                      className="cursor-pointer rounded-full transition-all hover:opacity-80"
+                      className="cursor-pointer rounded-full transition-all hover:opacity-80 select-none"
                       onClick={() => toggleSector(sector)}
                     >
                       {sectors.includes(sector.value) && (
@@ -222,16 +325,10 @@ export default function NewsletterPage() {
                 </div>
               )}
 
-              {success && (
-                <div className="rounded-xl bg-emerald-500/10 px-4 py-3 text-sm text-emerald-600 dark:text-emerald-400">
-                  {t("newsletter.success_desc")}
-                </div>
-              )}
-
               <Button
                 type="submit"
                 disabled={loading || !email}
-                className="w-full rounded-xl"
+                className="w-full rounded-xl h-11"
               >
                 {loading ? (
                   <>
@@ -244,73 +341,78 @@ export default function NewsletterPage() {
               </Button>
             </form>
           </CardContent>
-        </Card>
-      )}
+        )}
+      </Card>
 
-      <Card className="surface-panel border-0">
-        <CardContent className="space-y-5 p-6">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
-              <Newspaper className="size-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">
-                {t("newsletter.archives")}
-              </p>
-              <h2 className="text-2xl font-heading text-foreground">
-                {t("newsletter.previous_editions")}
-              </h2>
-            </div>
+      {/* Archives */}
+      <section className="space-y-5">
+        <div className="flex items-center gap-4">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+            <Newspaper className="size-5 text-primary" />
           </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">
+              {t("newsletter.archives")}
+            </p>
+            <h2 className="text-2xl font-heading text-foreground">
+              {t("newsletter.previous_editions")}
+            </h2>
+          </div>
+        </div>
 
-          <div className="space-y-3">
-            {editions.length > 0 ? (
-              editions.map((edition) => (
-                <article
-                  key={edition.id}
-                  className="rounded-xl border border-border/60 bg-card p-5 transition-all hover:border-primary/20 hover:shadow-md"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="font-heading text-lg font-semibold text-foreground">
-                        {edition.titre}
-                      </h3>
-                      {edition.sent_at && (
-                        <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-                          <CalendarDays className="size-3.5" />
-                          {new Date(edition.sent_at).toLocaleDateString(
-                            locale === 'en' ? 'en-US' : 'fr-FR',
-                            {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            },
-                          )}
-                        </p>
-                      )}
-                    </div>
+        <div className="space-y-3">
+          {editions.length > 0 ? (
+            editions.map((edition, index) => (
+              <article
+                key={edition.id}
+                className="group relative rounded-xl border border-border/60 bg-card p-5 transition-all hover:border-primary/20 hover:shadow-md hover:-translate-y-0.5"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <h3 className="font-heading text-lg font-semibold text-foreground">
+                      {edition.titre}
+                    </h3>
+                    {edition.sent_at && (
+                      <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <CalendarDays className="size-3.5 shrink-0" />
+                        {new Date(edition.sent_at).toLocaleDateString(
+                          locale === "en" ? "en-US" : "fr-FR",
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          },
+                        )}
+                      </p>
+                    )}
                   </div>
-                  {edition.contenu && (
-                    <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">
-                      {edition.contenu}
-                    </p>
-                  )}
-                </article>
-              ))
-            ) : (
-              <div className="flex flex-col items-center gap-3 py-12 text-center">
-                <Mail className="size-12 text-muted-foreground/30" />
+                  <ChevronRight className="size-5 shrink-0 text-muted-foreground/40 group-hover:text-primary/60 transition-colors" />
+                </div>
+                {edition.contenu && (
+                  <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">
+                    {edition.contenu}
+                  </p>
+                )}
+              </article>
+            ))
+          ) : (
+            <div className="flex flex-col items-center gap-4 py-16 text-center">
+              <div className="flex size-16 items-center justify-center rounded-2xl bg-muted">
+                <Mail className="size-8 text-muted-foreground/40" />
+              </div>
+              <div>
                 <p className="text-base font-medium text-foreground">
                   {t("newsletter.no_editions")}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground mt-1">
                   {t("newsletter.no_editions_hint")}
                 </p>
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

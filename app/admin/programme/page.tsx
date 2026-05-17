@@ -168,13 +168,13 @@ export default function AdminProgrammePage() {
             />
           </div>
         </div>
-        <div className="p-0">
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t("admin.programme.col_evenement")}</TableHead>
+                <TableHead>{t("admin.programme.col_event")}</TableHead>
                 <TableHead>{t("admin.programme.col_type")}</TableHead>
-                <TableHead>{t("admin.programme.col_lieu")}</TableHead>
+                <TableHead>{t("admin.programme.col_location")}</TableHead>
                 <TableHead>{t("admin.programme.col_date")}</TableHead>
                 <TableHead className="text-right">{t("admin.programme.col_actions")}</TableHead>
               </TableRow>
@@ -226,12 +226,12 @@ export default function AdminProgrammePage() {
                     <TableCell className="text-sm text-muted-foreground">
                       {evt.pavillon && (
                         <span>
-                          {t("admin.programme.pavillon_label")} {evt.pavillon}{" "}
+                          {t("admin.programme.col_location")} {evt.pavillon}{" "}
                         </span>
                       )}
                       {evt.salle && (
                         <span>
-                          {t("admin.programme.salle_label")} {evt.salle}
+                          - {evt.salle}
                         </span>
                       )}
                       {!evt.pavillon && !evt.salle && <span>—</span>}

@@ -69,7 +69,7 @@ export default function AdminExposantsPage() {
       setExposants(expRes.exposants || []);
       setEspaces(espRes.espaces || []);
     } catch {
-      toast.error('Erreur de chargement');
+      toast.error(t('admin.exposants.toast_load_error'));
     } finally {
       setLoading(false);
     }
@@ -108,10 +108,10 @@ export default function AdminExposantsPage() {
         await fetchData();
       } else {
         const payload = await response.json();
-        toast.error(payload.error || 'Erreur');
+        toast.error(payload.error || t('admin.exposants.toast_error'));
       }
     } catch {
-      toast.error('Erreur reseau');
+      toast.error(t('admin.exposants.toast_network_error'));
     } finally {
       setFormLoading(false);
     }
@@ -147,10 +147,10 @@ export default function AdminExposantsPage() {
         await fetchData();
       } else {
         const payload = await response.json();
-        toast.error(payload.error || 'Erreur');
+        toast.error(payload.error || t('admin.exposants.toast_error'));
       }
     } catch {
-      toast.error('Erreur reseau');
+      toast.error(t('admin.exposants.toast_network_error'));
     }
   };
 
@@ -188,7 +188,7 @@ export default function AdminExposantsPage() {
             />
           </div>
         </div>
-        <div className="p-0">
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -269,7 +269,7 @@ export default function AdminExposantsPage() {
             <DialogTitle>{editingId ? t('admin.exposants.form_edit') : t('admin.exposants.form_new')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="grid gap-3 py-4">
-            <Input placeholder={t('admin.exposants.form_nom') || t('admin.exposants.form_name_placeholder')} value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} required />
+            <Input placeholder={t('admin.exposants.form_name_placeholder')} value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} required />
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">

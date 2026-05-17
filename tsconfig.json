@@ -32,6 +32,9 @@
       "@/types/*": [
         "types/*"
       ],
+      "@/emails/*": [
+        "emails/*"
+      ],
       "@/hooks/*": [
         "hooks/*"
       ],

@@ -1,12 +1,10 @@
 import {
   Body,
-  Button,
   Container,
   Head,
   Heading,
   Hr,
   Html,
-  Img,
   Link,
   Preview,
   Section,
@@ -17,9 +15,17 @@ interface NewsletterEmailProps {
   titre: string;
   contenu: string;
   recipientName?: string;
+  unsubscribeUrl?: string;
+  year?: number;
 }
 
-export default function NewsletterEmail({ titre, contenu, recipientName }: NewsletterEmailProps) {
+export default function NewsletterEmail({
+  titre,
+  contenu,
+  recipientName,
+  unsubscribeUrl,
+  year = new Date().getFullYear(),
+}: NewsletterEmailProps) {
   const paragraphs = contenu
     .split(/\n{2,}/)
     .map((p) => p.trim())
@@ -47,18 +53,24 @@ export default function NewsletterEmail({ titre, contenu, recipientName }: Newsl
             ))}
             <Hr style={hr} />
             <Text style={footerText}>
-              Vous recevez cette newsletter car vous êtes inscrit à PROMOTE-CONNECT.
+              Vous recevez cette newsletter car vous êtes inscrit à
+              PROMOTE-CONNECT.
             </Text>
           </Section>
 
           <Section style={footer}>
-            <Text style={footerLink}>
-              <Link href="{{ unsubscribe_url }}" style={linkStyle}>
-                Se désinscrire
-              </Link>
-            </Text>
+            {unsubscribeUrl && (
+              <Text style={footerLink}>
+                <Link href={unsubscribeUrl} style={linkStyle}>
+                  Se désinscrire de la newsletter
+                </Link>
+              </Text>
+            )}
             <Text style={footerSmall}>
               PROMOTE-CONNECT — Plateforme de networking professionnel
+            </Text>
+            <Text style={footerSmall}>
+              {year} PROMOTE. Tous droits réservés.
             </Text>
           </Section>
         </Container>
@@ -71,7 +83,8 @@ const main = {
   margin: '0',
   padding: '32px 16px',
   backgroundColor: '#f6f8fb',
-  fontFamily: 'Arial, sans-serif',
+  fontFamily:
+    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,sans-serif',
   color: '#172554',
 };
 
@@ -103,6 +116,7 @@ const headerTitle = {
   margin: '0',
   fontSize: '30px',
   lineHeight: '1.2',
+  fontWeight: 700,
 };
 
 const bodySection = {
@@ -113,12 +127,14 @@ const greeting = {
   margin: '0 0 16px',
   fontSize: '16px',
   color: '#0f172a',
+  fontWeight: 500,
 };
 
 const paragraphStyle = {
   margin: '0 0 16px',
   lineHeight: '1.7',
   color: '#475569',
+  fontSize: '15px',
 };
 
 const hr = {
@@ -143,16 +159,16 @@ const footer = {
 const footerLink = {
   margin: '0 0 8px',
   fontSize: '12px',
-  color: '#94a3b8',
 };
 
 const linkStyle = {
   color: '#912450',
   textDecoration: 'underline',
+  fontWeight: 500,
 };
 
 const footerSmall = {
-  margin: '0',
-  fontSize: '12px',
+  margin: '4px 0 0',
+  fontSize: '11px',
   color: '#94a3b8',
 };

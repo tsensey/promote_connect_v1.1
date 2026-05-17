@@ -1,10 +1,17 @@
 import { NextResponse } from 'next/server';
-import { resend } from '@/lib/resend/client';
+import crypto from 'crypto';
+import { renderToString } from 'react-dom/server';
 import { createClient } from '@supabase/supabase-js';
+import { resend } from '@/lib/resend/client';
+import WelcomeEmail from '@/emails/WelcomeEmail';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+function generateToken(): string {
+  return crypto.randomUUID();
+}
 
 export async function POST(request: Request) {
   try {
@@ -33,19 +40,24 @@ export async function POST(request: Request) {
       if (user) profileId = user.id;
     }
 
+    const unsubscribeToken = generateToken();
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
     const { data: existing } = await supabaseAdmin
       .from('newsletter_subscriptions')
-      .select('id')
+      .select('id, unsubscribe_token')
       .eq('email', email)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       await supabaseAdmin
         .from('newsletter_subscriptions')
         .update({
+          profile_id: profileId,
           sectors: sectors || [],
           frequency: frequency || 'weekly',
           is_active: true,
+          unsubscribe_token: existing.unsubscribe_token || unsubscribeToken,
         })
         .eq('email', email);
 
@@ -58,32 +70,27 @@ export async function POST(request: Request) {
       sectors: sectors || [],
       frequency: frequency || 'weekly',
       is_active: true,
+      unsubscribe_token: unsubscribeToken,
     });
 
     const fromEmail = process.env.RESEND_FROM_EMAIL || 'newsletter@promote-connect.com';
     const fromName = process.env.RESEND_FROM_NAME || 'PROMOTE-CONNECT';
+    const unsubscribeUrl = `${appUrl}/api/newsletter/unsubscribe?token=${unsubscribeToken}`;
+
+    const emailHtml = renderToString(
+      WelcomeEmail({
+        email,
+        frequency: frequency || 'weekly',
+        sectors: sectors || [],
+        unsubscribeUrl,
+      })
+    );
 
     await resend.emails.send({
       from: `${fromName} <${fromEmail}>`,
       to: [email],
-      subject: 'Bienvenue a la newsletter PROMOTE-CONNECT',
-      html: `
-        <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #0f172a; font-size: 24px;">Bienvenue !</h1>
-          <p style="color: #475569; line-height: 1.6;">
-            Vous etes maintenant inscrit a la newsletter PROMOTE-CONNECT.
-            Vous recevrez les dernieres actualites et opportunites d'affaires.
-          </p>
-          <p style="color: #475569; line-height: 1.6;">
-            Frequence : ${frequency || 'Hebdomadaire'}<br />
-            Secteurs : ${(sectors || []).join(', ') || 'Tous'}
-          </p>
-          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
-          <p style="color: #94a3b8; font-size: 12px;">
-            PROMOTE-CONNECT - communaute professionnelle du salon
-          </p>
-        </div>
-      `,
+      subject: 'Bienvenue à la newsletter PROMOTE-CONNECT',
+      html: emailHtml,
     });
 
     return NextResponse.json({ message: 'Subscribed successfully' });

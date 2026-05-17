@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseClient } from '@/lib/supabase/client';
 import { DateSeparator } from '@/components/chat/MessageBubble';
@@ -56,22 +56,21 @@ const PRIORITY_STYLES: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  open: 'Ouvert',
-  in_progress: 'En cours',
-  resolved: 'Résolu',
-  closed: 'Fermé',
+  open: 'admin.tickets.status_open',
+  in_progress: 'admin.tickets.status_progress',
+  resolved: 'admin.tickets.status_resolved',
+  closed: 'admin.tickets.status_closed',
 };
 
 const PRIORITY_LABELS: Record<string, string> = {
-  low: 'Basse',
-  medium: 'Moyenne',
-  high: 'Haute',
+  low: 'admin.ticket_detail.priority_low',
+  medium: 'admin.ticket_detail.priority_medium',
+  high: 'admin.ticket_detail.priority_high',
 };
 
 export default function AdminTicketDetailPage() {
   const { t, locale } = useTranslation();
   const params = useParams();
-  const router = useRouter();
   const ticketId = params.ticketId as string;
 
   const [ticket, setTicket] = useState<AdminTicketDetail | null>(null);
@@ -294,7 +293,7 @@ export default function AdminTicketDetailPage() {
                   PRIORITY_STYLES[ticket.priority || 'medium'],
                 )}
               >
-                {PRIORITY_LABELS[ticket.priority || 'medium']}
+                {t(PRIORITY_LABELS[ticket.priority || 'medium'])}
               </Badge>
               <Badge
                 className={cn(
@@ -302,7 +301,7 @@ export default function AdminTicketDetailPage() {
                   STATUS_STYLES[ticket.status || 'open'],
                 )}
               >
-                {STATUS_LABELS[ticket.status || 'open']}
+                {t(STATUS_LABELS[ticket.status || 'open'])}
               </Badge>
             </div>
           </div>
@@ -378,7 +377,7 @@ export default function AdminTicketDetailPage() {
           {ticket.created_at && (
             <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground/60">
               <Clock className="size-3.5 shrink-0" />
-              Créé le{' '}
+              {t('admin.ticket_detail.created_on')}{' '}
               {new Date(ticket.created_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', {
                 day: 'numeric',
                 month: 'long',
@@ -397,7 +396,7 @@ export default function AdminTicketDetailPage() {
             <LifeBuoy className="size-3.5" />
             {t('admin.ticket_detail.conversation')}
             <span className="ml-1 text-muted-foreground/40">
-              ({messages.length} {messages.length > 1 ? 'messages' : 'message'})
+              ({messages.length} {messages.length > 1 ? t('admin.ticket_detail.messages_plural') : t('admin.ticket_detail.messages_singular')})
             </span>
           </div>
         </div>
@@ -446,7 +445,7 @@ export default function AdminTicketDetailPage() {
                               : 'bg-primary/10 text-primary',
                           )}
                         >
-                          {isAdmin ? 'S' : 'V'}
+                          {isAdmin ? t('admin.ticket_detail.initial_support') : t('admin.ticket_detail.initial_visitor')}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col max-w-[85%] sm:max-w-[70%] gap-1">

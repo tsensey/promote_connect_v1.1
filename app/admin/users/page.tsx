@@ -102,6 +102,59 @@ const COUNTRIES = [
 
 const NOMBRE_EMPLOYES = ['1-10', '11-50', '51-200', '200+'];
 
+const SECTOR_KEYS: Record<string, string> = {
+  'Agriculture': 'admin.sector.agriculture',
+  'Agroalimentaire': 'admin.sector.agroalimentaire',
+  'Artisanat': 'admin.sector.artisanat',
+  'Automobile': 'admin.sector.automobile',
+  'Banque & Finance': 'admin.sector.banque_finance',
+  'BTP & Construction': 'admin.sector.btp_construction',
+  'Commerce': 'admin.sector.commerce',
+  'Communication & Medias': 'admin.sector.communication_medias',
+  'Education & Formation': 'admin.sector.education_formation',
+  'Energie': 'admin.sector.energie',
+  'Hotellerie & Restauration': 'admin.sector.hotellerie_restauration',
+  'Immobilier': 'admin.sector.immobilier',
+  'Industrie': 'admin.sector.industrie',
+  'Informatique & Tech': 'admin.sector.informatique_tech',
+  'Logistique & Transport': 'admin.sector.logistique_transport',
+  'Sante': 'admin.sector.sante',
+  'Services': 'admin.sector.services',
+  'Telecommunications': 'admin.sector.telecommunications',
+  'Tourisme': 'admin.sector.tourisme',
+};
+
+const COUNTRY_KEYS: Record<string, string> = {
+  'Algerie': 'admin.country.algerie',
+  'Allemagne': 'admin.country.allemagne',
+  'Belgique': 'admin.country.belgique',
+  'Benin': 'admin.country.benin',
+  'Burkina Faso': 'admin.country.burkina_faso',
+  'Cameroun': 'admin.country.cameroun',
+  'Canada': 'admin.country.canada',
+  'Chine': 'admin.country.chine',
+  'Congo': 'admin.country.congo',
+  "Cote d'Ivoire": 'admin.country.cote_ivoire',
+  'Egypte': 'admin.country.egypte',
+  'Espagne': 'admin.country.espagne',
+  'Etats-Unis': 'admin.country.etats_unis',
+  'France': 'admin.country.france',
+  'Gabon': 'admin.country.gabon',
+  'Ghana': 'admin.country.ghana',
+  'Guinee': 'admin.country.guinee',
+  'Inde': 'admin.country.inde',
+  'Italie': 'admin.country.italie',
+  'Japon': 'admin.country.japon',
+  'Mali': 'admin.country.mali',
+  'Maroc': 'admin.country.maroc',
+  'Nigeria': 'admin.country.nigeria',
+  'Royaume-Uni': 'admin.country.royaume_uni',
+  'Senegal': 'admin.country.senegal',
+  'Togo': 'admin.country.togo',
+  'Tunisie': 'admin.country.tunisie',
+  'Turquie': 'admin.country.turquie',
+};
+
 export default function AdminUsersPage() {
   const { t, locale } = useTranslation();
   const { session } = useAuth();
@@ -292,15 +345,15 @@ export default function AdminUsersPage() {
 
       if (!response.ok) {
         const payload = await response.json();
-        toast.error(payload.error || 'Erreur lors du changement de role');
+        toast.error(payload.error || t('admin.users.role_change_error'));
         return;
       }
 
-      toast.success('Role modifie avec succes');
+      toast.success(t('admin.users.role_changed'));
       setShowRoleDialog(null);
       await fetchUsers();
     } catch {
-      toast.error('Erreur reseau');
+      toast.error(t('admin.users.role_change_network'));
     } finally {
       setActionLoading(null);
     }
@@ -325,14 +378,14 @@ export default function AdminUsersPage() {
 
       if (!response.ok) {
         const payload = await response.json();
-        toast.error(payload.error || 'Erreur');
+        toast.error(payload.error || t('admin.users.toggle_error'));
         return;
       }
 
-      toast.success(currentlyActive ? 'Compte suspendu' : 'Compte reactive');
+      toast.success(currentlyActive ? t('admin.users.suspended') : t('admin.users.reactivated'));
       await fetchUsers();
     } catch {
-      toast.error('Erreur reseau');
+      toast.error(t('admin.users.toggle_network'));
     } finally {
       setActionLoading(null);
     }
@@ -355,7 +408,7 @@ export default function AdminUsersPage() {
       const payload = await response.json();
 
       if (!response.ok) {
-        toast.error(payload.error || 'Erreur réinitialisation mot de passe');
+        toast.error(payload.error || t('admin.users.reset_error'));
         return;
       }
 
@@ -363,9 +416,9 @@ export default function AdminUsersPage() {
         new_password: payload.new_password,
         email_sent: payload.email_sent,
       });
-      toast.success('Mot de passe réinitialisé');
+      toast.success(t('admin.users.reset_success'));
     } catch {
-      toast.error('Erreur réseau');
+      toast.error(t('admin.users.reset_network'));
     } finally {
       setActionLoading(null);
     }
@@ -430,7 +483,7 @@ export default function AdminUsersPage() {
         <StatCard label={t('admin.users.admins')} value={stats.admins} icon={Shield} tone="amber" />
         <StatCard label={t('admin.users.exposants')} value={stats.exposants} icon={Building2} tone="violet" />
         <StatCard label={t('admin.users.visiteurs')} value={stats.visiteurs} icon={Globe2} tone="emerald" />
-        <StatCard label="Suspendus" value={stats.suspended} icon={Ban} tone="red" />
+        <StatCard label={t('admin.users.suspended_label')} value={stats.suspended} icon={Ban} tone="red" />
       </div>
 
       {lastInvite && (
@@ -487,7 +540,7 @@ export default function AdminUsersPage() {
                   className="rounded-full"
                   onClick={() => setStatusFilter(status)}
                 >
-                  {status === 'all' ? t('admin.users.all_roles') : status === 'active' ? 'Actifs' : 'Suspendus'}
+                  {status === 'all' ? t('admin.users.all_status') : status === 'active' ? t('admin.users.active_status') : t('admin.users.suspended_status')}
                 </Button>
               ))}
             </div>
@@ -515,15 +568,16 @@ export default function AdminUsersPage() {
               <p className="text-sm text-muted-foreground">{t('admin.users.no_results')}</p>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>{t('admin.users.col_user')}</TableHead>
                   <TableHead>{t('admin.users.col_role')}</TableHead>
-                  <TableHead>Statut</TableHead>
+                  <TableHead>{t('admin.users.col_status')}</TableHead>
                   <TableHead>{t('admin.users.col_profile')}</TableHead>
                   <TableHead>{t('admin.users.col_creation')}</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-right">{t('admin.users.col_actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -548,19 +602,19 @@ export default function AdminUsersPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary" className="rounded-full">
-                        {user.role || 'visiteur'}
+                        {user.role === 'admin' ? t('admin.logs.role_admin') : user.role === 'exposant' ? t('admin.logs.role_exposant') : t('admin.logs.role_visitor')}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       {user.is_active ? (
-                        <Badge variant="default" className="rounded-full bg-emerald-500/15 text-emerald-700">
-                          <CheckCircle2 className="mr-1 size-3" />
-                          Actif
-                        </Badge>
-                      ) : (
-                        <Badge variant="destructive" className="rounded-full">
-                          <Ban className="mr-1 size-3" />
-                          Suspendu
+                          <Badge variant="default" className="rounded-full bg-emerald-500/15 text-emerald-700">
+                            <CheckCircle2 className="mr-1 size-3" />
+                            {t('admin.users.active_badge')}
+                          </Badge>
+                        ) : (
+                          <Badge variant="destructive" className="rounded-full">
+                            <Ban className="mr-1 size-3" />
+                            {t('admin.users.suspended_badge')}
                         </Badge>
                       )}
                     </TableCell>
@@ -585,7 +639,7 @@ export default function AdminUsersPage() {
                             }}
                           >
                             <UserCheck className="mr-2 size-4" />
-                            Changer le role
+                            {t('admin.users.role_change_menu')}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
@@ -599,7 +653,7 @@ export default function AdminUsersPage() {
                             ) : (
                               <KeyRound className="mr-2 size-4" />
                             )}
-                            Réinitialiser mot de passe
+                            {t('admin.users.reset_menu')}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleToggleSuspend(user.id, user.is_active)}
@@ -612,7 +666,7 @@ export default function AdminUsersPage() {
                             ) : (
                               <CheckCircle2 className="mr-2 size-4" />
                             )}
-                            {user.is_active ? 'Suspendre' : 'Reactiv er'}
+                            {user.is_active ? t('admin.users.suspend_btn') : t('admin.users.reactivate_btn')}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
@@ -629,6 +683,7 @@ export default function AdminUsersPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -718,7 +773,7 @@ export default function AdminUsersPage() {
                     })
                   }
                 >
-                  Admin
+                  {t('admin.users.form_admin_role')}
                 </Button>
               </div>
             </div>
@@ -736,7 +791,7 @@ export default function AdminUsersPage() {
                     >
                       <option value="">{t('admin.users.form_select')}</option>
                       {SECTORS.map((sector) => (
-                        <option key={sector} value={sector}>{sector}</option>
+                        <option key={sector} value={sector}>{t(SECTOR_KEYS[sector] || sector)}</option>
                       ))}
                     </select>
                   </div>
@@ -750,7 +805,7 @@ export default function AdminUsersPage() {
                     >
                       <option value="">{t('admin.users.form_select')}</option>
                       {COUNTRIES.map((country) => (
-                        <option key={country} value={country}>{country}</option>
+                        <option key={country} value={country}>{t(COUNTRY_KEYS[country] || country)}</option>
                       ))}
                     </select>
                   </div>
@@ -774,7 +829,7 @@ export default function AdminUsersPage() {
                     <option value="">{t('admin.users.form_select_space')}</option>
                     {espaces.map((espace) => (
                       <option key={espace.id} value={espace.id}>
-                        {espace.type === 'pavillon' ? 'Pavillon' : 'Espace'} {espace.code} — {espace.nom}
+                        {espace.type === 'pavillon' ? t('admin.espaces.type_pavillon') : t('admin.espaces.type_espace')} {espace.code} — {espace.nom}
                       </option>
                     ))}
                   </select>
@@ -874,14 +929,14 @@ export default function AdminUsersPage() {
       <Dialog open={!!showDeleteDialog} onOpenChange={(open) => !open && setShowDeleteDialog(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogTitle>{t('admin.users.delete_title')}</DialogTitle>
             <DialogDescription>
-              Cette action est irreversible. Toutes les donnees liees a ce compte (messages, publications, rendez-vous) seront supprimees definitivement.
+              {t('admin.users.delete_desc')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" className="rounded-xl" onClick={() => setShowDeleteDialog(null)}>
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -894,7 +949,7 @@ export default function AdminUsersPage() {
               ) : (
                 <Trash2 className="mr-2 size-4" />
               )}
-              Supprimer definitivement
+              {t('admin.users.delete_permanent')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -903,10 +958,10 @@ export default function AdminUsersPage() {
       <Dialog open={!!showPasswordDialog} onOpenChange={(open) => { if (!open) { setShowPasswordDialog(null); setPasswordResult(null); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Réinitialiser le mot de passe</DialogTitle>
+            <DialogTitle>{t('admin.users.reset_title')}</DialogTitle>
             <DialogDescription>
               {showPasswordDialog
-                ? `Nouveau mot de passe pour ${showPasswordDialog.full_name}`
+                ? `${t('admin.users.reset_for')} ${showPasswordDialog.full_name}`
                 : ''}
             </DialogDescription>
           </DialogHeader>
@@ -914,12 +969,12 @@ export default function AdminUsersPage() {
             <div className="space-y-4 py-4">
               <p className="text-sm text-muted-foreground">
                 {passwordResult.email_sent
-                  ? 'Un email contenant le nouveau mot de passe a été envoyé.'
-                  : 'Aucun email na pas pu être envoyé. Copiez le mot de passe ci-dessous et transmettez-le manuellement.'}
+                  ? t('admin.users.reset_email_sent')
+                  : t('admin.users.reset_email_failed')}
               </p>
               <div className="rounded-xl border bg-muted/50 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                  Nouveau mot de passe
+                  {t('admin.users.reset_new_password')}
                 </p>
                 <p className="text-2xl font-bold tracking-wider text-foreground text-center select-all">
                   {passwordResult.new_password}
@@ -930,18 +985,17 @@ export default function AdminUsersPage() {
                 className="w-full rounded-xl"
                 onClick={() => {
                   navigator.clipboard.writeText(passwordResult.new_password);
-                  toast.success('Mot de passe copié');
+                  toast.success(t('admin.users.reset_copied'));
                 }}
               >
                 <Copy className="mr-2 size-4" />
-                Copier le mot de passe
+                {t('admin.users.reset_copy_btn')}
               </Button>
             </div>
           ) : (
             <div className="py-4">
               <p className="text-sm text-muted-foreground">
-                Un nouveau mot de passe temporaire sera généré et envoyé par email à l'utilisateur.
-                Confirmez-vous cette action ?
+                {t('admin.users.reset_confirm')}
               </p>
             </div>
           )}
@@ -951,7 +1005,7 @@ export default function AdminUsersPage() {
               className="rounded-xl"
               onClick={() => { setShowPasswordDialog(null); setPasswordResult(null); }}
             >
-              {passwordResult ? 'Fermer' : 'Annuler'}
+              {passwordResult ? t('common.close') : t('common.cancel')}
             </Button>
             {!passwordResult && (
               <Button
@@ -964,7 +1018,7 @@ export default function AdminUsersPage() {
                 ) : (
                   <KeyRound className="mr-2 size-4" />
                 )}
-                Confirmer
+                {t('admin.users.reset_confirm_btn')}
               </Button>
             )}
           </DialogFooter>
@@ -974,26 +1028,26 @@ export default function AdminUsersPage() {
       <Dialog open={!!showRoleDialog} onOpenChange={(open) => !open && setShowRoleDialog(null)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Changer le role</DialogTitle>
+            <DialogTitle>{t('admin.users.role_title')}</DialogTitle>
             <DialogDescription>
-              {showRoleDialog ? `Modifier le role de ${showRoleDialog.full_name}` : ''}
+              {showRoleDialog ? `${t('admin.users.role_for')} ${showRoleDialog.full_name}` : ''}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Select value={newRole} onValueChange={(value) => value && setNewRole(value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Selectionner un role" />
+                <SelectValue placeholder={t('admin.users.role_placeholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="visiteur">Visiteur</SelectItem>
-                <SelectItem value="exposant">Exposant</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="visiteur">{t('admin.users.form_visiteur')}</SelectItem>
+                <SelectItem value="exposant">{t('admin.users.form_exposant')}</SelectItem>
+                <SelectItem value="admin">{t('admin.users.form_admin_role')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <DialogFooter>
             <Button variant="outline" className="rounded-xl" onClick={() => setShowRoleDialog(null)}>
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button
               className="rounded-xl"
@@ -1005,7 +1059,7 @@ export default function AdminUsersPage() {
               ) : (
                 <UserCheck className="mr-2 size-4" />
               )}
-              Confirmer
+              {t('admin.users.role_confirm_btn')}
             </Button>
           </DialogFooter>
         </DialogContent>

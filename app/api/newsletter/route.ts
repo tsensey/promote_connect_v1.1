@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
+import { renderToString } from 'react-dom/server';
 import { resend } from '@/lib/resend/client';
 import { createAdminClient } from '@/lib/supabase/admin';
+import NewsletterEmail from '@/emails/NewsletterEmail';
 
 async function verifyAdmin(request: Request) {
   const authHeader = request.headers.get('authorization');
   if (!authHeader?.startsWith('Bearer ')) {
-    return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }), userId: null };
+    return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }), adminId: null };
   }
 
   const token = authHeader.split('Bearer ')[1];
@@ -16,7 +19,7 @@ async function verifyAdmin(request: Request) {
   } = await supabase.auth.getUser(token);
 
   if (authError || !user) {
-    return { error: NextResponse.json({ error: 'Invalid token' }, { status: 401 }), userId: null };
+    return { error: NextResponse.json({ error: 'Invalid token' }, { status: 401 }), adminId: null };
   }
 
   const { data: profile } = await supabase
@@ -26,17 +29,19 @@ async function verifyAdmin(request: Request) {
     .single();
 
   if (profile?.role !== 'admin') {
-    return { error: NextResponse.json({ error: 'Admin access required' }, { status: 403 }), userId: null };
+    return { error: NextResponse.json({ error: 'Admin access required' }, { status: 403 }), adminId: null };
   }
 
-  return { error: null, userId: user.id };
+  return { error: null, adminId: user.id };
+}
+
+function generateToken(): string {
+  return crypto.randomUUID();
 }
 
 export async function POST(request: Request) {
   const auth = await verifyAdmin(request);
-  if (auth.error) {
-    return auth.error;
-  }
+  if (auth.error) return auth.error;
 
   try {
     const body = await request.json();
@@ -52,22 +57,52 @@ export async function POST(request: Request) {
     }
 
     const supabase = createAdminClient();
-    let subscriptionsQuery = supabase
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+    let query = supabase
       .from('newsletter_subscriptions')
-      .select('email, sectors')
+      .select('id, email, profile_id, unsubscribe_token, sectors, frequency')
       .eq('is_active', true);
 
     if (sectors.length > 0) {
-      subscriptionsQuery = subscriptionsQuery.overlaps('sectors', sectors);
+      query = query.overlaps('sectors', sectors);
     }
 
-    const { data: subscriptions, error: subscriptionsError } = await subscriptionsQuery;
+    const { data: subscriptions, error: subscriptionsError } = await query;
     if (subscriptionsError) {
       return NextResponse.json({ error: subscriptionsError.message }, { status: 500 });
     }
 
-    const recipientEmails = Array.from(
-      new Set((subscriptions || []).map((subscription) => subscription.email).filter(Boolean))
+    if (!subscriptions || subscriptions.length === 0) {
+      return NextResponse.json({ error: 'Aucun abonné actif trouvé.' }, { status: 404 });
+    }
+
+    // Ensure all subscribers have tokens and fetch profile names for personalization
+    const profileIds = subscriptions
+      .map((s) => s.profile_id)
+      .filter(Boolean) as string[];
+
+    const { data: profiles } = profileIds.length > 0
+      ? await supabase.from('profiles').select('id, full_name').in('id', profileIds)
+      : { data: [] };
+
+    const profileMap = new Map<string, string | undefined>(
+      (profiles || []).map((p) => [p.id, p.full_name ?? undefined])
+    );
+
+    // Check user_preferences: exclude those who opted out of newsletter
+    const { data: preferences } = profileIds.length > 0
+      ? await supabase
+          .from('user_preferences')
+          .select('profile_id')
+          .eq('notify_newsletter', false)
+          .in('profile_id', profileIds)
+      : { data: [] };
+
+    const optedOutIds = new Set((preferences || []).map((p) => p.profile_id));
+
+    const recipients = subscriptions.filter(
+      (s) => !s.profile_id || !optedOutIds.has(s.profile_id)
     );
 
     const sentAt = sendNow ? new Date().toISOString() : null;
@@ -77,7 +112,7 @@ export async function POST(request: Request) {
         titre,
         contenu,
         sent_at: sentAt,
-        recipient_count: recipientEmails.length,
+        recipient_count: recipients.length,
       })
       .select()
       .single();
@@ -88,19 +123,46 @@ export async function POST(request: Request) {
 
     let deliveredCount = 0;
 
-    if (sendNow && recipientEmails.length > 0 && process.env.RESEND_API_KEY) {
+    if (sendNow && recipients.length > 0 && process.env.RESEND_API_KEY) {
       const fromEmail = process.env.RESEND_FROM_EMAIL || 'newsletter@promote-connect.com';
       const fromName = process.env.RESEND_FROM_NAME || 'PROMOTE-CONNECT';
 
-      await resend.emails.send({
-        from: `${fromName} <${fromEmail}>`,
-        to: [fromEmail],
-        bcc: recipientEmails,
-        subject: titre,
-        html: buildNewsletterHtml({ titre, contenu }),
-      });
+      // Send individually for personalization (unsubscribe URL + name)
+      const BATCH_SIZE = 50;
+      for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+        const batch = recipients.slice(i, i + BATCH_SIZE);
+        const sendPromises = batch.map(async (sub) => {
+          const token = sub.unsubscribe_token || generateToken();
+          if (!sub.unsubscribe_token) {
+            await supabase
+              .from('newsletter_subscriptions')
+              .update({ unsubscribe_token: token })
+              .eq('id', sub.id);
+          }
 
-      deliveredCount = recipientEmails.length;
+          const unsubscribeUrl = `${appUrl}/api/newsletter/unsubscribe?token=${token}`;
+          const recipientName = sub.profile_id ? profileMap.get(sub.profile_id) : undefined;
+
+          const emailHtml = renderToString(
+            NewsletterEmail({
+              titre,
+              contenu,
+              recipientName,
+              unsubscribeUrl,
+            })
+          );
+
+          return resend.emails.send({
+            from: `${fromName} <${fromEmail}>`,
+            to: [sub.email],
+            subject: titre,
+            html: emailHtml,
+          });
+        });
+
+        await Promise.allSettled(sendPromises);
+        deliveredCount += batch.length;
+      }
     }
 
     return NextResponse.json({
@@ -108,40 +170,10 @@ export async function POST(request: Request) {
       edition,
       queued: !sendNow || !process.env.RESEND_API_KEY,
       delivered_count: deliveredCount,
-      recipient_count: recipientEmails.length,
+      recipient_count: recipients.length,
     });
   } catch (error) {
     console.error('Newsletter send error:', error);
     return NextResponse.json({ error: 'Impossible de traiter la newsletter.' }, { status: 500 });
   }
-}
-
-function buildNewsletterHtml({ titre, contenu }: { titre: string; contenu: string }) {
-  const paragraphs = contenu
-    .split(/\n{2,}/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean)
-    .map((paragraph) => `<p style="margin:0 0 16px;line-height:1.7;color:#475569">${paragraph}</p>`)
-    .join('');
-
-  return `
-    <div style="margin:0;background:#f6f8fb;padding:32px 16px;font-family:Arial,sans-serif;color:#172554">
-      <div style="max-width:680px;margin:0 auto;background:#ffffff;border-radius:28px;overflow:hidden;box-shadow:0 30px 80px rgba(15,23,42,0.12)">
-        <div style="padding:36px;background:#912450;color:#ffffff">
-          <p style="margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;opacity:0.78">
-            PROMOTE-CONNECT
-          </p>
-          <h1 style="margin:0;font-size:30px;line-height:1.2">${titre}</h1>
-        </div>
-
-        <div style="padding:32px">
-          ${paragraphs}
-          <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0" />
-          <p style="margin:0;font-size:13px;line-height:1.7;color:#64748b">
-            Vous recevez cette newsletter car vous etes inscrit a PROMOTE-CONNECT.
-          </p>
-        </div>
-      </div>
-    </div>
-  `;
 }

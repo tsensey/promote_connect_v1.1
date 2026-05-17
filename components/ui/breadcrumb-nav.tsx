@@ -16,10 +16,11 @@ const ADMIN_MAP: Record<string, Omit<Crumb, 'href'>> = {
   '/admin': { label: 'layout.breadcrumb.dashboard' },
   '/admin/users': { label: 'layout.breadcrumb.users' },
   '/admin/exposants': { label: 'layout.breadcrumb.exposants' },
-  '/admin/abonnes': { label: 'layout.breadcrumb.access' },
   '/admin/programme': { label: 'layout.breadcrumb.programme' },
   '/admin/tickets': { label: 'layout.breadcrumb.tickets' },
   '/admin/newsletter': { label: 'layout.breadcrumb.newsletter' },
+  '/admin/espaces': { label: 'layout.breadcrumb.espaces' },
+  '/admin/logs': { label: 'layout.breadcrumb.logs' },
 };
 
 const USER_MAP: Record<string, Omit<Crumb, 'href'>> = {
@@ -43,6 +44,11 @@ function buildAdminCrumbs(pathname: string): Crumb[] {
   const detail = ADMIN_MAP[pathname];
   if (detail) {
     crumbs.push({ label: detail.label });
+    return crumbs;
+  }
+
+  if (pathname.startsWith('/admin/tickets/')) {
+    crumbs.push({ label: 'layout.breadcrumb.tickets', href: '/admin/tickets' }, { label: 'layout.breadcrumb.ticket' });
     return crumbs;
   }
 
