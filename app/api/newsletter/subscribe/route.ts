@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { renderToString } from 'react-dom/server';
+import { render } from '@react-email/components';
 import { createClient } from '@supabase/supabase-js';
 import { resend } from '@/lib/resend/client';
 import WelcomeEmail from '@/emails/WelcomeEmail';
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
     const fromName = process.env.RESEND_FROM_NAME || 'PROMOTE-CONNECT';
     const unsubscribeUrl = `${appUrl}/api/newsletter/unsubscribe?token=${unsubscribeToken}`;
 
-    const emailHtml = renderToString(
+    const emailHtml = await render(
       WelcomeEmail({
         email,
         frequency: frequency || 'weekly',

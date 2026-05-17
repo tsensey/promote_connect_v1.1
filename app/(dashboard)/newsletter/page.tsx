@@ -75,7 +75,6 @@ export default function NewsletterPage() {
           .maybeSingle();
 
         if (sub) {
-          setIsSubscribed(sub.is_active);
           setSubscriptionStatus({
             subscribed: sub.is_active,
             frequency: sub.frequency || "weekly",

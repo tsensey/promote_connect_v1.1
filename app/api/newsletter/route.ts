@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { renderToString } from 'react-dom/server';
+import { render } from '@react-email/components';
 import { resend } from '@/lib/resend/client';
 import { createAdminClient } from '@/lib/supabase/admin';
 import NewsletterEmail from '@/emails/NewsletterEmail';
@@ -143,7 +143,7 @@ export async function POST(request: Request) {
           const unsubscribeUrl = `${appUrl}/api/newsletter/unsubscribe?token=${token}`;
           const recipientName = sub.profile_id ? profileMap.get(sub.profile_id) : undefined;
 
-          const emailHtml = renderToString(
+          const emailHtml = await render(
             NewsletterEmail({
               titre,
               contenu,
