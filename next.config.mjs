@@ -9,9 +9,9 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://vercel.live",
       "frame-src 'self' https://js.stripe.com https://www.youtube.com https://player.vimeo.com",
-      "connect-src 'self' https://*.supabase.co https://api.stripe.com https://*.resend.com wss://*.supabase.co",
+      "connect-src 'self' https://*.supabase.co https://api.stripe.com https://*.resend.com https://vercel.live wss://*.supabase.co",
       "worker-src 'self' blob:",
       "img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com",
       "style-src 'self' 'unsafe-inline'",

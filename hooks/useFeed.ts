@@ -381,6 +381,7 @@ export function useFeed(limit = 20) {
     const post = posts.find((p) => p.id === postId);
     if (!post) return;
     const isLiked = post.is_liked;
+    const prevLikesCount = post.likes_count;
 
     setPosts((prev) =>
       prev.map((p) =>
@@ -388,23 +389,32 @@ export function useFeed(limit = 20) {
       )
     );
 
-    if (isLiked) {
+    try {
+      if (isLiked) {
         await Promise.all([
           supabaseClient.from('post_likes').delete().eq('post_id', postId).eq('user_id', myId),
           (supabaseClient as any).from('post_reactions').delete().eq('post_id', postId).eq('user_id', myId),
           supabaseClient.from('posts').update({ likes_count: Math.max(0, (post.likes_count || 0) - 1) }).eq('id', postId),
         ]);
-    } else {
-      const { error } = await (supabaseClient as any).from('post_reactions').insert({ post_id: postId, user_id: myId, type: 'like' });
-      if (error && error.code === '23505') {
-        setPosts((prev) =>
-          prev.map((p) =>
-            p.id === postId ? { ...p, is_liked: true, likes_count: (p.likes_count || 0) + 1, reaction_type: 'like' } : p
-          )
-        );
+      } else {
+        await Promise.all([
+          (supabaseClient as any).from('post_reactions').upsert(
+            { post_id: postId, user_id: myId, type: 'like' },
+            { onConflict: 'post_id,user_id' }
+          ),
+          (supabaseClient as any).from('post_likes').upsert(
+            { post_id: postId, user_id: myId },
+            { onConflict: 'post_id,user_id' }
+          ),
+          supabaseClient.from('posts').update({ likes_count: (post.likes_count || 0) + 1 }).eq('id', postId),
+        ]);
       }
-      await (supabaseClient as any).from('post_likes').upsert({ post_id: postId, user_id: myId }, { onConflict: 'post_id,user_id' });
-      await supabaseClient.from('posts').update({ likes_count: (post.likes_count || 0) + 1 }).eq('id', postId);
+    } catch {
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId ? { ...p, is_liked: isLiked, likes_count: prevLikesCount, reaction_type: isLiked ? 'like' : null } : p
+        )
+      );
     }
   }, [posts]);
 
@@ -474,6 +484,8 @@ export function useFeed(limit = 20) {
     const post = posts.find((p) => p.id === postId);
     if (!post) return;
     const currentReaction = post.reaction_type;
+    const wasLiked = post.is_liked;
+    const prevLikesCount = post.likes_count;
 
     if (currentReaction === reactionType) {
       setPosts((prev) =>
@@ -481,23 +493,38 @@ export function useFeed(limit = 20) {
           p.id === postId ? { ...p, is_liked: false, reaction_type: null, likes_count: Math.max(0, p.likes_count - 1) } : p
         )
       );
-      await Promise.all([
-        (supabaseClient as any).from('post_reactions').delete().eq('post_id', postId).eq('user_id', myId),
-        supabaseClient.from('posts').update({ likes_count: Math.max(0, (post.likes_count || 0) - 1) }).eq('id', postId),
-      ]);
+      try {
+        await Promise.all([
+          (supabaseClient as any).from('post_reactions').delete().eq('post_id', postId).eq('user_id', myId),
+          supabaseClient.from('posts').update({ likes_count: Math.max(0, (post.likes_count || 0) - 1) }).eq('id', postId),
+        ]);
+      } catch {
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === postId ? { ...p, is_liked: wasLiked, reaction_type: currentReaction, likes_count: prevLikesCount } : p
+          )
+        );
+      }
     } else {
-      const wasLiked = post.is_liked;
       setPosts((prev) =>
         prev.map((p) =>
           p.id === postId ? { ...p, is_liked: true, reaction_type: reactionType, likes_count: wasLiked ? p.likes_count : (p.likes_count + 1) } : p
         )
       );
-      await (supabaseClient as any).from('post_reactions').upsert(
-        { post_id: postId, user_id: myId, type: reactionType },
-        { onConflict: 'post_id,user_id' }
-      );
-      if (!wasLiked) {
-        await supabaseClient.from('posts').update({ likes_count: (post.likes_count || 0) + 1 }).eq('id', postId);
+      try {
+        await (supabaseClient as any).from('post_reactions').upsert(
+          { post_id: postId, user_id: myId, type: reactionType },
+          { onConflict: 'post_id,user_id' }
+        );
+        if (!wasLiked) {
+          await supabaseClient.from('posts').update({ likes_count: (post.likes_count || 0) + 1 }).eq('id', postId);
+        }
+      } catch {
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === postId ? { ...p, is_liked: wasLiked, reaction_type: currentReaction, likes_count: prevLikesCount } : p
+          )
+        );
       }
     }
   }, [posts]);
