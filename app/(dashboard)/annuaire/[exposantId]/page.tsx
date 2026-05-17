@@ -19,11 +19,21 @@ import {
   Mail,
   Phone,
   Video,
-  Download
+  Download,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  Users,
+  Award,
+  Tag,
+  Euro,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
 import type { Database } from '@/types/database.types';
@@ -33,7 +43,6 @@ import { useProfilePosts } from '@/hooks/useProfilePosts';
 import { PostCard } from '@/components/feed/PostCard';
 import { Ban, ShieldAlert } from 'lucide-react';
 
-// ── Icônes de marque SVG inline ──
 const IconLinkedin = ({ className }: { className?: string }) => (
   <svg className={className ?? 'size-4'} viewBox="0 0 24 24" fill="currentColor">
     <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
@@ -74,6 +83,7 @@ export default function ExposantDetailPage() {
   const [loading, setLoading] = useState(true);
   const [contacting, setContacting] = useState(false);
   const [blocking, setBlocking] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const { blockUser, unblockUser, isBlocked, loadBlockedUsers } = useBlockedUsers();
 
@@ -85,22 +95,6 @@ export default function ExposantDetailPage() {
     loadBlockedUsers();
   }, [loadBlockedUsers]);
 
-  const handleBlockExposant = async () => {
-    if (!exposantProfileId) return;
-    setBlocking(true);
-    await blockUser(exposantProfileId, 'harassment');
-    toast.success(t('annuaire.detail.block_success'));
-    setBlocking(false);
-  };
-
-  const handleUnblockExposant = async () => {
-    if (!exposantProfileId) return;
-    setBlocking(true);
-    await unblockUser(exposantProfileId);
-    toast.success(t('annuaire.detail.unblock_success'));
-    setBlocking(false);
-  };
-
   useEffect(() => {
     const loadData = async () => {
       const { data: exp } = await supabaseClient
@@ -111,7 +105,6 @@ export default function ExposantDetailPage() {
 
       if (exp) {
         setExposant(exp);
-
         const { data: session } = await supabaseClient.auth.getSession();
         const viewerId = session?.session?.user?.id;
         await supabaseClient.from('exposant_views').insert({
@@ -127,7 +120,6 @@ export default function ExposantDetailPage() {
         .order('created_at', { ascending: false });
 
       if (prods) setProduits(prods);
-
       setLoading(false);
     };
 
@@ -162,28 +154,72 @@ export default function ExposantDetailPage() {
     const title = exposant?.nom || t('annuaire.detail.profile_title');
     if (navigator.share) {
       try {
-        await navigator.share({
-          title,
-          text: exposant?.description || t('annuaire.detail.discover', { name: exposant?.nom || '' }),
-          url,
-        });
-      } catch {
-        // user cancelled
-      }
+        await navigator.share({ title, text: exposant?.description || '', url });
+      } catch {}
     } else {
       await navigator.clipboard.writeText(url);
       toast.success(t('annuaire.detail.link_copied'));
     }
   };
 
+  const handleBlockExposant = async () => {
+    if (!exposantProfileId) return;
+    setBlocking(true);
+    await blockUser(exposantProfileId, 'harassment');
+    toast.success(t('annuaire.detail.block_success'));
+    setBlocking(false);
+  };
+
+  const handleUnblockExposant = async () => {
+    if (!exposantProfileId) return;
+    setBlocking(true);
+    await unblockUser(exposantProfileId);
+    toast.success(t('annuaire.detail.unblock_success'));
+    setBlocking(false);
+  };
+
+  const COVER_GRADIENTS = [
+    'from-blue-600/30 via-blue-500/10 to-transparent',
+    'from-emerald-600/30 via-emerald-500/10 to-transparent',
+    'from-violet-600/30 via-violet-500/10 to-transparent',
+    'from-amber-600/30 via-amber-500/10 to-transparent',
+    'from-rose-600/30 via-rose-500/10 to-transparent',
+    'from-cyan-600/30 via-cyan-500/10 to-transparent',
+  ];
+
+  function getGradient(id: string) {
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) hash = ((hash << 5) - hash) + id.charCodeAt(i);
+    return COVER_GRADIENTS[Math.abs(hash) % COVER_GRADIENTS.length];
+  }
+
   if (loading) {
     return (
-      <div className="mx-auto max-w-5xl space-y-6">
-        <div className="surface-panel h-8 w-48 animate-pulse rounded-xl" />
-        <div className="surface-panel h-72 animate-pulse border-0" />
-        <div className="grid gap-6 md:grid-cols-[1fr_320px]">
-          <div className="surface-panel h-96 animate-pulse border-0" />
-          <div className="surface-panel h-96 animate-pulse border-0" />
+      <div className="mx-auto max-w-6xl space-y-6 pb-8">
+        <div className="h-5 w-36 animate-pulse rounded-lg bg-muted" />
+        <div className="overflow-hidden rounded-2xl bg-muted/50">
+          <div className="aspect-[3/1] animate-pulse bg-muted" />
+          <div className="space-y-4 p-6">
+            <div className="flex gap-4">
+              <div className="size-24 animate-pulse rounded-xl bg-muted sm:size-32" />
+              <div className="flex-1 space-y-3 pt-4">
+                <div className="h-7 w-64 animate-pulse rounded-lg bg-muted" />
+                <div className="h-4 w-48 animate-pulse rounded-lg bg-muted" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="grid gap-6 md:grid-cols-[1fr_320px] lg:grid-cols-[1fr_380px]">
+          <div className="space-y-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-48 animate-pulse rounded-2xl bg-muted/50" />
+            ))}
+          </div>
+          <div className="space-y-6">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="h-64 animate-pulse rounded-2xl bg-muted/50" />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -191,16 +227,16 @@ export default function ExposantDetailPage() {
 
   if (!exposant) {
     return (
-      <Card className="surface-panel border-0 py-0">
-        <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
-          <Building2 className="size-16 text-muted-foreground/30" />
-          <div>
-            <h1 className="text-2xl font-heading text-foreground">{t('annuaire.detail.not_found')}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {t('annuaire.detail.not_found_desc')}
-            </p>
+      <Card className="border-0 py-0 shadow-none">
+        <CardContent className="flex flex-col items-center gap-4 py-20 text-center">
+          <div className="flex size-20 items-center justify-center rounded-2xl bg-muted">
+            <Building2 className="size-10 text-muted-foreground/40" />
           </div>
-          <Link href="/annuaire" className={cn(buttonVariants({ variant: 'outline' }), 'rounded-xl')}>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{t('annuaire.detail.not_found')}</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{t('annuaire.detail.not_found_desc')}</p>
+          </div>
+          <Link href="/annuaire" className={cn(buttonVariants({ variant: 'outline' }), 'rounded-full')}>
             <ArrowLeft className="mr-2 size-4" />
             {t('annuaire.detail.back')}
           </Link>
@@ -211,11 +247,39 @@ export default function ExposantDetailPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 pb-8">
-      {/* Back nav & share */}
+      {/* Lightbox */}
+      {lightboxIndex !== null && exposant.gallery_urls && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setLightboxIndex(null)}>
+          <button onClick={() => setLightboxIndex(null)} className="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white">
+            <X className="size-5" />
+          </button>
+          {exposant.gallery_urls.length > 1 && (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); setLightboxIndex(((lightboxIndex - 1) % exposant.gallery_urls!.length + exposant.gallery_urls!.length) % exposant.gallery_urls!.length); }} className="absolute left-4 z-10 flex size-10 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white">
+                <ChevronLeft className="size-5" />
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); setLightboxIndex((lightboxIndex + 1) % exposant.gallery_urls!.length); }} className="absolute right-4 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white">
+                <ChevronRight className="size-5" />
+              </button>
+            </>
+          )}
+          <img
+            src={exposant.gallery_urls[lightboxIndex]}
+            alt=""
+            className="max-h-[85vh] max-w-[90vw] rounded-2xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-4 py-1.5 text-sm text-white">
+            {lightboxIndex + 1} / {exposant.gallery_urls.length}
+          </div>
+        </div>
+      )}
+
+      {/* Back nav */}
       <div className="flex items-center justify-between">
         <Link
           href="/annuaire"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="size-4" />
           {t('annuaire.detail.back')}
@@ -233,33 +297,84 @@ export default function ExposantDetailPage() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={exposant.cover_url} alt={t('annuaire.detail.cover_alt')} className="h-full w-full object-cover" />
           ) : (
-            <div className="h-full w-full bg-gradient-to-r from-slate-200 to-slate-100 dark:from-slate-800 dark:to-slate-900" />
+            <div className={cn("h-full w-full bg-gradient-to-br", getGradient(exposant.id))} />
           )}
+          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/10 to-transparent" />
         </div>
+
         <div className="relative px-6 pb-6">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
-            <div className="relative -mt-16 sm:-mt-20">
-              <div className="flex size-32 items-center justify-center overflow-hidden rounded-xl border-4 border-background bg-white shadow-sm dark:bg-slate-900 sm:size-40">
-                {exposant.logo_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={exposant.logo_url} alt={exposant.nom} className="size-full object-contain" />
-                ) : (
-                  <Building2 className="size-16 text-muted-foreground/30" />
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex items-end gap-5 -mt-12 sm:-mt-16">
+              <div className="relative shrink-0">
+                <div className="flex size-28 items-center justify-center overflow-hidden rounded-2xl border-[3px] border-background bg-white shadow-lg dark:bg-slate-900 sm:size-36">
+                  {exposant.logo_url ? (
+                    <img src={exposant.logo_url} alt={exposant.nom} className="size-full object-contain p-2" />
+                  ) : (
+                    <Building2 className="size-14 text-muted-foreground/30" />
+                  )}
+                </div>
+                {exposant.is_featured && (
+                  <div className="absolute -right-1.5 -top-1.5 flex size-7 items-center justify-center rounded-full bg-amber-400 shadow-sm">
+                    <Award className="size-4 text-white" />
+                  </div>
                 )}
               </div>
+              <div className="pb-1">
+                <h1 className="text-2xl font-bold text-foreground sm:text-3xl">{exposant.nom}</h1>
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                  {exposant.secteur && (
+                    <Badge variant="secondary" className="rounded-full text-xs font-normal">
+                      <Tag className="mr-1 size-3" />
+                      {exposant.secteur}
+                    </Badge>
+                  )}
+                  {exposant.pays && (
+                    <span className="flex items-center gap-1">
+                      <MapPin className="size-3" />
+                      {exposant.pays}
+                    </span>
+                  )}
+                  {exposant.nombre_employes && (
+                    <span className="flex items-center gap-1">
+                      <Users className="size-3" />
+                      {exposant.nombre_employes}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="mt-4 flex flex-wrap gap-3 sm:mt-6">
+
+            <div className="flex flex-wrap items-center gap-2">
               {exposant.profile_id && !isCurrentlyBlocked && perms.canContactExposant && (
-                <Button className="rounded-full px-6 shadow-sm" onClick={() => handleContact()} disabled={contacting}>
-                  <MessageSquare className="mr-2 size-4" />
+                <Button
+                  className="rounded-full px-5 shadow-sm"
+                  onClick={() => handleContact()}
+                  disabled={contacting}
+                >
+                  {contacting ? (
+                    <span className="mr-2 size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  ) : (
+                    <MessageSquare className="mr-2 size-4" />
+                  )}
                   {t('annuaire.detail.contact')}
                 </Button>
+              )}
+              {exposant.website && (
+                <a
+                  href={exposant.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(buttonVariants({ variant: 'outline', size: 'icon' }), 'rounded-full size-10 shadow-sm')}
+                  title={t('annuaire.detail.visit_website')}
+                >
+                  <Globe className="size-4" />
+                </a>
               )}
               {exposant.profile_id && (
                 <Button
                   variant="outline"
                   size="icon"
-                  className="rounded-full size-11 shadow-sm"
+                  className="rounded-full size-10 shadow-sm"
                   onClick={isCurrentlyBlocked ? handleUnblockExposant : handleBlockExposant}
                   disabled={blocking}
                   title={isCurrentlyBlocked ? t('annuaire.detail.unblock') : t('annuaire.detail.block')}
@@ -271,133 +386,123 @@ export default function ExposantDetailPage() {
                   )}
                 </Button>
               )}
-              {exposant.website && (
-                <a
-                  href={exposant.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(buttonVariants({ variant: 'outline' }), 'rounded-full shadow-sm')}
-                >
-                  <Globe className="mr-2 size-4" />
-                  {t('annuaire.detail.visit_website')}
-                  <ExternalLink className="ml-2 size-3" />
-                </a>
-              )}
             </div>
           </div>
 
-          <div className="mt-4 sm:mt-2">
-            <h1 className="text-2xl font-bold text-foreground sm:text-3xl">{exposant.nom}</h1>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             {exposant.description && (
-              <p className="mt-1.5 max-w-3xl text-base text-foreground/90">{exposant.description}</p>
+              <p className="w-full text-base leading-relaxed text-muted-foreground sm:w-auto">
+                {exposant.description}
+              </p>
             )}
-            <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-              {exposant.secteur && <span>{exposant.secteur}</span>}
-              {exposant.secteur && exposant.pays && <span>•</span>}
-              {exposant.pays && <span>{exposant.pays}</span>}
-              {(exposant.secteur || exposant.pays) && exposant.nombre_employes && <span>•</span>}
-              {exposant.nombre_employes && <span>{t('annuaire.detail.employees', { count: exposant.nombre_employes! })}</span>}
-            </div>
-
-              {(exposant.pavillon || exposant.stand) && (
-                <div className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 text-sm font-medium text-primary">
-                  <MapPin className="size-4" />
-                  {exposant.pavillon && exposant.stand
-                    ? t('annuaire.detail.pavillon_stand', { pavillon: exposant.pavillon, stand: exposant.stand })
-                    : exposant.pavillon
-                      ? `${t('annuaire.pavillon_prefix')} ${exposant.pavillon}`
-                      : t('annuaire.stand_label', { stand: exposant.stand! })}
-                </div>
-              )}
           </div>
+
+          {(exposant.pavillon || exposant.stand) && (
+            <div className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
+              <MapPin className="size-4" />
+              {exposant.pavillon && exposant.stand
+                ? t('annuaire.detail.pavillon_stand', { pavillon: exposant.pavillon, stand: exposant.stand })
+                : exposant.pavillon
+                  ? `${t('annuaire.pavillon_prefix')} ${exposant.pavillon}`
+                  : t('annuaire.stand_label', { stand: exposant.stand! })}
+            </div>
+          )}
         </div>
       </Card>
 
-      {/* Two Columns Layout */}
-      <div className="grid gap-6 md:grid-cols-[1fr_320px] lg:grid-cols-[1fr_380px]">
-        {/* Left Column (Main) */}
+      {/* Two Columns */}
+      <div className="grid gap-6 lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_380px]">
+        {/* Main */}
         <div className="space-y-6">
-          {/* About Section */}
           {(exposant.long_description || exposant.video_url || exposant.brochure_url) && (
-            <Card className="surface-panel border-0 py-0">
-              <CardContent className="space-y-6 p-6">
-                <h2 className="text-xl font-semibold text-foreground">{t('annuaire.detail.about')}</h2>
-                {exposant.long_description && (
+            <Card className="border-0 shadow-sm py-0">
+              {exposant.long_description && (
+                <CardContent className="p-6">
+                  <h2 className="mb-4 text-lg font-semibold text-foreground">{t('annuaire.detail.about')}</h2>
                   <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/80">
                     {exposant.long_description}
                   </p>
-                )}
-
-                {exposant.brochure_url && (
+                </CardContent>
+              )}
+              {exposant.brochure_url && (
+                <div className={cn("border-t border-border/50 px-6 py-4", exposant.long_description ? "" : "border-t-0")}>
                   <a
                     href={exposant.brochure_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg border border-border/70 bg-muted/30 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
+                    className="inline-flex items-center gap-2 rounded-lg border border-border/70 bg-muted/30 px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:bg-muted/60 hover:border-border"
                   >
                     <Download className="size-4 text-muted-foreground" />
                     {t('annuaire.detail.brochure')}
                   </a>
-                )}
+                </div>
+              )}
 
-                {exposant.video_url && (
-                  <div className="mt-4 overflow-hidden rounded-lg border border-border/50">
-                    <div className="flex items-center gap-2 border-b border-border/50 bg-muted/30 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      <Video className="size-3.5" />
-                      {t('annuaire.detail.video')}
-                    </div>
-                    <div className="aspect-video w-full">
-                      <iframe
-                        src={toEmbedUrl(exposant.video_url)}
-                        className="h-full w-full"
-                        allowFullScreen
-                        title={t('annuaire.detail.video_title', { name: exposant.nom })}
-                      />
-                    </div>
+              {exposant.video_url && (
+                <div className="border-t border-border/50">
+                  <div className="flex items-center gap-2 bg-muted/30 px-6 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <Video className="size-3.5" />
+                    {t('annuaire.detail.video')}
                   </div>
-                )}
-              </CardContent>
+                  <div className="aspect-video w-full">
+                    <iframe
+                      src={toEmbedUrl(exposant.video_url)}
+                      className="h-full w-full"
+                      allowFullScreen
+                      title={t('annuaire.detail.video_title', { name: exposant.nom })}
+                    />
+                  </div>
+                </div>
+              )}
             </Card>
           )}
 
-          {/* Gallery Section */}
           {exposant.gallery_urls && exposant.gallery_urls.length > 0 && (
-            <Card className="surface-panel border-0 py-0">
-              <CardContent className="space-y-4 p-6">
-                <h2 className="text-xl font-semibold text-foreground">{t('annuaire.detail.gallery')}</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-foreground">{t('annuaire.detail.gallery')}</h2>
+                  <span className="text-xs text-muted-foreground">{exposant.gallery_urls.length} photos</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {exposant.gallery_urls.map((url: string, i: number) => (
-                    <div key={i} className="aspect-square rounded-xl overflow-hidden bg-muted border border-border/50">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={url} alt={t('annuaire.detail.gallery_image_alt', { index: i })} className="size-full object-cover hover:scale-105 transition-transform duration-300 cursor-pointer" />
-                    </div>
+                    <button
+                      key={i}
+                      onClick={() => setLightboxIndex(i)}
+                      className="group relative aspect-square overflow-hidden rounded-xl bg-muted"
+                    >
+                      <img
+                        src={url}
+                        alt=""
+                        className="size-full object-cover transition duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/10" />
+                    </button>
                   ))}
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Publications Section */}
-          <Card className="surface-panel border-0 py-0">
-            <CardContent className="space-y-4 p-6">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-semibold text-foreground">{t('annuaire.detail.posts')}</h2>
+          <Card className="border-0 shadow-sm py-0">
+            <CardContent className="p-6">
+              <div className="mb-4 flex items-center gap-3">
+                <h2 className="text-lg font-semibold text-foreground">{t('annuaire.detail.posts')}</h2>
                 <span className="flex size-6 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
                   {publications.length}
                 </span>
               </div>
 
               {publications.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border/60 py-12 text-center text-muted-foreground">
-                  <Rss className="mx-auto mb-3 size-8 opacity-20" />
-                  <p className="text-sm">{t('annuaire.detail.no_posts')}</p>
+                <div className="rounded-xl border border-dashed border-border/60 py-12 text-center">
+                  <Rss className="mx-auto mb-3 size-8 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground">{t('annuaire.detail.no_posts')}</p>
                 </div>
               ) : (
                 <div className="space-y-6">
                   {publications.map((post) => (
                     <PostCard
                       key={post.id}
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       post={post as any}
                       isOwner={myUserId === post.author_id}
                       onLike={() => toggleLike(post.id)}
@@ -421,17 +526,16 @@ export default function ExposantDetailPage() {
           </Card>
         </div>
 
-        {/* Right Column (Sidebar) */}
+        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Details Sidebar */}
-          <Card className="surface-panel border-0 py-0">
-            <CardContent className="space-y-5 p-6">
-              <h2 className="text-lg font-semibold text-foreground">{t('annuaire.detail.company_details')}</h2>
+          <Card className="border-0 shadow-sm py-0">
+            <CardContent className="p-6">
+              <h2 className="mb-5 text-lg font-semibold text-foreground">{t('annuaire.detail.company_details')}</h2>
               <dl className="space-y-4 text-sm">
                 {exposant.website && (
-                  <div>
-                    <dt className="font-medium text-muted-foreground">{t('annuaire.detail.website')}</dt>
-                    <dd className="mt-1 font-medium text-primary hover:underline">
+                  <div className="flex items-start justify-between gap-4">
+                    <dt className="shrink-0 font-medium text-muted-foreground">{t('annuaire.detail.website')}</dt>
+                    <dd className="truncate text-right font-medium text-primary hover:underline">
                       <a href={exposant.website} target="_blank" rel="noopener noreferrer">
                         {exposant.website.replace(/^https?:\/\//, '')}
                       </a>
@@ -439,70 +543,88 @@ export default function ExposantDetailPage() {
                   </div>
                 )}
                 {exposant.secteur && (
-                  <div>
-                    <dt className="font-medium text-muted-foreground">{t('annuaire.detail.sector')}</dt>
-                    <dd className="mt-1 text-foreground">{exposant.secteur}</dd>
+                  <div className="flex items-start justify-between gap-4">
+                    <dt className="shrink-0 font-medium text-muted-foreground">{t('annuaire.detail.sector')}</dt>
+                    <dd className="text-right text-foreground">{exposant.secteur}</dd>
+                  </div>
+                )}
+                {exposant.pays && (
+                  <div className="flex items-start justify-between gap-4">
+                    <dt className="shrink-0 font-medium text-muted-foreground">{t('annuaire.detail.country')}</dt>
+                    <dd className="text-right text-foreground">{exposant.pays}</dd>
                   </div>
                 )}
                 {exposant.nombre_employes && (
-                  <div>
-                    <dt className="font-medium text-muted-foreground">{t('annuaire.detail.company_size')}</dt>
-                    <dd className="mt-1 text-foreground">{t('annuaire.detail.employees', { count: exposant.nombre_employes! })}</dd>
+                  <div className="flex items-start justify-between gap-4">
+                    <dt className="shrink-0 font-medium text-muted-foreground">{t('annuaire.detail.company_size')}</dt>
+                    <dd className="text-right text-foreground">{t('annuaire.detail.employees', { count: exposant.nombre_employes! })}</dd>
                   </div>
                 )}
                 {exposant.annee_creation && (
-                  <div>
-                    <dt className="font-medium text-muted-foreground">{t('annuaire.detail.founded')}</dt>
-                    <dd className="mt-1 text-foreground">{exposant.annee_creation}</dd>
+                  <div className="flex items-start justify-between gap-4">
+                    <dt className="shrink-0 font-medium text-muted-foreground">{t('annuaire.detail.founded')}</dt>
+                    <dd className="text-right text-foreground">{exposant.annee_creation}</dd>
                   </div>
                 )}
                 {exposant.chiffre_affaires && (
-                  <div>
-                    <dt className="font-medium text-muted-foreground">{t('annuaire.detail.revenue')}</dt>
-                    <dd className="mt-1 text-foreground">{exposant.chiffre_affaires}</dd>
+                  <div className="flex items-start justify-between gap-4">
+                    <dt className="shrink-0 font-medium text-muted-foreground">{t('annuaire.detail.revenue')}</dt>
+                    <dd className="text-right font-semibold text-foreground">{exposant.chiffre_affaires}</dd>
                   </div>
                 )}
-                
-                {/* Contacts Section */}
-                {(exposant.email_contact || exposant.phone_contact) && perms.canSeeContactDetails && (
+
+                {(exposant.email_contact || exposant.phone_contact) && (
                   <div className="border-t border-border/50 pt-4">
-                    <dt className="mb-2 font-medium text-muted-foreground">{t('annuaire.detail.contacts')}</dt>
-                    <dd className="space-y-2 text-foreground">
-                      {exposant.email_contact && (
-                        <a href={`mailto:${exposant.email_contact}`} className="flex items-center gap-2 transition-colors hover:text-primary">
-                          <Mail className="size-4 text-muted-foreground" /> {exposant.email_contact}
-                        </a>
-                      )}
-                      {exposant.phone_contact && (
-                        <a href={`tel:${exposant.phone_contact}`} className="flex items-center gap-2 transition-colors hover:text-primary">
-                          <Phone className="size-4 text-muted-foreground" /> {exposant.phone_contact}
-                        </a>
-                      )}
-                    </dd>
+                    <dt className="mb-3 font-medium text-muted-foreground">{t('annuaire.detail.contacts')}</dt>
+                    {perms.canSeeContactDetails ? (
+                      <dd className="space-y-2">
+                        {exposant.email_contact && (
+                          <a
+                            href={`mailto:${exposant.email_contact}`}
+                            className="flex items-center gap-2.5 rounded-lg bg-primary/5 px-3.5 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+                          >
+                            <Mail className="size-4 shrink-0" />
+                            <span className="truncate">{exposant.email_contact}</span>
+                          </a>
+                        )}
+                        {exposant.phone_contact && (
+                          <a
+                            href={`tel:${exposant.phone_contact}`}
+                            className="flex items-center gap-2.5 rounded-lg bg-primary/5 px-3.5 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+                          >
+                            <Phone className="size-4 shrink-0" />
+                            <span>{exposant.phone_contact}</span>
+                          </a>
+                        )}
+                      </dd>
+                    ) : (
+                      <dd className="rounded-lg bg-muted/50 px-3.5 py-2.5 text-sm text-muted-foreground">
+                        Connectez-vous en Premium pour voir les coordonnées
+                      </dd>
+                    )}
                   </div>
                 )}
               </dl>
 
-              {/* Socials Row */}
               {(exposant.linkedin_url || exposant.facebook_url || exposant.twitter_url || exposant.instagram_url) && (
-                <div className="flex gap-2 border-t border-border/50 pt-5">
+                <div className="mt-5 flex flex-wrap gap-2 border-t border-border/50 pt-5">
                   {exposant.linkedin_url && (
-                    <a href={exposant.linkedin_url} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-full bg-[#0077B5]/10 text-[#0077B5] transition-colors hover:bg-[#0077B5]/20">
+                    <a href={exposant.linkedin_url} target="_blank" rel="noopener noreferrer" className="flex size-9 items-center justify-center rounded-full bg-[#0077B5]/10 text-[#0077B5] transition-colors hover:bg-[#0077B5]/20" title="LinkedIn">
                       <IconLinkedin className="size-4" />
                     </a>
                   )}
                   {exposant.facebook_url && (
-                    <a href={exposant.facebook_url} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-full bg-[#1877F2]/10 text-[#1877F2] transition-colors hover:bg-[#1877F2]/20">
+                    <a href={exposant.facebook_url} target="_blank" rel="noopener noreferrer" className="flex size-9 items-center justify-center rounded-full bg-[#1877F2]/10 text-[#1877F2] transition-colors hover:bg-[#1877F2]/20" title="Facebook">
                       <IconFacebook className="size-4" />
                     </a>
                   )}
                   {exposant.twitter_url && (
-                    <a href={exposant.twitter_url} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-full bg-foreground/5 text-foreground transition-colors hover:bg-foreground/10">
+                    <a href={exposant.twitter_url} target="_blank" rel="noopener noreferrer" className="flex size-9 items-center justify-center rounded-full bg-foreground/5 text-foreground transition-colors hover:bg-foreground/10" title="X / Twitter">
                       <IconTwitter className="size-4" />
                     </a>
                   )}
                   {exposant.instagram_url && (
-                    <a href={exposant.instagram_url} target="_blank" rel="noopener noreferrer" className="flex size-8 items-center justify-center rounded-full bg-[#E1306C]/10 text-[#E1306C] transition-colors hover:bg-[#E1306C]/20">
+                    <a href={exposant.instagram_url} target="_blank" rel="noopener noreferrer" className="flex size-9 items-center justify-center rounded-full bg-[#E1306C]/10 text-[#E1306C] transition-colors hover:bg-[#E1306C]/20" title="Instagram">
                       <IconInstagram className="size-4" />
                     </a>
                   )}
@@ -511,59 +633,76 @@ export default function ExposantDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Products Sidebar */}
-          <Card className="surface-panel border-0 py-0">
-            <CardContent className="space-y-4 p-6">
-              <div className="flex items-center justify-between">
+          <Card className="border-0 shadow-sm py-0">
+            <CardContent className="p-6">
+              <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-foreground">{t('annuaire.detail.products')}</h2>
-                <span className="flex size-6 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
+                <span className="flex size-6 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
                   {produits.length}
                 </span>
               </div>
-              
+
               {produits.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t('annuaire.detail.no_products')}</p>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {produits.map((prod) => (
-                    <div key={prod.id} className="group flex items-start gap-3 rounded-lg border border-transparent p-2 transition-colors hover:border-border/50 hover:bg-muted/30">
-                      {prod.image_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={prod.image_url} alt="" className="size-16 shrink-0 rounded-md bg-muted object-cover" />
-                      ) : (
-                        <div className="flex size-16 shrink-0 items-center justify-center rounded-md bg-muted/50">
-                          <Package className="size-6 text-muted-foreground/40" />
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <h3 className="line-clamp-1 text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                            {prod.nom}
-                          </h3>
-                          {(prod as any).type && (
-                            <span className="inline-flex shrink-0 items-center rounded-sm bg-secondary px-1.5 py-0.5 text-[9px] font-medium text-secondary-foreground">
-                              {(prod as any).type === 'service' ? t('annuaire.detail.type_service') : t('annuaire.detail.type_product')}
-                            </span>
-                          )}
-                        </div>
-                        {prod.categorie && (
-                          <span className="text-[10px] text-muted-foreground font-medium block mt-0.5">
-                            {prod.categorie}
-                          </span>
+                    <div
+                      key={prod.id}
+                      className="group relative overflow-hidden rounded-xl border border-border/50 bg-card transition-all hover:border-border hover:shadow-sm"
+                    >
+                      <div className="flex gap-3 p-3">
+                        {prod.image_url ? (
+                          <div className="size-20 shrink-0 overflow-hidden rounded-lg bg-muted">
+                            <img src={prod.image_url} alt="" className="size-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="flex size-20 shrink-0 items-center justify-center rounded-lg bg-muted/50">
+                            <Package className="size-8 text-muted-foreground/30" />
+                          </div>
                         )}
-                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                          {prod.description}
-                        </p>
-                        {exposant.profile_id && (
-                          <button
-                            onClick={() => handleContact(prod.nom)}
-                            className="mt-1.5 flex items-center gap-1 text-xs font-medium text-primary hover:underline text-left"
-                            disabled={contacting}
-                          >
-                            <MessageSquare className="size-3" />
-                            {t('annuaire.detail.inquire')}
-                          </button>
-                        )}
+                        <div className="flex min-w-0 flex-1 flex-col justify-between">
+                          <div>
+                            <div className="flex items-start justify-between gap-2">
+                              <h3 className="line-clamp-1 text-sm font-semibold text-foreground">
+                                {prod.nom}
+                              </h3>
+                              {(prod as any).type && (
+                                <span className="shrink-0 rounded-md bg-secondary/50 px-1.5 py-0.5 text-[9px] font-medium text-secondary-foreground">
+                                  {(prod as any).type === 'service' ? 'Service' : 'Produit'}
+                                </span>
+                              )}
+                            </div>
+                            {prod.categorie && (
+                              <p className="mt-0.5 text-[10px] font-medium text-muted-foreground/70">
+                                {prod.categorie}
+                              </p>
+                            )}
+                            {prod.description && (
+                              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                                {prod.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="mt-2 flex items-center justify-between">
+                            {prod.prix_indicatif && (
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-foreground">
+                                <Euro className="size-3 text-muted-foreground" />
+                                {prod.prix_indicatif}
+                              </span>
+                            )}
+                            {exposant.profile_id && perms.canContactExposant && (
+                              <button
+                                onClick={() => handleContact(prod.nom)}
+                                disabled={contacting}
+                                className="inline-flex items-center gap-1 text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100 hover:underline"
+                              >
+                                <MessageSquare className="size-3" />
+                                {t('annuaire.detail.inquire')}
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
