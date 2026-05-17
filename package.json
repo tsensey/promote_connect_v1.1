@@ -12,7 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "db:reset-seed": "node scripts/seed.js --clean"
+    "db:reset-seed": "node scripts/seed.js --clean",
+    "db:cleanup-orphans": "node scripts/cleanup-orphans.js",
+    "db:cleanup-orphans:dry-run": "node scripts/cleanup-orphans.js --dry-run"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

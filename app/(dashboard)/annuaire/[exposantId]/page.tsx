@@ -16,8 +16,6 @@ import {
   ExternalLink,
   Share2,
   Rss,
-  ThumbsUp,
-  MessageCircle,
   Mail,
   Phone,
   Video,
@@ -30,6 +28,8 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
 import type { Database } from '@/types/database.types';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
+import { useProfilePosts } from '@/hooks/useProfilePosts';
+import { PostCard } from '@/components/feed/PostCard';
 import { Ban, ShieldAlert } from 'lucide-react';
 
 // ── Icônes de marque SVG inline ──
@@ -61,7 +61,6 @@ const IconInstagram = ({ className }: { className?: string }) => (
 
 type Exposant = Database['public']['Tables']['exposants']['Row'];
 type Produit = Database['public']['Tables']['produits']['Row'];
-type Post = Database['public']['Tables']['posts']['Row'];
 
 export default function ExposantDetailPage() {
   const { t, locale } = useTranslation();
@@ -70,7 +69,6 @@ export default function ExposantDetailPage() {
 
   const [exposant, setExposant] = useState<Exposant | null>(null);
   const [produits, setProduits] = useState<Produit[]>([]);
-  const [publications, setPublications] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [contacting, setContacting] = useState(false);
   const [blocking, setBlocking] = useState(false);
@@ -78,6 +76,7 @@ export default function ExposantDetailPage() {
   const { blockUser, unblockUser, isBlocked, loadBlockedUsers } = useBlockedUsers();
 
   const exposantProfileId = exposant?.profile_id;
+  const { posts: publications, toggleLike, sharePost, repostPost, toggleSave, toggleReaction, toggleFollow, getComments, addComment, updatePost, deletePost, createPost, myUserId } = useProfilePosts(exposantProfileId);
   const isCurrentlyBlocked = exposantProfileId ? isBlocked(exposantProfileId) : false;
 
   useEffect(() => {
@@ -126,15 +125,6 @@ export default function ExposantDetailPage() {
         .order('created_at', { ascending: false });
 
       if (prods) setProduits(prods);
-
-      if (exp?.profile_id) {
-        const { data: posts } = await supabaseClient
-          .from('posts')
-          .select('*')
-          .eq('author_id', exp.profile_id)
-          .order('created_at', { ascending: false });
-        if (posts) setPublications(posts);
-      }
 
       setLoading(false);
     };
@@ -403,50 +393,25 @@ export default function ExposantDetailPage() {
               ) : (
                 <div className="space-y-6">
                   {publications.map((post) => (
-                    <div
+                    <PostCard
                       key={post.id}
-                      className="group relative overflow-hidden rounded-xl border border-border/50 bg-background/50 p-5 transition-colors hover:bg-muted/20"
-                    >
-                      <div className="mb-4 flex items-center gap-3">
-                        <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10">
-                          {exposant.logo_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={exposant.logo_url} className="size-full object-cover" alt="" />
-                          ) : (
-                            <Building2 className="size-6 text-primary/50" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-foreground">{exposant.nom}</p>
-                          {post.created_at && (
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(post.created_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                              })}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <p className="mb-4 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-                        {post.content}
-                      </p>
-                      {post.image_url && (
-                        <div className="mt-3 overflow-hidden rounded-lg border border-border/40">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={post.image_url} alt="" className="max-h-96 w-full object-cover" />
-                        </div>
-                      )}
-                      <div className="mt-5 flex items-center gap-6 border-t border-border/50 pt-4 text-sm font-medium text-muted-foreground">
-                        <button className="flex items-center gap-2 transition-colors hover:text-primary">
-                          <ThumbsUp className="size-4" /> {post.likes_count}
-                        </button>
-                        <button className="flex items-center gap-2 transition-colors hover:text-primary">
-                          <MessageCircle className="size-4" /> {post.comments_count}
-                        </button>
-                      </div>
-                    </div>
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      post={post as any}
+                      isOwner={myUserId === post.author_id}
+                      onLike={() => toggleLike(post.id)}
+                      onShare={() => sharePost(post.id)}
+                      onRepost={(content, originalPostId) => repostPost(content, originalPostId)}
+                      onSave={() => toggleSave(post.id)}
+                      onFollow={() => toggleFollow(post.author_id)}
+                      onReaction={(type) => toggleReaction(post.id, type)}
+                      onEdit={(postId, content, type, category, imageUrl) =>
+                        updatePost(postId, content, type, category, imageUrl)
+                      }
+                      createPost={createPost}
+                      onDelete={() => deletePost(post.id)}
+                      onGetComments={() => getComments(post.id)}
+                      onAddComment={(content, parentCommentId) => addComment(post.id, content, parentCommentId)}
+                    />
                   ))}
                 </div>
               )}
