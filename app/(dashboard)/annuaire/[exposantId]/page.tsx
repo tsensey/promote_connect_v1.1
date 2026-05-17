@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
 import type { Database } from '@/types/database.types';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useProfilePosts } from '@/hooks/useProfilePosts';
 import { PostCard } from '@/components/feed/PostCard';
 import { Ban, ShieldAlert } from 'lucide-react';
@@ -66,6 +67,7 @@ export default function ExposantDetailPage() {
   const { t, locale } = useTranslation();
   const params = useParams();
   const exposantId = params.exposantId as string;
+  const perms = usePermissions();
 
   const [exposant, setExposant] = useState<Exposant | null>(null);
   const [produits, setProduits] = useState<Produit[]>([]);
@@ -247,7 +249,7 @@ export default function ExposantDetailPage() {
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-3 sm:mt-6">
-              {exposant.profile_id && !isCurrentlyBlocked && (
+              {exposant.profile_id && !isCurrentlyBlocked && perms.canContactExposant && (
                 <Button className="rounded-full px-6 shadow-sm" onClick={() => handleContact()} disabled={contacting}>
                   <MessageSquare className="mr-2 size-4" />
                   {t('annuaire.detail.contact')}
@@ -462,7 +464,7 @@ export default function ExposantDetailPage() {
                 )}
                 
                 {/* Contacts Section */}
-                {(exposant.email_contact || exposant.phone_contact) && (
+                {(exposant.email_contact || exposant.phone_contact) && perms.canSeeContactDetails && (
                   <div className="border-t border-border/50 pt-4">
                     <dt className="mb-2 font-medium text-muted-foreground">{t('annuaire.detail.contacts')}</dt>
                     <dd className="space-y-2 text-foreground">

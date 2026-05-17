@@ -27,6 +27,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Crown } from 'lucide-react';
 
 // ─── Panneau liste des conversations ──────────────────────────────────────────
 function ConversationList({
@@ -549,6 +551,7 @@ export default function ChatPage() {
   const router = useRouter();
   const { setActiveConversationId } = useNotificationState();
   const initialConv = searchParams.get('conv');
+  const perms = usePermissions();
 
   // Produit pré-attaché depuis la vitrine (?product=<base64json>)
   const productParam = searchParams.get('product');
@@ -578,6 +581,23 @@ export default function ChatPage() {
   useEffect(() => {
     setActiveConversationId(selectedId);
   }, [selectedId, setActiveConversationId]);
+
+  if (!perms.canUseChat) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="max-w-md text-center">
+          <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-full bg-amber-500/10">
+            <Crown className="size-10 text-amber-500" />
+          </div>
+          <h2 className="mb-2 text-2xl font-bold text-foreground">Accès Premium requis</h2>
+          <p className="mb-6 text-muted-foreground">
+            La messagerie est réservée aux visiteurs Premium et aux exposants.
+            Passez à l&apos;offre Premium pour contacter les exposants et échanger avec eux.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

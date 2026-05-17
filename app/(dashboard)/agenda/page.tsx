@@ -24,11 +24,14 @@ import { EVENT_TYPES, getEventTypeConfig, formatDateShort } from "@/lib/agenda/u
 import { EvenementCard } from "@/components/agenda/EvenementCard";
 import { RdvCard } from "@/components/agenda/RdvCard";
 import { NewRdvDialog } from "@/components/agenda/NewRdvDialog";
+import { usePermissions } from "@/hooks/usePermissions";
+import { Crown } from "lucide-react";
 
 export default function AgendaPage() {
   const { evenements, loading: eventsLoading } = useEvenements();
   const { rdvs, loading: rdvsLoading, createRdv, updateRdvStatus } = useRendezVous();
   const { user } = useAuth();
+  const perms = usePermissions();
   const myUserId = user?.id;
   const { t, locale } = useTranslation();
 
@@ -123,10 +126,17 @@ export default function AgendaPage() {
                 </p>
               </div>
             </div>
-            <Button onClick={() => setShowNewRdv(true)} className="whitespace-nowrap rounded-xl shadow-sm">
-              <Plus className="mr-2 size-4" />
-              {t("agenda.request_rdv")}
-            </Button>
+            {perms.canRequestRdv ? (
+              <Button onClick={() => setShowNewRdv(true)} className="whitespace-nowrap rounded-xl shadow-sm">
+                <Plus className="mr-2 size-4" />
+                {t("agenda.request_rdv")}
+              </Button>
+            ) : (
+              <Button disabled className="whitespace-nowrap rounded-xl shadow-sm" title="Réservé aux visiteurs Premium et exposants">
+                <Crown className="mr-2 size-4 text-amber-500" />
+                {t("agenda.request_rdv")}
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -357,10 +367,17 @@ export default function AgendaPage() {
                       : t("agenda.no_rdvs_hint")}
                   </p>
                 </div>
-                <Button onClick={() => setShowNewRdv(true)} className="rounded-xl">
-                  <Plus className="mr-2 size-4" />
-                  {t("agenda.request_rdv")}
-                </Button>
+                {perms.canRequestRdv ? (
+                  <Button onClick={() => setShowNewRdv(true)} className="rounded-xl">
+                    <Plus className="mr-2 size-4" />
+                    {t("agenda.request_rdv")}
+                  </Button>
+                ) : (
+                  <Button disabled className="rounded-xl" title="Réservé aux visiteurs Premium et exposants">
+                    <Crown className="mr-2 size-4 text-amber-500" />
+                    {t("agenda.request_rdv")}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (

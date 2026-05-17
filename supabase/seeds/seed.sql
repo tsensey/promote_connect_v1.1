@@ -75,7 +75,7 @@ begin
       now(),
       now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
-      '{"full_name":"Administrateur PROMOTE","role":"admin","company":"PROMOTE-CONNECT"}'::jsonb,
+      '{"full_name":"Administrateur PROMOTE","role":"admin","company":"PROMOTE-CONNECT","access_level":"premium"}'::jsonb,
       'authenticated',
       'authenticated'
     ),
@@ -87,7 +87,7 @@ begin
       now(),
       now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
-      '{"full_name":"Alice Martin","role":"exposant","company":"TechCorp","sector":"Technology","country":"France","pavillon":"A"}'::jsonb,
+      '{"full_name":"Alice Martin","role":"exposant","company":"TechCorp","sector":"Technology","country":"France","pavillon":"A","access_level":"premium"}'::jsonb,
       'authenticated',
       'authenticated'
     ),
@@ -99,7 +99,7 @@ begin
       now(),
       now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
-      '{"full_name":"Bob Johnson","role":"exposant","company":"GreenEnergy","sector":"Energy","country":"Germany","pavillon":"B"}'::jsonb,
+      '{"full_name":"Bob Johnson","role":"exposant","company":"GreenEnergy","sector":"Energy","country":"Germany","pavillon":"B","access_level":"classic"}'::jsonb,
       'authenticated',
       'authenticated'
     ),
@@ -111,7 +111,7 @@ begin
       now(),
       now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
-      '{"full_name":"Claire Dupont","role":"exposant","company":"Fashion Plus","sector":"Fashion","country":"France","pavillon":"C"}'::jsonb,
+      '{"full_name":"Claire Dupont","role":"exposant","company":"Fashion Plus","sector":"Fashion","country":"France","pavillon":"C","access_level":"classic"}'::jsonb,
       'authenticated',
       'authenticated'
     ),
@@ -123,7 +123,7 @@ begin
       now(),
       now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
-      '{"full_name":"Marie Lefevre","role":"visiteur","company":"Import Corp","sector":"Commerce","country":"France"}'::jsonb,
+      '{"full_name":"Marie Lefevre","role":"visiteur","company":"Import Corp","sector":"Commerce","country":"France","access_level":"classic"}'::jsonb,
       'authenticated',
       'authenticated'
     )
@@ -200,8 +200,7 @@ insert into profiles (
   sector,
   country,
   pavillon,
-  subscription_status,
-  subscription_ends_at
+  access_level
 )
 values
   (
@@ -212,8 +211,7 @@ values
     null,
     'Cameroun',
     null,
-    'active',
-    null
+    'premium'
   ),
   (
     '550e8400-e29b-41d4-a716-446655440001'::uuid,
@@ -223,8 +221,7 @@ values
     'Technology',
     'France',
     'A',
-    'active',
-    null
+    'premium'
   ),
   (
     '550e8400-e29b-41d4-a716-446655440002'::uuid,
@@ -234,8 +231,7 @@ values
     'Energy',
     'Germany',
     'B',
-    'active',
-    null
+    'classic'
   ),
   (
     '550e8400-e29b-41d4-a716-446655440003'::uuid,
@@ -245,8 +241,7 @@ values
     'Fashion',
     'France',
     'C',
-    'active',
-    null
+    'classic'
   ),
   (
     '550e8400-e29b-41d4-a716-446655440004'::uuid,
@@ -256,8 +251,7 @@ values
     'Commerce',
     'France',
     null,
-    'active',
-    null
+    'classic'
   )
 on conflict (id) do update
 set
@@ -267,8 +261,7 @@ set
   sector = excluded.sector,
   country = excluded.country,
   pavillon = excluded.pavillon,
-  subscription_status = excluded.subscription_status,
-  subscription_ends_at = excluded.subscription_ends_at;
+  access_level = excluded.access_level;
 
 insert into exposants (profile_id, nom, description, secteur, pavillon, stand, pays, website, is_featured)
 values

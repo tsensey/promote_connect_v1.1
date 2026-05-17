@@ -34,6 +34,7 @@ import {
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Ban } from 'lucide-react';
 
 const COVER_GRADIENTS = [
@@ -56,6 +57,7 @@ function getGradient(id: string) {
 export default function AnnuairePage() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const perms = usePermissions();
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -478,7 +480,7 @@ export default function AnnuairePage() {
                         <Ban className="size-3.5" />
                         {t('annuaire.detail.blocked')}
                       </div>
-                    ) : !isOwn && (
+                    ) : !isOwn && perms.canContactExposant && (
                       <Button
                         variant="outline"
                         size="sm"

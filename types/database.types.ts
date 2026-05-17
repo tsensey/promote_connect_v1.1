@@ -22,6 +22,9 @@ export interface Database {
           is_active: boolean;
           suspended_at: string | null;
           suspended_reason: string | null;
+          access_level: string;
+          daily_exchange_count: number;
+          last_exchange_reset: string | null;
           created_at: string | null;
         };
         Insert: {
@@ -36,6 +39,9 @@ export interface Database {
           is_active?: boolean;
           suspended_at?: string | null;
           suspended_reason?: string | null;
+          access_level?: string;
+          daily_exchange_count?: number;
+          last_exchange_reset?: string | null;
           created_at?: string | null;
         };
         Update: {
@@ -50,6 +56,9 @@ export interface Database {
           is_active?: boolean;
           suspended_at?: string | null;
           suspended_reason?: string | null;
+          access_level?: string;
+          daily_exchange_count?: number;
+          last_exchange_reset?: string | null;
           created_at?: string | null;
         };
         Relationships: [];

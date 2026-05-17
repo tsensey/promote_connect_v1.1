@@ -10,6 +10,7 @@ export type AppProfile = Pick<
   Database['public']['Tables']['profiles']['Row'],
   'id' | 'full_name' | 'company' | 'role' | 'sector' | 'country' 
   | 'pavillon' | 'avatar_url' | 'is_active' | 'suspended_at' | 'created_at'
+  | 'access_level' | 'daily_exchange_count' | 'last_exchange_reset'
 >;
 
 export type AppExposant = Pick<
@@ -34,7 +35,7 @@ async function loadProfile(userId: string) {
   const { data, error } = await supabaseClient
     .from('profiles')
     .select(
-      'id, full_name, company, role, sector, country, pavillon, avatar_url, is_active, suspended_at, created_at'
+      'id, full_name, company, role, sector, country, pavillon, avatar_url, is_active, suspended_at, created_at, access_level, daily_exchange_count, last_exchange_reset'
     )
     .eq('id', userId)
     .single();

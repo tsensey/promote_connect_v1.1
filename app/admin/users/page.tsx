@@ -67,6 +67,7 @@ interface UserRow {
   country: string | null;
   pavillon: string | null;
   is_active: boolean;
+  access_level: string;
   created_at: string;
 }
 
@@ -186,11 +187,13 @@ export default function AdminUsersPage() {
     annee_creation: '',
     nombre_employes: '',
     generate_exposant: false,
+    access_level: 'classic',
   });
 
   const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
   const [showRoleDialog, setShowRoleDialog] = useState<UserRow | null>(null);
   const [newRole, setNewRole] = useState('');
+  const [newAccessLevel, setNewAccessLevel] = useState('classic');
   const [showPasswordDialog, setShowPasswordDialog] = useState<UserRow | null>(null);
   const [passwordResult, setPasswordResult] = useState<{ new_password: string; email_sent: boolean } | null>(null);
 
@@ -215,6 +218,7 @@ export default function AdminUsersPage() {
       exposants: users.filter((user) => user.role === 'exposant').length,
       visiteurs: users.filter((user) => user.role === 'visiteur').length,
       suspended: users.filter((user) => !user.is_active).length,
+      premium: users.filter((user) => user.access_level === 'premium').length,
     }),
     [users]
   );
@@ -314,6 +318,7 @@ export default function AdminUsersPage() {
         annee_creation: '',
         nombre_employes: '',
         generate_exposant: false,
+        access_level: 'classic',
       });
       setShowCreateDialog(false);
       toast.success(
@@ -334,13 +339,18 @@ export default function AdminUsersPage() {
     setActionLoading(userId);
 
     try {
+      const body: Record<string, unknown> = { id: userId, role: newRoleValue };
+      if (newAccessLevel) {
+        body.access_level = newAccessLevel;
+      }
+
       const response = await fetch('/api/admin/users', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ id: userId, role: newRoleValue }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
@@ -478,11 +488,12 @@ export default function AdminUsersPage() {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         <StatCard label={t('admin.users.total')} value={stats.total} icon={Users} tone="blue" />
         <StatCard label={t('admin.users.admins')} value={stats.admins} icon={Shield} tone="amber" />
         <StatCard label={t('admin.users.exposants')} value={stats.exposants} icon={Building2} tone="violet" />
         <StatCard label={t('admin.users.visiteurs')} value={stats.visiteurs} icon={Globe2} tone="emerald" />
+        <StatCard label="Premium" value={stats.premium} icon={UserCheck} tone="amber" />
         <StatCard label={t('admin.users.suspended_label')} value={stats.suspended} icon={Ban} tone="red" />
       </div>
 
@@ -574,6 +585,7 @@ export default function AdminUsersPage() {
                 <TableRow>
                   <TableHead>{t('admin.users.col_user')}</TableHead>
                   <TableHead>{t('admin.users.col_role')}</TableHead>
+                  <TableHead>Accès</TableHead>
                   <TableHead>{t('admin.users.col_status')}</TableHead>
                   <TableHead>{t('admin.users.col_profile')}</TableHead>
                   <TableHead>{t('admin.users.col_creation')}</TableHead>
@@ -603,6 +615,18 @@ export default function AdminUsersPage() {
                     <TableCell>
                       <Badge variant="secondary" className="rounded-full">
                         {user.role === 'admin' ? t('admin.logs.role_admin') : user.role === 'exposant' ? t('admin.logs.role_exposant') : t('admin.logs.role_visitor')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={user.access_level === 'premium' ? 'default' : 'outline'}
+                        className={`rounded-full ${
+                          user.access_level === 'premium'
+                            ? 'bg-amber-500/15 text-amber-700 border-amber-200'
+                            : 'text-muted-foreground'
+                        }`}
+                      >
+                        {user.access_level === 'premium' ? 'Premium' : 'Classic'}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -636,6 +660,7 @@ export default function AdminUsersPage() {
                             onClick={() => {
                               setShowRoleDialog(user);
                               setNewRole(user.role || 'visiteur');
+                              setNewAccessLevel(user.access_level || 'classic');
                             }}
                           >
                             <UserCheck className="mr-2 size-4" />
@@ -774,6 +799,28 @@ export default function AdminUsersPage() {
                   }
                 >
                   {t('admin.users.form_admin_role')}
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label>Niveau d'accès</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  variant={form.access_level === 'classic' ? 'default' : 'outline'}
+                  className="rounded-xl"
+                  onClick={() => setForm({ ...form, access_level: 'classic' })}
+                >
+                  Classic
+                </Button>
+                <Button
+                  type="button"
+                  variant={form.access_level === 'premium' ? 'default' : 'outline'}
+                  className="rounded-xl bg-amber-500/10 text-amber-700 hover:bg-amber-500/20"
+                  onClick={() => setForm({ ...form, access_level: 'premium' })}
+                >
+                  Premium
                 </Button>
               </div>
             </div>
@@ -1033,17 +1080,41 @@ export default function AdminUsersPage() {
               {showRoleDialog ? `${t('admin.users.role_for')} ${showRoleDialog.full_name}` : ''}
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Select value={newRole} onValueChange={(value) => value && setNewRole(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder={t('admin.users.role_placeholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="visiteur">{t('admin.users.form_visiteur')}</SelectItem>
-                <SelectItem value="exposant">{t('admin.users.form_exposant')}</SelectItem>
-                <SelectItem value="admin">{t('admin.users.form_admin_role')}</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Rôle</Label>
+              <Select value={newRole} onValueChange={(value) => value && setNewRole(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('admin.users.role_placeholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="visiteur">{t('admin.users.form_visiteur')}</SelectItem>
+                  <SelectItem value="exposant">{t('admin.users.form_exposant')}</SelectItem>
+                  <SelectItem value="admin">{t('admin.users.form_admin_role')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Niveau d'accès</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant={newAccessLevel === 'classic' ? 'default' : 'outline'}
+                  className="rounded-xl"
+                  onClick={() => setNewAccessLevel('classic')}
+                >
+                  Classic
+                </Button>
+                <Button
+                  type="button"
+                  variant={newAccessLevel === 'premium' ? 'default' : 'outline'}
+                  className="rounded-xl bg-amber-500/10 text-amber-700 hover:bg-amber-500/20"
+                  onClick={() => setNewAccessLevel('premium')}
+                >
+                  Premium
+                </Button>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" className="rounded-xl" onClick={() => setShowRoleDialog(null)}>
@@ -1052,7 +1123,12 @@ export default function AdminUsersPage() {
             <Button
               className="rounded-xl"
               disabled={actionLoading === showRoleDialog?.id || !showRoleDialog}
-              onClick={() => showRoleDialog && handleChangeRole(showRoleDialog.id, newRole)}
+              onClick={() => {
+                if (showRoleDialog) {
+                  const updatedRole = newRole || showRoleDialog.role || 'visiteur';
+                  handleChangeRole(showRoleDialog.id, updatedRole);
+                }
+              }}
             >
               {actionLoading === showRoleDialog?.id ? (
                 <Loader2 className="mr-2 size-4 animate-spin" />

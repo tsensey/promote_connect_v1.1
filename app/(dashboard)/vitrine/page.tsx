@@ -27,6 +27,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Database } from '@/types/database.types';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
+import { usePermissions } from '@/hooks/usePermissions';
 
 type Produit = Database['public']['Tables']['produits']['Row'];
 type Exposant = Database['public']['Tables']['exposants']['Row'];
@@ -55,6 +56,7 @@ const TYPE_STYLES = {
 export default function VitrinePage() {
   const { t } = useTranslation();
   const router = useRouter();
+  const perms = usePermissions();
   const [produits, setProduits] = useState<ProduitWithExposant[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -446,31 +448,38 @@ export default function VitrinePage() {
 
                   {/* Actions */}
                   <div className="flex gap-2 pt-1">
-                    <Button
-                      size="sm"
-                      className="flex-1 rounded-xl text-xs h-9"
-                      disabled={contacting === (produit.exposant_id + produit.nom) || !produit.exposants}
-                      onClick={async () => {
-                        if (!produit.exposants) return;
-                        const { data } = await supabaseClient
-                          .from('exposants')
-                          .select('profile_id')
-                          .eq('id', produit.exposants.id)
-                          .single();
-                        if (data?.profile_id) {
-                          await handleContact(produit.exposants.id, produit.nom, data.profile_id);
-                        } else {
-                          toast.error(t('vitrine.cannot_contact'));
-                        }
-                      }}
-                    >
-                      <MessageSquare className="mr-1.5 size-3.5" />
-                      {contacting === (produit.exposant_id + produit.nom) ? (
-                        <span className="animate-pulse">...</span>
-                      ) : (
-                        t('vitrine.contact_exposant')
-                      )}
-                    </Button>
+                    {perms.canContactExposant ? (
+                      <Button
+                        size="sm"
+                        className="flex-1 rounded-xl text-xs h-9"
+                        disabled={contacting === (produit.exposant_id + produit.nom) || !produit.exposants}
+                        onClick={async () => {
+                          if (!produit.exposants) return;
+                          const { data } = await supabaseClient
+                            .from('exposants')
+                            .select('profile_id')
+                            .eq('id', produit.exposants.id)
+                            .single();
+                          if (data?.profile_id) {
+                            await handleContact(produit.exposants.id, produit.nom, data.profile_id);
+                          } else {
+                            toast.error(t('vitrine.cannot_contact'));
+                          }
+                        }}
+                      >
+                        <MessageSquare className="mr-1.5 size-3.5" />
+                        {contacting === (produit.exposant_id + produit.nom) ? (
+                          <span className="animate-pulse">...</span>
+                        ) : (
+                          t('vitrine.contact_exposant')
+                        )}
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="outline" disabled className="flex-1 rounded-xl text-xs h-9">
+                        <MessageSquare className="mr-1.5 size-3.5" />
+                        {t('vitrine.contact_exposant')}
+                      </Button>
+                    )}
                     {produit.exposants && (
                       <Button
                         variant="outline"

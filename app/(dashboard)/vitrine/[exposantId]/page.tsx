@@ -65,6 +65,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
+import { usePermissions } from '@/hooks/usePermissions';
 import type { Database } from '@/types/database.types';
 
 type Exposant = Database['public']['Tables']['exposants']['Row'];
@@ -78,6 +79,7 @@ export default function VitrineExposantPage() {
   const [produits, setProduits] = useState<Produit[]>([]);
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
+  const perms = usePermissions();
   const [contacting, setContacting] = useState(false);
   const router = useRouter();
 
@@ -260,7 +262,7 @@ export default function VitrineExposantPage() {
             </div>
 
             {/* CTA */}
-            {exposant.profile_id && (
+            {exposant.profile_id && perms.canContactExposant && (
               <Button
                 className="shrink-0 rounded-xl"
                 onClick={() => handleContact()}
@@ -382,7 +384,7 @@ export default function VitrineExposantPage() {
       )}
 
       {/* Contact & Socials */}
-      {(hasContact || hasSocials || exposant.brochure_url) && (
+      {perms.canSeeContactDetails && (hasContact || hasSocials || exposant.brochure_url) && (
         <Card className="surface-panel border-0">
           <CardContent className="p-6 space-y-5">
             <div className="text-sm font-semibold uppercase tracking-widest text-primary/70">{t('vitrine.detail.contacts')}</div>
@@ -514,14 +516,16 @@ export default function VitrineExposantPage() {
                           <p className="text-2xl font-bold text-foreground">{prod.prix_indicatif}</p>
                         </div>
                       )}
-                      <Button
-                        className="w-full rounded-xl"
-                        onClick={() => handleContact({ id: prod.id, nom: prod.nom, image_url: prod.image_url, prix_indicatif: prod.prix_indicatif })}
-                        disabled={contacting}
-                      >
-                        <MessageSquare className="mr-2 size-4" />
-                        {t('vitrine.detail.contact_about')}
-                      </Button>
+                      {perms.canContactExposant && (
+                        <Button
+                          className="w-full rounded-xl"
+                          onClick={() => handleContact({ id: prod.id, nom: prod.nom, image_url: prod.image_url, prix_indicatif: prod.prix_indicatif })}
+                          disabled={contacting}
+                        >
+                          <MessageSquare className="mr-2 size-4" />
+                          {t('vitrine.detail.contact_about')}
+                        </Button>
+                      )}
                     </div>
                   </DialogContent>
                 </Dialog>
@@ -532,7 +536,7 @@ export default function VitrineExposantPage() {
       </Card>
 
       {/* Bottom CTA */}
-      {exposant.profile_id && (
+      {exposant.profile_id && perms.canContactExposant && (
         <Card className="surface-panel border-0">
           <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>

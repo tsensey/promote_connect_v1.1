@@ -99,7 +99,7 @@ export async function GET(request: Request) {
   const supabase = createAdminClient();
   const { data: users, error } = await supabase
     .from('profiles')
-    .select('id, full_name, company, role, sector, country, pavillon, is_active, created_at')
+    .select('id, full_name, company, role, sector, country, pavillon, is_active, created_at, access_level')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -130,6 +130,7 @@ export async function POST(request: Request) {
     annee_creation,
     nombre_employes,
     generate_exposant,
+    access_level,
   } = body;
 
   if (!full_name || !email || !role) {
@@ -162,6 +163,7 @@ export async function POST(request: Request) {
       sector: sector || null,
       country: country || null,
       pavillon: pavillon || null,
+      access_level: access_level || 'classic',
       invited_by_admin: true,
       temporary_password: true,
     },
@@ -196,6 +198,7 @@ export async function POST(request: Request) {
       sector: sector || null,
       country: country || null,
       pavillon: pavillon || null,
+      access_level: access_level || 'classic',
     });
 
   if (profileError) {
@@ -280,7 +283,7 @@ export async function PATCH(request: Request) {
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { id, role, full_name, company, sector, country, pavillon, is_active } = body;
+  const { id, role, full_name, company, sector, country, pavillon, is_active, access_level } = body;
 
   if (!id) {
     return NextResponse.json({ error: 'User ID requis' }, { status: 400 });
@@ -295,6 +298,13 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Role invalide' }, { status: 400 });
     }
     updateData.role = role;
+  }
+
+  if (access_level !== undefined) {
+    if (!['classic', 'premium'].includes(access_level)) {
+      return NextResponse.json({ error: "Niveau d'acces invalide" }, { status: 400 });
+    }
+    updateData.access_level = access_level;
   }
 
   if (full_name !== undefined) updateData.full_name = full_name;
