@@ -10,7 +10,7 @@ type PostShareInsert = Database['public']['Tables']['post_shares']['Insert'];
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 
 type PostWithAuthor = PostRow & {
-  author: Pick<ProfileRow, 'id' | 'full_name' | 'company' | 'avatar_url' | 'role'> & { exposants?: { id: string }[] };
+  author: Pick<ProfileRow, 'id' | 'full_name' | 'company' | 'avatar_url' | 'role'> & { exposants?: { id: string; nom?: string; logo_url?: string }[] };
 };
 
 export type Post = PostWithAuthor & {
@@ -21,12 +21,12 @@ export type Post = PostWithAuthor & {
   reaction_type: string | null;
   author: PostWithAuthor['author'] & { is_following: boolean };
   repost_of?: (PostRow & {
-    author: Pick<ProfileRow, 'id' | 'full_name' | 'company' | 'avatar_url' | 'role'> & { exposants?: { id: string }[] };
+    author: Pick<ProfileRow, 'id' | 'full_name' | 'company' | 'avatar_url' | 'role'> & { exposants?: { id: string; nom?: string; logo_url?: string }[] };
   }) | null;
 };
 
 export type Comment = PostCommentRow & {
-  author: Pick<ProfileRow, 'id' | 'full_name' | 'company' | 'avatar_url' | 'role'>;
+  author: Pick<ProfileRow, 'id' | 'full_name' | 'company' | 'avatar_url' | 'role'> & { exposants?: { id: string; nom?: string; logo_url?: string }[] };
   parent_comment_id: string | null;
   replies?: Comment[];
 };

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { useAuth } from "@/lib/auth/context";
+import { useIdentity } from "@/hooks/useIdentity";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -80,6 +81,7 @@ export function CreatePost({
 }: CreatePostProps) {
   const { t } = useTranslation();
   const { profile } = useAuth();
+  const identity = useIdentity();
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState("general");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -201,8 +203,8 @@ export function CreatePost({
     setTimeout(() => textareaRef.current?.focus(), 80);
   };
 
-  const initials = profile?.full_name
-    ? profile.full_name
+  const initials = identity?.displayName
+    ? identity.displayName
         .split(" ")
         .map((n) => n[0])
         .join("")
@@ -222,8 +224,8 @@ export function CreatePost({
             <div className="flex flex-row gap-2 items-center">
               {/* Avatar */}
               <Avatar className="size-10 shrink-0 ring-2 ring-border/20">
-                {profile?.avatar_url ? (
-                  <AvatarImage src={profile.avatar_url} />
+                {identity?.avatarUrl ? (
+                  <AvatarImage src={identity.avatarUrl} />
                 ) : (
                   <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
                     {initials}

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AlertCircle, LifeBuoy, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { AlertCircle, LifeBuoy, Loader2, MessageSquare } from 'lucide-react';
 import { supabaseClient } from '@/lib/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -196,6 +197,16 @@ export default function AdminTicketsPage() {
                   </p>
 
                   <div className="flex flex-wrap gap-2">
+                    <Link href={`/admin/tickets/${ticket.id}`}>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="rounded-full"
+                      >
+                        <MessageSquare className="size-3.5 mr-1.5" />
+                        Conversation
+                      </Button>
+                    </Link>
                     <Button
                       size="sm"
                       variant="outline"

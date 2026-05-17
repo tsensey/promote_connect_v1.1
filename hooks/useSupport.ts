@@ -150,29 +150,35 @@ export function useTicketMessages(ticketId: string) {
   }, [ticketId]);
 
   const sendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, isAdmin = false) => {
       if (!content.trim()) return;
 
       const { data: session } = await supabaseClient.auth.getSession();
       if (!session?.session?.user) return;
 
-      const { error } = await supabaseClient
+      const { data, error } = await supabaseClient
         .from('support_messages')
         .insert({
           ticket_id: ticketId,
           sender_id: session.session.user.id,
           content: content.trim(),
-          is_admin: false,
-        });
+          is_admin: isAdmin,
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      if (data) {
+        setMessages((prev) => [...prev, data as SupportMessage]);
+      }
 
       await supabaseClient
         .from('support_tickets')
         .update({ updated_at: new Date().toISOString(), status: 'open' })
         .eq('id', ticketId);
     },
-    [ticketId]
+    [ticketId, setMessages]
   );
 
   return { messages, ticket, loading, error, sendMessage };

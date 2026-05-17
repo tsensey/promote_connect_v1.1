@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
-  const { user, profile, signOut, loading } = useAuth();
+  const { user, profile, exposant, signOut, loading } = useAuth();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -48,16 +48,25 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
   const role = profile?.role === 'exposant' ? 'exposant' : 'visiteur';
 
+  const sidebarUser = {
+    name: (profile?.role === 'exposant' && exposant?.nom)
+      ? exposant.nom
+      : (profile?.full_name || user.email?.split('@')[0] || t('common.participant')),
+    company: (profile?.role === 'exposant' && exposant?.nom)
+      ? exposant.nom
+      : (profile?.company || undefined),
+    avatar: ((profile?.role === 'exposant' && exposant?.logo_url)
+      ? exposant.logo_url
+      : profile?.avatar_url) ?? undefined,
+  };
+
   return (
     <div className="min-h-screen">
       <UserSidebar
         role={role}
         collapsed={collapsed}
         onToggle={() => setCollapsed((current) => !current)}
-        user={{
-          name: profile?.full_name || user.email?.split('@')[0] || t('common.participant'),
-          company: profile?.company || undefined,
-        }}
+        user={sidebarUser}
         onSignOut={handleSignOut}
       />
 
@@ -72,10 +81,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
               collapsed={false}
               onToggle={() => setMobileOpen(false)}
               onNavigate={() => setMobileOpen(false)}
-              user={{
-                name: profile?.full_name || user.email?.split('@')[0] || t('common.participant'),
-                company: profile?.company || undefined,
-              }}
+              user={sidebarUser}
               onSignOut={handleSignOut}
               onItemClick={() => setMobileOpen(false)}
               mobile
@@ -94,9 +100,10 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
           collapsed={collapsed}
           onToggleSidebar={() => setMobileOpen(true)}
           user={{
-            name: profile?.full_name || user.email?.split('@')[0] || t('common.participant'),
+            name: sidebarUser.name,
             email: user.email || undefined,
             role,
+            avatar: sidebarUser.avatar,
           }}
           onSignOut={handleSignOut}
         />

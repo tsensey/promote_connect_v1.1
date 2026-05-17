@@ -17,6 +17,7 @@ import {
   Eye,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/context";
+import { useIdentity } from "@/hooks/useIdentity";
 import { supabaseClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -80,7 +81,8 @@ const getQuickActions = (role: string, t: any) => [
 
 export default function DashboardHome() {
   const { t, locale } = useTranslation();
-  const { user, profile } = useAuth();
+  const { user, profile, exposant } = useAuth();
+  const identity = useIdentity();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
 
@@ -245,7 +247,9 @@ export default function DashboardHome() {
   }
 
   const roleLabel = profile.role === "exposant" ? t('dashboard.home.exposant_label') : t('dashboard.home.visiteur_label');
-  const firstName = profile.full_name?.split(" ")[0] || t('common.participant');
+  const firstName = (profile.role === "exposant" && exposant)
+    ? exposant.nom.split(" ")[0]
+    : (profile.full_name?.split(" ")[0] || t('common.participant'));
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px] max-w-6xl mx-auto">
@@ -462,13 +466,15 @@ export default function DashboardHome() {
             <div className="flex items-center gap-3">
               <Avatar className="size-14 border-2 border-white/50 shadow-lg">
                 <AvatarFallback className="bg-white/20 text-lg font-semibold text-white backdrop-blur-sm">
-                  {profile.full_name?.charAt(0).toUpperCase() || "?"}
+                  {(identity?.displayName || profile.full_name)?.charAt(0).toUpperCase() || "?"}
                 </AvatarFallback>
               </Avatar>
               <div className="text-white">
-                <p className="text-lg font-heading font-bold">{profile.full_name}</p>
+                <p className="text-lg font-heading font-bold">{identity?.displayName || profile.full_name}</p>
                 <p className="text-sm text-white/80">
-                  {profile.company || t('common.participant')}
+                  {(profile.role === 'exposant' && exposant)
+                    ? exposant.secteur || t('common.exposant')
+                    : (profile.company || t('common.participant'))}
                 </p>
               </div>
             </div>

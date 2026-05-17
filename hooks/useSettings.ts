@@ -101,7 +101,7 @@ export function useSettings() {
   );
 
   const updateProfile = useCallback(
-    async (updates: { full_name?: string; company?: string; sector?: string | null; country?: string | null; pavillon?: string | null; avatar_url?: string | null }) => {
+    async (updates: { full_name?: string; country?: string | null; avatar_url?: string | null }) => {
       if (!userId) return { success: false, error: 'Not authenticated' } as const;
       setSaving(true);
       try {

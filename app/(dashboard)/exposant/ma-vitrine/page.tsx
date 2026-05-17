@@ -282,10 +282,7 @@ export default function ManageVitrinePage() {
       } else {
         setShowcaseForm((f) => ({
           ...f,
-          nom: profile?.company || profile?.full_name || "",
-          secteur: profile?.sector || "",
-          pavillon: profile?.pavillon || "",
-          pays: profile?.country || "",
+          nom: profile?.full_name || "",
         }));
       }
 
@@ -293,14 +290,7 @@ export default function ManageVitrinePage() {
     };
 
     void loadData();
-  }, [
-    profile?.company,
-    profile?.country,
-    profile?.full_name,
-    profile?.pavillon,
-    profile?.sector,
-    user,
-  ]);
+  }, [profile?.full_name, user]);
 
   const refreshProducts = async (exposantId: string) => {
     const { data } = await supabaseClient

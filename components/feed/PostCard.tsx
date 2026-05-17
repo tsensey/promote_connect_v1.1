@@ -40,6 +40,7 @@ import type { useFeed, Comment } from '@/hooks/useFeed';
 import { MentionInput } from '@/components/shared/MentionInput';
 import { supabaseClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth/context';
+import { getDisplayName, getAvatarUrl, getCompanyName, getExposantId } from '@/components/shared/UserIdentity';
 
 type Post = NonNullable<ReturnType<typeof useFeed>['posts']>[number];
 
@@ -147,8 +148,11 @@ function CommentItem({
     setSubmitting(false);
   };
 
-  const authorInitials = getInitials(comment.author.full_name);
-  const authorExposantId = (comment.author as { exposants?: Array<{ id: string }> }).exposants?.[0]?.id;
+  const commentAuthorExposants = (comment.author as { exposants?: Array<{ id: string; nom?: string; logo_url?: string }> }).exposants;
+  const authorDisplayName = getDisplayName(comment.author, commentAuthorExposants) || t('feed.post.user');
+  const authorAvatarUrl = getAvatarUrl(comment.author, commentAuthorExposants);
+  const authorExposantId = getExposantId(commentAuthorExposants);
+  const authorInitials = getInitials(authorDisplayName);
 
   return (
     <div className={cn('flex gap-2', depth > 0 && 'ml-8 mt-2')}>
@@ -156,8 +160,8 @@ function CommentItem({
       <div className="flex-1 min-w-0">
         <div className="flex gap-2.5 items-start">
           <Avatar className="size-7 shrink-0">
-            {comment.author.avatar_url ? (
-              <AvatarImage src={comment.author.avatar_url} />
+            {authorAvatarUrl ? (
+              <AvatarImage src={authorAvatarUrl} />
             ) : (
               <AvatarFallback className="bg-muted text-[10px] font-semibold">{authorInitials}</AvatarFallback>
             )}
@@ -166,7 +170,7 @@ function CommentItem({
             <div className="rounded-2xl rounded-tl-sm bg-muted/50 px-3 py-2">
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="text-xs font-semibold text-foreground">
-                  {comment.author.full_name || t('feed.post.user')}
+                  {authorDisplayName}
                 </span>
                 <span className="text-[10px] text-muted-foreground/60">
                   {comment.created_at
@@ -194,7 +198,7 @@ function CommentItem({
                   onChange={setReplyText}
                   onMention={(exposant) => setMentionedProfiles(prev => [...prev, exposant.profile_id])}
                   authorExposantId={authorExposantId}
-                  placeholder={t('feed.post.reply_placeholder', { name: comment.author.full_name || t('feed.post.user') })}
+                  placeholder={t('feed.post.reply_placeholder', { name: authorDisplayName })}
                   className="rounded-xl px-3 py-1.5"
                 />
                 <Button type="submit" size="icon-sm" className="size-8 rounded-full shrink-0" disabled={!replyText.trim() || submitting}>
@@ -305,7 +309,7 @@ export const PostCard = memo(function PostCard({
 
   const handleNativeShare = useCallback(async () => {
     const url = `${window.location.origin}/feed#${post.id}`;
-    const shareData = { title: t('feed.post.share_title', { name: post.author.full_name || '' }), text: post.content.slice(0, 120), url };
+    const shareData = { title: t('feed.post.share_title', { name: authorDisplayName }), text: post.content.slice(0, 120), url };
     if (navigator.share) {
       try {
         await navigator.share(shareData);
@@ -392,9 +396,13 @@ export const PostCard = memo(function PostCard({
   );
 
   const typeBg = TYPE_BADGE[post.type] || TYPE_BADGE.general;
-  const authorInitials = getInitials(post.author.full_name);
   const timeAgo = formatDistanceToNow(new Date(post.created_at as string), { locale: locale === 'en' ? enUS : fr, addSuffix: true });
-  const exposantId = post.author.exposants?.[0]?.id;
+  const postAuthorExposants = post.author.exposants;
+  const authorDisplayName = getDisplayName(post.author, postAuthorExposants) || t('feed.post.user');
+  const authorAvatarUrl = getAvatarUrl(post.author, postAuthorExposants);
+  const authorCompanyName = getCompanyName(post.author, postAuthorExposants);
+  const exposantId = getExposantId(postAuthorExposants);
+  const authorInitials = getInitials(authorDisplayName);
 
   const AuthorWrapper = ({ children }: { children: React.ReactNode }) => {
     if (post.author.role === 'exposant' && exposantId) {
@@ -413,8 +421,8 @@ export const PostCard = memo(function PostCard({
         <div className="flex items-start gap-3 p-4 pb-3">
           <AuthorWrapper>
             <Avatar className="size-10 shrink-0 ring-2 ring-border/20">
-              {post.author.avatar_url ? (
-                <AvatarImage src={post.author.avatar_url} />
+              {authorAvatarUrl ? (
+                <AvatarImage src={authorAvatarUrl} />
               ) : (
                 <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
                   {authorInitials}
@@ -427,7 +435,7 @@ export const PostCard = memo(function PostCard({
             <div className="flex flex-wrap items-center gap-1.5">
               <AuthorWrapper>
                 <span className="font-semibold text-sm text-foreground hover:underline">
-                  {post.author.full_name || t('feed.post.user')}
+                  {authorDisplayName}
                 </span>
               </AuthorWrapper>
               {post.author.role === 'exposant' && (
@@ -442,8 +450,8 @@ export const PostCard = memo(function PostCard({
               )}
             </div>
             <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
-              {post.author.company && <span>{post.author.company}</span>}
-              {post.author.company && <span>·</span>}
+              {authorCompanyName && <span>{authorCompanyName}</span>}
+              {authorCompanyName && <span>·</span>}
               <span>{timeAgo}</span>
             </div>
           </div>
@@ -520,7 +528,7 @@ export const PostCard = memo(function PostCard({
               {post.type === 'repost' && (
                 <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground border-b border-border/30 pb-2 mb-3">
                   <Repeat2 className="size-3.5 text-violet-500" />
-                  <span>{t('feed.post.repost_notice', { name: post.author.full_name || t('feed.post.user') })}</span>
+                  <span>{t('feed.post.repost_notice', { name: authorDisplayName })}</span>
                 </div>
               )}
               <p className="whitespace-pre-wrap text-sm text-foreground/90 leading-relaxed">
@@ -572,23 +580,30 @@ export const PostCard = memo(function PostCard({
           <div className="mx-4 mb-3 rounded-xl border border-border/50 bg-muted/20 overflow-hidden hover:bg-muted/30 transition-colors cursor-pointer">
             <div className="p-3">
               <div className="flex items-center gap-2 mb-2">
-                <Avatar className="size-6 shrink-0">
-                  {post.repost_of.author?.avatar_url ? (
-                    <AvatarImage src={post.repost_of.author.avatar_url} />
-                  ) : (
-                    <AvatarFallback className="bg-muted text-[9px] font-semibold">
-                      {getInitials(post.repost_of.author?.full_name)}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-foreground truncate">
-                    {post.repost_of.author?.full_name || t('feed.post.user')}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground truncate">
-                    {post.repost_of.author?.company}
-                  </p>
-                </div>
+                {(() => {
+                  const ra = post.repost_of?.author;
+                  const rExposants = (ra as { exposants?: Array<{ id: string; nom?: string; logo_url?: string }> })?.exposants;
+                  const rName = getDisplayName(ra, rExposants) || t('feed.post.user');
+                  const rAvatar = getAvatarUrl(ra, rExposants);
+                  const rCompany = getCompanyName(ra, rExposants);
+                  return (
+                    <>
+                      <Avatar className="size-6 shrink-0">
+                        {rAvatar ? (
+                          <AvatarImage src={rAvatar} />
+                        ) : (
+                          <AvatarFallback className="bg-muted text-[9px] font-semibold">
+                            {getInitials(rName)}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-foreground truncate">{rName}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{rCompany}</p>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
               <p className="text-xs text-foreground/80 leading-relaxed line-clamp-3 whitespace-pre-wrap">
                 {post.repost_of.content}
@@ -851,14 +866,14 @@ export const PostCard = memo(function PostCard({
               <div className="flex items-center gap-3">
                  <AuthorWrapper>
                    <Avatar className="size-10 ring-2 ring-border/20">
-                      {post.author.avatar_url ? <AvatarImage src={post.author.avatar_url} /> : <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">{authorInitials}</AvatarFallback>}
+                      {authorAvatarUrl ? <AvatarImage src={authorAvatarUrl} /> : <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">{authorInitials}</AvatarFallback>}
                    </Avatar>
                  </AuthorWrapper>
                  <div>
                     <AuthorWrapper>
-                      <span className="font-semibold text-sm block hover:underline">{post.author.full_name || t('feed.post.user')}</span>
+                      <span className="font-semibold text-sm block hover:underline">{authorDisplayName}</span>
                     </AuthorWrapper>
-                    <span className="text-xs text-muted-foreground">{post.author.company} • {timeAgo}</span>
+                    <span className="text-xs text-muted-foreground">{authorCompanyName} • {timeAgo}</span>
                  </div>
               </div>
             </div>
@@ -887,23 +902,27 @@ export const PostCard = memo(function PostCard({
                  ) : comments.length === 0 ? (
                    <div className="text-center py-4 text-xs text-muted-foreground">{t('feed.post.no_comments')}</div>
                  ) : (
-                   comments.map(c => (
-                     <div key={c.id} className="flex gap-2">
-                       <Avatar className="size-8">
-                         {c.author.avatar_url ? <AvatarImage src={c.author.avatar_url} /> : <AvatarFallback>{getInitials(c.author.full_name)}</AvatarFallback>}
-                       </Avatar>
-                       <div className="flex-1">
-                         <div className="bg-muted/40 rounded-2xl px-3 py-2">
-                           <p className="text-[13px] font-semibold">{c.author.full_name}</p>
-                           <p className="text-[13px] text-foreground/90">{c.content}</p>
-                         </div>
+                    comments.map(c => {
+                      const cExposants = (c.author as { exposants?: Array<{ id: string; nom?: string; logo_url?: string }> }).exposants;
+                      const cName = getDisplayName(c.author, cExposants) || t('feed.post.user');
+                      const cAvatar = getAvatarUrl(c.author, cExposants);
+                      return (
+                      <div key={c.id} className="flex gap-2">
+                        <Avatar className="size-8">
+                          {cAvatar ? <AvatarImage src={cAvatar} /> : <AvatarFallback>{getInitials(cName)}</AvatarFallback>}
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="bg-muted/40 rounded-2xl px-3 py-2">
+                            <p className="text-[13px] font-semibold">{cName}</p>
+                            <p className="text-[13px] text-foreground/90">{c.content}</p>
+                          </div>
                          <div className="flex gap-3 px-2 mt-1 text-[11px] text-muted-foreground font-medium">
                             <span>{formatDistanceToNow(new Date(c.created_at as string), { locale: locale === 'en' ? enUS : fr })}</span>
                          </div>
                        </div>
                      </div>
-                   ))
-                 )}
+                     )})
+                  )}
                </div>
             </div>
             
@@ -947,8 +966,8 @@ export const PostCard = memo(function PostCard({
             <div className="mt-3 rounded-xl border border-border/50 bg-muted/30 p-3">
               <div className="flex items-center gap-2.5">
                 <Avatar className="size-8 shrink-0 ring-2 ring-border/20">
-                  {post.author.avatar_url ? (
-                    <AvatarImage src={post.author.avatar_url} />
+                  {authorAvatarUrl ? (
+                    <AvatarImage src={authorAvatarUrl} />
                   ) : (
                     <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
                       {authorInitials}
@@ -957,10 +976,10 @@ export const PostCard = memo(function PostCard({
                 </Avatar>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-foreground truncate">
-                    {post.author.full_name || t('feed.post.user')}
+                    {authorDisplayName}
                   </p>
                   <p className="text-[11px] text-muted-foreground">
-                    {post.author.company} · {timeAgo}
+                    {authorCompanyName} · {timeAgo}
                   </p>
                 </div>
               </div>

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ChevronDown, Menu, MessageSquare, CalendarDays } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useNotificationState } from "@/lib/notification-context";
 import { NotificationDropdown } from "./NotificationDropdown";
@@ -26,7 +26,7 @@ export function UserTopbar({
 }: {
   collapsed: boolean;
   onToggleSidebar: () => void;
-  user: { name: string; email?: string; role: string } | null;
+  user: { name: string; email?: string; role: string; avatar?: string } | null;
   onSignOut: () => void;
 }) {
   const router = useRouter();
@@ -79,6 +79,9 @@ export function UserTopbar({
               }
             >
               <Avatar className="size-7 border-2 border-border/50">
+                {user?.avatar ? (
+                  <AvatarImage src={user.avatar} />
+                ) : null}
                 <AvatarFallback className="bg-primary/10 text-[11px] font-semibold text-primary">
                   {user?.name?.charAt(0).toUpperCase() || "?"}
                 </AvatarFallback>

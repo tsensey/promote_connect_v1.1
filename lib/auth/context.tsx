@@ -1,9 +1,10 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabaseClient } from '@/lib/supabase/client';
 import type { Database } from '@/types/database.types';
+import type { Exposant } from '@/types/exposant';
 
 export type AppProfile = Pick<
   Database['public']['Tables']['profiles']['Row'],
@@ -11,11 +12,16 @@ export type AppProfile = Pick<
   | 'pavillon' | 'avatar_url' | 'is_active' | 'suspended_at' | 'created_at'
 >;
 
+export type AppExposant = Pick<
+  Exposant,
+  'id' | 'nom' | 'logo_url' | 'secteur' | 'pavillon' | 'stand' | 'pays' | 'description'
+>;
 
 interface AuthContextValue {
   user: User | null;
   session: Session | null;
   profile: AppProfile | null;
+  exposant: AppExposant | null;
   loading: boolean;
   refreshProfile: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
@@ -40,10 +46,22 @@ async function loadProfile(userId: string) {
   return data;
 }
 
+async function loadExposant(profileId: string) {
+  const { data, error } = await supabaseClient
+    .from('exposants')
+    .select('id, nom, logo_url, secteur, pavillon, stand, pays, description')
+    .eq('profile_id', profileId)
+    .maybeSingle();
+
+  if (error) return null;
+  return data;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<AppProfile | null>(null);
+  const [exposant, setExposant] = useState<AppExposant | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -65,6 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!resolvedSession?.user) {
         setProfile(null);
+        setExposant(null);
         if (isInitialLoad) setLoading(false);
         isInitialLoad = false;
         return;
@@ -73,8 +92,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const nextProfile = await loadProfile(resolvedSession.user.id);
         if (mounted) setProfile(nextProfile);
+        if (mounted && nextProfile?.role === 'exposant') {
+          const nextExposant = await loadExposant(resolvedSession.user.id);
+          if (mounted) setExposant(nextExposant);
+        } else {
+          if (mounted) setExposant(null);
+        }
       } catch {
         if (mounted) setProfile(null);
+        if (mounted) setExposant(null);
       } finally {
         if (mounted && isInitialLoad) setLoading(false);
         isInitialLoad = false;
@@ -93,15 +119,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (!user) {
       setProfile(null);
+      setExposant(null);
       return;
     }
 
     const nextProfile = await loadProfile(user.id);
     setProfile(nextProfile);
-  };
+
+    if (nextProfile?.role === 'exposant') {
+      const nextExposant = await loadExposant(user.id);
+      setExposant(nextExposant);
+    } else {
+      setExposant(null);
+    }
+  }, [user]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
@@ -119,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <authContext.Provider
-      value={{ user, session, profile, loading, refreshProfile, signIn, signOut }}
+      value={{ user, session, profile, exposant, loading, refreshProfile, signIn, signOut }}
     >
       {children}
     </authContext.Provider>

@@ -13,13 +13,6 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { toast } from 'sonner';
 import {
   User,
@@ -41,13 +34,6 @@ import {
 } from 'lucide-react';
 import type { Locale } from '@/lib/i18n';
 
-const SECTORS = [
-  'agriculture', 'agroalimentaire', 'artisanat', 'banque_assurance',
-  'batiment', 'chimie', 'commerce', 'communication', 'education',
-  'energie', 'environnement', 'finance', 'industrie', 'it',
-  'logistique', 'sante', 'services', 'tourisme',
-] as const;
-
 const TABS = [
   { id: 'profile', icon: User, key: 'settings.profile' },
   { id: 'notifications', icon: Bell, key: 'settings.notifications' },
@@ -59,22 +45,15 @@ function ProfileTab() {
   const { t } = useTranslation();
   const { profile, refreshProfile } = useAuth();
   const { updateProfile, saving } = useSettings();
-  const isExposant = profile?.role === 'exposant';
   const [fullName, setFullName] = useState(profile?.full_name ?? '');
-  const [company, setCompany] = useState(profile?.company ?? '');
-  const [sector, setSector] = useState(profile?.sector ?? '');
   const [country, setCountry] = useState(profile?.country ?? '');
-  const [pavillon, setPavillon] = useState(profile?.pavillon ?? '');
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = async () => {
     const result = await updateProfile({
       full_name: fullName,
-      ...(isExposant ? { company } : {}),
-      ...(isExposant ? { sector: sector || null } : {}),
       country: country || null,
-      ...(isExposant ? { pavillon: pavillon || null } : {}),
       avatar_url: avatarUrl,
     });
     if (result.success) {
@@ -107,14 +86,11 @@ function ProfileTab() {
   const hasChanges =
     profile?.full_name !== fullName ||
     profile?.country !== country ||
-    profile?.avatar_url !== avatarUrl ||
-    (isExposant && (profile?.company !== company ||
-    profile?.sector !== sector ||
-    profile?.pavillon !== pavillon));
+    profile?.avatar_url !== avatarUrl;
 
   return (
     <div className="space-y-6">
-      <Card className="overflow-hidden border-border/50 shadow-sm transition-shadow hover:shadow-md">
+      <Card className="overflow-hidden border-border/50 shadow-sm transition-shadow hover:shadow-md pt-0">
         <div className="h-1.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -123,7 +99,7 @@ function ProfileTab() {
             </div>
             <div>
               <CardTitle className="text-lg">{t('settings.profile')}</CardTitle>
-              <CardDescription>{isExposant ? t('settings.profile.description.exposant') : t('settings.profile.description.visiteur')}</CardDescription>
+              <CardDescription>{t('settings.profile.description')}</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -158,37 +134,10 @@ function ProfileTab() {
               <Label htmlFor="fullName">{t('profile.full_name')}</Label>
               <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t('profile.full_name.placeholder')} />
             </Field>
-            {isExposant && (
-              <Field>
-                <Label htmlFor="company">{t('profile.company')}</Label>
-                <Input id="company" value={company} onChange={(e) => setCompany(e.target.value)} placeholder={t('profile.company.placeholder')} />
-              </Field>
-            )}
-            {isExposant && (
-              <Field>
-                <Label htmlFor="sector">{t('profile.sector')}</Label>
-                <Select value={sector} onValueChange={(v: string | null) => setSector(v ?? '')}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('profile.sector.placeholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SECTORS.map((s) => (
-                      <SelectItem key={s} value={s}>{t(`sector.${s}`)}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-            )}
             <Field>
               <Label htmlFor="country">{t('profile.country')}</Label>
               <Input id="country" value={country} onChange={(e) => setCountry(e.target.value)} placeholder={t('profile.country.placeholder')} />
             </Field>
-            {isExposant && (
-              <Field>
-                <Label htmlFor="pavillon">{t('profile.pavillon')}</Label>
-                <Input id="pavillon" value={pavillon} onChange={(e) => setPavillon(e.target.value)} placeholder={t('profile.pavillon.placeholder')} />
-              </Field>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -226,7 +175,7 @@ function NotificationsTab() {
   };
 
   return (
-    <Card className="overflow-hidden border-border/50 shadow-sm transition-shadow hover:shadow-md">
+    <Card className="overflow-hidden border-border/50 shadow-sm transition-shadow hover:shadow-md pt-0">
       <div className="h-1.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
       <CardHeader>
         <div className="flex items-center gap-3">
@@ -283,7 +232,7 @@ function LanguageTab() {
   };
 
   return (
-    <Card className="overflow-hidden border-border/50 shadow-sm transition-shadow hover:shadow-md">
+    <Card className="overflow-hidden border-border/50 shadow-sm transition-shadow hover:shadow-md pt-0">
       <div className="h-1.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
       <CardHeader>
         <div className="flex items-center gap-3">
@@ -347,7 +296,7 @@ function AccountTab() {
 
   return (
     <div className="space-y-6">
-      <Card className="overflow-hidden border-border/50 shadow-sm transition-shadow hover:shadow-md">
+      <Card className="overflow-hidden border-border/50 shadow-sm transition-shadow hover:shadow-md pt-0">
         <div className="h-1.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -380,7 +329,7 @@ function AccountTab() {
           </div>
         </CardContent>
       </Card>
-      <Card className="border-destructive/20 shadow-sm">
+      <Card className="border-destructive/20 shadow-sm py-0">
         <CardContent className="flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10">

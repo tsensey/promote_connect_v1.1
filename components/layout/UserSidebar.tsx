@@ -18,6 +18,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNotificationState } from '@/lib/notification-context';
@@ -202,10 +203,21 @@ export function UserSidebar({
           collapsed && 'flex-col gap-1'
         )}>
           <div className={cn(
-            'flex shrink-0 items-center justify-center rounded-lg bg-primary/10 font-semibold text-primary',
+            'flex shrink-0 items-center justify-center rounded-lg overflow-hidden',
             collapsed ? 'size-10 text-sm' : 'size-9 text-xs'
           )}>
-            {user?.name?.charAt(0).toUpperCase() || '?'}
+            {user?.avatar ? (
+              <Avatar className={cn('rounded-lg', collapsed ? 'size-10' : 'size-9')}>
+                <AvatarImage src={user.avatar} />
+                <AvatarFallback className="bg-primary/10 font-semibold text-primary text-xs rounded-lg">
+                  {user.name?.charAt(0).toUpperCase() || '?'}
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              <div className="flex size-full items-center justify-center bg-primary/10 font-semibold text-primary">
+                {user?.name?.charAt(0).toUpperCase() || '?'}
+              </div>
+            )}
           </div>
           <LabelText collapsed={collapsed}>
             <div className="min-w-0">
