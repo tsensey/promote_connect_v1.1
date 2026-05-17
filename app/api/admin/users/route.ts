@@ -113,25 +113,28 @@ export async function POST(request: Request) {
   const auth = await verifyAdmin(request);
   if (auth.error) return auth.error;
 
-  const body = await request.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
 
-  const {
-    full_name,
-    email,
-    company,
-    role,
-    sector,
-    country,
-    pavillon,
-    espace_id,
-    stand,
-    description,
-    website,
-    annee_creation,
-    nombre_employes,
-    generate_exposant,
-    access_level,
-  } = body;
+  const full_name = body.full_name as string | undefined;
+  const email = body.email as string | undefined;
+  const company = body.company as string | undefined;
+  const role = body.role as string | undefined;
+  const sector = body.sector as string | undefined;
+  const country = body.country as string | undefined;
+  const pavillon = body.pavillon as string | undefined;
+  const espace_id = body.espace_id as string | undefined;
+  const stand = body.stand as string | undefined;
+  const description = body.description as string | undefined;
+  const website = body.website as string | undefined;
+  const annee_creation = body.annee_creation as string | undefined;
+  const nombre_employes = body.nombre_employes as string | undefined;
+  const generate_exposant = body.generate_exposant as boolean | undefined;
+  const access_level = body.access_level as string | undefined;
 
   if (!full_name || !email || !role) {
     return NextResponse.json(
@@ -282,8 +285,23 @@ export async function PATCH(request: Request) {
   const auth = await verifyAdmin(request);
   if (auth.error) return auth.error;
 
-  const body = await request.json();
-  const { id, role, full_name, company, sector, country, pavillon, is_active, access_level } = body;
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const id = body.id as string | undefined;
+  const role = body.role as string | undefined;
+  const full_name = body.full_name as string | undefined;
+  const company = body.company as string | undefined;
+  const sector = body.sector as string | undefined;
+  const country = body.country as string | undefined;
+  const pavillon = body.pavillon as string | undefined;
+  const is_active = body.is_active as boolean | undefined;
+  const access_level = body.access_level as string | undefined;
+  const suspension_reason = body.suspension_reason as string | undefined;
 
   if (!id) {
     return NextResponse.json({ error: 'User ID requis' }, { status: 400 });
@@ -317,7 +335,7 @@ export async function PATCH(request: Request) {
     updateData.is_active = is_active;
     if (!is_active) {
       updateData.suspended_at = new Date().toISOString();
-      updateData.suspended_reason = body.suspension_reason || null;
+      updateData.suspended_reason = suspension_reason || null;
     } else {
       updateData.suspended_at = null;
       updateData.suspended_reason = null;

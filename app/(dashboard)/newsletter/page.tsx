@@ -76,7 +76,7 @@ export default function NewsletterPage() {
 
         if (sub) {
           setSubscriptionStatus({
-            subscribed: sub.is_active,
+            subscribed: sub.is_active ?? false,
             frequency: sub.frequency || "weekly",
             sectors: sub.sectors || [],
           });

@@ -73,7 +73,7 @@ interface DashboardData {
   exposantSnapshot: ExposantSnapshot | null;
 }
 
-const getQuickActions = (role: string, t: any) => [
+const getQuickActions = (role: string, t: (key: string) => string) => [
   { label: role === "exposant" ? t('dashboard.home.prospecting') : t('dashboard.home.prospecting_desc'), href: "/annuaire", icon: Users },
   { label: role === "exposant" ? t('dashboard.home.leads') : t('dashboard.home.leads_desc'), href: "/chat", icon: MessageSquare },
   { label: role === "exposant" ? t('dashboard.home.schedule') : t('dashboard.home.schedule_desc'), href: "/agenda", icon: CalendarDays },
@@ -175,8 +175,8 @@ export default function DashboardHome() {
 
         const lastMsgMap = new Map<string, { content: string | null; created_at: string | null }>();
         for (const msg of messagesRes.data || []) {
-          if (!lastMsgMap.has(msg.conversation_id)) {
-            lastMsgMap.set(msg.conversation_id, { content: msg.content, created_at: msg.created_at });
+          if (!lastMsgMap.has(msg.conversation_id!)) {
+            lastMsgMap.set(msg.conversation_id!, { content: msg.content, created_at: msg.created_at });
           }
         }
 

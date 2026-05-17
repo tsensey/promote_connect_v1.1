@@ -27,6 +27,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Database } from '@/types/database.types';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
+import Image from 'next/image';
 import { usePermissions } from '@/hooks/usePermissions';
 
 type Produit = Database['public']['Tables']['produits']['Row'];
@@ -356,12 +357,13 @@ export default function VitrinePage() {
                 className="group relative overflow-hidden border-border/50 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 flex flex-col py-0"
               >
                 {/* Image / Type header */}
-                {produit.image_url ? (
+                  {produit.image_url ? (
                   <div className="relative h-44 overflow-hidden bg-muted">
-                    <img
+                    <Image
                       src={produit.image_url}
                       alt={produit.nom}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      fill
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
                     <div className="absolute bottom-3 left-3 right-3 flex items-start justify-between gap-2">

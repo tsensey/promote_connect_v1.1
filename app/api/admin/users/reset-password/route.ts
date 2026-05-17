@@ -9,8 +9,15 @@ export async function POST(request: Request) {
   const auth = await verifyAdmin(request);
   if (auth.error) return auth.error;
 
-  const body = await request.json();
-  const { user_id, send_email } = body;
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const user_id = body.user_id as string | undefined;
+  const send_email = body.send_email as boolean | undefined;
 
   if (!user_id) {
     return NextResponse.json({ error: 'user_id requis' }, { status: 400 });
@@ -91,7 +98,6 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     success: true,
-    new_password: newPassword,
     email_sent: emailSent,
   });
 }

@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/select';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Ban } from 'lucide-react';
@@ -382,10 +383,11 @@ export default function AnnuairePage() {
                   exposant.cover_url ? '' : 'bg-muted',
                 )}>
                   {exposant.cover_url && (
-                    <img
+                    <Image
                       src={exposant.cover_url}
                       alt=""
-                      className="absolute inset-0 h-full w-full object-cover opacity-60"
+                      fill
+                      className="object-cover opacity-60"
                     />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />

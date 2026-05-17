@@ -12,11 +12,7 @@ export default function OfflinePage() {
         <WifiOff className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
         <h1 className="mb-2 text-2xl font-bold">Pas de connexion</h1>
         <p className="text-muted-foreground">
-          Vous êtes actuellement hors ligne. Certaines fonctionnalités de PROMOTE-CONNECT
-          peuvent ne pas être disponibles.
-        </p>
-        <p className="mt-4 text-sm text-muted-foreground">
-          Rétablissez votre connexion pour accéder à l&apos;intégralité du contenu.
+          Vous êtes actuellement hors ligne. Rétablissez votre connexion pour accéder à l&apos;intégralité du contenu.
         </p>
       </div>
     </div>

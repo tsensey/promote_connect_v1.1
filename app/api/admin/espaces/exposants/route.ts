@@ -11,8 +11,6 @@ export async function GET(request: Request) {
   if (auth.error) return auth.error;
 
   const supabase = createAdminClient();
-  void auth;
-
   const { data, error } = await supabase
     .from('exposants')
     .select('*')
@@ -29,16 +27,28 @@ export async function POST(request: Request) {
   const auth = await verifyAdmin(request);
   if (auth.error) return auth.error;
 
-  const body = await request.json();
-  const { nom, description, secteur, espace_id, pavillon, stand, pays, website, is_featured } = body;
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const nom = body.nom as string | undefined;
+  const description = body.description as string | undefined;
+  const secteur = body.secteur as string | undefined;
+  const espace_id = body.espace_id as string | undefined;
+  const pavillon = body.pavillon as string | undefined;
+  const stand = body.stand as string | undefined;
+  const pays = body.pays as string | undefined;
+  const website = body.website as string | undefined;
+  const is_featured = body.is_featured as boolean | undefined;
 
   if (!nom) {
     return NextResponse.json({ error: 'nom requis' }, { status: 400 });
   }
 
   const supabase = createAdminClient();
-  void auth;
-
   const insertData: ExposantInsert = {
     nom,
     description: description || null,
@@ -68,16 +78,29 @@ export async function PATCH(request: Request) {
   const auth = await verifyAdmin(request);
   if (auth.error) return auth.error;
 
-  const body = await request.json();
-  const { id, nom, description, secteur, espace_id, pavillon, stand, pays, website, is_featured } = body;
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const id = body.id as string | undefined;
+  const nom = body.nom as string | undefined;
+  const description = body.description as string | undefined;
+  const secteur = body.secteur as string | undefined;
+  const espace_id = body.espace_id as string | undefined;
+  const pavillon = body.pavillon as string | undefined;
+  const stand = body.stand as string | undefined;
+  const pays = body.pays as string | undefined;
+  const website = body.website as string | undefined;
+  const is_featured = body.is_featured as boolean | undefined;
 
   if (!id) {
     return NextResponse.json({ error: 'id requis' }, { status: 400 });
   }
 
   const supabase = createAdminClient();
-  void auth;
-
   const updateData: ExposantUpdate = {};
   if (nom !== undefined) updateData.nom = nom;
   if (description !== undefined) updateData.description = description;
@@ -115,8 +138,6 @@ export async function DELETE(request: Request) {
   }
 
   const supabase = createAdminClient();
-  void auth;
-
   const { error } = await supabase.from('exposants').delete().eq('id', id);
 
   if (error) {

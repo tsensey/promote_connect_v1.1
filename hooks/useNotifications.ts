@@ -42,7 +42,7 @@ export function useNotifications() {
           const { data: conv } = await supabaseClient
             .from('conversations')
             .select('participant_a, participant_b')
-            .eq('id', msg.conversation_id)
+            .eq('id', msg.conversation_id!)
             .single();
 
           if (!conv) return;
@@ -51,7 +51,7 @@ export function useNotifications() {
           const { data: sender } = await supabaseClient
             .from('profiles')
             .select('full_name')
-            .eq('id', msg.sender_id)
+            .eq('id', msg.sender_id!)
             .single();
 
           const senderName = sender?.full_name ?? t('notifications.someone');

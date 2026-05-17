@@ -7,8 +7,15 @@ export async function GET(request: Request) {
   if (auth.error) return auth.error;
 
   const { searchParams } = new URL(request.url);
-  const page = parseInt(searchParams.get('page') || '1', 10);
-  const limit = parseInt(searchParams.get('limit') || '50', 10);
+
+  let page: number, limit: number;
+  try {
+    page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    limit = Math.min(500, Math.max(1, parseInt(searchParams.get('limit') || '50', 10)));
+  } catch {
+    page = 1;
+    limit = 50;
+  }
   const offset = (page - 1) * limit;
 
   const actorId = searchParams.get('actor_id');

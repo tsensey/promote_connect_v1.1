@@ -9,8 +9,12 @@ function isPublicRoute(pathname: string) {
 }
 
 async function getUserProfile(supabase: ReturnType<typeof createServerClient<Database>>, userId: string) {
-  const { data } = await supabase.from('profiles').select('role').eq('id', userId).single()
-  return data ? { role: data.role, is_active: true } : null
+  const { data } = await (supabase
+    .from('profiles')
+    .select('role, subscription_status, is_active')
+    .eq('id', userId)
+    .single() as never) as { data: { role: string | null; subscription_status: string | null; is_active: boolean | null } | null };
+  return data ? { role: data.role, is_active: data.is_active ?? true, subscription_status: data.subscription_status } : null
 }
 
 export async function updateSession(request: NextRequest) {
@@ -43,9 +47,9 @@ export async function updateSession(request: NextRequest) {
     return response
   }
 
-  const needsProfileCheck = pathname === '/login' || pathname === '/register' || pathname === '/' || pathname.startsWith('/admin') || pathname.startsWith('/exposant')
+  const needsProfileCheck = pathname === '/login' || pathname === '/register' || pathname === '/' || pathname.startsWith('/admin') || pathname.startsWith('/exposant') || pathname.startsWith('/app') || pathname.startsWith('/feed') || pathname.startsWith('/chat') || pathname.startsWith('/annuaire') || pathname.startsWith('/agenda') || pathname.startsWith('/vitrine') || pathname.startsWith('/abonnement')
 
-  let profile: { role: string | null; is_active: boolean } | null = null
+  let profile: { role: string | null; is_active: boolean; subscription_status: string | null } | null = null
   if (needsProfileCheck) {
     profile = await getUserProfile(supabase, user.id)
   }
@@ -54,12 +58,22 @@ export async function updateSession(request: NextRequest) {
   const isAdmin = role === 'admin'
   const isExposant = role === 'exposant'
   const isActive = profile?.is_active ?? true
+  const subscriptionStatus = profile?.subscription_status ?? null
 
   if (!isActive) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('suspended', 'true')
     return NextResponse.redirect(url)
+  }
+
+  if (subscriptionStatus === 'expired' || subscriptionStatus === 'past_due' || subscriptionStatus === 'canceled') {
+    if (!isPublicRoute(pathname) && !pathname.startsWith('/abonnement')) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/abonnement'
+      url.searchParams.set('expired', 'true')
+      return NextResponse.redirect(url)
+    }
   }
 
   if (pathname === '/login' || pathname === '/register') {

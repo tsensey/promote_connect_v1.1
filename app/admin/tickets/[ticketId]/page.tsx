@@ -109,7 +109,7 @@ export default function AdminTicketDetailPage() {
         if (messagesRes.error) throw messagesRes.error;
 
         setTicket(ticketRes.data as unknown as AdminTicketDetail);
-        setMessages(messagesRes.data || []);
+        setMessages((messagesRes.data || []) as SupportMessage[]);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : t('admin.ticket_detail.load_error'));
       } finally {

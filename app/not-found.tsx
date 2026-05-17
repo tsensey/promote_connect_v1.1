@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function NotFoundPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
@@ -8,12 +10,12 @@ export default function NotFoundPage() {
       <p className="max-w-sm text-muted-foreground">
         La page que vous recherchez n&apos;existe pas ou a été déplacée.
       </p>
-      <a
+      <Link
         href="/"
         className="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
       >
         Retour à l&apos;accueil
-      </a>
+      </Link>
     </div>
   );
 }

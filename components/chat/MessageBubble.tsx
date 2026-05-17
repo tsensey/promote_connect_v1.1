@@ -1,10 +1,12 @@
 'use client';
 
+import Image from 'next/image';
 import { memo, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Check, CheckCheck, Reply, FileText, ExternalLink } from 'lucide-react';
 import type { EnrichedMessage, ProductAttachment } from '@/hooks/useChat';
 import { cn } from '@/lib/utils';
+import { sanitizeHTML, sanitizeText } from '@/lib/sanitize';
 import { useTranslation } from '@/lib/i18n';
 
 interface MessageBubbleProps {
@@ -56,7 +58,7 @@ function ReplyQuote({ replyTo, isMine }: { replyTo: EnrichedMessage['reply_to'];
         {replyTo.author?.full_name ?? t('chat.user')}
       </p>
       <p className={cn('truncate opacity-80', isMine ? 'text-primary-foreground' : 'text-foreground/70')}>
-        {text}
+        {sanitizeText(text)}
       </p>
     </div>
   );
@@ -83,10 +85,12 @@ function ProductCard({
       )}
     >
       {product.image_url ? (
-        <img
+        <Image
           src={product.image_url}
           alt={product.nom}
-          className="size-12 shrink-0 rounded-lg object-cover"
+          width={48}
+          height={48}
+          className="shrink-0 rounded-lg object-cover"
         />
       ) : (
         <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-muted/80">
@@ -138,25 +142,29 @@ function ImageAttachment({ url }: { url: string }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={url}
-        alt="Photo"
-        onClick={() => setOpen(true)}
-        className="mt-1 max-h-60 w-auto max-w-[240px] cursor-pointer rounded-xl object-cover ring-1 ring-white/10 transition-opacity hover:opacity-90"
-      />
+      <div className="relative mt-1 max-h-60 max-w-[240px]">
+        <Image
+          src={url}
+          alt="Photo"
+          onClick={() => setOpen(true)}
+          fill
+          className="cursor-pointer rounded-xl object-cover ring-1 ring-white/10 transition-opacity hover:opacity-90"
+        />
+      </div>
       {open && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
           onClick={() => setOpen(false)}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={url}
-            alt="Photo agrandie"
-            className="max-h-[90vh] max-w-[90vw] rounded-2xl object-contain shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          />
+          <div className="relative max-h-[90vh] max-w-[90vw]">
+            <Image
+              src={url}
+              alt="Photo agrandie"
+              fill
+              className="rounded-2xl object-contain shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
         </div>
       )}
     </>
@@ -235,11 +243,11 @@ export const MessageBubble = memo(function MessageBubble({ message, isMine, show
 
           {/* Produit */}
           {message.product_attachment && (
-            <ProductCard product={message.product_attachment as ProductAttachment} isMine={isMine} />
+            <ProductCard product={message.product_attachment as unknown as ProductAttachment} isMine={isMine} />
           )}
 
           {/* Texte */}
-          {message.content && <span>{message.content}</span>}
+          {message.content && <span dangerouslySetInnerHTML={{ __html: sanitizeHTML(message.content) }} />}
         </div>
 
         {/* Heure + statut lecture */}

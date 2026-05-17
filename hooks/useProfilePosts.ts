@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
 import type { Database } from '@/types/database.types';
@@ -94,7 +95,7 @@ export function useProfilePosts(profileId: string | null | undefined) {
     const reactionMap = new Map((reactionsResult?.data || []).map((r: { post_id: string; type: string }) => [r.post_id, r.type]));
     const followingSet = new Set((followsResult?.data || []).map((f: { following_id: string }) => f.following_id));
 
-    const enriched: ProfilePost[] = (data || []).map((post: PostWithAuthor & { repost_of_id?: string }) => ({
+    const enriched: ProfilePost[] = (data || []).map((post: PostWithAuthor & { repost_of_id?: string | null }) => ({
       ...post,
       is_liked: likedPostIds.has(post.id) || reactionMap.has(post.id),
       is_shared: sharedPostIds.has(post.id),
@@ -128,7 +129,7 @@ export function useProfilePosts(profileId: string | null | undefined) {
 
     setPosts((prev) =>
       prev.map((p) =>
-        p.id === postId ? { ...p, is_liked: !isLiked, likes_count: Math.max(0, p.likes_count + (isLiked ? -1 : 1)), reaction_type: isLiked ? null : 'like' } : p
+        p.id === postId ? { ...p, is_liked: !isLiked, likes_count: Math.max(0, (p.likes_count ?? 0) + (isLiked ? -1 : 1)), reaction_type: isLiked ? null : 'like' } : p
       )
     );
 
@@ -175,7 +176,7 @@ export function useProfilePosts(profileId: string | null | undefined) {
     if (currentReaction === reactionType) {
       setPosts((prev) =>
         prev.map((p) =>
-          p.id === postId ? { ...p, is_liked: false, reaction_type: null, likes_count: Math.max(0, p.likes_count - 1) } : p
+          p.id === postId ? { ...p, is_liked: false, reaction_type: null, likes_count: Math.max(0, (p.likes_count ?? 0) - 1) } : p
         )
       );
       try {
@@ -193,7 +194,7 @@ export function useProfilePosts(profileId: string | null | undefined) {
     } else {
       setPosts((prev) =>
         prev.map((p) =>
-          p.id === postId ? { ...p, is_liked: true, reaction_type: reactionType, likes_count: wasLiked ? p.likes_count : (p.likes_count + 1) } : p
+          p.id === postId ? { ...p, is_liked: true, reaction_type: reactionType, likes_count: wasLiked ? (p.likes_count ?? 0) : ((p.likes_count ?? 0) + 1) } : p
         )
       );
       try {

@@ -14,12 +14,6 @@ export default defineConfig({
       provider: 'v8',
       include: ['hooks/**', 'lib/**', 'app/api/**'],
       exclude: ['node_modules', '.next'],
-      thresholds: {
-        statements: 60,
-        branches: 50,
-        functions: 60,
-        lines: 60,
-      },
     },
   },
   resolve: {

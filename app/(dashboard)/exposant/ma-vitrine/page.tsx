@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/context";
 import { supabaseClient } from "@/lib/supabase/client";
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -269,7 +270,7 @@ export default function ManageVitrinePage() {
           chiffre_affaires: existingExposant.chiffre_affaires || "",
           annee_creation: existingExposant.annee_creation || "",
           nombre_employes: existingExposant.nombre_employes || "",
-          gallery_urls: existingExposant.gallery_urls || [],
+          gallery_urls: existingExposant.gallery_urls as string[] || [],
         });
 
         const { data: existingProducts } = await supabaseClient
@@ -595,8 +596,7 @@ export default function ManageVitrinePage() {
                     <div className="flex items-center gap-4">
                       {showcaseForm.logo_url && (
                         <div className="relative size-16 overflow-hidden rounded-xl border border-border/50 shrink-0 bg-white">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={showcaseForm.logo_url} className="size-full object-contain" alt={t('exposant.vitrine.logo_label')} />
+                          <Image src={showcaseForm.logo_url} alt={t('exposant.vitrine.logo_label')} fill className="object-contain" />
                           <button type="button" onClick={() => setShowcaseForm(f => ({ ...f, logo_url: '' }))} className="absolute -right-1 -top-1 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"><X className="size-3" /></button>
                         </div>
                       )}
@@ -620,8 +620,7 @@ export default function ManageVitrinePage() {
                     <div className="flex flex-col gap-3">
                       {showcaseForm.cover_url && (
                         <div className="relative h-24 w-full overflow-hidden rounded-xl border border-border/50 shrink-0 bg-muted">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={showcaseForm.cover_url} className="h-full w-full object-cover" alt={t('exposant.vitrine.cover_label')} />
+                          <Image src={showcaseForm.cover_url} alt={t('exposant.vitrine.cover_label')} fill className="object-cover" />
                           <button type="button" onClick={() => setShowcaseForm(f => ({ ...f, cover_url: '' }))} className="absolute right-2 top-2 rounded-full bg-black/50 p-1.5 text-white hover:bg-black/70"><X className="size-3" /></button>
                         </div>
                       )}
@@ -978,8 +977,7 @@ export default function ManageVitrinePage() {
                   <div className="flex items-center gap-3">
                     {productForm.image_url && (
                       <div className="relative size-16 overflow-hidden rounded-xl border border-border/50 shrink-0 bg-muted">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={productForm.image_url} className="size-full object-cover" alt={t('exposant.vitrine.product_type_produit')} />
+                        <Image src={productForm.image_url} alt={t('exposant.vitrine.product_type_produit')} fill className="object-cover" />
                         <button type="button" onClick={() => setProductForm(f => ({ ...f, image_url: '' }))} className="absolute -right-1 -top-1 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"><X className="size-3" /></button>
                       </div>
                     )}
@@ -1069,8 +1067,7 @@ export default function ManageVitrinePage() {
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex gap-4">
                               {product.image_url ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={product.image_url} alt="" className="size-16 rounded-xl object-cover bg-muted border border-border/50 shrink-0" />
+                                <Image src={product.image_url} alt="" width={64} height={64} className="rounded-xl object-cover bg-muted border border-border/50 shrink-0" />
                               ) : (
                                 <div className="flex size-16 shrink-0 items-center justify-center rounded-xl bg-muted/50 border border-border/50 text-muted-foreground">
                                   <PackagePlus className="size-6" />
@@ -1176,8 +1173,7 @@ export default function ManageVitrinePage() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {showcaseForm.gallery_urls.map((url, i) => (
                     <div key={i} className="group relative aspect-square rounded-xl overflow-hidden border border-border/50 bg-muted">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={url} alt="" className="size-full object-cover" />
+                      <Image src={url} alt="" fill className="object-cover" />
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Button
                           variant="destructive"

@@ -53,6 +53,7 @@ const IconInstagram = ({ className }: { className?: string }) => (
     <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/>
   </svg>
 );
+import Image from 'next/image';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -220,11 +221,11 @@ export default function VitrineExposantPage() {
           )}
         >
           {exposant.cover_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={exposant.cover_url}
               alt={t('vitrine.detail.cover_alt', { name: exposant.nom })}
-              className="h-full w-full object-cover"
+              fill
+              className="object-cover"
             />
           ) : (
             <div className="brand-gradient h-full w-full" />
@@ -241,10 +242,9 @@ export default function VitrineExposantPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-6">
             {/* Logo */}
             <div className="relative -mt-14 shrink-0 sm:-mt-16">
-              <div className="flex size-24 items-center justify-center rounded-2xl border-4 border-background bg-primary/10 text-3xl font-bold text-primary shadow-lg">
+              <div className="relative flex size-24 items-center justify-center rounded-2xl border-4 border-background bg-primary/10 text-3xl font-bold text-primary shadow-lg">
                 {exposant.logo_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={exposant.logo_url} alt={exposant.nom} className="size-full rounded-xl object-contain" />
+                  <Image src={exposant.logo_url} alt={exposant.nom} fill className="rounded-xl object-contain" />
                 ) : (
                   exposant.nom.charAt(0).toUpperCase()
                 )}
@@ -474,8 +474,9 @@ export default function VitrineExposantPage() {
                   <DialogTrigger>
                     <div className="cursor-pointer rounded-xl border border-border/60 bg-muted/20 p-5 transition-all hover:border-primary/30 hover:shadow-md hover:bg-muted/40 group">
                       {prod.image_url && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={prod.image_url} alt={prod.nom} className="mb-3 h-40 w-full rounded-lg object-cover" />
+                        <div className="relative mb-3 h-40 w-full">
+                          <Image src={prod.image_url} alt={prod.nom} fill className="rounded-lg object-cover" />
+                        </div>
                       )}
                       <h3 className="font-heading text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
                         {prod.nom}
@@ -503,8 +504,9 @@ export default function VitrineExposantPage() {
                     </DialogHeader>
                     <div className="space-y-4 py-2">
                       {prod.image_url && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={prod.image_url} alt={prod.nom} className="h-52 w-full rounded-xl object-cover" />
+                        <div className="relative h-52 w-full">
+                          <Image src={prod.image_url} alt={prod.nom} fill className="rounded-xl object-cover" />
+                        </div>
                       )}
                       {prod.categorie && <Badge>{prod.categorie}</Badge>}
                       <p className="text-sm leading-7 text-muted-foreground">

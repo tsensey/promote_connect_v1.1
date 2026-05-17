@@ -28,6 +28,7 @@ import { createConversation } from '@/hooks/useChat';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 import type { Database } from '@/types/database.types';
 
 type Product = Database['public']['Tables']['produits']['Row'] & {
@@ -293,8 +294,8 @@ export default function FeedPage() {
               return (
                 <Card key={product.id} className="border-border/60 p-0 overflow-hidden group shadow-sm hover:shadow-md transition-all">
                   {product.image_url && (
-                    <div className="h-28 w-full overflow-hidden">
-                      <img src={product.image_url} alt={product.nom} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                    <div className="relative h-28 w-full overflow-hidden">
+                      <Image src={product.image_url} alt={product.nom} fill className="object-cover transition-transform group-hover:scale-105" />
                     </div>
                   )}
                   <CardContent className={product.image_url ? "p-3" : "p-3"}>

@@ -1,5 +1,6 @@
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -10,9 +11,7 @@ import {
   Send,
   MoreHorizontal,
   Trash2,
-  Share2,
   Repeat2,
-  Check,
   ChevronDown,
   ChevronUp,
   ChevronLeft,
@@ -28,7 +27,6 @@ import {
   HeartHandshake,
   PartyPopper,
   Lightbulb,
-  Star,
   Loader2,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -217,6 +215,13 @@ function CommentItem({
   );
 }
 
+function AuthorLink({ role, exposantId, children }: { role: string | null; exposantId: string | null; children: React.ReactNode }) {
+  if (role === 'exposant' && exposantId) {
+    return <Link href={`/annuaire/${exposantId}`} className="hover:opacity-80 transition-opacity">{children}</Link>;
+  }
+  return <>{children}</>;
+}
+
 export const PostCard = memo(function PostCard({
   post,
   isOwner,
@@ -259,6 +264,14 @@ export const PostCard = memo(function PostCard({
 
   const isLong = (post.content?.length ?? 0) > PREVIEW_CHARS;
   const displayContent = isLong && !expanded ? post.content.slice(0, PREVIEW_CHARS) + '…' : post.content;
+  const typeBg = TYPE_BADGE[post.type] || TYPE_BADGE.general;
+  const timeAgo = formatDistanceToNow(new Date(post.created_at as string), { locale: locale === 'en' ? enUS : fr, addSuffix: true });
+  const postAuthorExposants = post.author.exposants;
+  const authorDisplayName = getDisplayName(post.author, postAuthorExposants) || t('feed.post.user');
+  const authorAvatarUrl = getAvatarUrl(post.author, postAuthorExposants);
+  const authorCompanyName = getCompanyName(post.author, postAuthorExposants);
+  const exposantId = getExposantId(postAuthorExposants);
+  const authorInitials = getInitials(authorDisplayName);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -392,24 +405,8 @@ export const PostCard = memo(function PostCard({
       }
       setSubmitting(false);
     },
-    [newComment, onAddComment, post.author_id, post.id, user?.id, mentionedProfiles]
+    [newComment, onAddComment, post.author_id, post.id, user, mentionedProfiles]
   );
-
-  const typeBg = TYPE_BADGE[post.type] || TYPE_BADGE.general;
-  const timeAgo = formatDistanceToNow(new Date(post.created_at as string), { locale: locale === 'en' ? enUS : fr, addSuffix: true });
-  const postAuthorExposants = post.author.exposants;
-  const authorDisplayName = getDisplayName(post.author, postAuthorExposants) || t('feed.post.user');
-  const authorAvatarUrl = getAvatarUrl(post.author, postAuthorExposants);
-  const authorCompanyName = getCompanyName(post.author, postAuthorExposants);
-  const exposantId = getExposantId(postAuthorExposants);
-  const authorInitials = getInitials(authorDisplayName);
-
-  const AuthorWrapper = ({ children }: { children: React.ReactNode }) => {
-    if (post.author.role === 'exposant' && exposantId) {
-      return <Link href={`/annuaire/${exposantId}`} className="hover:opacity-80 transition-opacity">{children}</Link>;
-    }
-    return <>{children}</>;
-  };
 
   return (
     <Card
@@ -419,7 +416,7 @@ export const PostCard = memo(function PostCard({
       <CardContent className="p-0">
         {/* Header */}
         <div className="flex items-start gap-3 p-4 pb-3">
-          <AuthorWrapper>
+          <AuthorLink role={post.author.role} exposantId={exposantId ?? null}>
             <Avatar className="size-10 shrink-0 ring-2 ring-border/20">
               {authorAvatarUrl ? (
                 <AvatarImage src={authorAvatarUrl} />
@@ -429,15 +426,15 @@ export const PostCard = memo(function PostCard({
                 </AvatarFallback>
               )}
             </Avatar>
-          </AuthorWrapper>
+          </AuthorLink>
 
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
-              <AuthorWrapper>
+              <AuthorLink role={post.author.role} exposantId={exposantId ?? null}>
                 <span className="font-semibold text-sm text-foreground hover:underline">
                   {authorDisplayName}
                 </span>
-              </AuthorWrapper>
+              </AuthorLink>
               {post.author.role === 'exposant' && (
                 <span className="inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-600/20">
                   {t('feed.post.exposant')}
@@ -554,23 +551,46 @@ export const PostCard = memo(function PostCard({
         {post.image_url && (
           <div className={cn("mx-4 mb-3 overflow-hidden rounded-xl border border-border/60", post.image_url.includes(',') ? "grid grid-cols-2 gap-1 border-none" : "")}>
             {post.image_url.split(',').map((url, i) => (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                key={i}
-                src={url}
-                alt=""
-                onClick={() => {
-                  setSelectedImageIdx(i);
-                  setIsImageModalOpen(true);
-                  if (comments.length === 0) {
-                     setLoadingComments(true);
-                     onGetComments().then(data => { setComments(data); setLoadingComments(false); });
-                  }
-                }}
-                className={cn("w-full object-cover cursor-pointer hover:opacity-95 transition-opacity", post.image_url?.includes(',') ? "aspect-square rounded-xl border border-border/60" : "max-h-[28rem]")}
-                loading="lazy"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-              />
+              post.image_url?.includes(',') ? (
+                <div key={i} className="relative aspect-square overflow-hidden rounded-xl border border-border/60">
+                  <Image
+                    src={url}
+                    alt=""
+                    fill
+                    className="object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                    onClick={() => {
+                      setSelectedImageIdx(i);
+                      setIsImageModalOpen(true);
+                      if (comments.length === 0) {
+                         setLoadingComments(true);
+                         onGetComments().then(data => { setComments(data); setLoadingComments(false); });
+                      }
+                    }}
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                </div>
+              ) : (
+                <Image
+                  key={i}
+                  src={url}
+                  alt=""
+                  width={0}
+                  height={0}
+                  sizes="100vw"
+                  className="w-full object-cover cursor-pointer hover:opacity-95 transition-opacity max-h-[28rem]"
+                  style={{ width: '100%', height: 'auto' }}
+                  onClick={() => {
+                    setSelectedImageIdx(i);
+                    setIsImageModalOpen(true);
+                    if (comments.length === 0) {
+                       setLoadingComments(true);
+                       onGetComments().then(data => { setComments(data); setLoadingComments(false); });
+                    }
+                  }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              )
             ))}
           </div>
         )}
@@ -610,11 +630,14 @@ export const PostCard = memo(function PostCard({
               </p>
               {post.repost_of.image_url && (
                 <div className="mt-2 overflow-hidden rounded-lg border border-border/40">
-                  <img
+                  <Image
                     src={post.repost_of.image_url.split(',')[0]}
                     alt=""
+                    width={0}
+                    height={0}
+                    sizes="100vw"
                     className="max-h-32 w-full object-cover"
-                    loading="lazy"
+                    style={{ width: '100%', height: 'auto' }}
                   />
                 </div>
               )}
@@ -623,17 +646,17 @@ export const PostCard = memo(function PostCard({
         )}
 
         {/* Stats bar */}
-        {(post.likes_count > 0 || post.comments_count > 0 || (post.shares_count ?? 0) > 0 || (post.reposts_count ?? 0) > 0) && (
+        {((post.likes_count ?? 0) > 0 || (post.comments_count ?? 0) > 0 || (post.shares_count ?? 0) > 0 || (post.reposts_count ?? 0) > 0) && (
           <div className="mx-4 mb-1 flex items-center gap-3 text-[11px] text-muted-foreground border-b border-border/40 pb-2">
-            {post.likes_count > 0 && (
+            {(post.likes_count ?? 0) > 0 && (
               <span className="flex items-center gap-1">
                 <Heart className="size-3 fill-red-500 text-red-500" />
                 {post.likes_count}
               </span>
             )}
-            {post.comments_count > 0 && (
+            {(post.comments_count ?? 0) > 0 && (
               <button onClick={handleToggleComments} className="hover:text-foreground transition-colors">
-                {t('feed.post.comments_count', { count: post.comments_count })}
+                {t('feed.post.comments_count', { count: post.comments_count ?? 0 })}
               </button>
             )}
             {(post.shares_count ?? 0) > 0 && (
@@ -802,7 +825,7 @@ export const PostCard = memo(function PostCard({
             {/* New root comment */}
             <form onSubmit={handleAddComment} className="flex gap-2 pt-1">
               <MentionInput
-                ref={commentInputRef as any}
+                ref={commentInputRef as unknown as React.RefObject<HTMLInputElement | null>}
                 value={newComment}
                 onChange={setNewComment}
                 onMention={(exposant) => setMentionedProfiles(prev => [...prev, exposant.profile_id])}
@@ -832,10 +855,11 @@ export const PostCard = memo(function PostCard({
                <X className="size-5" />
              </button>
              {post.image_url && (
-                <img 
+                <Image 
                   src={post.image_url.split(',')[selectedImageIdx]} 
                   alt={t('common.preview')}
-                  className="max-w-full max-h-full object-contain"
+                  fill
+                  className="object-contain"
                 />
              )}
              {/* Next/Prev controls */}
@@ -864,15 +888,15 @@ export const PostCard = memo(function PostCard({
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border/40 shrink-0">
               <div className="flex items-center gap-3">
-                 <AuthorWrapper>
-                   <Avatar className="size-10 ring-2 ring-border/20">
+                 <AuthorLink role={post.author.role} exposantId={exposantId ?? null}>
+                    <Avatar className="size-10 ring-2 ring-border/20">
                       {authorAvatarUrl ? <AvatarImage src={authorAvatarUrl} /> : <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">{authorInitials}</AvatarFallback>}
                    </Avatar>
-                 </AuthorWrapper>
+                 </AuthorLink>
                  <div>
-                    <AuthorWrapper>
+           <AuthorLink role={post.author.role} exposantId={exposantId ?? null}>
                       <span className="font-semibold text-sm block hover:underline">{authorDisplayName}</span>
-                    </AuthorWrapper>
+                    </AuthorLink>
                     <span className="text-xs text-muted-foreground">{authorCompanyName} • {timeAgo}</span>
                  </div>
               </div>
@@ -884,8 +908,8 @@ export const PostCard = memo(function PostCard({
                
                {/* Stats */}
                <div className="flex items-center gap-3 text-[11px] text-muted-foreground border-y border-border/40 py-3 mt-4">
-                  <span className="flex items-center gap-1"><Heart className="size-3.5 fill-red-500 text-red-500" /> {post.likes_count}</span>
-                  <span>{t('feed.post.comments_count', { count: post.comments_count })}</span>
+                   <span className="flex items-center gap-1"><Heart className="size-3.5 fill-red-500 text-red-500" /> {post.likes_count}</span>
+                   <span>{t('feed.post.comments_count', { count: post.comments_count ?? 0 })}</span>
                </div>
                
                {/* Actions */}

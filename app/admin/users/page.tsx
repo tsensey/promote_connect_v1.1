@@ -804,7 +804,7 @@ export default function AdminUsersPage() {
             </div>
 
             <div className="space-y-3">
-              <Label>Niveau d'accès</Label>
+              <Label>Niveau d{'\u2019'}accès</Label>
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   type="button"
@@ -1095,7 +1095,7 @@ export default function AdminUsersPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Niveau d'accès</Label>
+              <Label>Niveau d{'\u2019'}accès</Label>
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   type="button"

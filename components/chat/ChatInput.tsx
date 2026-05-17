@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useRef, useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { EnrichedMessage, ProductAttachment } from '@/hooks/useChat';
 import { cn } from '@/lib/utils';
+import { sanitizeText } from '@/lib/sanitize';
 import { useTranslation } from '@/lib/i18n';
 
 export interface SendOptions {
@@ -103,7 +105,7 @@ export function ChatInput({
 
   const handleSend = () => {
     onSend({
-      content: value,
+      content: sanitizeText(value),
       file: selectedFile,
       replyToId: replyTo?.id ?? null,
       productAttachment: productContext ?? null,
@@ -153,10 +155,12 @@ export function ChatInput({
         <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-2">
           <Tag className="size-4 shrink-0 text-amber-500" />
           {productContext.image_url && (
-            <img
+            <Image
               src={productContext.image_url}
               alt={productContext.nom}
-              className="size-8 rounded-lg object-cover"
+              width={32}
+              height={32}
+              className="rounded-lg object-cover"
             />
           )}
           <div className="min-w-0 flex-1">
@@ -176,10 +180,12 @@ export function ChatInput({
       {selectedFile && (
         <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/40 p-2">
           {previewUrl ? (
-            <img
+            <Image
               src={previewUrl}
               alt={t('common.preview')}
-              className="size-14 rounded-lg object-cover ring-1 ring-border/40"
+              width={56}
+              height={56}
+              className="rounded-lg object-cover ring-1 ring-border/40"
             />
           ) : (
             <div className="flex size-14 shrink-0 items-center justify-center rounded-lg bg-muted/80">

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useRef, useCallback } from "react";
 import { useAuth } from "@/lib/auth/context";
 import { useIdentity } from "@/hooks/useIdentity";
@@ -325,11 +326,14 @@ export function CreatePost({
                 <div className={cn("mt-3 grid gap-2", imagePreviews.length > 1 ? "grid-cols-2" : "grid-cols-1")}>
                   {imagePreviews.map((preview, idx) => (
                     <div key={preview} className="relative overflow-hidden rounded-2xl border border-border bg-muted/20">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <Image
                         src={preview}
                         alt={`${t('common.preview')} ${idx + 1}`}
+                        width={0}
+                        height={0}
+                        sizes="100vw"
                         className="max-h-72 w-full object-cover"
+                        style={{ width: '100%', height: 'auto' }}
                       />
                       <button
                         type="button"

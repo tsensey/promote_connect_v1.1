@@ -41,6 +41,7 @@ import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useProfilePosts } from '@/hooks/useProfilePosts';
 import { PostCard } from '@/components/feed/PostCard';
+import Image from 'next/image';
 import { Ban, ShieldAlert } from 'lucide-react';
 
 const IconLinkedin = ({ className }: { className?: string }) => (
@@ -253,24 +254,27 @@ export default function ExposantDetailPage() {
           <button onClick={() => setLightboxIndex(null)} className="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white">
             <X className="size-5" />
           </button>
-          {exposant.gallery_urls.length > 1 && (
+          {Array.isArray(exposant.gallery_urls) && exposant.gallery_urls.length > 1 && (
             <>
-              <button onClick={(e) => { e.stopPropagation(); setLightboxIndex(((lightboxIndex - 1) % exposant.gallery_urls!.length + exposant.gallery_urls!.length) % exposant.gallery_urls!.length); }} className="absolute left-4 z-10 flex size-10 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white">
+              <button onClick={(e) => { e.stopPropagation(); setLightboxIndex(((lightboxIndex - 1) % (exposant.gallery_urls as string[]).length + (exposant.gallery_urls as string[]).length) % (exposant.gallery_urls as string[]).length); }} className="absolute left-4 z-10 flex size-10 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white">
                 <ChevronLeft className="size-5" />
               </button>
-              <button onClick={(e) => { e.stopPropagation(); setLightboxIndex((lightboxIndex + 1) % exposant.gallery_urls!.length); }} className="absolute right-4 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white">
+              <button onClick={(e) => { e.stopPropagation(); setLightboxIndex((lightboxIndex + 1) % (exposant.gallery_urls as string[]).length); }} className="absolute right-4 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white">
                 <ChevronRight className="size-5" />
               </button>
             </>
           )}
-          <img
-            src={exposant.gallery_urls[lightboxIndex]}
-            alt=""
-            className="max-h-[85vh] max-w-[90vw] rounded-2xl object-contain shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          />
+          <div className="relative max-h-[85vh] max-w-[90vw]">
+            <Image
+              src={(exposant.gallery_urls as string[])[lightboxIndex]}
+              alt=""
+              fill
+              className="rounded-2xl object-contain shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-4 py-1.5 text-sm text-white">
-            {lightboxIndex + 1} / {exposant.gallery_urls.length}
+            {lightboxIndex + 1} / {(exposant.gallery_urls as string[]).length}
           </div>
         </div>
       )}
@@ -294,8 +298,7 @@ export default function ExposantDetailPage() {
       <Card className="surface-panel overflow-hidden border-0 p-0">
         <div className="relative h-48 w-full bg-muted sm:h-64">
           {exposant.cover_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={exposant.cover_url} alt={t('annuaire.detail.cover_alt')} className="h-full w-full object-cover" />
+            <Image src={exposant.cover_url} alt={t('annuaire.detail.cover_alt')} fill className="object-cover" />
           ) : (
             <div className={cn("h-full w-full bg-gradient-to-br", getGradient(exposant.id))} />
           )}
@@ -306,9 +309,9 @@ export default function ExposantDetailPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex items-end gap-5 -mt-12 sm:-mt-16">
               <div className="relative shrink-0">
-                <div className="flex size-28 items-center justify-center overflow-hidden rounded-2xl border-[3px] border-background bg-white shadow-lg dark:bg-slate-900 sm:size-36">
+                <div className="relative flex size-28 items-center justify-center overflow-hidden rounded-2xl border-[3px] border-background bg-white shadow-lg dark:bg-slate-900 sm:size-36">
                   {exposant.logo_url ? (
-                    <img src={exposant.logo_url} alt={exposant.nom} className="size-full object-contain p-2" />
+                    <Image src={exposant.logo_url} alt={exposant.nom} fill className="object-contain p-2" />
                   ) : (
                     <Building2 className="size-14 text-muted-foreground/30" />
                   )}
@@ -457,24 +460,25 @@ export default function ExposantDetailPage() {
             </Card>
           )}
 
-          {exposant.gallery_urls && exposant.gallery_urls.length > 0 && (
+          {Array.isArray(exposant.gallery_urls) && (exposant.gallery_urls as string[]).length > 0 && (
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-foreground">{t('annuaire.detail.gallery')}</h2>
-                  <span className="text-xs text-muted-foreground">{exposant.gallery_urls.length} photos</span>
+                  <span className="text-xs text-muted-foreground">{(exposant.gallery_urls as string[]).length} photos</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {exposant.gallery_urls.map((url: string, i: number) => (
+                  {(exposant.gallery_urls as string[]).map((url: string, i: number) => (
                     <button
                       key={i}
                       onClick={() => setLightboxIndex(i)}
                       className="group relative aspect-square overflow-hidden rounded-xl bg-muted"
                     >
-                      <img
+                      <Image
                         src={url}
                         alt=""
-                        className="size-full object-cover transition duration-500 group-hover:scale-110"
+                        fill
+                        className="object-cover transition duration-500 group-hover:scale-110"
                       />
                       <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/10" />
                     </button>
@@ -503,7 +507,7 @@ export default function ExposantDetailPage() {
                   {publications.map((post) => (
                     <PostCard
                       key={post.id}
-                      post={post as any}
+                      post={post as unknown as Parameters<typeof PostCard>[0]['post']}
                       isOwner={myUserId === post.author_id}
                       onLike={() => toggleLike(post.id)}
                       onShare={() => sharePost(post.id)}
@@ -653,8 +657,8 @@ export default function ExposantDetailPage() {
                     >
                       <div className="flex gap-3 p-3">
                         {prod.image_url ? (
-                          <div className="size-20 shrink-0 overflow-hidden rounded-lg bg-muted">
-                            <img src={prod.image_url} alt="" className="size-full object-cover" />
+                          <div className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-muted">
+                            <Image src={prod.image_url} alt="" fill className="object-cover" />
                           </div>
                         ) : (
                           <div className="flex size-20 shrink-0 items-center justify-center rounded-lg bg-muted/50">
@@ -667,8 +671,10 @@ export default function ExposantDetailPage() {
                               <h3 className="line-clamp-1 text-sm font-semibold text-foreground">
                                 {prod.nom}
                               </h3>
+                              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                               {(prod as any).type && (
                                 <span className="shrink-0 rounded-md bg-secondary/50 px-1.5 py-0.5 text-[9px] font-medium text-secondary-foreground">
+                                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                   {(prod as any).type === 'service' ? 'Service' : 'Produit'}
                                 </span>
                               )}

@@ -11,7 +11,6 @@ export async function GET(request: Request) {
   if (auth.error) return auth.error;
 
   const supabase = createAdminClient();
-  void auth;
   const { data, error } = await supabase
     .from('espaces')
     .select('*')
@@ -28,8 +27,18 @@ export async function POST(request: Request) {
   const auth = await verifyAdmin(request);
   if (auth.error) return auth.error;
 
-  const body = await request.json();
-  const { code, nom, description, type, sort_order } = body;
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const code = body.code as string | undefined;
+  const nom = body.nom as string | undefined;
+  const description = body.description as string | undefined;
+  const type = body.type as string | undefined;
+  const sort_order = body.sort_order as number | undefined;
 
   if (!code || !nom) {
     return NextResponse.json({ error: 'code et nom sont requis' }, { status: 400 });
@@ -63,8 +72,19 @@ export async function PUT(request: Request) {
   const auth = await verifyAdmin(request);
   if (auth.error) return auth.error;
 
-  const body = await request.json();
-  const { id, code, nom, description, type, sort_order } = body;
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const id = body.id as string | undefined;
+  const code = body.code as string | undefined;
+  const nom = body.nom as string | undefined;
+  const description = body.description as string | undefined;
+  const type = body.type as string | undefined;
+  const sort_order = body.sort_order as number | undefined;
 
   if (!id) {
     return NextResponse.json({ error: 'id requis' }, { status: 400 });

@@ -41,73 +41,107 @@ promote-connect/
 │   │   ├── login/
 │   │   └── register/
 │   ├── (dashboard)/            # Zone connectée
+│   │   ├── abonnement/         # Module G — Abonnement Stripe
+│   │   ├── agenda/             # Module C — Agenda interactif
 │   │   ├── annuaire/           # Module A — Annuaire exposants
+│   │   ├── app/                # Dashboard principal
 │   │   ├── chat/               # Module B — Chat privé
 │   │   │   └── [conversationId]/
-│   │   ├── agenda/             # Module C — Agenda interactif
-│   │   ├── vitrine/            # Module D — Vitrine produits
-│   │   │   └── [exposantId]/
+│   │   ├── exposant/           # Module D — Vitrine (édition exposant)
+│   │   ├── feed/               # Fil d'actualités
 │   │   ├── newsletter/         # Module E — Newsletter
-│   │   └── support/            # Module F — Support technique
-│   ├── (admin)/                # Back-office PROMOTE
+│   │   ├── parametres/         # Paramètres utilisateur
+│   │   ├── support/            # Module F — Support technique
+│   │   │   └── [ticketId]/
+│   │   └── vitrine/            # Module D — Vitrine produits
+│   │       └── [exposantId]/
+│   ├── admin/                  # Back-office PROMOTE
+│   │   ├── espaces/            # Gestion espaces/pavillons
+│   │   │   └── exposants/
 │   │   ├── exposants/
-│   │   ├── abonnes/
-│   │   └── programme/
-│   └── api/                    # API Routes Next.js
-│       ├── webhooks/
-│       │   ├── stripe/
-│       │   └── fcm/
-│       └── newsletter/
+│   │   ├── logs/               # Audit logs
+│   │   ├── newsletter/
+│   │   ├── programme/
+│   │   ├── tickets/            # Support tickets
+│   │   │   └── [ticketId]/
+│   │   └── users/              # Gestion utilisateurs
+│   │       └── reset-password/
+│   ├── api/                    # API Routes Next.js
+│   │   ├── admin/              # Admin CRUD APIs
+│   │   ├── feed/               # Feed upload
+│   │   ├── newsletter/         # Newsletter subscribe/unsubscribe
+│   │   └── webhooks/
+│   │       ├── stripe/         # Stripe event webhook
+│   │       └── fcm/            # Firebase push notifications
+│   └── offline/                # Page hors-ligne PWA
 ├── components/
-│   ├── ui/                     # shadcn/ui components
-│   ├── annuaire/               # Composants annuaire
-│   ├── chat/                   # Composants chat
-│   ├── agenda/                 # Composants agenda
-│   └── shared/                 # Composants partagés
+│   ├── ui/                     # shadcn/ui (43 composants)
+│   ├── agenda/                 # EvenementCard, RdvCard
+│   ├── chat/                   # ChatInput, MessageBubble
+│   ├── feed/                   # CreatePost, PostCard
+│   ├── layout/                 # Sidebars, topbars, notifications
+│   └── shared/                 # PwaRegister, UserIdentity, MentionInput, etc.
 ├── lib/
 │   ├── supabase/
-│   │   ├── client.ts           # Client browser
-│   │   ├── server.ts           # Client server (cookies)
-│   │   └── middleware.ts
-│   ├── stripe/
-│   │   └── client.ts
-│   ├── resend/
-│   │   └── client.ts
-│   └── utils/
-│       ├── cn.ts               # classnames helper
-│       └── date.ts
-├── hooks/                      # Custom React hooks
-│   ├── useAnnuaire.ts
-│   ├── useChat.ts
-│   └── useAgenda.ts
+│   │   ├── client.ts           # Client browser (re-export)
+│   │   └── admin.ts            # Client admin (service_role)
+│   ├── auth/                   # Auth context provider
+│   ├── chat/                   # Chat utils + storage
+│   ├── i18n/                   # i18n custom (Provider + traductions)
+│   ├── resend/                 # Resend client
+│   ├── admin.ts                # verifyAdmin() helper
+│   ├── client.ts               # Supabase browser client singleton
+│   ├── middleware.ts           # Auth middleware (session, subscription, roles)
+│   ├── permissions.ts          # Permission helpers
+│   ├── rate-limit.ts           # Rate limiter (in-memory)
+│   ├── server.ts               # Supabase server client (cookies)
+│   └── utils.ts                # cn() + helpers
+├── hooks/                      # Custom React hooks (14 hooks)
+│   ├── useAgenda.ts, useAnnuaire.ts, useBlockedUsers.ts
+│   ├── useChat.ts, useExposants.ts, useFeed.ts
+│   ├── useIdentity.ts, useIntersectionObserver.ts
+│   ├── useMediaQuery.ts, use-mobile.ts
+│   ├── useNotifications.ts, usePermissions.ts
+│   ├── useProfilePosts.ts, useSettings.ts, useSupport.ts
 ├── store/                      # Zustand stores
+│   ├── agendaStore.ts
 │   ├── chatStore.ts
 │   └── userStore.ts
+├── test/                       # Tests unitaires + e2e
+│   ├── api.newsletter.test.ts
+│   ├── lib.chat.utils.test.ts, lib.rate-limit.test.ts, lib.utils.test.ts
+│   ├── store.chat.test.ts, store.user.test.ts
+│   └── e2e/auth.spec.ts       # Playwright e2e
 ├── types/                      # TypeScript types globaux
-│   ├── database.types.ts       # Généré par Supabase CLI
-│   ├── exposant.ts
-│   ├── chat.ts
-│   └── agenda.ts
+│   ├── database.types.ts       # Généré par Supabase CLI (partiellement obsolète)
+│   └── (chat.ts, exposant.ts, agenda.ts, etc.)
 ├── supabase/
-│   ├── migrations/             # SQL migrations
+│   ├── migrations/             # 34 SQL migrations (000-034)
 │   ├── functions/              # Edge Functions Deno
 │   │   ├── send-newsletter/
-│   │   ├── generate-rdv/
-│   │   └── subscription-webhook/
+│   │   ├── send-push-notification/
+│   │   └── generate-rdv/
 │   └── seed.sql
 ├── emails/                     # Templates React Email
 │   ├── WelcomeEmail.tsx
 │   ├── NewsletterEmail.tsx
-│   └── RdvConfirmationEmail.tsx
-├── CLAUDE.md                   # Ce fichier
+│   ├── RdvConfirmationEmail.tsx
+│   └── CredentialsEmail.tsx
 ├── public/
 │   ├── sw.js                   # Service Worker (cache, offline, push)
-│   └── icons/                  # Icônes PWA (générées par script)
+│   ├── icons/                  # 8 icônes PWA (72-512px + maskable)
+│   ├── logo-promote.png
+│   └── .well-known/
 ├── scripts/
-│   └── generate-pwa-icons.mjs  # Génération des icônes PWA via sharp
+│   ├── generate-pwa-icons.mjs  # Génération des icônes PWA
+│   ├── seed.js                 # Seed de la base
+│   ├── create-admin.mjs        # Création admin CLI
+│   └── cleanup-orphans.js      # Nettoyage données orphelines
+├── middleware.ts               # Auth middleware Next.js (délègue à lib/middleware.ts)
+├── next.config.mjs             # Config Next.js (headers sécurité, CSP, images)
+├── vitest.config.ts            # Config Vitest (jsdom, coverage, aliases)
 ├── .env.local                  # Variables d'environnement (jamais en git)
-├── .env.example                # Template variables
-└── middleware.ts               # Auth middleware Next.js
+└── .env.example                # Template variables
 ```
 
 ---
@@ -167,8 +201,15 @@ profiles (
   country text,
   pavillon text,
   avatar_url text,
-  subscription_status text,     -- 'active' | 'expired' | 'trial'
+  subscription_status text,     -- 'active' | 'expired' | 'trial' | 'past_due'
   subscription_ends_at timestamptz,
+  stripe_customer_id text,
+  is_active boolean DEFAULT true,
+  access_level text DEFAULT 'classic',
+  daily_exchange_count integer DEFAULT 0,
+  last_exchange_reset timestamptz,
+  suspended_at timestamptz,
+  suspended_reason text,
   created_at timestamptz DEFAULT now()
 )
 
@@ -348,7 +389,12 @@ node scripts/generate-pwa-icons.mjs  # Générer les icônes PWA
 
 # Tests
 npm run test                    # Vitest
+npm run test:coverage           # Coverage (nécessite @vitest/coverage-v8)
 npm run test:e2e                # Playwright
+
+# Base de données
+npm run db:seed                 # Seed initial
+npm run db:cleanup-orphans      # Nettoyage données orphelines
 ```
 
 ---
@@ -360,10 +406,13 @@ npm run test:e2e                # Playwright
 3. **Performance** : LCP < 3s, TTI < 5s — mesurer avec Lighthouse CI
 4. **Abonnement** : Vérifier `subscription_status === 'active'` avant tout accès aux données protégées
 5. **Chat** : Données sensibles — ne jamais logger le contenu des messages
-6. **Stripe Webhooks** : Toujours valider la signature (`stripe.webhooks.constructEvent`)
+6. **Stripe Webhooks** : Toujours valider la signature (`stripe.webhooks.constructEvent`) + idempotency in-memory
 7. **PWA** : Vérifier le Service Worker après chaque build (`public/sw.js`) — tester offline et push
 8. **CSP** : La `worker-src 'self' blob:` doit être présente pour le Service Worker
 9. **Icônes PWA** : Générer les PNG via `node scripts/generate-pwa-icons.mjs` avant déploiement
+10. **Rate Limiting** : Utiliser `lib/rate-limit.ts` sur tous les endpoints exposés (FCM, upload, auth)
+11. **API Auth** : Toute route API doit vérifier l'authentification (Bearer token ou verifyAdmin)
+12. **Images** : Utiliser `next/image` (pas de `<img>` natif) — dimensions fixes ou `fill` avec conteneur
 
 ---
 

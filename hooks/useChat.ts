@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
 import { uploadChatFile } from '@/lib/chat/storage';
-import type { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 import type {
   EnrichedConversation,
   EnrichedMessage,
@@ -93,7 +93,7 @@ export function useConversations() {
         if (error) throw error;
         if (!mounted) return;
 
-        const convs = (data || []) as (Conversation & {
+        const convs = (data || []) as unknown as (Conversation & {
           participant_a: Profile | null;
           participant_b: Profile | null;
         })[];
@@ -148,12 +148,12 @@ export function useConversations() {
           const lastMsgByConv = new Map<string, string>();
           if (lastMessages) {
             for (const msg of lastMessages) {
-              if (!lastMsgByConv.has(msg.conversation_id)) {
+              if (!lastMsgByConv.has(msg.conversation_id!)) {
                 let preview = msg.content;
                 if (!preview && msg.attachment_type === 'image') preview = '📷 Photo';
                 else if (!preview && msg.attachment_type === 'document') preview = '📄 Document';
-                else if (msg.product_attachment) preview = `🏷️ ${(msg.product_attachment as ProductAttachment).nom}`;
-                lastMsgByConv.set(msg.conversation_id, preview || '');
+                else if (msg.product_attachment) preview = `🏷️ ${(msg.product_attachment as unknown as ProductAttachment).nom}`;
+                lastMsgByConv.set(msg.conversation_id!, preview || '');
               }
             }
           }
@@ -161,7 +161,7 @@ export function useConversations() {
           const unreadByConv = new Map<string, number>();
           if (unreadCounts) {
             for (const row of unreadCounts) {
-              unreadByConv.set(row.conversation_id, (unreadByConv.get(row.conversation_id) || 0) + 1);
+              unreadByConv.set(row.conversation_id!, (unreadByConv.get(row.conversation_id!) || 0) + 1);
             }
           }
 
@@ -226,7 +226,7 @@ export function useMessages(conversationId: string) {
           .single();
 
         if (convData && mounted) {
-          const conv = convData as Conversation & {
+          const conv = convData as unknown as Conversation & {
             participant_a: Profile | null;
             participant_b: Profile | null;
           };
@@ -395,7 +395,7 @@ export function useMessages(conversationId: string) {
         attachment_url: attachmentUrl,
         attachment_type: attachmentType,
         reply_to_id: replyToId ?? null,
-        product_attachment: productAttachment ?? null,
+        product_attachment: productAttachment as unknown as Json,
         is_read: false,
       });
 
