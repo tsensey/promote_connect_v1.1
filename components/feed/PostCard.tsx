@@ -252,6 +252,8 @@ export const PostCard = memo(function PostCard({
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [saveAnim, setSaveAnim] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [repostExpanded, setRepostExpanded] = useState(false);
+  const [showOriginalModal, setShowOriginalModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
   const [showRepostDialog, setShowRepostDialog] = useState(false);
@@ -597,7 +599,10 @@ export const PostCard = memo(function PostCard({
 
         {/* Embedded original post (repost) */}
         {post.repost_of && (
-          <div className="mx-4 mb-3 rounded-xl border border-border/50 bg-muted/20 overflow-hidden hover:bg-muted/30 transition-colors cursor-pointer">
+          <div
+            className="mx-4 mb-3 rounded-xl border border-border/50 bg-muted/20 overflow-hidden hover:bg-muted/30 transition-colors cursor-pointer"
+            onClick={() => setShowOriginalModal(true)}
+          >
             <div className="p-3">
               <div className="flex items-center gap-2 mb-2">
                 {(() => {
@@ -625,9 +630,26 @@ export const PostCard = memo(function PostCard({
                   );
                 })()}
               </div>
-              <p className="text-xs text-foreground/80 leading-relaxed line-clamp-3 whitespace-pre-wrap">
+              <p
+                className={cn(
+                  "text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap",
+                  !repostExpanded && "line-clamp-3"
+                )}
+              >
                 {post.repost_of.content}
               </p>
+              {post.repost_of.content && post.repost_of.content.length > 180 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setRepostExpanded((v) => !v); }}
+                  className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                >
+                  {repostExpanded ? (
+                    <><ChevronUp className="size-3" /> {t('feed.post.see_less')}</>
+                  ) : (
+                    <><ChevronDown className="size-3" /> {t('feed.post.see_more')}</>
+                  )}
+                </button>
+              )}
               {post.repost_of.image_url && (
                 <div className="mt-2 overflow-hidden rounded-lg border border-border/40">
                   <Image
@@ -966,6 +988,60 @@ export const PostCard = memo(function PostCard({
                  <input type="text" value={newComment} onChange={e => setNewComment(e.target.value)} placeholder={t('feed.post.comment_placeholder')} className="flex-1 bg-muted/50 rounded-full px-4 text-sm outline-none focus:ring-1 focus:ring-primary/40 border border-transparent focus:border-primary/30" />
                  <button type="submit" disabled={!newComment.trim()} className="shrink-0 p-2 text-primary hover:bg-primary/10 rounded-full disabled:opacity-50"><Send className="size-4" /></button>
                </form>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Original Post Detail Modal */}
+      <Dialog open={showOriginalModal} onOpenChange={setShowOriginalModal}>
+        <DialogContent className="!max-w-lg p-0 overflow-hidden rounded-2xl border-border/40 gap-0">
+          <div className="p-5">
+            <div className="flex items-center gap-3 mb-4">
+              {(() => {
+                const ra = post.repost_of?.author;
+                const rExposants = (ra as { exposants?: Array<{ id: string; nom?: string; logo_url?: string }> })?.exposants;
+                const rName = getDisplayName(ra, rExposants) || t('feed.post.user');
+                const rAvatar = getAvatarUrl(ra, rExposants);
+                const rCompany = getCompanyName(ra, rExposants);
+                const rInitials = getInitials(rName);
+                return (
+                  <>
+                    <Avatar className="size-10 shrink-0 ring-2 ring-border/20">
+                      {rAvatar ? (
+                        <AvatarImage src={rAvatar} />
+                      ) : (
+                        <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+                          {rInitials}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-sm text-foreground truncate">{rName}</p>
+                      {rCompany && <p className="text-xs text-muted-foreground truncate">{rCompany}</p>}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+
+            <div className="max-h-[50vh] overflow-y-auto space-y-4">
+              <p className="whitespace-pre-wrap text-sm text-foreground/90 leading-relaxed">
+                {post.repost_of?.content}
+              </p>
+              {post.repost_of?.image_url && (
+                <div className="rounded-xl overflow-hidden border border-border/40">
+                  <Image
+                    src={post.repost_of.image_url.split(',')[0]}
+                    alt=""
+                    width={0}
+                    height={0}
+                    sizes="100vw"
+                    className="w-full object-cover max-h-96"
+                    style={{ width: '100%', height: 'auto' }}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </DialogContent>
