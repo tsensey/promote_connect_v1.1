@@ -148,6 +148,7 @@ function ImageAttachment({ url }: { url: string }) {
           alt="Photo"
           onClick={() => setOpen(true)}
           fill
+          sizes="240px"
           className="cursor-pointer rounded-xl object-cover ring-1 ring-white/10 transition-opacity hover:opacity-90"
         />
       </div>
@@ -161,6 +162,7 @@ function ImageAttachment({ url }: { url: string }) {
               src={url}
               alt="Photo agrandie"
               fill
+              sizes="90vw"
               className="rounded-2xl object-contain shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             />

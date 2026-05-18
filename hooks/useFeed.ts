@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useCallback } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
+import { compressImages } from '@/lib/compress-image';
 import type { Database } from '@/types/database.types';
 
 type PostRow = Database['public']['Tables']['posts']['Row'];
@@ -32,15 +33,12 @@ export type Comment = PostCommentRow & {
   replies?: Comment[];
 };
 
-export type FeedFilter = 'top' | 'recent';
-
 export function useFeed(limit = 20) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [myUserId, setMyUserId] = useState<string | null>(null);
-  const [feedFilter, setFeedFilter] = useState<FeedFilter>('recent');
   const [followingIds, setFollowingIds] = useState<string[]>([]);
 
   const fetchPosts = useCallback(
@@ -59,15 +57,7 @@ export function useFeed(limit = 20) {
           `)
           .limit(limit);
 
-        if (feedFilter === 'top') {
-          query = query
-            .order('is_pinned', { ascending: false })
-            .order('likes_count', { ascending: false })
-            .order('comments_count', { ascending: false })
-            .order('created_at', { ascending: false });
-        } else {
-          query = query.order('created_at', { ascending: false });
-        }
+        query = query.order('created_at', { ascending: false });
 
         if (cursor) {
           query = query.lt('created_at', cursor);
@@ -140,7 +130,7 @@ export function useFeed(limit = 20) {
         setLoading(false);
       }
     },
-    [limit, feedFilter]
+    [limit]
   );
 
   useEffect(() => {
@@ -224,9 +214,16 @@ export function useFeed(limit = 20) {
   }, [hasMore, loading, posts, fetchPosts]);
 
   const uploadImage = useCallback(async (files: File[]): Promise<string[]> => {
+    const compressed = await compressImages(files);
+    const { data: session } = await supabaseClient.auth.getSession();
+    const token = session?.session?.access_token;
     const formData = new FormData();
-    files.forEach(file => formData.append('files', file));
-    const res = await fetch('/api/feed/upload', { method: 'POST', body: formData });
+    compressed.forEach(file => formData.append('files', file));
+    const res = await fetch('/api/feed/upload', {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Upload error");
     return data.urls || (data.url ? [data.url] : []);
@@ -624,8 +621,6 @@ export function useFeed(limit = 20) {
     error,
     hasMore,
     loadMore,
-    feedFilter,
-    setFeedFilter,
     createPost,
     repostPost,
     updatePost,

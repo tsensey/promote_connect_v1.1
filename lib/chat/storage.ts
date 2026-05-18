@@ -1,4 +1,5 @@
 import { supabaseClient } from '@/lib/supabase/client';
+import { compressImage } from '@/lib/compress-image';
 
 const ALLOWED_IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
 
@@ -11,6 +12,8 @@ export async function uploadChatFile(
   const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
   const type: AttachmentType = ALLOWED_IMAGE_EXTS.includes(ext) ? 'image' : 'document';
 
+  const uploadFile = type === 'image' ? await compressImage(file) : file;
+
   const { data: session } = await supabaseClient.auth.getSession();
   const userId = session?.session?.user?.id;
   if (!userId) return null;
@@ -18,7 +21,7 @@ export async function uploadChatFile(
   const filePath = `${conversationId}/${userId}-${Date.now()}.${ext}`;
   const { data: uploadData, error: uploadError } = await supabaseClient.storage
     .from('chat_media')
-    .upload(filePath, file, { upsert: false });
+    .upload(filePath, uploadFile, { upsert: false });
 
   if (uploadError || !uploadData) return null;
 

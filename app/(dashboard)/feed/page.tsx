@@ -18,8 +18,6 @@ import {
   Repeat2,
   Send,
   Package,
-  Flame,
-  Clock,
 } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -27,7 +25,6 @@ import { supabaseClient } from '@/lib/supabase/client';
 import { createConversation } from '@/hooks/useChat';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
-import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import type { Database } from '@/types/database.types';
 
@@ -43,8 +40,6 @@ export default function FeedPage() {
     loading,
     hasMore,
     loadMore,
-    feedFilter,
-    setFeedFilter,
     createPost,
     repostPost,
     updatePost,
@@ -203,28 +198,6 @@ export default function FeedPage() {
         <div className="col-span-12 space-y-4 lg:col-span-6">
           <CreatePost onSubmit={createPost} onUpload={uploadImage} />
 
-          {/* Filter tabs */}
-          <div className="flex gap-1 rounded-xl border border-border/60 bg-card p-1">
-            {[
-              { key: 'top' as const, icon: Flame, label: t('feed.filter.top') },
-              { key: 'recent' as const, icon: Clock, label: t('feed.filter.recent') },
-            ].map(({ key, icon: Icon, label }) => (
-              <button
-                key={key}
-                onClick={() => setFeedFilter(key)}
-                className={cn(
-                  'flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all',
-                  feedFilter === key
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                )}
-              >
-                <Icon className="size-3.5" />
-                {label}
-              </button>
-            ))}
-          </div>
-
           {loading && posts.length === 0 ? (
             <Card className="border-border/60 p-0">
               <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
@@ -295,7 +268,7 @@ export default function FeedPage() {
                 <Card key={product.id} className="border-border/60 p-0 overflow-hidden group shadow-sm hover:shadow-md transition-all">
                   {product.image_url && (
                     <div className="relative h-28 w-full overflow-hidden">
-                      <Image src={product.image_url} alt={product.nom} fill className="object-cover transition-transform group-hover:scale-105" />
+                      <Image src={product.image_url} alt={product.nom} fill sizes="300px" className="object-cover transition-transform group-hover:scale-105" />
                     </div>
                   )}
                   <CardContent className={product.image_url ? "p-3" : "p-3"}>

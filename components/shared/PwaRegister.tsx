@@ -10,6 +10,10 @@ export function PwaRegister() {
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
 
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+    });
+
     const handler = (reg: ServiceWorkerRegistration) => {
       setRegistration(reg);
       if (reg.waiting) setUpdateAvailable(true);

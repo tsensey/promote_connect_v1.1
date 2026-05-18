@@ -854,14 +854,15 @@ export const PostCard = memo(function PostCard({
              <button onClick={() => setIsImageModalOpen(false)} className="absolute top-4 left-4 z-50 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 p-2 rounded-full backdrop-blur-sm transition-all">
                <X className="size-5" />
              </button>
-             {post.image_url && (
-                <Image 
-                  src={post.image_url.split(',')[selectedImageIdx]} 
-                  alt={t('common.preview')}
-                  fill
-                  className="object-contain"
-                />
-             )}
+              {post.image_url && (
+                 <Image 
+                   src={post.image_url.split(',')[selectedImageIdx]} 
+                   alt={t('common.preview')}
+                   fill
+                   sizes="(max-width: 1200px) 95vw, 1200px"
+                   className="object-contain"
+                 />
+              )}
              {/* Next/Prev controls */}
              {post.image_url?.includes(',') && (
                <>

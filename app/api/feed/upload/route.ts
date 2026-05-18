@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import sharp from 'sharp';
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
@@ -46,8 +47,15 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: `Format non supporte pour ${file.name}` }, { status: 400 });
       }
 
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const ext = file.name.split('.').pop() || 'jpg';
+      const isGif = file.type === 'image/gif';
+      const originalBuffer = Buffer.from(await file.arrayBuffer());
+      const buffer = !isGif
+        ? await sharp(originalBuffer)
+            .resize(2048, 2048, { fit: 'inside', withoutEnlargement: true })
+            .jpeg({ quality: 85, mozjpeg: true })
+            .toBuffer()
+        : originalBuffer;
+      const ext = isGif ? 'gif' : 'jpg';
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`;
       const filePath = `posts/${fileName}`;
 
@@ -55,7 +63,7 @@ export async function POST(request: NextRequest) {
       const { data, error } = await adminClient.storage
         .from('feed-images')
         .upload(filePath, buffer, {
-          contentType: file.type,
+          contentType: isGif ? file.type : 'image/jpeg',
           cacheControl: '31536000',
         });
 

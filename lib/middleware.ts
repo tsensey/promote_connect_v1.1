@@ -92,14 +92,14 @@ export async function updateSession(request: NextRequest) {
 
   if (pathname === '/login' || pathname === '/register') {
     const url = request.nextUrl.clone()
-    url.pathname = isAdmin ? '/admin' : '/app'
+    url.pathname = isAdmin ? '/admin' : '/feed'
     url.searchParams.delete('redirect')
     return NextResponse.redirect(url)
   }
 
   if (pathname === '/') {
     const url = request.nextUrl.clone()
-    url.pathname = isAdmin ? '/admin' : '/app'
+    url.pathname = isAdmin ? '/admin' : '/feed'
     return NextResponse.redirect(url)
   }
 

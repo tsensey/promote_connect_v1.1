@@ -269,6 +269,7 @@ export default function ExposantDetailPage() {
               src={(exposant.gallery_urls as string[])[lightboxIndex]}
               alt=""
               fill
+              sizes="100vw"
               className="rounded-2xl object-contain shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             />
@@ -298,7 +299,7 @@ export default function ExposantDetailPage() {
       <Card className="surface-panel overflow-hidden border-0 p-0">
         <div className="relative h-48 w-full bg-muted sm:h-64">
           {exposant.cover_url ? (
-            <Image src={exposant.cover_url} alt={t('annuaire.detail.cover_alt')} fill className="object-cover" />
+            <Image src={exposant.cover_url} alt={t('annuaire.detail.cover_alt')} fill sizes="100vw" className="object-cover" />
           ) : (
             <div className={cn("h-full w-full bg-gradient-to-br", getGradient(exposant.id))} />
           )}
@@ -311,7 +312,7 @@ export default function ExposantDetailPage() {
               <div className="relative shrink-0">
                 <div className="relative flex size-28 items-center justify-center overflow-hidden rounded-2xl border-[3px] border-background bg-white shadow-lg dark:bg-slate-900 sm:size-36">
                   {exposant.logo_url ? (
-                    <Image src={exposant.logo_url} alt={exposant.nom} fill className="object-contain p-2" />
+                    <Image src={exposant.logo_url} alt={exposant.nom} fill sizes="(max-width: 640px) 112px, 144px" className="object-contain p-2" />
                   ) : (
                     <Building2 className="size-14 text-muted-foreground/30" />
                   )}
@@ -478,6 +479,7 @@ export default function ExposantDetailPage() {
                         src={url}
                         alt=""
                         fill
+                        sizes="(max-width: 640px) 50vw, 33vw"
                         className="object-cover transition duration-500 group-hover:scale-110"
                       />
                       <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/10" />
@@ -658,7 +660,7 @@ export default function ExposantDetailPage() {
                       <div className="flex gap-3 p-3">
                         {prod.image_url ? (
                           <div className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-muted">
-                            <Image src={prod.image_url} alt="" fill className="object-cover" />
+                            <Image src={prod.image_url} alt="" fill sizes="80px" className="object-cover" />
                           </div>
                         ) : (
                           <div className="flex size-20 shrink-0 items-center justify-center rounded-lg bg-muted/50">

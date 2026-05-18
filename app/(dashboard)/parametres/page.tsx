@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth/context';
 import { useTranslation } from '@/lib/i18n';
 import { useSettings } from '@/hooks/useSettings';
 import { supabaseClient } from '@/lib/supabase/client';
+import { compressImage } from '@/lib/compress-image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -70,9 +71,10 @@ function ProfileTab() {
     const { data: session } = await supabaseClient.auth.getSession();
     const userId = session?.session?.user?.id;
     if (!userId) return;
-    const fileExt = file.name.split('.').pop();
+    const compressed = await compressImage(file);
+    const fileExt = compressed.name.split('.').pop();
     const filePath = `avatars/${userId}-${Date.now()}.${fileExt}`;
-    const { error: uploadError } = await supabaseClient.storage.from('avatars').upload(filePath, file);
+    const { error: uploadError } = await supabaseClient.storage.from('avatars').upload(filePath, compressed);
     if (uploadError) {
       toast.error(t('profile.error'), { description: uploadError.message });
       return;

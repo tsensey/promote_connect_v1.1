@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/context";
 import { supabaseClient } from "@/lib/supabase/client";
+import { compressImage, compressImages } from "@/lib/compress-image";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -154,8 +155,11 @@ export default function ManageVitrinePage() {
     const newUrls: string[] = [];
 
     try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+      const fileArray = Array.from(files);
+      const compressedFiles = await compressImages(fileArray);
+
+      for (let i = 0; i < compressedFiles.length; i++) {
+        const file = compressedFiles[i];
         if (file.size > 5 * 1024 * 1024) {
           toast.error(t('exposant.vitrine.image_name_too_large', { name: file.name }));
           continue;
@@ -207,12 +211,13 @@ export default function ManageVitrinePage() {
     else setUploadingProductImage(true);
 
     try {
-      const ext = file.name.split('.').pop();
+      const compressed = await compressImage(file);
+      const ext = compressed.name.split('.').pop();
       const fileName = `${user.id}-${field}-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
       
       const { data, error } = await supabaseClient.storage
         .from('vitrine-images')
-        .upload(fileName, file);
+        .upload(fileName, compressed);
 
       if (error) throw error;
 
@@ -596,7 +601,7 @@ export default function ManageVitrinePage() {
                     <div className="flex items-center gap-4">
                       {showcaseForm.logo_url && (
                         <div className="relative size-16 overflow-hidden rounded-xl border border-border/50 shrink-0 bg-white">
-                          <Image src={showcaseForm.logo_url} alt={t('exposant.vitrine.logo_label')} fill className="object-contain" />
+                          <Image src={showcaseForm.logo_url} alt={t('exposant.vitrine.logo_label')} fill sizes="64px" className="object-contain" />
                           <button type="button" onClick={() => setShowcaseForm(f => ({ ...f, logo_url: '' }))} className="absolute -right-1 -top-1 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"><X className="size-3" /></button>
                         </div>
                       )}
@@ -620,7 +625,7 @@ export default function ManageVitrinePage() {
                     <div className="flex flex-col gap-3">
                       {showcaseForm.cover_url && (
                         <div className="relative h-24 w-full overflow-hidden rounded-xl border border-border/50 shrink-0 bg-muted">
-                          <Image src={showcaseForm.cover_url} alt={t('exposant.vitrine.cover_label')} fill className="object-cover" />
+                          <Image src={showcaseForm.cover_url} alt={t('exposant.vitrine.cover_label')} fill sizes="100vw" className="object-cover" />
                           <button type="button" onClick={() => setShowcaseForm(f => ({ ...f, cover_url: '' }))} className="absolute right-2 top-2 rounded-full bg-black/50 p-1.5 text-white hover:bg-black/70"><X className="size-3" /></button>
                         </div>
                       )}
@@ -977,7 +982,7 @@ export default function ManageVitrinePage() {
                   <div className="flex items-center gap-3">
                     {productForm.image_url && (
                       <div className="relative size-16 overflow-hidden rounded-xl border border-border/50 shrink-0 bg-muted">
-                        <Image src={productForm.image_url} alt={t('exposant.vitrine.product_type_produit')} fill className="object-cover" />
+                        <Image src={productForm.image_url} alt={t('exposant.vitrine.product_type_produit')} fill sizes="64px" className="object-cover" />
                         <button type="button" onClick={() => setProductForm(f => ({ ...f, image_url: '' }))} className="absolute -right-1 -top-1 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"><X className="size-3" /></button>
                       </div>
                     )}
@@ -1173,7 +1178,7 @@ export default function ManageVitrinePage() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {showcaseForm.gallery_urls.map((url, i) => (
                     <div key={i} className="group relative aspect-square rounded-xl overflow-hidden border border-border/50 bg-muted">
-                      <Image src={url} alt="" fill className="object-cover" />
+                      <Image src={url} alt="" fill sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw" className="object-cover" />
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Button
                           variant="destructive"
