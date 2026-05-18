@@ -45,6 +45,7 @@ type Post = NonNullable<ReturnType<typeof useFeed>['posts']>[number];
 interface PostCardProps {
   post: Post;
   isOwner: boolean;
+  priority?: boolean;
   onLike: () => void;
   onShare: () => void;
   onRepost: (content: string, originalPostId: string) => Promise<{ error: any }>;
@@ -225,6 +226,7 @@ function AuthorLink({ role, exposantId, children }: { role: string | null; expos
 export const PostCard = memo(function PostCard({
   post,
   isOwner,
+  priority = false,
   onLike,
   onShare,
   onRepost,
@@ -559,6 +561,7 @@ export const PostCard = memo(function PostCard({
                     src={url}
                     alt=""
                     fill
+                    priority={priority}
                     className="object-cover cursor-pointer hover:opacity-95 transition-opacity"
                     onClick={() => {
                       setSelectedImageIdx(i);
@@ -580,6 +583,7 @@ export const PostCard = memo(function PostCard({
                   width={0}
                   height={0}
                   sizes="100vw"
+                  priority={priority}
                   className="w-full object-cover cursor-pointer hover:opacity-95 transition-opacity max-h-[28rem]"
                   style={{ width: '100%', height: 'auto' }}
                   onClick={() => {

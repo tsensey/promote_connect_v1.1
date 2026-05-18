@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/context';
-import { Plus, Search, Edit, Trash2, Loader2, Users } from 'lucide-react';
+import { Plus, Search, Trash2, ExternalLink, Loader2, Users } from 'lucide-react';
 import type { Database } from '@/types/database.types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +39,7 @@ interface Espace {
 
 export default function AdminExposantsPage() {
   const { t } = useTranslation();
+  const router = useRouter();
   const { session } = useAuth();
   const [exposants, setExposants] = useState<Exposant[]>([]);
   const [espaces, setEspaces] = useState<Espace[]>([]);
@@ -115,22 +117,6 @@ export default function AdminExposantsPage() {
     } finally {
       setFormLoading(false);
     }
-  };
-
-  const handleEdit = (exp: Exposant) => {
-    setFormData({
-      nom: exp.nom || '',
-      description: exp.description || '',
-      secteur: exp.secteur || '',
-      espace_id: exp.espace_id || '',
-      pavillon: exp.pavillon || '',
-      stand: exp.stand || '',
-      pays: exp.pays || '',
-      website: exp.website || '',
-      is_featured: exp.is_featured || false,
-    });
-    setEditingId(exp.id);
-    setShowForm(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -239,8 +225,8 @@ export default function AdminExposantsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => handleEdit(exp)} className="h-8 w-8 p-0">
-                            <Edit className="size-4" />
+                          <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/exposants/${exp.id}`)} className="h-8 w-8 p-0">
+                            <ExternalLink className="size-4" />
                           </Button>
                           <Button variant="ghost" size="sm" onClick={() => handleDelete(exp.id)} className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10">
                             <Trash2 className="size-4" />

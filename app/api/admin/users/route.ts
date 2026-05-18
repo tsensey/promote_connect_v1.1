@@ -106,7 +106,25 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ users });
+  const profileIds = users.map(u => u.id).filter(Boolean);
+  const { data: exposants } = await supabase
+    .from('exposants')
+    .select('id, profile_id')
+    .in('profile_id', profileIds);
+
+  const exposantMap = new Map<string, string>();
+  if (exposants) {
+    for (const exp of exposants) {
+      if (exp.profile_id) exposantMap.set(exp.profile_id, exp.id);
+    }
+  }
+
+  const usersWithExposant = users.map(u => ({
+    ...u,
+    exposant_id: exposantMap.get(u.id) || null,
+  }));
+
+  return NextResponse.json({ users: usersWithExposant });
 }
 
 export async function POST(request: Request) {

@@ -29,7 +29,12 @@ import Image from 'next/image';
 import type { Database } from '@/types/database.types';
 
 type Product = Database['public']['Tables']['produits']['Row'] & {
-  exposants: { nom: string; profile_id: string; logo_url: string | null } | null;
+  exposants: {
+    nom: string;
+    profile_id: string;
+    logo_url: string | null;
+    profiles: { access_level: string } | null;
+  } | null;
 };
 
 export default function FeedPage() {
@@ -63,11 +68,24 @@ export default function FeedPage() {
     async function loadRandomProducts() {
       const { data } = await supabaseClient
         .from('produits')
-        .select('*, exposants(nom, profile_id, logo_url)')
-        .limit(20);
+        .select('*, exposants!inner(nom, profile_id, logo_url, profiles(access_level))')
+        .limit(30);
       if (data && data.length > 0) {
-        const shuffled = (data as Product[]).sort(() => 0.5 - Math.random()).slice(0, 4);
-        setRandomProducts(shuffled);
+        const products = data as Product[];
+        const premium = products.filter(
+          p => p.exposants?.profiles?.access_level === 'premium'
+        );
+        const classic = products.filter(
+          p => p.exposants?.profiles?.access_level !== 'premium'
+        );
+        const shuffledPremium = premium.sort(() => 0.5 - Math.random()).slice(0, 3);
+        const countNeeded = Math.max(0, 4 - shuffledPremium.length);
+        const shuffledClassic = classic
+          .filter(p => !shuffledPremium.find(sp => sp.id === p.id))
+          .sort(() => 0.5 - Math.random())
+          .slice(0, countNeeded);
+        const combined = [...shuffledPremium, ...shuffledClassic];
+        setRandomProducts(combined.slice(0, 4));
       }
     }
     loadRandomProducts();
@@ -225,11 +243,12 @@ export default function FeedPage() {
             </Card>
           ) : (
             <>
-              {posts.map((post) => (
+              {posts.map((post, index) => (
                 <PostCard
                   key={post.id}
                   post={post}
                   isOwner={post.author_id === myUserId}
+                  priority={index === 0}
                   onLike={() => toggleLike(post.id)}
                   onShare={() => sharePost(post.id)}
                   onRepost={(content, originalId) => repostPost(content, originalId)}

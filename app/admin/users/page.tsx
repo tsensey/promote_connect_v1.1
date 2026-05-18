@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Ban,
   Building2,
@@ -8,6 +9,7 @@ import {
   Copy,
   Globe2,
   KeyRound,
+  Store,
   Loader2,
   Mail,
   MoreVertical,
@@ -69,6 +71,7 @@ interface UserRow {
   is_active: boolean;
   access_level: string;
   created_at: string;
+  exposant_id: string | null;
 }
 
 const SECTORS = [
@@ -158,6 +161,7 @@ const COUNTRY_KEYS: Record<string, string> = {
 
 export default function AdminUsersPage() {
   const { t, locale } = useTranslation();
+  const router = useRouter();
   const { session } = useAuth();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -666,6 +670,14 @@ export default function AdminUsersPage() {
                             <UserCheck className="mr-2 size-4" />
                             {t('admin.users.role_change_menu')}
                           </DropdownMenuItem>
+                          {user.role === 'exposant' && user.exposant_id && (
+                            <DropdownMenuItem
+                              onClick={() => router.push(`/admin/exposants/${user.exposant_id}`)}
+                            >
+                              <Store className="mr-2 size-4" />
+                              {t('admin.users.vitrine_menu')}
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             onClick={() => {
                               setShowPasswordDialog(user);
