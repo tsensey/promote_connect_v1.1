@@ -82,7 +82,7 @@ const TYPE_KEYS: Record<string, string> = {
   general: 'feed.type.general',
 };
 
-const PREVIEW_CHARS = 80;
+const PREVIEW_CHARS = 180;
 
 function getInitials(name: string | null | undefined) {
   if (!name) return '?';
@@ -549,7 +549,7 @@ export const PostCard = memo(function PostCard({
 
         {/* Image */}
         {post.image_url && (
-          <div className={cn("mx-4 mb-3 overflow-hidden rounded-xl border border-border/60", post.image_url.includes(',') ? "grid grid-cols-2 gap-1 border-none" : "")}>
+          <div className={cn("mx-1 mb-3 overflow-hidden rounded-xl border border-border/60", post.image_url.includes(',') ? "grid grid-cols-2 gap-1 border-none" : "")}>
             {post.image_url.split(',').map((url, i) => (
               post.image_url?.includes(',') ? (
                 <div key={i} className="relative aspect-square overflow-hidden rounded-xl border border-border/60">
