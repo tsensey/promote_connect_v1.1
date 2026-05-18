@@ -131,13 +131,8 @@ CLEAN_DATABASE=true npm run db:seed
 | Donnée | Détail |
 |--------|--------|
 | **Compte admin** | `admin@promote-connect.com` / `Admin@2026!secure` (surchargeable via `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`) |
-| **Utilisateurs de test** | 6 exposants + 2 visiteurs (mot de passe : `Test1234!`) |
-| **Fiches exposants** | 7 fiches (5 liées à des utilisateurs, 2 orphelines) |
-| **Produits/Services** | 10 produits répartis sur les fiches |
-| **Événements salon** | 4 événements (conférences, atelier, networking) |
-| **Conversation chat** | 3 messages entre Alice et Bob |
-| **Newsletter** | 2 abonnements + 1 édition exemple |
-| **Ticket support** | 1 ticket avec 2 messages |
+
+> Aucune donnée de test (utilisateurs, exposants, produits, événements, messages, etc.) n'est insérée. Le seed production crée uniquement le compte administrateur nécessaire à l'administration de la plateforme.
 
 ### 4.6 Création d'un admin en ligne de commande (alternatif)
 
@@ -353,7 +348,7 @@ node scripts/create-admin.mjs admin@votre-domaine.com "Nom Admin"
 
 | Script | Commande | Usage |
 |--------|----------|-------|
-| Seed BDD | `npm run db:seed` | Peupler la base avec des données de démo + admin |
+| Seed BDD | `npm run db:seed` | Créer le compte administrateur uniquement |
 | Création admin | `node scripts/create-admin.mjs` | Créer un admin sans seed |
 | Nettoyage orphelins | `npm run db:cleanup-orphans` | Supprimer les données orphelines (profiles sans auth, messages sans conversation, etc.) |
 | Vérification env | `npm run check:prod-env` | Vérifier les variables d'environnement |
