@@ -553,51 +553,110 @@ export const PostCard = memo(function PostCard({
 
         {/* Image */}
         {post.image_url && (
-          <div className={cn("mx-1 mb-3 overflow-hidden rounded-xl border border-border/60", post.image_url.includes(',') ? "grid grid-cols-2 gap-1 border-none" : "")}>
-            {post.image_url.split(',').map((url, i) => (
-              post.image_url?.includes(',') ? (
-                <div key={i} className="relative aspect-square overflow-hidden rounded-xl border border-border/60">
-                  <Image
-                    src={url}
-                    alt=""
-                    fill
-                    priority={priority}
-                    className="object-cover cursor-pointer hover:opacity-95 transition-opacity"
-                    onClick={() => {
-                      setSelectedImageIdx(i);
-                      setIsImageModalOpen(true);
-                      if (comments.length === 0) {
-                         setLoadingComments(true);
-                         onGetComments().then(data => { setComments(data); setLoadingComments(false); });
-                      }
-                    }}
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                  />
+          <div className="mx-1 mb-3">
+            {(() => {
+              const images = post.image_url.split(',');
+              const count = images.length;
+              
+              if (count === 1) {
+                return (
+                  <div className="overflow-hidden rounded-xl border border-border/60">
+                    <Image
+                      src={images[0]}
+                      alt=""
+                      width={0}
+                      height={0}
+                      sizes="100vw"
+                      className="w-full h-auto cursor-pointer hover:opacity-95 transition-opacity"
+                      style={{ width: '100%', height: 'auto' }}
+                      onClick={() => {
+                        setSelectedImageIdx(0);
+                        setIsImageModalOpen(true);
+                        if (comments.length === 0) {
+                          setLoadingComments(true);
+                          onGetComments().then(data => { setComments(data); setLoadingComments(false); });
+                        }
+                      }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  </div>
+                );
+              }
+              
+              if (count === 2) {
+                return (
+                  <div className="grid grid-cols-2 gap-1">
+                    {images.map((url, i) => (
+                      <div key={i} className="relative aspect-square overflow-hidden rounded-xl border border-border/60">
+                        <Image
+                          src={url}
+                          alt=""
+                          fill
+                          className="object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                          onClick={() => {
+                            setSelectedImageIdx(i);
+                            setIsImageModalOpen(true);
+                            if (comments.length === 0) {
+                              setLoadingComments(true);
+                              onGetComments().then(data => { setComments(data); setLoadingComments(false); });
+                            }
+                          }}
+                          sizes="(max-width: 768px) 50vw, 25vw"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+              
+              return (
+                <div className="flex flex-col gap-1">
+                  <div className="overflow-hidden rounded-xl border border-border/60">
+                    <Image
+                      src={images[0]}
+                      alt=""
+                      width={0}
+                      height={0}
+                      sizes="100vw"
+                      className="w-full h-auto cursor-pointer hover:opacity-95 transition-opacity"
+                      style={{ width: '100%', height: 'auto' }}
+                      onClick={() => {
+                        setSelectedImageIdx(0);
+                        setIsImageModalOpen(true);
+                        if (comments.length === 0) {
+                          setLoadingComments(true);
+                          onGetComments().then(data => { setComments(data); setLoadingComments(false); });
+                        }
+                      }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  </div>
+                  <div className={cn("grid gap-1", count === 3 ? "grid-cols-2" : "grid-cols-3")}>
+                    {images.slice(1).map((url, i) => (
+                      <div key={i + 1} className="relative aspect-square overflow-hidden rounded-xl border border-border/60">
+                        <Image
+                          src={url}
+                          alt=""
+                          fill
+                          className="object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                          onClick={() => {
+                            setSelectedImageIdx(i + 1);
+                            setIsImageModalOpen(true);
+                            if (comments.length === 0) {
+                              setLoadingComments(true);
+                              onGetComments().then(data => { setComments(data); setLoadingComments(false); });
+                            }
+                          }}
+                          sizes="(max-width: 768px) 50vw, 33vw"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ) : (
-                <Image
-                  key={i}
-                  src={url}
-                  alt=""
-                  width={0}
-                  height={0}
-                  sizes="100vw"
-                  priority={priority}
-                  className="w-full object-cover cursor-pointer hover:opacity-95 transition-opacity max-h-[28rem]"
-                  style={{ width: '100%', height: 'auto' }}
-                  onClick={() => {
-                    setSelectedImageIdx(i);
-                    setIsImageModalOpen(true);
-                    if (comments.length === 0) {
-                       setLoadingComments(true);
-                       onGetComments().then(data => { setComments(data); setLoadingComments(false); });
-                    }
-                  }}
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
-              )
-            ))}
+              );
+            })()}
           </div>
         )}
 
