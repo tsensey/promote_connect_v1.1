@@ -466,7 +466,7 @@ export default function ManageVitrinePage() {
 
   if (profile?.role !== "exposant") {
     return (
-      <Card className="surface-panel border-0">
+      <Card className="surface-panel border-0 py-0">
         <CardContent className="space-y-4 p-8 text-center">
           <Store className="mx-auto size-10 text-primary" />
           <div>
@@ -490,7 +490,7 @@ export default function ManageVitrinePage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-6xl mx-auto">
         <div className="surface-panel h-56 animate-pulse" />
         <div className="surface-panel h-80 animate-pulse" />
       </div>
@@ -520,6 +520,66 @@ export default function ManageVitrinePage() {
         <TabsContent value="presentation">
           {/* ─── Présentation principale ─── */}
           <div className="space-y-6">
+
+            <Card className="surface-panel border-0">
+              <CardHeader className="border-b border-border/50 pb-4">
+                <CardTitle className="text-lg">{t('exposant.vitrine.visual_identity')}</CardTitle>
+                <p className="text-sm text-muted-foreground">{t('exposant.vitrine.personalize')}</p>
+              </CardHeader>
+              <CardContent className="space-y-6 pt-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <Field
+                    label={t('exposant.vitrine.logo_label')}
+                    hint={t('exposant.vitrine.logo_hint')}
+                  >
+                    <div className="flex items-center gap-4">
+                      {showcaseForm.logo_url && (
+                        <div className="relative size-16 overflow-hidden rounded-xl border border-border/50 shrink-0 bg-white">
+                          <Image src={showcaseForm.logo_url} alt={t('exposant.vitrine.logo_label')} fill sizes="64px" className="object-contain" />
+                          <button type="button" onClick={() => setShowcaseForm(f => ({ ...f, logo_url: '' }))} className="absolute -right-1 -top-1 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"><X className="size-3" /></button>
+                        </div>
+                      )}
+                      <div className="relative w-full">
+                        <Input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          disabled={uploadingLogo}
+                          className="file:hidden pl-10 h-12 pt-3"
+                          onChange={(e) => handleImageUpload(e.target.files?.[0] || null, 'logo_url')}
+                        />
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"><ImagePlus className="size-5" /></span>
+                        {uploadingLogo && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 animate-spin text-muted-foreground" />}
+                      </div>
+                    </div>
+                  </Field>
+                  <Field
+                    label={t('exposant.vitrine.cover_label')}
+                    hint={t('exposant.vitrine.cover_hint')}
+                  >
+                    <div className="flex flex-col gap-3">
+                      {showcaseForm.cover_url && (
+                        <div className="relative h-24 w-full overflow-hidden rounded-xl border border-border/50 shrink-0 bg-muted">
+                          <Image src={showcaseForm.cover_url} alt={t('exposant.vitrine.cover_label')} fill sizes="100vw" className="object-cover" />
+                          <button type="button" onClick={() => setShowcaseForm(f => ({ ...f, cover_url: '' }))} className="absolute right-2 top-2 rounded-full bg-black/50 p-1.5 text-white hover:bg-black/70"><X className="size-3" /></button>
+                        </div>
+                      )}
+                      <div className="relative w-full">
+                        <Input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          disabled={uploadingCover}
+                          className="file:hidden pl-10 h-12 pt-3"
+                          onChange={(e) => handleImageUpload(e.target.files?.[0] || null, 'cover_url')}
+                        />
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"><ImagePlus className="size-5" /></span>
+                        {uploadingCover && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 animate-spin text-muted-foreground" />}
+                      </div>
+                    </div>
+                  </Field>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card className="surface-panel border-0">
               <CardHeader className="border-b border-border/50 pb-4">
                 <CardTitle className="text-lg">{t('exposant.vitrine.general_info')}</CardTitle>
@@ -584,65 +644,6 @@ export default function ManageVitrinePage() {
                 />
               </Field>
 
-              </CardContent>
-            </Card>
-
-            <Card className="surface-panel border-0">
-              <CardHeader className="border-b border-border/50 pb-4">
-                <CardTitle className="text-lg">{t('exposant.vitrine.visual_identity')}</CardTitle>
-                <p className="text-sm text-muted-foreground">{t('exposant.vitrine.personalize')}</p>
-              </CardHeader>
-              <CardContent className="space-y-6 pt-6">
-                <div className="grid gap-6 md:grid-cols-2">
-                  <Field
-                    label={t('exposant.vitrine.logo_label')}
-                    hint={t('exposant.vitrine.logo_hint')}
-                  >
-                    <div className="flex items-center gap-4">
-                      {showcaseForm.logo_url && (
-                        <div className="relative size-16 overflow-hidden rounded-xl border border-border/50 shrink-0 bg-white">
-                          <Image src={showcaseForm.logo_url} alt={t('exposant.vitrine.logo_label')} fill sizes="64px" className="object-contain" />
-                          <button type="button" onClick={() => setShowcaseForm(f => ({ ...f, logo_url: '' }))} className="absolute -right-1 -top-1 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"><X className="size-3" /></button>
-                        </div>
-                      )}
-                      <div className="relative w-full">
-                        <Input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          disabled={uploadingLogo}
-                          className="file:hidden pl-10 h-12 pt-3"
-                          onChange={(e) => handleImageUpload(e.target.files?.[0] || null, 'logo_url')}
-                        />
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"><ImagePlus className="size-5" /></span>
-                        {uploadingLogo && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 animate-spin text-muted-foreground" />}
-                      </div>
-                    </div>
-                  </Field>
-                  <Field
-                    label={t('exposant.vitrine.cover_label')}
-                    hint={t('exposant.vitrine.cover_hint')}
-                  >
-                    <div className="flex flex-col gap-3">
-                      {showcaseForm.cover_url && (
-                        <div className="relative h-24 w-full overflow-hidden rounded-xl border border-border/50 shrink-0 bg-muted">
-                          <Image src={showcaseForm.cover_url} alt={t('exposant.vitrine.cover_label')} fill sizes="100vw" className="object-cover" />
-                          <button type="button" onClick={() => setShowcaseForm(f => ({ ...f, cover_url: '' }))} className="absolute right-2 top-2 rounded-full bg-black/50 p-1.5 text-white hover:bg-black/70"><X className="size-3" /></button>
-                        </div>
-                      )}
-                      <div className="relative w-full">
-                        <Input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          disabled={uploadingCover}
-                          className="file:hidden pl-10 h-12 pt-3"
-                          onChange={(e) => handleImageUpload(e.target.files?.[0] || null, 'cover_url')}
-                        />
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"><ImagePlus className="size-5" /></span>
-                        {uploadingCover && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 animate-spin text-muted-foreground" />}
-                      </div>
-                    </div>
-                  </Field>
-                </div>
               </CardContent>
             </Card>
 

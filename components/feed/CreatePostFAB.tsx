@@ -51,7 +51,7 @@ export function CreatePostFAB({ onSubmit, onUpload }: CreatePostFABProps) {
         )}
       >
         <Send className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
-        <span className="hidden sm:inline">Partager</span>
+        <span className="hidden sm:inline">Publier</span>
       </Button>
 
       {/* Modal - Sheet on mobile, Dialog on desktop */}

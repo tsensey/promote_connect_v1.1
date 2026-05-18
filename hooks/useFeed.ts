@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
 import { compressImages } from '@/lib/compress-image';
 import type { Database } from '@/types/database.types';
@@ -40,14 +40,17 @@ export function useFeed(limit = 20) {
   const [hasMore, setHasMore] = useState(true);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
+  const seenPostIds = useRef<Set<string>>(new Set());
 
   const fetchPosts = useCallback(
-    async (cursor?: string) => {
+    async (reset = false) => {
       try {
         const { data: session } = await supabaseClient.auth.getSession();
         const myId = session?.session?.user?.id;
         if (!myId) return;
         setMyUserId(myId);
+
+        if (reset) seenPostIds.current.clear();
 
         let query = supabaseClient
           .from('posts')
@@ -57,16 +60,19 @@ export function useFeed(limit = 20) {
           `)
           .limit(limit);
 
-        query = query.order('created_at', { ascending: false });
-
-        if (cursor) {
-          query = query.lt('created_at', cursor);
+        if (seenPostIds.current.size > 0) {
+          query = query.not('id', 'in', `(${Array.from(seenPostIds.current).join(',')})`);
         }
+
+        query = query.order('created_at', { ascending: false });
 
         const { data, error } = await query;
         if (error) throw error;
 
-        const postIds = (data || []).map((p: PostWithAuthor) => p.id);
+        const newPosts = data || [];
+        newPosts.forEach((p: PostWithAuthor) => seenPostIds.current.add(p.id));
+
+        const postIds = newPosts.map((p: PostWithAuthor) => p.id);
         const repostOfIds = ((data || []) as any[]).filter((p: any) => p.repost_of_id).map((p: any) => p.repost_of_id);
         const authorIds = [...new Set((data || []).map((p: PostWithAuthor) => p.author_id))];
 
@@ -117,13 +123,15 @@ export function useFeed(limit = 20) {
           repost_of: post.repost_of_id ? (repostOfMap.get(post.repost_of_id) ?? null) : undefined,
         }));
 
-        if (!cursor) {
-          setPosts(enriched);
+        const shuffled = enriched.sort(() => Math.random() - 0.5);
+
+        if (reset) {
+          setPosts(shuffled);
         } else {
-          setPosts((prev) => [...prev, ...enriched]);
+          setPosts((prev) => [...prev, ...shuffled]);
         }
 
-        setHasMore((data || []).length === limit);
+        setHasMore(newPosts.length === limit);
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Unknown error'));
       } finally {
@@ -137,7 +145,7 @@ export function useFeed(limit = 20) {
     setLoading(true);
     setPosts([]);
     setHasMore(true);
-    fetchPosts();
+    fetchPosts(true);
   }, [fetchPosts]);
 
   useEffect(() => {
@@ -209,9 +217,8 @@ export function useFeed(limit = 20) {
 
   const loadMore = useCallback(() => {
     if (!hasMore || loading) return;
-    const lastPost = posts[posts.length - 1];
-    if (lastPost) fetchPosts(lastPost.created_at ?? undefined);
-  }, [hasMore, loading, posts, fetchPosts]);
+    fetchPosts(false);
+  }, [hasMore, loading, fetchPosts]);
 
   const uploadImage = useCallback(async (files: File[]): Promise<string[]> => {
     const compressed = await compressImages(files);

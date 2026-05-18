@@ -168,7 +168,7 @@ export default function VitrinePage() {
       </div>
 
       {/* Filtres */}
-      <Card className="border-border/50 shadow-sm">
+      <Card className="border-border/50 shadow-sm py-0">
         <CardContent className="space-y-4 p-5">
           {/* Search + actions */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -290,7 +290,7 @@ export default function VitrinePage() {
       {loading ? (
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i} className="overflow-hidden border-border/50 shadow-sm">
+            <Card key={i} className="overflow-hidden border-border/50 shadow-sm py-0">
               <div className="h-44 w-full animate-pulse bg-muted" />
               <CardContent className="space-y-3 p-5">
                 <div className="h-5 w-2/3 animate-pulse rounded-lg bg-muted" />
@@ -503,7 +503,7 @@ export default function VitrinePage() {
       )}
 
       {/* CTA */}
-      <Card className="border-border/50 shadow-sm">
+      <Card className="border-border/50 shadow-sm py-0">
         <CardContent className="flex flex-col items-center gap-4 p-6 text-center sm:flex-row sm:justify-between sm:text-left">
           <div>
             <h2 className="text-lg font-semibold text-foreground">

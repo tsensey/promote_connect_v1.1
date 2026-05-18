@@ -264,7 +264,7 @@ export default function ExposantDetailPage() {
               </button>
             </>
           )}
-          <div className="relative max-h-[85vh] max-w-[90vw]">
+          <div className="relative flex h-[85vh] w-[90vw] max-h-[85vh] max-w-[90vw] items-center justify-center">
             <Image
               src={(exposant.gallery_urls as string[])[lightboxIndex]}
               alt=""

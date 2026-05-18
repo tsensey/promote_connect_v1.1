@@ -60,6 +60,13 @@ NEXT_PUBLIC_IOS_APP_STORE_ID=
 # Seed (optionnel, pour le déploiement initial uniquement)
 SEED_ADMIN_EMAIL=admin@promote-connect.com
 SEED_ADMIN_PASSWORD=<mot_de_passe_fort>
+
+# Supabase Edge Functions (réservé Supabase, pas Vercel)
+# Ces variables sont à définir via `supabase secrets set` (section 8.6)
+# RESEND_API_KEY=
+# RESEND_FROM_EMAIL=
+# RESEND_FROM_NAME=
+# NEXT_PUBLIC_APP_URL=
 ```
 
 Vérification locale :
@@ -217,12 +224,135 @@ https://promote-connect.com/api/webhooks/stripe
 
 ---
 
-## 8. Resend
+## 8. Resend (emails transactionnels)
 
-1. Vérifier le domaine d'envoi dans Resend Dashboard.
-2. Configurer SPF, DKIM et DMARC sur le DNS du domaine.
-3. Utiliser une adresse expéditeur du domaine valide, ex. `newsletter@promote-connect.com`.
-4. Envoyer un email de test depuis l'admin newsletter.
+### 8.1 Vue d'ensemble du système email
+
+PROMOTE-CONNECT envoie des emails via **Resend** (API REST) avec **React Email** pour le rendu des templates côté Next.js, et du HTML inline côté Edge Functions Deno.
+
+#### Types d'emails envoyés
+
+| Type | Expéditeur | Template | Déclencheur |
+|------|-----------|----------|-------------|
+| **Bienvenue newsletter** | `RESEND_FROM_NAME <RESEND_FROM_EMAIL>` | `emails/WelcomeEmail.tsx` | Inscription newsletter |
+| **Newsletter** | `RESEND_FROM_NAME <RESEND_FROM_EMAIL>` | `emails/NewsletterEmail.tsx` | Admin → publie une édition |
+| **Identifiants utilisateur** | `RESEND_FROM_EMAIL` | HTML inline (`buildCredentialsHtml()`) | Admin → crée un utilisateur |
+| **Réinitialisation mot de passe** | `RESEND_FROM_EMAIL` | HTML inline | Admin → réinitialise un mot de passe |
+
+> **Note :** Les templates `emails/CredentialsEmail.tsx` et `emails/RdvConfirmationEmail.tsx` existent mais ne sont pas utilisés actuellement.  
+> Les Edge Functions Deno utilisent leur propre HTML inline (pas les templates React Email).
+
+### 8.2 Configuration Resend
+
+1. Créer un compte sur [Resend](https://resend.com) et vérifier un domaine d'envoi.
+
+2. Configurer les enregistrements DNS pour le domaine d'envoi (SPF, DKIM, DMARC) :
+
+```bash
+# Fournis par Resend dans le Dashboard → Domains → Verify
+# Exemple (à adapter selon votre domaine) :
+SPF : v=spf1 include:spf.resend.com ~all
+DKIM : Clé publique fournie par Resend
+DMARC : v=DMARC1; p=quarantine; adkim=s; aspf=s
+```
+
+3. Générer une **clé API** Resend depuis le Dashboard → API Keys.
+
+4. Renseigner les variables d'environnement :
+
+```bash
+RESEND_API_KEY=re_xxxxxxxxxxxxxx        # Clé API Resend (production)
+RESEND_FROM_EMAIL=newsletter@votre-domaine.com
+RESEND_FROM_NAME=PROMOTE-CONNECT
+```
+
+5. **Envoyer un email de test** depuis l'admin newsletter ou via curl :
+
+```bash
+curl -X POST https://api.resend.com/emails \
+  -H "Authorization: Bearer re_xxxxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from": "PROMOTE-CONNECT <newsletter@votre-domaine.com>",
+    "to": "vous@email.com",
+    "subject": "Test PROMOTE-CONNECT",
+    "text": "Email de test réussi !"
+  }'
+```
+
+### 8.3 Architecture des envois
+
+#### Next.js (API Routes Node.js)
+
+| Route API | Méthode | Template | Auth |
+|-----------|---------|----------|------|
+| `POST /api/newsletter/subscribe` | Inscription newsletter | `WelcomeEmail.tsx` | Optionnelle (Bearer token) |
+| `POST /api/newsletter` | Envoi newsletter | `NewsletterEmail.tsx` | Admin (Bearer + rôle admin) |
+| `DELETE /api/newsletter/subscribe` | Désabonnement | Aucun (JSON) | Optionnelle |
+| `GET /api/newsletter/unsubscribe` | Désabonnement one-click | Aucun (HTML page) | Aucune (via token) |
+| `POST /api/admin/users` | Création utilisateur + envoi identifiants | HTML inline | Admin (Bearer + verifyAdmin) |
+| `POST /api/admin/users/reset-password` | Réinitialisation mot de passe | HTML inline | Admin (Bearer + verifyAdmin) |
+
+#### Edge Functions (Deno / Supabase)
+
+| Fonction | Trigger | Rôle |
+|----------|---------|------|
+| `supabase/functions/send-newsletter/index.ts` | Cron ou n8n | Envoi différé des newsletters (rattrape les éditions non envoyées) |
+| `supabase/functions/generate-rdv/index.ts` | API (appelée depuis le frontend) | Crée un rendez-vous et notifie le destinataire par email |
+
+**Important :** Les Edge Functions utilisent `fetch()` vers l'API Resend (pas le SDK npm) et ne partagent **pas** les templates React Email. Le HTML est construit en string.
+
+### 8.4 Flux newsletter
+
+La newsletter peut être envoyée via **deux chemins** :
+
+```
+Chemin A (Admin UI) :
+  Admin → /admin/newsletter → compose → POST /api/newsletter
+    → render(NewsletterEmail.tsx) → resend.emails.send()
+    → Envoi immédiat (ou draft si sendNow=false)
+
+Chemin B (Edge Function / Cron) :
+  Cron/n8n → POST supabase/functions/send-newsletter
+    → Vérifie newsletter_editions avec sent_at IS NULL
+    → Récupère les abonnés actifs
+    → fetch('https://api.resend.com/emails') pour chaque destinataire (par 50)
+    → Met à jour sent_at et recipient_count
+```
+
+Les deux chemins :
+- Personnalisent chaque email avec un lien de désabonnement unique (`unsubscribe_token`)
+- Respecent les préférences `user_preferences.notify_newsletter = false`
+- Envoient en lots de 50 emails (`Promise.allSettled`)
+
+### 8.5 Gestion des désabonnements
+
+- **Unsubscribe token :** Généré automatiquement à la création de l'abonnement (colonne `unsubscribe_token` dans `newsletter_subscriptions`)
+- **One-click :** `GET /api/newsletter/unsubscribe?token=xxx` → page HTML de confirmation
+- **API :** `DELETE /api/newsletter/subscribe` avec `{ email }` en JSON
+- Lien de désabonnement présent dans chaque newsletter : `{{NEXT_PUBLIC_APP_URL}}/api/newsletter/unsubscribe?token={{token}}`
+
+### 8.6 Configuration Edge Functions (côté Supabase)
+
+Déployer et configurer les secrets pour les Edge Functions :
+
+```bash
+# Déploiement
+supabase functions deploy send-newsletter --project-ref <PROJECT_REF>
+
+# Secrets requis
+supabase secrets set RESEND_API_KEY=re_xxxxxxxxxxxxxx --project-ref <PROJECT_REF>
+supabase secrets set RESEND_FROM_EMAIL=newsletter@votre-domaine.com --project-ref <PROJECT_REF>
+supabase secrets set RESEND_FROM_NAME=PROMOTE-CONNECT --project-ref <PROJECT_REF>
+supabase secrets set NEXT_PUBLIC_APP_URL=https://promote-connect.com --project-ref <PROJECT_REF>
+```
+
+### 8.7 Délivrabilité
+
+- Vérifier que SPF, DKIM et DMARC sont correctement configurés sur le DNS du domaine d'envoi
+- Surveiller le tableau de bord Resend pour les bouncing et les spam complaints
+- Ne jamais exposer les clés API (`RESEND_API_KEY`) côté client
+- Utiliser une adresse FROM dédiée (`newsletter@...`) et un sous-domaine séparé si nécessaire pour préserver la réputation de l'expéditeur principal
 
 ---
 
