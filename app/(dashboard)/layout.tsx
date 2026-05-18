@@ -6,9 +6,11 @@ import { useAuth } from '@/lib/auth/context';
 import { useTranslation } from '@/lib/i18n';
 import { UserSidebar } from '@/components/layout/UserSidebar';
 import { UserTopbar } from '@/components/layout/UserTopbar';
+import { SearchCommandPalette } from '@/components/search/SearchCommandPalette';
 import { cn } from '@/lib/utils';
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
+  const [searchOpen, setSearchOpen] = useState(false);
   const { t } = useTranslation();
   const { user, profile, exposant, signOut, loading } = useAuth();
   const router = useRouter();
@@ -30,6 +32,18 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
       return;
     }
   }, [loading, profile?.role, router, user]);
+
+  // Global keyboard shortcut for search: ⌘K / Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
@@ -106,6 +120,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
             avatar: sidebarUser.avatar,
           }}
           onSignOut={handleSignOut}
+          onOpenSearch={() => setSearchOpen(true)}
         />
 
         <main className="px-4 pt-6 sm:px-6 xl:px-8">
@@ -118,6 +133,8 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
           </Suspense>
         </main>
       </div>
+
+      <SearchCommandPalette open={searchOpen} onOpenChange={setSearchOpen} />
     </div>
   );
 }

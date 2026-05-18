@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChevronDown, Menu, MessageSquare, CalendarDays } from "lucide-react";
+import { ChevronDown, Menu, MessageSquare, CalendarDays, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useNotificationState } from "@/lib/notification-context";
@@ -23,11 +23,13 @@ export function UserTopbar({
   onToggleSidebar,
   user,
   onSignOut,
+  onOpenSearch,
 }: {
   collapsed: boolean;
   onToggleSidebar: () => void;
   user: { name: string; email?: string; role: string; avatar?: string } | null;
   onSignOut: () => void;
+  onOpenSearch?: () => void;
 }) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -49,6 +51,15 @@ export function UserTopbar({
         </div>
 
         <div className="flex items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="rounded-full text-muted-foreground hover:text-foreground"
+            onClick={onOpenSearch}
+            title={t('common.search')}
+          >
+            <Search className="size-4" />
+          </Button>
           <LocaleToggle />
           <ModeToggle />
           <Button

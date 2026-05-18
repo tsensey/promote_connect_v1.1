@@ -103,12 +103,6 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (pathname.startsWith('/app')) {
-    const url = request.nextUrl.clone()
-    url.pathname = isAdmin ? '/admin' : '/feed'
-    return NextResponse.redirect(url)
-  }
-
   if (pathname.startsWith('/admin') && !isAdmin) {
     const url = request.nextUrl.clone()
     url.pathname = '/feed'
