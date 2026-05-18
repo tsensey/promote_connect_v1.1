@@ -253,7 +253,7 @@ export default function FeedPage() {
                   onShare={() => sharePost(post.id)}
                   onRepost={(content, originalId) => repostPost(content, originalId)}
                   onSave={() => toggleSave(post.id)}
-                  onFollow={() => toggleFollow(post.author_id)}
+                   onFollow={() => toggleFollow(post.repost_of?.author_id ?? post.author_id)}
                   onReaction={(type) => toggleReaction(post.id, type)}
                   onEdit={updatePost}
                   createPost={createPost}

@@ -515,7 +515,7 @@ export default function ExposantDetailPage() {
                       onShare={() => sharePost(post.id)}
                       onRepost={(content, originalPostId) => repostPost(content, originalPostId)}
                       onSave={() => toggleSave(post.id)}
-                      onFollow={() => toggleFollow(post.author_id)}
+                       onFollow={() => toggleFollow((post as any).repost_of?.author_id ?? post.author_id)}
                       onReaction={(type) => toggleReaction(post.id, type)}
                       onEdit={(postId, content, type, category, imageUrl) =>
                         updatePost(postId, content, type, category, imageUrl)

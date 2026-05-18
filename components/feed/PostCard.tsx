@@ -254,8 +254,7 @@ export const PostCard = memo(function PostCard({
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [saveAnim, setSaveAnim] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [repostExpanded, setRepostExpanded] = useState(false);
-  const [showOriginalModal, setShowOriginalModal] = useState(false);
+
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
   const [showRepostDialog, setShowRepostDialog] = useState(false);
@@ -266,16 +265,28 @@ export const PostCard = memo(function PostCard({
   const menuRef = useRef<HTMLDivElement>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
 
-  const isLong = (post.content?.length ?? 0) > PREVIEW_CHARS;
-  const displayContent = isLong && !expanded ? post.content.slice(0, PREVIEW_CHARS) + '…' : post.content;
-  const typeBg = TYPE_BADGE[post.type] || TYPE_BADGE.general;
-  const timeAgo = formatDistanceToNow(new Date(post.created_at as string), { locale: locale === 'en' ? enUS : fr, addSuffix: true });
-  const postAuthorExposants = post.author.exposants;
-  const authorDisplayName = getDisplayName(post.author, postAuthorExposants) || t('feed.post.user');
-  const authorAvatarUrl = getAvatarUrl(post.author, postAuthorExposants);
-  const authorCompanyName = getCompanyName(post.author, postAuthorExposants);
+  const isRepost = post.type === 'repost' && post.repost_of != null;
+  const originalPost = isRepost ? post.repost_of! : null;
+
+  const displayAuthor = isRepost && originalPost ? originalPost.author : post.author;
+  const displayContent = isRepost && originalPost ? (originalPost.content || '') : post.content;
+  const displayImageUrl = isRepost && originalPost ? originalPost.image_url : post.image_url;
+  const displayType = isRepost && originalPost ? (originalPost.type || 'general') : post.type;
+  const displayCreatedAt = isRepost && originalPost ? (originalPost.created_at || post.created_at) : post.created_at;
+
+  const isLong = (displayContent?.length ?? 0) > PREVIEW_CHARS;
+  const contentPreview = isLong && !expanded ? displayContent.slice(0, PREVIEW_CHARS) + '…' : displayContent;
+  const typeBg = TYPE_BADGE[displayType] || TYPE_BADGE.general;
+  const timeAgo = formatDistanceToNow(new Date(displayCreatedAt as string), { locale: locale === 'en' ? enUS : fr, addSuffix: true });
+  const postAuthorExposants = (displayAuthor as { exposants?: Array<{ id: string; nom?: string; logo_url?: string }> }).exposants;
+  const authorDisplayName = getDisplayName(displayAuthor, postAuthorExposants) || t('feed.post.user');
+  const authorAvatarUrl = getAvatarUrl(displayAuthor, postAuthorExposants);
+  const authorCompanyName = getCompanyName(displayAuthor, postAuthorExposants);
   const exposantId = getExposantId(postAuthorExposants);
   const authorInitials = getInitials(authorDisplayName);
+
+  const reposterExposants = post.author.exposants;
+  const reposterName = getDisplayName(post.author, reposterExposants) || t('feed.post.user');
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -326,7 +337,7 @@ export const PostCard = memo(function PostCard({
 
   const handleNativeShare = useCallback(async () => {
     const url = `${window.location.origin}/feed#${post.id}`;
-    const shareData = { title: t('feed.post.share_title', { name: authorDisplayName }), text: post.content.slice(0, 120), url };
+    const shareData = { title: t('feed.post.share_title', { name: authorDisplayName }), text: displayContent.slice(0, 120), url };
     if (navigator.share) {
       try {
         await navigator.share(shareData);
@@ -418,9 +429,17 @@ export const PostCard = memo(function PostCard({
       className="border-border/50 bg-card transition-all duration-200 hover:shadow-lg hover:border-border/80 dark:hover:shadow-primary/5 p-0"
     >
       <CardContent className="p-0">
+        {/* Repost banner */}
+        {isRepost && (
+          <div className="flex items-center gap-2 px-4 pt-3 pb-0 text-xs text-muted-foreground">
+            <Repeat2 className="size-3.5 text-violet-500 shrink-0" />
+            <span>{t('feed.post.repost_notice', { name: reposterName })}</span>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-start gap-3 p-4 pb-3">
-          <AuthorLink role={post.author.role} exposantId={exposantId ?? null}>
+          <AuthorLink role={displayAuthor.role} exposantId={exposantId ?? null}>
             <Avatar className="size-10 shrink-0 ring-2 ring-border/20">
               {authorAvatarUrl ? (
                 <AvatarImage src={authorAvatarUrl} />
@@ -434,19 +453,19 @@ export const PostCard = memo(function PostCard({
 
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
-              <AuthorLink role={post.author.role} exposantId={exposantId ?? null}>
+              <AuthorLink role={displayAuthor.role} exposantId={exposantId ?? null}>
                 <span className="font-semibold text-sm text-foreground hover:underline">
                   {authorDisplayName}
                 </span>
               </AuthorLink>
-              {post.author.role === 'exposant' && (
+              {displayAuthor.role === 'exposant' && (
                 <span className="inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-600/20">
                   {t('feed.post.exposant')}
                 </span>
               )}
-              {post.type !== 'general' && (
+              {displayType !== 'general' && (
                 <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', typeBg)}>
-                  {t(TYPE_KEYS[post.type] || 'feed.type.general')}
+                  {t(TYPE_KEYS[displayType] || 'feed.type.general')}
                 </span>
               )}
             </div>
@@ -526,14 +545,8 @@ export const PostCard = memo(function PostCard({
             </div>
           ) : (
             <>
-              {post.type === 'repost' && (
-                <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground border-b border-border/30 pb-2 mb-3">
-                  <Repeat2 className="size-3.5 text-violet-500" />
-                  <span>{t('feed.post.repost_notice', { name: authorDisplayName })}</span>
-                </div>
-              )}
               <p className="whitespace-pre-wrap text-sm text-foreground/90 leading-relaxed">
-                {displayContent}
+                {contentPreview}
               </p>
               {isLong && (
                 <button
@@ -552,10 +565,10 @@ export const PostCard = memo(function PostCard({
         </div>
 
         {/* Image */}
-        {post.image_url && (
+        {displayImageUrl && (
           <div className="mx-1 mb-3">
             {(() => {
-              const images = post.image_url.split(',');
+              const images = displayImageUrl.split(',');
               const count = images.length;
               
               if (count === 1) {
@@ -657,76 +670,6 @@ export const PostCard = memo(function PostCard({
                 </div>
               );
             })()}
-          </div>
-        )}
-
-        {/* Embedded original post (repost) */}
-        {post.repost_of && (
-          <div
-            className="mx-4 mb-3 rounded-xl border border-border/50 bg-muted/20 overflow-hidden hover:bg-muted/30 transition-colors cursor-pointer"
-            onClick={() => setShowOriginalModal(true)}
-          >
-            <div className="p-3">
-              <div className="flex items-center gap-2 mb-2">
-                {(() => {
-                  const ra = post.repost_of?.author;
-                  const rExposants = (ra as { exposants?: Array<{ id: string; nom?: string; logo_url?: string }> })?.exposants;
-                  const rName = getDisplayName(ra, rExposants) || t('feed.post.user');
-                  const rAvatar = getAvatarUrl(ra, rExposants);
-                  const rCompany = getCompanyName(ra, rExposants);
-                  return (
-                    <>
-                      <Avatar className="size-6 shrink-0">
-                        {rAvatar ? (
-                          <AvatarImage src={rAvatar} />
-                        ) : (
-                          <AvatarFallback className="bg-muted text-[9px] font-semibold">
-                            {getInitials(rName)}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-foreground truncate">{rName}</p>
-                        <p className="text-[10px] text-muted-foreground truncate">{rCompany}</p>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-              <p
-                className={cn(
-                  "text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap",
-                  !repostExpanded && "line-clamp-3"
-                )}
-              >
-                {post.repost_of.content}
-              </p>
-              {post.repost_of.content && post.repost_of.content.length > 180 && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); setRepostExpanded((v) => !v); }}
-                  className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
-                >
-                  {repostExpanded ? (
-                    <><ChevronUp className="size-3" /> {t('feed.post.see_less')}</>
-                  ) : (
-                    <><ChevronDown className="size-3" /> {t('feed.post.see_more')}</>
-                  )}
-                </button>
-              )}
-              {post.repost_of.image_url && (
-                <div className="mt-2 overflow-hidden rounded-lg border border-border/40">
-                  <Image
-                    src={post.repost_of.image_url.split(',')[0]}
-                    alt=""
-                    width={0}
-                    height={0}
-                    sizes="100vw"
-                    className="max-h-32 w-full object-cover"
-                    style={{ width: '100%', height: 'auto' }}
-                  />
-                </div>
-              )}
-            </div>
           </div>
         )}
 
@@ -939,17 +882,17 @@ export const PostCard = memo(function PostCard({
              <button onClick={() => setIsImageModalOpen(false)} className="absolute top-4 left-4 z-50 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 p-2 rounded-full backdrop-blur-sm transition-all">
                <X className="size-5" />
              </button>
-              {post.image_url && (
-                 <Image 
-                   src={post.image_url.split(',')[selectedImageIdx]} 
-                   alt={t('common.preview')}
-                   fill
-                   sizes="(max-width: 1200px) 95vw, 1200px"
-                   className="object-contain"
-                 />
-              )}
+               {displayImageUrl && (
+                  <Image 
+                    src={displayImageUrl.split(',')[selectedImageIdx]} 
+                    alt={t('common.preview')}
+                    fill
+                    sizes="(max-width: 1200px) 95vw, 1200px"
+                    className="object-contain"
+                  />
+               )}
              {/* Next/Prev controls */}
-             {post.image_url?.includes(',') && (
+             {displayImageUrl?.includes(',') && (
                <>
                  <button 
                    onClick={(e) => { e.stopPropagation(); setSelectedImageIdx(prev => Math.max(0, prev - 1)); }}
@@ -959,8 +902,8 @@ export const PostCard = memo(function PostCard({
                    <ChevronLeft className="size-6" />
                  </button>
                  <button 
-                   onClick={(e) => { e.stopPropagation(); setSelectedImageIdx(prev => Math.min(post.image_url!.split(',').length - 1, prev + 1)); }}
-                   disabled={selectedImageIdx === (post.image_url?.split(',').length ?? 1) - 1}
+                   onClick={(e) => { e.stopPropagation(); setSelectedImageIdx(prev => Math.min(displayImageUrl!.split(',').length - 1, prev + 1)); }}
+                   disabled={selectedImageIdx === (displayImageUrl?.split(',').length ?? 1) - 1}
                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/80 disabled:opacity-30 transition-all"
                  >
                    <ChevronRight className="size-6" />
@@ -974,13 +917,13 @@ export const PostCard = memo(function PostCard({
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border/40 shrink-0">
               <div className="flex items-center gap-3">
-                 <AuthorLink role={post.author.role} exposantId={exposantId ?? null}>
+                 <AuthorLink role={displayAuthor.role} exposantId={exposantId ?? null}>
                     <Avatar className="size-10 ring-2 ring-border/20">
                       {authorAvatarUrl ? <AvatarImage src={authorAvatarUrl} /> : <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">{authorInitials}</AvatarFallback>}
                    </Avatar>
                  </AuthorLink>
                  <div>
-           <AuthorLink role={post.author.role} exposantId={exposantId ?? null}>
+            <AuthorLink role={displayAuthor.role} exposantId={exposantId ?? null}>
                       <span className="font-semibold text-sm block hover:underline">{authorDisplayName}</span>
                     </AuthorLink>
                     <span className="text-xs text-muted-foreground">{authorCompanyName} • {timeAgo}</span>
@@ -990,7 +933,7 @@ export const PostCard = memo(function PostCard({
             
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-               <p className="whitespace-pre-wrap text-sm text-foreground/90">{post.content}</p>
+               <p className="whitespace-pre-wrap text-sm text-foreground/90">{displayContent}</p>
                
                {/* Stats */}
                <div className="flex items-center gap-3 text-[11px] text-muted-foreground border-y border-border/40 py-3 mt-4">
@@ -1056,60 +999,6 @@ export const PostCard = memo(function PostCard({
         </DialogContent>
       </Dialog>
 
-      {/* Original Post Detail Modal */}
-      <Dialog open={showOriginalModal} onOpenChange={setShowOriginalModal}>
-        <DialogContent className="!max-w-lg p-0 overflow-hidden rounded-2xl border-border/40 gap-0">
-          <div className="p-5">
-            <div className="flex items-center gap-3 mb-4">
-              {(() => {
-                const ra = post.repost_of?.author;
-                const rExposants = (ra as { exposants?: Array<{ id: string; nom?: string; logo_url?: string }> })?.exposants;
-                const rName = getDisplayName(ra, rExposants) || t('feed.post.user');
-                const rAvatar = getAvatarUrl(ra, rExposants);
-                const rCompany = getCompanyName(ra, rExposants);
-                const rInitials = getInitials(rName);
-                return (
-                  <>
-                    <Avatar className="size-10 shrink-0 ring-2 ring-border/20">
-                      {rAvatar ? (
-                        <AvatarImage src={rAvatar} />
-                      ) : (
-                        <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
-                          {rInitials}
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-sm text-foreground truncate">{rName}</p>
-                      {rCompany && <p className="text-xs text-muted-foreground truncate">{rCompany}</p>}
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-
-            <div className="max-h-[50vh] overflow-y-auto space-y-4">
-              <p className="whitespace-pre-wrap text-sm text-foreground/90 leading-relaxed">
-                {post.repost_of?.content}
-              </p>
-              {post.repost_of?.image_url && (
-                <div className="rounded-xl overflow-hidden border border-border/40">
-                  <Image
-                    src={post.repost_of.image_url.split(',')[0]}
-                    alt=""
-                    width={0}
-                    height={0}
-                    sizes="100vw"
-                    className="w-full object-cover max-h-96"
-                    style={{ width: '100%', height: 'auto' }}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Repost Dialog */}
       <Dialog open={showRepostDialog} onOpenChange={setShowRepostDialog}>
         <DialogContent className="!max-w-lg p-0 overflow-hidden rounded-2xl border-border/40 gap-0">
@@ -1148,7 +1037,7 @@ export const PostCard = memo(function PostCard({
                 </div>
               </div>
               <p className="mt-2 text-xs text-foreground/80 leading-relaxed line-clamp-2 whitespace-pre-wrap">
-                {post.content}
+                {displayContent}
               </p>
             </div>
 
