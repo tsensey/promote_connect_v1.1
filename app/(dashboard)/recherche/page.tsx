@@ -164,7 +164,7 @@ export default function RecherchePage() {
       </div>
 
       {/* Search bar */}
-      <Card className="border-border/50 shadow-sm mb-6">
+      <Card className="border-border/50 shadow-sm mb-6 py-0">
         <CardContent className="p-5 space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
@@ -263,7 +263,7 @@ export default function RecherchePage() {
         {loading && results.length === 0 ? (
           <div className="space-y-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Card key={i} className="border-border/50 shadow-sm">
+              <Card key={i} className="border-border/50 shadow-sm py-0">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">
                     <Skeleton className="size-12 rounded-xl shrink-0" />
@@ -281,7 +281,7 @@ export default function RecherchePage() {
             ))}
           </div>
         ) : error ? (
-          <Card className="border-destructive/20 bg-destructive/5">
+          <Card className="border-destructive/20 bg-destructive/5 py-0">
             <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
               <p className="text-sm text-destructive">{error}</p>
               <Button variant="outline" size="sm" onClick={() => executeSearch(query, activeType, page)} className="rounded-xl">
@@ -290,7 +290,7 @@ export default function RecherchePage() {
             </CardContent>
           </Card>
         ) : query && results.length === 0 && !loading ? (
-          <Card className="border-dashed border-border/60">
+          <Card className="border-dashed border-border/60 py-0">
             <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
               <div className="flex size-16 items-center justify-center rounded-2xl bg-muted">
                 <Search className="size-8 text-muted-foreground/40" />
@@ -315,7 +315,7 @@ export default function RecherchePage() {
               </p>
             )}
 
-            <div className={cn('space-y-3', loading && 'opacity-50 pointer-events-none transition-opacity duration-200')}>
+            <div className={cn('space-y-6', loading && 'opacity-50 pointer-events-none transition-opacity duration-200')}>
               {results.map((result) => (
                 <SearchResultItem key={`${result.entity_type}-${result.entity_id}`} result={result} />
               ))}
@@ -373,7 +373,7 @@ export default function RecherchePage() {
             )}
           </div>
         ) : !query ? (
-          <Card className="border-dashed border-border/60">
+          <Card className="border-dashed border-border/60 py-0">
             <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
               <div className="flex size-16 items-center justify-center rounded-2xl bg-muted">
                 <Sparkles className="size-8 text-muted-foreground/40" />

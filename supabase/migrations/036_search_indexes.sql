@@ -103,7 +103,6 @@ BEGIN
     FROM exposants e
     WHERE 'exposant' = ANY(result_types)
       AND to_tsvector('french', coalesce(e.nom, '') || ' ' || coalesce(e.description, '') || ' ' || coalesce(e.secteur, '') || ' ' || coalesce(e.pays, '')) @@ query_tsquery
-      AND e.is_active = true
 
     UNION ALL
 
@@ -239,7 +238,6 @@ BEGIN
     FROM exposants e
     WHERE 'exposant' = ANY(result_types)
       AND (e.nom ILIKE pattern OR e.description ILIKE pattern OR e.secteur ILIKE pattern OR e.pays ILIKE pattern)
-      AND e.is_active = true
 
     UNION ALL
 
@@ -327,8 +325,7 @@ BEGIN
 
   IF 'exposant' = ANY(result_types) THEN
     RETURN QUERY SELECT 'exposant'::text, count(*)::bigint FROM exposants e
-      WHERE to_tsvector('french', coalesce(e.nom,'') || ' ' || coalesce(e.description,'') || ' ' || coalesce(e.secteur,'') || ' ' || coalesce(e.pays,'')) @@ query_tsquery
-        AND e.is_active = true;
+      WHERE to_tsvector('french', coalesce(e.nom,'') || ' ' || coalesce(e.description,'') || ' ' || coalesce(e.secteur,'') || ' ' || coalesce(e.pays,'')) @@ query_tsquery;
   END IF;
 
   IF 'produit' = ANY(result_types) THEN
@@ -367,8 +364,7 @@ BEGIN
 
   IF 'exposant' = ANY(result_types) THEN
     RETURN QUERY SELECT 'exposant'::text, count(*)::bigint FROM exposants e
-      WHERE (e.nom ILIKE pattern OR e.description ILIKE pattern OR e.secteur ILIKE pattern OR e.pays ILIKE pattern)
-        AND e.is_active = true;
+      WHERE (e.nom ILIKE pattern OR e.description ILIKE pattern OR e.secteur ILIKE pattern OR e.pays ILIKE pattern);
   END IF;
 
   IF 'produit' = ANY(result_types) THEN

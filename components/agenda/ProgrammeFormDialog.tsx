@@ -57,7 +57,7 @@ export function ProgrammeFormDialog({
         </DialogHeader>
         <form onSubmit={onSubmit} className="grid gap-3 py-4">
           <Input
-            placeholder={t("admin.programme.form_titre")}
+            placeholder={t("admin.programme.form_title")}
             value={formData.titre}
             onChange={(e) => onChange({ ...formData, titre: e.target.value })}
             required

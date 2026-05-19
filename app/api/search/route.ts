@@ -76,19 +76,23 @@ export async function GET(request: NextRequest) {
     });
 
     if (searchError) {
-      console.error('Search error:', searchError);
+      console.error('[SEARCH] search_all RPC error:', JSON.stringify(searchError));
       return NextResponse.json(
-        { error: 'Search failed' },
+        { error: `Search failed: ${searchError.message || JSON.stringify(searchError)}` },
         { status: 500 },
       );
     }
 
     // Get counts per type for facets
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: counts } = await (adminClient.rpc as any)('search_count', {
+    const { data: counts, error: countError } = await (adminClient.rpc as any)('search_count', {
       search_query: q,
       result_types: types,
     });
+
+    if (countError) {
+      console.error('[SEARCH] search_count RPC error:', JSON.stringify(countError));
+    }
 
     const facets: Record<SearchEntity, number> = Object.fromEntries(
       VALID_TYPES.map((t) => [t, 0]),
@@ -120,9 +124,9 @@ export async function GET(request: NextRequest) {
       facets: { types: facets },
     } satisfies SearchResponse);
   } catch (err) {
-    console.error('Search API error:', err);
+    console.error('[SEARCH] Unexpected error:', err instanceof Error ? err.message : err);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: `Internal server error: ${err instanceof Error ? err.message : 'Unknown'}` },
       { status: 500 },
     );
   }

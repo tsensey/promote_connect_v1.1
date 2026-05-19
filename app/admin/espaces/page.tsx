@@ -275,7 +275,7 @@ export default function AdminEspacesPage() {
                   <TableHead className="w-16">{t('admin.espaces.col_code')}</TableHead>
                   <TableHead>{t('admin.espaces.col_name')}</TableHead>
                   <TableHead>{t('admin.espaces.col_type')}</TableHead>
-                  <TableHead>{t('admin.espaces.col_ordre')}</TableHead>
+                  <TableHead>{t('admin.espaces.col_order')}</TableHead>
                   <TableHead className="text-right">{t('admin.espaces.col_actions')}</TableHead>
                 </TableRow>
               </TableHeader>
