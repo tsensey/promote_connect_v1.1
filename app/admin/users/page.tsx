@@ -176,6 +176,9 @@ export default function AdminUsersPage() {
     emailSent: boolean;
   } | null>(null);
   const [espaces, setEspaces] = useState<{ id: string; code: string; nom: string; type: string }[]>([]);
+  const [unlinkedExposants, setUnlinkedExposants] = useState<{ id: string; nom: string; secteur: string | null; stand: string | null }[]>([]);
+  const [linkExposantMode, setLinkExposantMode] = useState(false);
+  const [exposantSearch, setExposantSearch] = useState('');
   const [form, setForm] = useState({
     full_name: '',
     email: '',
@@ -192,6 +195,7 @@ export default function AdminUsersPage() {
     nombre_employes: '',
     generate_exposant: false,
     access_level: 'classic',
+    exposant_id: '',
   });
 
   const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
@@ -262,12 +266,17 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     if (!showCreateDialog || !token) return;
-    fetch('/api/admin/espaces', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.espaces) setEspaces(data.espaces);
+    Promise.all([
+      fetch('/api/admin/espaces', {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((r) => r.json()),
+      fetch('/api/admin/espaces/exposants?unlinked=true', {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((r) => r.json()),
+    ])
+      .then(([espData, expData]) => {
+        if (espData.espaces) setEspaces(espData.espaces);
+        if (expData.exposants) setUnlinkedExposants(expData.exposants);
       })
       .catch(() => {});
   }, [showCreateDialog, token]);
@@ -323,7 +332,9 @@ export default function AdminUsersPage() {
         nombre_employes: '',
         generate_exposant: false,
         access_level: 'classic',
+        exposant_id: '',
       });
+      setLinkExposantMode(false);
       setShowCreateDialog(false);
       toast.success(
         payload.email_sent
@@ -792,7 +803,8 @@ export default function AdminUsersPage() {
                     setForm({
                       ...form,
                       role: 'exposant',
-                      generate_exposant: true,
+                      generate_exposant: !linkExposantMode,
+                      exposant_id: '',
                     })
                   }
                 >
@@ -839,122 +851,190 @@ export default function AdminUsersPage() {
 
             {form.role === 'exposant' && (
               <>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="sector">{t('admin.users.form_sector')}</Label>
-                    <select
-                      id="sector"
-                      value={form.sector}
-                      onChange={(event) => setForm({ ...form, sector: event.target.value })}
-                      className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
+                <div className="space-y-3">
+                  <Label>{t('admin.users.form_exposant_option')}</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      type="button"
+                      variant={!linkExposantMode ? 'default' : 'outline'}
+                      className="rounded-xl"
+                      onClick={() => {
+                        setLinkExposantMode(false);
+                        setForm({ ...form, generate_exposant: true, exposant_id: '' });
+                      }}
                     >
-                      <option value="">{t('admin.users.form_select')}</option>
-                      {SECTORS.map((sector) => (
-                        <option key={sector} value={sector}>{t(SECTOR_KEYS[sector] || sector)}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="country">{t('admin.users.form_country')}</Label>
-                    <select
-                      id="country"
-                      value={form.country}
-                      onChange={(event) => setForm({ ...form, country: event.target.value })}
-                      className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
+                      {t('admin.users.form_exposant_create')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={linkExposantMode ? 'default' : 'outline'}
+                      className="rounded-xl"
+                      onClick={() => {
+                        setLinkExposantMode(true);
+                        setForm({ ...form, generate_exposant: false });
+                      }}
                     >
-                      <option value="">{t('admin.users.form_select')}</option>
-                      {COUNTRIES.map((country) => (
-                        <option key={country} value={country}>{t(COUNTRY_KEYS[country] || country)}</option>
-                      ))}
-                    </select>
+                      {t('admin.users.form_exposant_link')}
+                    </Button>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="espace_id">{t('admin.users.form_pavillon')}</Label>
-                  <select
-                    id="espace_id"
-                    value={form.espace_id}
-                    onChange={(event) => {
-                      const espace = espaces.find((e) => e.id === event.target.value);
-                      setForm({
-                        ...form,
-                        espace_id: event.target.value,
-                        pavillon: espace?.code || '',
-                      });
-                    }}
-                    className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
-                  >
-                    <option value="">{t('admin.users.form_select_space')}</option>
-                    {espaces.map((espace) => (
-                      <option key={espace.id} value={espace.id}>
-                        {espace.type === 'pavillon' ? t('admin.espaces.type_pavillon') : t('admin.espaces.type_espace')} {espace.code} — {espace.nom}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-muted-foreground">
-                    {t('admin.users.form_space_hint')}
-                  </p>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
+                {linkExposantMode ? (
                   <div className="space-y-2">
-                    <Label htmlFor="stand">{t('admin.users.form_stand')}</Label>
+                    <Label>{t('admin.users.form_link_exposant')}</Label>
                     <Input
-                      id="stand"
-                      value={form.stand}
-                      onChange={(event) => setForm({ ...form, stand: event.target.value })}
-                      placeholder={t('admin.users.form_stand_placeholder')}
+                      placeholder={t('admin.users.form_link_exposant_placeholder')}
+                      value={exposantSearch}
+                      onChange={(e) => setExposantSearch(e.target.value)}
                     />
+                    <div className="max-h-48 overflow-y-auto rounded-xl border border-border">
+                      {unlinkedExposants
+                        .filter((e) => e.nom.toLowerCase().includes(exposantSearch.toLowerCase()))
+                        .map((exp) => (
+                          <button
+                            key={exp.id}
+                            type="button"
+                            onClick={() => setForm({ ...form, exposant_id: exp.id })}
+                            className={`w-full px-3 py-2 text-left text-sm transition-colors hover:bg-muted ${
+                              form.exposant_id === exp.id ? 'bg-primary/10 font-medium text-primary' : ''
+                            }`}
+                          >
+                            <span>{exp.nom}</span>
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              {[exp.secteur, exp.stand].filter(Boolean).join(' · ') || ''}
+                            </span>
+                          </button>
+                        ))}
+                      {unlinkedExposants.filter((e) => e.nom.toLowerCase().includes(exposantSearch.toLowerCase())).length === 0 && (
+                        <p className="px-3 py-4 text-center text-xs text-muted-foreground">
+                          {t('admin.users.form_link_exposant_no_results')}
+                        </p>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {t('admin.users.form_link_exposant_hint')}
+                    </p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="website">{t('admin.users.form_website')}</Label>
-                    <Input
-                      id="website"
-                      type="url"
-                      value={form.website}
-                      onChange={(event) => setForm({ ...form, website: event.target.value })}
-                      placeholder={t('admin.users.form_website_placeholder')}
-                    />
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="sector">{t('admin.users.form_sector')}</Label>
+                        <select
+                          id="sector"
+                          value={form.sector}
+                          onChange={(event) => setForm({ ...form, sector: event.target.value })}
+                          className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
+                        >
+                          <option value="">{t('admin.users.form_select')}</option>
+                          {SECTORS.map((sector) => (
+                            <option key={sector} value={sector}>{t(SECTOR_KEYS[sector] || sector)}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="country">{t('admin.users.form_country')}</Label>
+                        <select
+                          id="country"
+                          value={form.country}
+                          onChange={(event) => setForm({ ...form, country: event.target.value })}
+                          className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
+                        >
+                          <option value="">{t('admin.users.form_select')}</option>
+                          {COUNTRIES.map((country) => (
+                            <option key={country} value={country}>{t(COUNTRY_KEYS[country] || country)}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="description">{t('admin.users.form_description')}</Label>
-                  <textarea
-                    id="description"
-                    value={form.description}
-                    onChange={(event) => setForm({ ...form, description: event.target.value })}
-                    placeholder={t('admin.users.form_description_placeholder')}
-                    className="flex min-h-24 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm shadow-sm"
-                  />
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="espace_id">{t('admin.users.form_pavillon')}</Label>
+                      <select
+                        id="espace_id"
+                        value={form.espace_id}
+                        onChange={(event) => {
+                          const espace = espaces.find((e) => e.id === event.target.value);
+                          setForm({
+                            ...form,
+                            espace_id: event.target.value,
+                            pavillon: espace?.code || '',
+                          });
+                        }}
+                        className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
+                      >
+                        <option value="">{t('admin.users.form_select_space')}</option>
+                        {espaces.map((espace) => (
+                          <option key={espace.id} value={espace.id}>
+                            {espace.type === 'pavillon' ? t('admin.espaces.type_pavillon') : t('admin.espaces.type_espace')} {espace.code} — {espace.nom}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-muted-foreground">
+                        {t('admin.users.form_space_hint')}
+                      </p>
+                    </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="annee_creation">{t('admin.users.form_year')}</Label>
-                    <Input
-                      id="annee_creation"
-                      value={form.annee_creation}
-                      onChange={(event) => setForm({ ...form, annee_creation: event.target.value })}
-                      placeholder={t('admin.users.form_year_placeholder')}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="nombre_employes">{t('admin.users.form_employees')}</Label>
-                    <select
-                      id="nombre_employes"
-                      value={form.nombre_employes}
-                      onChange={(event) => setForm({ ...form, nombre_employes: event.target.value })}
-                      className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
-                    >
-                      <option value="">{t('admin.users.form_employees_placeholder')}</option>
-                      {NOMBRE_EMPLOYES.map((n) => (
-                        <option key={n} value={n}>{n}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="stand">{t('admin.users.form_stand')}</Label>
+                        <Input
+                          id="stand"
+                          value={form.stand}
+                          onChange={(event) => setForm({ ...form, stand: event.target.value })}
+                          placeholder={t('admin.users.form_stand_placeholder')}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="website">{t('admin.users.form_website')}</Label>
+                        <Input
+                          id="website"
+                          type="url"
+                          value={form.website}
+                          onChange={(event) => setForm({ ...form, website: event.target.value })}
+                          placeholder={t('admin.users.form_website_placeholder')}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="description">{t('admin.users.form_description')}</Label>
+                      <textarea
+                        id="description"
+                        value={form.description}
+                        onChange={(event) => setForm({ ...form, description: event.target.value })}
+                        placeholder={t('admin.users.form_description_placeholder')}
+                        className="flex min-h-24 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm shadow-sm"
+                      />
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="annee_creation">{t('admin.users.form_year')}</Label>
+                        <Input
+                          id="annee_creation"
+                          value={form.annee_creation}
+                          onChange={(event) => setForm({ ...form, annee_creation: event.target.value })}
+                          placeholder={t('admin.users.form_year_placeholder')}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="nombre_employes">{t('admin.users.form_employees')}</Label>
+                        <select
+                          id="nombre_employes"
+                          value={form.nombre_employes}
+                          onChange={(event) => setForm({ ...form, nombre_employes: event.target.value })}
+                          className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
+                        >
+                          <option value="">{t('admin.users.form_employees_placeholder')}</option>
+                          {NOMBRE_EMPLOYES.map((n) => (
+                            <option key={n} value={n}>{n}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                )}
               </>
             )}
           </div>

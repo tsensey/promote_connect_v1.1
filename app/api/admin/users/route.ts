@@ -152,6 +152,7 @@ export async function POST(request: Request) {
   const annee_creation = body.annee_creation as string | undefined;
   const nombre_employes = body.nombre_employes as string | undefined;
   const generate_exposant = body.generate_exposant as boolean | undefined;
+  const exposant_id = body.exposant_id as string | undefined;
   const access_level = body.access_level as string | undefined;
 
   if (!full_name || !email || !role) {
@@ -230,35 +231,50 @@ export async function POST(request: Request) {
     );
   }
 
-  if (generate_exposant && role === 'exposant') {
-    const exposantData: Database['public']['Tables']['exposants']['Insert'] = {
-      nom: company || full_name,
-      secteur: sector || null,
-      pavillon: pavillon || null,
-      pays: country || null,
-      stand: stand || null,
-      description: description || null,
-      website: website || null,
-      annee_creation: annee_creation || null,
-      nombre_employes: nombre_employes || null,
-      espace_id: espace_id || null,
-      profile_id: userId,
-    };
-
-    const { data: existingExposant } = await supabaseAdmin
-      .from('exposants')
-      .select('id')
-      .eq('profile_id', userId)
-      .maybeSingle();
-
-    if (existingExposant?.id) {
-      const { profile_id: _, ...updateData } = exposantData;
-      await supabaseAdmin
+  if (role === 'exposant') {
+    if (exposant_id) {
+      const { error: linkError } = await supabaseAdmin
         .from('exposants')
-        .update(updateData as Database['public']['Tables']['exposants']['Update'])
-        .eq('id', existingExposant.id);
-    } else {
-      await supabaseAdmin.from('exposants').insert(exposantData);
+        .update({ profile_id: userId })
+        .eq('id', exposant_id);
+
+      if (linkError) {
+        await supabaseAdmin.auth.admin.deleteUser(userId);
+        return NextResponse.json(
+          { error: `Erreur liaison exposant: ${linkError.message}` },
+          { status: 500 }
+        );
+      }
+    } else if (generate_exposant) {
+      const exposantData: Database['public']['Tables']['exposants']['Insert'] = {
+        nom: company || full_name,
+        secteur: sector || null,
+        pavillon: pavillon || null,
+        pays: country || null,
+        stand: stand || null,
+        description: description || null,
+        website: website || null,
+        annee_creation: annee_creation || null,
+        nombre_employes: nombre_employes || null,
+        espace_id: espace_id || null,
+        profile_id: userId,
+      };
+
+      const { data: existingExposant } = await supabaseAdmin
+        .from('exposants')
+        .select('id')
+        .eq('profile_id', userId)
+        .maybeSingle();
+
+      if (existingExposant?.id) {
+        const { profile_id: _, ...updateData } = exposantData;
+        await supabaseAdmin
+          .from('exposants')
+          .update(updateData as Database['public']['Tables']['exposants']['Update'])
+          .eq('id', existingExposant.id);
+      } else {
+        await supabaseAdmin.from('exposants').insert(exposantData);
+      }
     }
   }
 

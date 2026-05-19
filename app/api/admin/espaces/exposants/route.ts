@@ -10,11 +10,19 @@ export async function GET(request: Request) {
   const auth = await verifyAdmin(request);
   if (auth.error) return auth.error;
 
+  const { searchParams } = new URL(request.url);
+  const unlinked = searchParams.get('unlinked') === 'true';
+
   const supabase = createAdminClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from('exposants')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .select('*');
+
+  if (unlinked) {
+    query = query.is('profile_id', null);
+  }
+
+  const { data, error } = await query.order('nom', { ascending: true });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
