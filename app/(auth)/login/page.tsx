@@ -96,7 +96,7 @@ function LoginPageContent() {
 
 
         {adminOnly && (
-          <Alert className="rounded-2xl border-amber-200 bg-amber-50 text-amber-900">
+          <Alert className="rounded-2xl border-primary/20 bg-primary/5 text-primary">
             <AlertDescription>
               {t('auth.login.restricted')}
             </AlertDescription>

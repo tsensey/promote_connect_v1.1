@@ -1,7 +1,6 @@
 import { MarketingNavbar } from '@/components/landing/MarketingNavbar';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { StatsSection } from '@/components/landing/StatsSection';
-import { BrandStrip } from '@/components/landing/BrandStrip';
 import { FeaturesSection } from '@/components/landing/FeaturesSection';
 import { UsefulLinksSection } from '@/components/landing/UsefulLinksSection';
 import { CtaSection } from '@/components/landing/CtaSection';
@@ -12,8 +11,7 @@ export default function LandingPage() {
     <>
       <MarketingNavbar />
       <HeroSection />
-      <StatsSection />
-      <BrandStrip />
+      {/* <StatsSection /> */}
       <FeaturesSection />
       <UsefulLinksSection />
       <CtaSection />
