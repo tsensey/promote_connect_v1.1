@@ -312,7 +312,7 @@ export default function AdminExposantsPage() {
                 <p className="text-sm text-emerald-600">{t('admin.exposants.import_success', { count: importResult.imported })}</p>
                 {importResult.total > importResult.imported && (
                   <p className="mt-2 text-xs text-muted-foreground">
-                    {importResult.total - importResult.imported} ligne(s) ignoree(s)
+                    {t('admin.exposants.import_skipped', { count: importResult.total - importResult.imported })}
                   </p>
                 )}
               </div>
@@ -340,7 +340,7 @@ export default function AdminExposantsPage() {
                 <p className="text-xs text-muted-foreground">{t('admin.exposants.import_columns_hint')}</p>
                 <div className="mt-3 space-y-2">
                   <div>
-                    <p className="text-xs font-semibold text-foreground mb-1">Colonnes reconnues</p>
+                    <p className="text-xs font-semibold text-foreground mb-1">{t('admin.exposants.import_columns_recognized')}</p>
                     <div className="flex flex-wrap gap-1">
                       {[
                         { label: 'Raison Sociale', required: true },
@@ -366,10 +366,10 @@ export default function AdminExposantsPage() {
                   </div>
                   <div className="pt-1">
                     <p className="text-xs font-semibold text-foreground mb-1">
-                      Pavillon auto-detecte
+                      {t('admin.exposants.import_pavillon_auto')}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Le code pavillon (ex: "3", "A", "H") est automatiquement mis en correspondance avec les espaces de la base. Si aucun espace ne correspond, le pavillon est conserve tel quel.
+                      {t('admin.exposants.import_pavillon_auto_desc')}
                     </p>
                   </div>
                 </div>

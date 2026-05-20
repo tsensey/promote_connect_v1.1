@@ -41,12 +41,13 @@ export const metadata: Metadata = {
     title: 'PROMOTE-CONNECT',
     statusBarStyle: 'black-translucent',
   },
+
+
   formatDetection: {
     telephone: true,
     email: true,
     address: false,
   },
-
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -60,7 +61,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       data-scroll-behavior="smooth"
       className={cn(manrope.variable)}
     >
-      <body className="min-h-screen bg-background text-foreground">
+      <body suppressHydrationWarning className="min-h-screen bg-background text-foreground">
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -73,14 +74,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <I18nProvider initialLocale={initialLocale}>
                   <NotificationStateProvider>
                     <NotificationProvider>
-                    <Suspense fallback={null}>
-                      {children}
-                    </Suspense>
-                    <Toaster richColors position="top-right" />
-                    <PwaRegister />
-                    <PlausibleAnalytics />
-                  </NotificationProvider>
-                </NotificationStateProvider>
+                      <Suspense fallback={null}>
+                        {children}
+                      </Suspense>
+                      <Toaster richColors position="top-right" />
+                      <PwaRegister />
+                      <PlausibleAnalytics />
+                    </NotificationProvider>
+                  </NotificationStateProvider>
                 </I18nProvider>
               </AuthProvider>
             </TooltipProvider>

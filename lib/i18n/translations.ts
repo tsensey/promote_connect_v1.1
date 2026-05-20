@@ -975,6 +975,10 @@ export const translations: Record<Locale, Record<string, string>> = {
     'admin.exposants.import_no_data': 'Aucune donnée trouvée dans le fichier.',
     'admin.exposants.import_no_name': 'La colonne "nom" est requise.',
     'admin.exposants.import_parse_error': 'Erreur de lecture du fichier.',
+    'admin.exposants.import_skipped': '{count} ligne(s) ignoree(s)',
+    'admin.exposants.import_columns_recognized': 'Colonnes reconnues',
+    'admin.exposants.import_pavillon_auto': 'Pavillon detecte automatiquement',
+    'admin.exposants.import_pavillon_auto_desc': 'Le code pavillon (ex: "3", "A", "H") est automatiquement mis en correspondance avec les espaces de la base. Si aucun espace ne correspond, le pavillon est conserve tel quel.',
 
     // ─── Admin Sector ────────────────────────────────────────
     'admin.sector.agriculture': 'Agriculture',
@@ -2384,6 +2388,10 @@ export const translations: Record<Locale, Record<string, string>> = {
     'admin.exposants.import_no_data': 'No data found in the file.',
     'admin.exposants.import_no_name': 'The "nom" column is required.',
     'admin.exposants.import_parse_error': 'File reading error.',
+    'admin.exposants.import_skipped': '{count} row(s) skipped',
+    'admin.exposants.import_columns_recognized': 'Recognized columns',
+    'admin.exposants.import_pavillon_auto': 'Auto-detected pavilion',
+    'admin.exposants.import_pavillon_auto_desc': 'The pavilion code (e.g. "3", "A", "H") is automatically matched to spaces in the database. If no space matches, the pavilion is kept as-is.',
 
     // ─── Admin Sector ────────────────────────────────────────
     'admin.sector.agriculture': 'Agriculture',

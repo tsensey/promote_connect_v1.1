@@ -6,12 +6,30 @@ import { useTranslation } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { ModeToggle } from '@/components/ui/mode-toggle';
 import { LocaleToggle } from '@/components/ui/locale-toggle';
+import { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 
 export function MarketingNavbar() {
   const { t } = useTranslation();
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
+    <header 
+      className={cn(
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+        isScrolled 
+          ? "border-b border-border/50 bg-background/80 backdrop-blur-xl py-0" 
+          : "bg-transparent border-transparent py-2"
+      )}
+    >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
           <div className="relative size-8 sm:size-10 overflow-hidden rounded-full p-1 transition-transform group-hover:scale-110">
@@ -23,13 +41,21 @@ export function MarketingNavbar() {
               className="object-contain"
             />
           </div>
-          <span className="hidden sm:inline font-bold tracking-tight text-base sm:text-lg">PROMOTE-CONNECT</span>
+          <span className={cn(
+            "hidden sm:inline font-bold tracking-tight text-base sm:text-lg transition-colors",
+            !isScrolled && "text-white drop-shadow-sm"
+          )}>
+            PROMOTE-CONNECT
+          </span>
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
           <a
             href="#features"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className={cn(
+              "text-sm font-medium transition-colors hover:text-primary",
+              !isScrolled ? "text-white/90 hover:text-white" : "text-muted-foreground"
+            )}
           >
             {t('landing.nav.features')}
           </a>
@@ -37,7 +63,10 @@ export function MarketingNavbar() {
             href="https://salon-promote.org"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className={cn(
+              "text-sm font-medium transition-colors hover:text-primary",
+              !isScrolled ? "text-white/90 hover:text-white" : "text-muted-foreground"
+            )}
           >
             {t('landing.nav.salon')}
           </a>
@@ -47,7 +76,11 @@ export function MarketingNavbar() {
           <ModeToggle />
           <LocaleToggle />
           <Link href="/login">
-            <Button variant="default" size="sm">
+            <Button 
+              variant={!isScrolled ? "secondary" : "default"} 
+              size="sm"
+              className={cn(!isScrolled && "bg-white text-[#520a3f] hover:bg-white/90")}
+            >
               {t('landing.nav.login')}
             </Button>
           </Link>

@@ -74,17 +74,18 @@ function LoginPageContent() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-10 sm:space-y-12">
-        <div className="flex justify-center mb-6">
+    <div className="w-full max-w-md mx-auto">
+      <div className="surface-card p-6 sm:p-10 space-y-8 animate-reveal">
+        <div className="flex justify-center mb-2">
           <Image
             src="/logo-promote.png"
             alt="PROMOTE-CONNECT Logo"
             width={120}
             height={40}
-            className="object-contain rounded-full shadow-sm"
+            className="object-contain rounded-full shadow-md"
           />
         </div>
-        <div className="space-y-3 text-center">
+        <div className="space-y-2 text-center animate-reveal-delay-1">
           <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
             {t('auth.login.title')}
           </h1>
@@ -93,10 +94,8 @@ function LoginPageContent() {
           </p>
         </div>
 
-
-
         {adminOnly && (
-          <Alert className="rounded-2xl border-primary/20 bg-primary/5 text-primary">
+          <Alert className="rounded-2xl border-primary/20 bg-primary/5 text-primary animate-reveal-delay-1">
             <AlertDescription>
               {t('auth.login.restricted')}
             </AlertDescription>
@@ -104,16 +103,16 @@ function LoginPageContent() {
         )}
 
         {error && (
-          <Alert variant="destructive" className="rounded-2xl">
+          <Alert variant="destructive" className="rounded-2xl animate-reveal-delay-1">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6 animate-reveal-delay-2">
           <div className="space-y-3">
-            <Label htmlFor="email">{t('auth.login.email')}</Label>
+            <Label htmlFor="email" className="font-semibold">{t('auth.login.email')}</Label>
             <div className="relative">
-              <Mail className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Mail className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground/70" />
               <Input
                 id="email"
                 type="email"
@@ -121,20 +120,20 @@ function LoginPageContent() {
                 onChange={(event) => setEmail(event.target.value)}
                 required
                 placeholder={t('auth.login.email_placeholder')}
-                className="pl-11"
+                className="pl-12 h-12 rounded-xl bg-background/50 focus-visible:ring-primary/30"
               />
             </div>
           </div>
 
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3">
-              <Label htmlFor="password">{t('auth.login.password')}</Label>
+              <Label htmlFor="password" className="font-semibold">{t('auth.login.password')}</Label>
               <span className="text-xs text-muted-foreground">
                 {t('auth.login.password_hint')}
               </span>
             </div>
             <div className="relative">
-              <KeyRound className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <KeyRound className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground/70" />
               <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
@@ -142,7 +141,7 @@ function LoginPageContent() {
                 onChange={(event) => setPassword(event.target.value)}
                 required
                 placeholder={t('auth.login.password_placeholder')}
-                className="pl-11 pr-12"
+                className="pl-12 pr-12 h-12 rounded-xl bg-background/50 focus-visible:ring-primary/30"
               />
               <button
                 type="button"
@@ -163,19 +162,17 @@ function LoginPageContent() {
             </div>
           </div>
 
-
-
           <Button
             type="submit"
             disabled={loading}
             size="lg"
-            className="w-full"
+            className="w-full h-12 rounded-xl text-base shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 active:translate-y-0"
           >
             {loading ? t('auth.login.logging_in') : t('auth.login.sign_in')}
-            {!loading && <ArrowRight className="size-4" />}
+            {!loading && <ArrowRight className="ml-2 size-4" />}
           </Button>
         </form>
-        <div className="flex flex-col gap-4 pt-4">
+        <div className="flex flex-col gap-4 pt-4 animate-reveal-delay-2">
           <Link
             href="mailto:support@promote-connect.com"
             className="text-center text-sm font-medium text-muted-foreground transition hover:text-primary"
@@ -183,6 +180,7 @@ function LoginPageContent() {
             {t('auth.login.no_access')}
           </Link>
         </div>
+      </div>
     </div>
   );
 }
