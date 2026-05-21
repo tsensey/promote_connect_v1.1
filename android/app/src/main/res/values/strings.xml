@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PROMOTE-CONNECT</string>
+    <string name="title_activity_main">PROMOTE-CONNECT</string>
+    <string name="package_name">com.promoteconnect.app</string>
+    <string name="custom_url_scheme">com.promoteconnect.app</string>
+</resources>

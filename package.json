@@ -15,10 +15,13 @@
     "test:coverage": "vitest run --coverage",
     "db:reset-seed": "node scripts/seed.js --clean",
     "db:cleanup-orphans": "node scripts/cleanup-orphans.js",
-    "db:cleanup-orphans:dry-run": "node scripts/cleanup-orphans.js --dry-run"
+    "db:cleanup-orphans:dry-run": "node scripts/cleanup-orphans.js --dry-run",
+    "cap:sync": "cap sync",
+    "cap:open": "cap open android"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
+    "@capacitor/status-bar": "^6.0.3",
     "@react-email/components": "^1.0.12",
     "@sentry/nextjs": "^10.53.1",
     "@sentry/node": "^10.53.1",
@@ -54,6 +57,9 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^6.2.1",
     "@playwright/test": "^1.60.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

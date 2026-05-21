@@ -12,6 +12,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { NotificationStateProvider } from '@/lib/notification-context';
 import { NotificationProvider } from '@/components/shared/NotificationProvider';
 import { PwaRegister } from '@/components/shared/PwaRegister';
+import { CapacitorStatusBar } from '@/components/shared/CapacitorStatusBar';
 import PlausibleAnalytics from '@/components/shared/PlausibleAnalytics';
 import { cn } from '@/lib/utils';
 import './globals.css';
@@ -79,6 +80,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                       </Suspense>
                       <Toaster richColors position="top-right" />
                       <PwaRegister />
+                      <CapacitorStatusBar />
                       <PlausibleAnalytics />
                     </NotificationProvider>
                   </NotificationStateProvider>
