@@ -95,7 +95,7 @@ export default function RegisterPage() {
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="surface-card p-6 sm:p-10 space-y-8 animate-reveal">
+      <div className="space-y-8 animate-reveal">
         <div className="text-center space-y-2 animate-reveal-delay-1">
           <div className="inline-flex size-14 items-center justify-center rounded-2xl bg-primary/10 mb-2">
             <UserPlus className="size-7 text-primary" />
@@ -173,7 +173,7 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <Button type="submit" className="w-full h-12 rounded-xl text-base shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 active:translate-y-0" disabled={loading}>
+          <Button type="submit" className="w-full h-12 rounded-xl text-base transition-all hover:-translate-y-0.5 active:translate-y-0" disabled={loading}>
             {loading ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" />

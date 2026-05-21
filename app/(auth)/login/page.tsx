@@ -75,7 +75,7 @@ function LoginPageContent() {
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="surface-card p-6 sm:p-10 space-y-8 animate-reveal">
+      <div className="space-y-8 animate-reveal">
         <div className="flex justify-center mb-2">
           <Image
             src="/logo-promote.png"
@@ -166,7 +166,7 @@ function LoginPageContent() {
             type="submit"
             disabled={loading}
             size="lg"
-            className="w-full h-12 rounded-xl text-base shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 active:translate-y-0"
+            className="w-full h-12 rounded-xl text-base transition-all hover:-translate-y-0.5 active:translate-y-0"
           >
             {loading ? t('auth.login.logging_in') : t('auth.login.sign_in')}
             {!loading && <ArrowRight className="ml-2 size-4" />}
