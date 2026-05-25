@@ -12,20 +12,15 @@ export function CapacitorStatusBar() {
     if (!Capacitor.isNativePlatform()) return;
 
     const currentTheme = theme === 'system' ? systemTheme : theme;
-    
-    // Style.Dark signifie que l'arrière-plan est sombre, donc les icônes deviennent claires (Light)
-    // Style.Light signifie que l'arrière-plan est clair, donc les icônes deviennent sombres (Dark)
-    const setStatusBarStyle = async () => {
-      try {
-        await StatusBar.setStyle({
-          style: currentTheme === 'dark' ? Style.Dark : Style.Light,
-        });
-      } catch (e) {
-        console.warn('StatusBar plugin not available', e);
-      }
-    };
 
-    setStatusBarStyle();
+    StatusBar.setStyle({
+      style: currentTheme === 'dark' ? Style.Dark : Style.Light,
+    }).catch(() => {});
+
+    // iOS: scroll to top on status bar tap
+    window.addEventListener('statusTap', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   }, [theme, systemTheme]);
 
   return null;

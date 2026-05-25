@@ -36,7 +36,9 @@ export function UserTopbar({
   const { unreadMessages } = useNotificationState();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+    <header 
+      className="sticky top-0 z-40 border-b border-border/60 bg-background safe-top"
+    >
       <div className="mx-auto flex h-14 items-center justify-between gap-4 px-4 sm:px-6 xl:px-8">
         <div className="flex min-w-0 items-center gap-3">
           <Button
@@ -47,7 +49,13 @@ export function UserTopbar({
           >
             <Menu className="size-4" />
           </Button>
-          <UserBreadcrumb className="hidden min-w-0 sm:flex" />
+          <UserBreadcrumb className="hidden min-w-0 lg:flex" />
+          <div className="flex lg:hidden flex-col justify-center">
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary/60">
+              Promote
+            </p>
+            <p className="-mt-1 text-sm font-bold text-foreground">Connect</p>
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5">

@@ -737,7 +737,7 @@ export default function AdminUsersPage() {
       </Card>
 
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t('admin.users.form_title')}</DialogTitle>
             <DialogDescription>
