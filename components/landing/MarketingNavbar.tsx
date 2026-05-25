@@ -34,7 +34,7 @@ export function MarketingNavbar() {
         <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
           <div className="relative size-8 sm:size-10 overflow-hidden rounded-full p-1 transition-transform group-hover:scale-110">
             <Image
-              src="/logo-promote.png"
+              src="/web-app-manifest-512x512.png"
               alt="PROMOTE"
               width={40}
               height={40}

@@ -6,7 +6,6 @@ import { useAuth } from '@/lib/auth/context';
 import { useTranslation } from '@/lib/i18n';
 import { UserSidebar } from '@/components/layout/UserSidebar';
 import { UserTopbar } from '@/components/layout/UserTopbar';
-import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { SearchCommandPalette } from '@/components/search/SearchCommandPalette';
 import { cn } from '@/lib/utils';
 
@@ -124,7 +123,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
           onOpenSearch={() => setSearchOpen(true)}
         />
 
-        <main className="px-4 pt-6 sm:px-6 xl:px-8 xl:pb-8" style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
+        <main className="px-2 pt-2 sm:px-6 xl:px-8 xl:pb-8" style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
           <Suspense fallback={
             <div className="flex min-h-[60vh] items-center justify-center">
               <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -135,7 +134,6 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
         </main>
       </div>
 
-      <MobileBottomNav />
       <SearchCommandPalette open={searchOpen} onOpenChange={setSearchOpen} />
     </div>
   );

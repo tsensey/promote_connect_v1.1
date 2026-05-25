@@ -1,5 +1,9 @@
 import { redirect } from 'next/navigation';
 
+export async function generateStaticParams() {
+  return [{ conversationId: '_placeholder' }];
+}
+
 interface Props {
   params: Promise<{ conversationId: string }>;
 }

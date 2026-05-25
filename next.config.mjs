@@ -47,12 +47,16 @@ const securityHeaders = [
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
 ];
 
+const isCapacitorBuild = process.env.CAPACITOR_BUILD === 'true';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  ...(isCapacitorBuild ? { output: 'export', distDir: 'out', typescript: { ignoreBuildErrors: true } } : {}),
   transpilePackages: ['@base-ui/react'],
   poweredByHeader: false,
   images: {
+    unoptimized: isCapacitorBuild,
     remotePatterns: [
       { protocol: 'https', hostname: '*.supabase.co' },
       { protocol: 'https', hostname: '*.stripe.com' },

@@ -13,6 +13,7 @@ import { NotificationStateProvider } from '@/lib/notification-context';
 import { NotificationProvider } from '@/components/shared/NotificationProvider';
 import { PwaRegister } from '@/components/shared/PwaRegister';
 import { CapacitorStatusBar } from '@/components/shared/CapacitorStatusBar';
+import { CapacitorInitializer } from '@/components/shared/CapacitorInitializer';
 import PlausibleAnalytics from '@/components/shared/PlausibleAnalytics';
 import { cn } from '@/lib/utils';
 import './globals.css';
@@ -52,8 +53,13 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies();
-  const initialLocale = (cookieStore.get('NEXT_LOCALE')?.value === 'en' ? 'en' : 'fr') as Locale;
+  let initialLocale: Locale = 'fr';
+  try {
+    const cookieStore = await cookies();
+    initialLocale = (cookieStore.get('NEXT_LOCALE')?.value === 'en' ? 'en' : 'fr') as Locale;
+  } catch {
+    // Static export: cookies() is unavailable, default to 'fr'
+  }
 
   return (
     <html
@@ -81,6 +87,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                       <Toaster richColors position="top-right" />
                       <PwaRegister />
                       <CapacitorStatusBar />
+                      <CapacitorInitializer />
                       <PlausibleAnalytics />
                     </NotificationProvider>
                   </NotificationStateProvider>

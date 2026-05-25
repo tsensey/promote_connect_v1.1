@@ -1,7 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChevronDown, Menu, MessageSquare, CalendarDays, Search } from "lucide-react";
+import {
+  ChevronDown,
+  Menu,
+  MessageSquare,
+  CalendarDays,
+  Search,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useNotificationState } from "@/lib/notification-context";
@@ -17,7 +23,9 @@ import {
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { LocaleToggle } from "@/components/ui/locale-toggle";
 import { UserBreadcrumb } from "@/components/ui/breadcrumb-nav";
-import { useTranslation } from '@/lib/i18n';
+import { useTranslation } from "@/lib/i18n";
+import { isNativePlatform } from "@/lib/capacitor";
+import { MobileBottomNav } from "./MobileBottomNav";
 
 export function UserTopbar({
   onToggleSidebar,
@@ -36,120 +44,124 @@ export function UserTopbar({
   const { unreadMessages } = useNotificationState();
 
   return (
-    <header 
-      className="sticky top-0 z-40 border-b border-border/60 bg-background safe-top"
-    >
-      <div className="mx-auto flex h-14 items-center justify-between gap-4 px-4 sm:px-6 xl:px-8">
-        <div className="flex min-w-0 items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={onToggleSidebar}
-            className="xl:hidden"
-          >
-            <Menu className="size-4" />
-          </Button>
-          <UserBreadcrumb className="hidden min-w-0 lg:flex" />
-          <div className="flex lg:hidden flex-col justify-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary/60">
-              Promote
-            </p>
-            <p className="-mt-1 text-sm font-bold text-foreground">Connect</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="rounded-full text-muted-foreground hover:text-foreground"
-            onClick={onOpenSearch}
-            title={t('common.search')}
-          >
-            <Search className="size-4" />
-          </Button>
-          <LocaleToggle />
-          <ModeToggle />
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="hidden rounded-full text-muted-foreground hover:text-foreground sm:inline-flex"
-            onClick={() => router.push("/chat")}
-          >
-            <MessageSquare className="size-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="hidden rounded-full text-muted-foreground hover:text-foreground sm:inline-flex"
-            onClick={() => router.push("/agenda")}
-          >
-            <CalendarDays className="size-4" />
-          </Button>
-          <NotificationDropdown />
-
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  className="h-auto rounded-full px-2 py-1 hover:bg-muted/60"
-                />
-              }
+    <>
+      <header
+        className={`sticky top-0 z-40 border-b border-border/60 bg-background safe-top ${isNativePlatform() && "!pt-10 h-[6rem]"}`}
+      >
+        <div className="mx-auto flex h-14 items-center justify-between gap-4 px-4 sm:px-6 xl:px-8">
+          <div className="flex min-w-0 items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onToggleSidebar}
+              className="xl:hidden"
             >
-              <Avatar className="size-7 border-2 border-border/50">
-                {user?.avatar ? (
-                  <AvatarImage src={user.avatar} />
-                ) : null}
-                <AvatarFallback className="bg-primary/10 text-[11px] font-semibold text-primary">
-                  {user?.name?.charAt(0).toUpperCase() || "?"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="hidden text-left md:block">
-                <p className="max-w-[8rem] truncate text-sm font-medium text-foreground">
-                  {user?.name}
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  {user?.role === "exposant" ? t('layout.topbar.exposant') : t('layout.topbar.visiteur')}
-                </p>
-              </div>
-              <ChevronDown className="hidden size-3.5 text-muted-foreground md:block" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 rounded-xl p-1">
-              <DropdownMenuLabel className="px-3 py-2">
-                <div className="space-y-1">
-                  <p className="text-sm font-semibold text-foreground">
+              <Menu className="size-4" />
+            </Button>
+            <UserBreadcrumb className="hidden min-w-0 lg:flex" />
+            <div className="flex lg:hidden flex-col justify-center">
+              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary/60">
+                Promote
+              </p>
+              <p className="-mt-1 text-sm font-bold text-foreground">Connect</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="rounded-full text-muted-foreground hover:text-foreground"
+              onClick={onOpenSearch}
+              title={t("common.search")}
+            >
+              <Search className="size-4" />
+            </Button>
+            <LocaleToggle />
+            <ModeToggle />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="hidden rounded-full text-muted-foreground hover:text-foreground sm:inline-flex"
+              onClick={() => router.push("/chat")}
+            >
+              <MessageSquare className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="hidden rounded-full text-muted-foreground hover:text-foreground sm:inline-flex"
+              onClick={() => router.push("/agenda")}
+            >
+              <CalendarDays className="size-4" />
+            </Button>
+            <NotificationDropdown />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    className="h-auto rounded-full px-2 py-1 hover:bg-muted/60"
+                  />
+                }
+              >
+                <Avatar className="size-7 border-2 border-border/50">
+                  {user?.avatar ? <AvatarImage src={user.avatar} /> : null}
+                  <AvatarFallback className="bg-primary/10 text-[11px] font-semibold text-primary">
+                    {user?.name?.charAt(0).toUpperCase() || "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="hidden text-left md:block">
+                  <p className="max-w-[8rem] truncate text-sm font-medium text-foreground">
                     {user?.name}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    {user?.email}
+                  <p className="text-[11px] text-muted-foreground">
+                    {user?.role === "exposant"
+                      ? t("layout.topbar.exposant")
+                      : t("layout.topbar.visiteur")}
                   </p>
                 </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => router.push("/app")}
-                className="rounded-lg"
-              >
-                {t('layout.topbar.home')}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => router.push("/support")}
-                className="rounded-lg"
-              >
-                {t('layout.topbar.support')}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={onSignOut}
-                className="rounded-lg text-destructive focus:text-destructive"
-              >
-                {t('layout.topbar.signout')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <ChevronDown className="hidden size-3.5 text-muted-foreground md:block" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 rounded-xl p-1">
+                <DropdownMenuLabel className="px-3 py-2">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-foreground">
+                      {user?.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {user?.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => router.push("/app")}
+                  className="rounded-lg"
+                >
+                  {t("layout.topbar.home")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => router.push("/support")}
+                  className="rounded-lg"
+                >
+                  {t("layout.topbar.support")}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={onSignOut}
+                  className="rounded-lg text-destructive focus:text-destructive"
+                >
+                  {t("layout.topbar.signout")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      <MobileBottomNav />
+    </>
   );
 }

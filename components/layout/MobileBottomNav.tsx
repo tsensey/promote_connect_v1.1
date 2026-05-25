@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 import { useNotificationState } from "@/lib/notification-context";
 import { Badge } from "@/components/ui/badge";
+
 export function MobileBottomNav() {
   const pathname = usePathname();
   const { t } = useTranslation();
@@ -38,10 +39,8 @@ export function MobileBottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/60 bg-background xl:hidden">
-      <div
-        className="flex h-[72px] items-center justify-around px-2 safe-bottom"
-      >
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/60 bg-background lg:hidden safe-bottom">
+      <div className="flex h-[70px] items-center justify-around px-2 safe-bottom">
         {navItems.map((item) => {
           const active = isItemActive(pathname, item.href);
           const Icon = item.icon;
@@ -58,7 +57,7 @@ export function MobileBottomNav() {
               )}
             >
               <div className="relative">
-                <Icon className={cn("size-6", active && "fill-primary/20")} />
+                <Icon className={cn("size-5", active && "fill-primary/20")} />
                 {item.badge && (
                   <Badge
                     variant="destructive"

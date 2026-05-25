@@ -7,66 +7,58 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.join(__dirname, '..');
 
-const apiDir = path.join(rootDir, 'app', 'api');
-const apiBackupDir = path.join(rootDir, 'api_backup_tmp');
+function stash(src, dst) {
+  if (!fs.existsSync(src)) return false;
+  if (fs.existsSync(dst)) fs.rmSync(dst, { recursive: true, force: true });
+  fs.cpSync(src, dst, { recursive: true, force: true });
+  fs.rmSync(src, { recursive: true, force: true });
+  return true;
+}
 
-const sitemapDir = path.join(rootDir, 'app', 'sitemap.ts');
-const sitemapBackupDir = path.join(rootDir, 'sitemap_backup_tmp');
+function unstash(src, dst) {
+  if (!fs.existsSync(src)) return false;
+  if (fs.existsSync(dst)) fs.rmSync(dst, { recursive: true, force: true });
+  fs.cpSync(src, dst, { recursive: true, force: true });
+  fs.rmSync(src, { recursive: true, force: true });
+  return true;
+}
 
-const robotDir = path.join(rootDir, 'app', 'robots.ts');
-const robotBackupDir = path.join(rootDir, 'robots_backup_tmp');
-
-const manifestDir = path.join(rootDir, 'app', 'manifest.ts');
-const manifestBackupDir = path.join(rootDir, 'manifest_backup_tmp');
+const stashes = [
+  { label: 'app/api', src: path.join(rootDir, 'app', 'api'), dst: path.join(rootDir, 'api_backup_tmp') },
+  { label: 'app/sitemap.ts', src: path.join(rootDir, 'app', 'sitemap.ts'), dst: path.join(rootDir, 'sitemap_backup_tmp') },
+  { label: 'app/robots.ts', src: path.join(rootDir, 'app', 'robots.ts'), dst: path.join(rootDir, 'robots_backup_tmp') },
+  { label: 'app/apple-icon.tsx', src: path.join(rootDir, 'app', 'apple-icon.tsx'), dst: path.join(rootDir, 'apple_icon_backup_tmp') },
+];
 
 try {
   console.log('=== Préparation du build statique Capacitor ===');
-  
-  if (fs.existsSync(apiDir)) {
-    console.log('- Masquage temporaire de app/api...');
-    fs.renameSync(apiDir, apiBackupDir);
-  }
-  
-  if (fs.existsSync(sitemapDir)) {
-    console.log('- Masquage temporaire de app/sitemap.ts...');
-    fs.renameSync(sitemapDir, sitemapBackupDir);
+  console.log('- Nettoyage du cache...');
+  if (fs.existsSync(path.join(rootDir, '.next'))) {
+    fs.rmSync(path.join(rootDir, '.next'), { recursive: true, force: true });
+    console.log('  → .next supprimé');
   }
 
-  if (fs.existsSync(robotDir)) {
-    console.log('- Masquage temporaire de app/robots.ts...');
-    fs.renameSync(robotDir, robotBackupDir);
-  }
-
-  if (fs.existsSync(manifestDir)) {
-    console.log('- Masquage temporaire de app/manifest.ts...');
-    fs.renameSync(manifestDir, manifestBackupDir);
+  console.log('- Masquage temporaire des fichiers non compatibles static export...');
+  for (const s of stashes) {
+    if (stash(s.src, s.dst)) console.log(`  → ${s.label}`);
   }
 
   console.log('\n=== Lancement de Next.js Build (export statique) ===');
-  execSync('npm run build', { stdio: 'inherit', cwd: rootDir });
+  execSync('npm run build', {
+    stdio: 'inherit',
+    cwd: rootDir,
+    env: { ...process.env, CAPACITOR_BUILD: 'true' },
+  });
 
 } catch (error) {
   console.error('\n❌ Échec du build:', error.message);
   process.exitCode = 1;
 } finally {
   console.log('\n=== Restauration des fichiers dynamiques ===');
-  if (fs.existsSync(apiBackupDir)) {
-    fs.renameSync(apiBackupDir, apiDir);
-    console.log('- app/api restauré.');
+  for (const s of stashes) {
+    if (unstash(s.dst, s.src)) console.log(`  ✓ ${s.label} restauré`);
   }
-  if (fs.existsSync(sitemapBackupDir)) {
-    fs.renameSync(sitemapBackupDir, sitemapDir);
-    console.log('- app/sitemap.ts restauré.');
-  }
-  if (fs.existsSync(robotBackupDir)) {
-    fs.renameSync(robotBackupDir, robotDir);
-    console.log('- app/robots.ts restauré.');
-  }
-  if (fs.existsSync(manifestBackupDir)) {
-    fs.renameSync(manifestBackupDir, manifestDir);
-    console.log('- app/manifest.ts restauré.');
-  }
-  
+
   if (process.exitCode !== 1) {
     console.log('\n✅ Build statique généré dans le dossier /out avec succès !');
     console.log('➡️ Prochaine étape : npx cap sync android');

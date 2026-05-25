@@ -19,9 +19,9 @@ android {
     signingConfigs {
         release {
             storeFile file('promote-connect.keystore')
-            storePassword 'promote2026'
-            keyAlias 'promote'
-            keyPassword 'promote2026'
+            storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD') ?: 'promote2026'
+            keyAlias System.getenv('ANDROID_KEY_ALIAS') ?: 'promote'
+            keyPassword System.getenv('ANDROID_KEY_PASSWORD') ?: 'promote2026'
         }
     }
     buildTypes {
@@ -36,6 +36,14 @@ android {
 repositories {
     flatDir{
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+configurations.all {
+    resolutionStrategy {
+        force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22'
+        force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.22'
+        force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.22'
     }
 }
 

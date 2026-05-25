@@ -1,16 +1,16 @@
 {
   "appId": "com.promoteconnect.app",
   "appName": "PROMOTE-CONNECT",
-  "webDir": "public",
+  "webDir": "out",
   "bundledWebRuntime": false,
-  "server": {
-    "url": "https://promoteconnect.bbit-it.com/login",
-    "cleartext": true,
-    "appendUserAgent": "CapacitorApp"
-  },
+  "appendUserAgent": "CapacitorApp",
   "plugins": {
     "StatusBar": {
       "style": "DARK"
+    },
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#581F47"
     }
   }
 }
