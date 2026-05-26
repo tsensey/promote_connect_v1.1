@@ -104,14 +104,24 @@ export default function FeedPage() {
       const { data: session } = await supabaseClient.auth.getSession();
       if (session?.session?.user) {
         const type = (product.type ?? 'produit') === 'service' ? 'service' : 'produit';
-        await supabaseClient.from('messages').insert({
+        
+        // Créer un message structuré avec les informations du produit
+        const productLink = `${window.location.origin}/vitrine/${product.exposants.profile_id}?product=${product.id}`;
+        const messageContent = `${t('feed.contact_about', { type, product: product.nom })}\n\n<a href="${productLink}" target="_blank" rel="noopener noreferrer">🔗 ${t('common.view_product')}</a>`;
+        
+        const messageInsert = await supabaseClient.from('messages').insert({
           conversation_id: data.id,
           sender_id: session.session.user.id,
-          content: t('feed.contact_about', { type, product: product.nom }),
+          content: messageContent,
           is_read: false,
-        });
-        // Redirige vers la conversation
-        router.push(`/chat/${data.id}`);
+        }).select('id').single();
+        
+        // Redirige vers la conversation avec ancre au message
+        if (messageInsert.data?.id) {
+          router.push(`/chat?conv=${data.id}#${messageInsert.data.id}`);
+        } else {
+          router.push(`/chat?conv=${data.id}`);
+        }
       }
     } else {
       toast.error(t('feed.contact_error'));

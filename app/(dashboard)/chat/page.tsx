@@ -314,7 +314,22 @@ function MessageThread({
   }, [loadBlockedUsers]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Scroll vers le message cible si un hash est présent
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.substring(1);
+      if (hash) {
+        setTimeout(() => {
+          const element = document.getElementById(hash);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.classList.add('ring-2', 'ring-primary', 'rounded-xl');
+            setTimeout(() => element.classList.remove('ring-2', 'ring-primary', 'rounded-xl'), 3000);
+          }
+        }, 100);
+      } else {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -474,7 +489,7 @@ function MessageThread({
               const showAvatar = !prev || prev.sender_id !== msg.sender_id || showDateSeparator;
 
               return (
-                <div key={msg.id}>
+                <div key={msg.id} id={msg.id}>
                   {showDateSeparator && msg.created_at && (
                     <DateSeparator date={msg.created_at} />
                   )}

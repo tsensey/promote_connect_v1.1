@@ -53,6 +53,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     'common.toggle_language': 'Basculer la langue',
     'common.preview': 'Aperçu',
     'common.view_profile': 'Voir le profil',
+    'common.view_product': 'Voir le produit',
 
     // ─── Auth Layout ─────────────────────────────────────────
     'auth.layout.qualify': 'Réseau qualifié',
@@ -1469,6 +1470,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     'common.toggle_language': 'Switch language',
     'common.preview': 'Preview',
     'common.view_profile': 'View profile',
+    'common.view_product': 'View product',
 
     // ─── Auth Layout ─────────────────────────────────────────
     'auth.layout.qualify': 'Qualified Network',
