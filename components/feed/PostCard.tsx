@@ -878,7 +878,18 @@ export const PostCard = memo(function PostCard({
       <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
         <DialogContent className="!max-w-[1200px] sm:!max-w-[1200px] w-[95vw] h-[90vh] p-0 !flex flex-col md:flex-row overflow-hidden border-border/40 gap-0" showCloseButton={false}>
           {/* Left Side: Images */}
-          <div className="flex-1 bg-black/95 relative flex items-center justify-center min-h-[40vh] md:min-h-0">
+          <div className="flex-1 bg-black/95 relative flex items-center justify-center min-h-[40vh] md:min-h-0 overflow-hidden">
+             {/* Blurred background image */}
+             {displayImageUrl && (
+               <Image 
+                 src={displayImageUrl.split(',')[selectedImageIdx]} 
+                 alt=""
+                 fill
+                 sizes="(max-width: 1200px) 95vw, 1200px"
+                 className="object-cover absolute inset-0"
+                 style={{ filter: 'blur(40px) brightness(0.5)', zIndex: 0 }}
+               />
+             )}
              <button onClick={() => setIsImageModalOpen(false)} className="absolute top-4 left-4 z-50 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 p-2 rounded-full backdrop-blur-sm transition-all">
                <X className="size-5" />
              </button>
@@ -888,7 +899,8 @@ export const PostCard = memo(function PostCard({
                     alt={t('common.preview')}
                     fill
                     sizes="(max-width: 1200px) 95vw, 1200px"
-                    className="object-contain"
+                    className="object-contain relative"
+                    style={{ zIndex: 10 }}
                   />
                )}
              {/* Next/Prev controls */}
