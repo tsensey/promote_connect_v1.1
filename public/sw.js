@@ -40,8 +40,13 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   if (url.origin !== self.location.origin) return;
 
+  if (url.pathname === '/manifest.webmanifest') {
+    event.respondWith(fromNetwork(request));
+    return;
+  }
+
   if (url.pathname.startsWith('/_next/static/')) {
-    event.respondWith(fromCacheOrNetwork(request, STATIC_CACHE));
+    event.respondWith(fromNetworkOrCache(request, STATIC_CACHE));
     return;
   }
 
@@ -80,6 +85,15 @@ async function fromCacheOrNetwork(request, cacheName) {
     return response;
   } catch {
     return new Response('Offline', { status: 503 });
+  }
+}
+
+async function fromNetwork(request) {
+  try {
+    return await fetch(request);
+  } catch {
+    const cached = await caches.match(request);
+    return cached || new Response('Offline', { status: 503 });
   }
 }
 

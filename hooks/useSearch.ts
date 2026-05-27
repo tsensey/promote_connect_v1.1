@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabaseClient } from '@/lib/supabase/client';
 import type { SearchEntity, SearchResult, SearchResponse } from '@/types/search';
 
 interface UseSearchOptions {
@@ -18,6 +19,8 @@ interface UseSearchResult {
   loadMore: () => void;
   hasMore: boolean;
 }
+
+const VALID_TYPES: SearchEntity[] = ['exposant', 'produit', 'evenement', 'post', 'espace'];
 
 export function useSearch(options: UseSearchOptions = {}): UseSearchResult {
   const { types, limit = 10 } = options;
@@ -48,33 +51,50 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchResult {
     setError(null);
 
     try {
-      const params = new URLSearchParams({
-        q: searchQuery,
-        page: String(searchPage),
-        limit: String(limit),
-      });
-      if (types && types.length > 0) {
-        params.set('types', types.join(','));
-      }
+      const searchTypes = types && types.length > 0 ? types : VALID_TYPES;
 
-      const res = await fetch(`/api/search?${params}`, {
-        signal: controller.signal,
+      const { data: results, error: searchError } = await supabaseClient.rpc('search_all' as any, {
+        search_query: searchQuery,
+        result_types: searchTypes,
+        result_limit: limit,
+        result_offset: searchPage * limit,
       });
 
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || 'Search failed');
+      if (searchError) throw new Error(`Search failed: ${searchError.message}`);
+
+      const { data: counts } = await supabaseClient.rpc('search_count' as any, {
+        search_query: searchQuery,
+        result_types: searchTypes,
+      });
+
+      const facetsMap = Object.fromEntries(VALID_TYPES.map((t) => [t, 0])) as Record<SearchEntity, number>;
+      if (counts && Array.isArray(counts)) {
+        for (const row of counts as Array<{ entity_type: string; count: number }>) {
+          if (VALID_TYPES.includes(row.entity_type as SearchEntity)) {
+            facetsMap[row.entity_type as SearchEntity] = row.count;
+          }
+        }
       }
 
-      const data: SearchResponse = await res.json();
+      const totalCount = Object.values(facetsMap).reduce((a, b) => a + b, 0);
+
+      const mapped: SearchResult[] = (results || []).map((r: Record<string, unknown>) => ({
+        entity_type: r.entity_type as SearchEntity,
+        entity_id: r.entity_id as string,
+        title: r.title as string,
+        description: r.description as string | null,
+        url: r.url as string,
+        metadata: r.metadata as Record<string, unknown>,
+        rank: r.rank as number,
+      }));
 
       if (append) {
-        setResults((prev) => [...prev, ...data.results]);
+        setResults((prev) => [...prev, ...mapped]);
       } else {
-        setResults(data.results);
+        setResults(mapped);
       }
-      setTotal(data.total);
-      setFacets(data.facets.types as Record<SearchEntity, number>);
+      setTotal(totalCount);
+      setFacets(facetsMap);
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
       setError(err instanceof Error ? err.message : 'Search failed');

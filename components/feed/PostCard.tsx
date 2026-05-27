@@ -598,7 +598,7 @@ export const PostCard = memo(function PostCard({
               
               if (count === 2) {
                 return (
-                  <div className="grid grid-cols-2 gap-1">
+                  <div className="grid grid-cols-2 gap-0.5">
                     {images.map((url, i) => (
                       <div key={i} className="relative aspect-square overflow-hidden rounded-xl border border-border/60">
                         <Image
@@ -624,7 +624,7 @@ export const PostCard = memo(function PostCard({
               }
               
               return (
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-0.5">
                   <div className="overflow-hidden rounded-xl border border-border/60">
                     <Image
                       src={images[0]}
@@ -645,7 +645,7 @@ export const PostCard = memo(function PostCard({
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
                   </div>
-                  <div className={cn("grid gap-1", count === 3 ? "grid-cols-2" : "grid-cols-3")}>
+                  <div className={cn("grid gap-0.5", count === 3 ? "grid-cols-2" : "grid-cols-3")}>
                     {images.slice(1).map((url, i) => (
                       <div key={i + 1} className="relative aspect-square overflow-hidden rounded-xl border border-border/60">
                         <Image

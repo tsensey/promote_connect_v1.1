@@ -11,7 +11,7 @@ import {
   Search,
   User,
 } from 'lucide-react';
-import { useAuth } from '@/lib/auth/context';
+import { supabaseClient } from '@/lib/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -131,7 +131,6 @@ const ROLES = ['all', 'admin', 'exposant', 'visiteur'];
 
 export default function AdminLogsPage() {
   const { t, locale } = useTranslation();
-  const { session } = useAuth();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -144,42 +143,49 @@ export default function AdminLogsPage() {
   const [endDate, setEndDate] = useState('');
   const limit = 50;
 
-  const token = session?.access_token || null;
-
   const fetchLogs = useCallback(async () => {
-    if (!token) return;
     setLoading(true);
 
     try {
-      const params = new URLSearchParams();
-      params.set('page', page.toString());
-      params.set('limit', limit.toString());
-      if (search) params.set('search', search);
-      if (actionFilter !== 'all') params.set('action', actionFilter);
-      if (entityFilter !== 'all') params.set('entity_type', entityFilter);
-      if (roleFilter !== 'all') params.set('actor_role', roleFilter);
-      if (startDate) params.set('start_date', startDate);
-      if (endDate) params.set('end_date', endDate);
+      let query = supabaseClient.from('audit_logs').select('*', { count: 'exact' });
 
-      const response = await fetch(`/api/admin/logs?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      if (search) {
+        query = query.or(`actor_email.ilike.%${search}%,action.ilike.%${search}%,entity_type.ilike.%${search}%`);
+      }
+      if (actionFilter !== 'all') {
+        query = query.eq('action', actionFilter);
+      }
+      if (entityFilter !== 'all') {
+        query = query.eq('entity_type', entityFilter);
+      }
+      if (roleFilter !== 'all') {
+        query = query.eq('actor_role', roleFilter);
+      }
+      if (startDate) {
+        query = query.gte('created_at', startDate);
+      }
+      if (endDate) {
+        query = query.lte('created_at', endDate);
+      }
 
-      const payload = await response.json();
+      const offset = (page - 1) * limit;
+      const { data, count, error } = await query
+        .range(offset, offset + limit - 1)
+        .order('created_at', { ascending: false });
 
-      if (!response.ok) {
+      if (error) {
         toast.error(t('admin.logs.toast_load_error'));
         return;
       }
 
-      setLogs(payload.logs || []);
-      setTotal(payload.total || 0);
+      setLogs((data || []) as AuditLog[]);
+      setTotal(count || 0);
     } catch {
       toast.error(t('admin.logs.toast_network_error'));
     } finally {
       setLoading(false);
     }
-  }, [token, page, search, actionFilter, entityFilter, roleFilter, startDate, endDate]);
+  }, [page, search, actionFilter, entityFilter, roleFilter, startDate, endDate]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -198,28 +204,35 @@ export default function AdminLogsPage() {
   }), [logs, total]);
 
   async function handleExportCSV() {
-    if (!token) return;
-
     try {
-      const params = new URLSearchParams();
-      params.set('limit', '5000');
-      if (actionFilter !== 'all') params.set('action', actionFilter);
-      if (entityFilter !== 'all') params.set('entity_type', entityFilter);
-      if (roleFilter !== 'all') params.set('actor_role', roleFilter);
-      if (startDate) params.set('start_date', startDate);
-      if (endDate) params.set('end_date', endDate);
+      let query = supabaseClient.from('audit_logs').select('*');
 
-      const response = await fetch(`/api/admin/logs?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      if (actionFilter !== 'all') {
+        query = query.eq('action', actionFilter);
+      }
+      if (entityFilter !== 'all') {
+        query = query.eq('entity_type', entityFilter);
+      }
+      if (roleFilter !== 'all') {
+        query = query.eq('actor_role', roleFilter);
+      }
+      if (startDate) {
+        query = query.gte('created_at', startDate);
+      }
+      if (endDate) {
+        query = query.lte('created_at', endDate);
+      }
 
-      const payload = await response.json();
-      const allLogs: AuditLog[] = payload.logs || [];
+      const { data: allLogs, error } = await query
+        .limit(5000)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
 
       const header = t('admin.logs.csv_header');
-      const rows = allLogs.map((log) =>
+      const rows = (allLogs || []).map((log) =>
         [
-          new Date(log.created_at).toLocaleString(locale === 'en' ? 'en-US' : 'fr-FR'),
+          new Date(log.created_at ?? '').toLocaleString(locale === 'en' ? 'en-US' : 'fr-FR'),
           log.actor_id,
           log.actor_email || '',
           log.actor_role,

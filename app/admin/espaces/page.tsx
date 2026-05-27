@@ -9,7 +9,7 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
-import { useAuth } from '@/lib/auth/context';
+import { supabaseClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -54,7 +54,6 @@ const defaultForm = {
 
 export default function AdminEspacesPage() {
   const { t } = useTranslation();
-  const { session } = useAuth();
   const [espaces, setEspaces] = useState<Espace[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -63,27 +62,24 @@ export default function AdminEspacesPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(defaultForm);
 
-  const token = session?.access_token || null;
-
   const fetchEspaces = useCallback(async () => {
-    if (!token) return;
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/espaces', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setEspaces(data.espaces || []);
+      const { data, error } = await supabaseClient
+        .from('espaces')
+        .select('*')
+        .order('sort_order');
+      if (error) {
+        toast.error(error.message);
       } else {
-        toast.error(data.error || t('admin.espaces.load_error'));
+        setEspaces((data || []) as Espace[]);
       }
     } catch {
       toast.error(t('admin.espaces.network_error'));
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => fetchEspaces(), 0);
@@ -128,7 +124,6 @@ export default function AdminEspacesPage() {
   };
 
   const handleSave = async () => {
-    if (!token) return;
     if (!form.code || !form.nom) {
       toast.error(t('admin.espaces.validation'));
       return;
@@ -136,26 +131,26 @@ export default function AdminEspacesPage() {
 
     setSaving(true);
     try {
-      const method = editingId ? 'PUT' : 'POST';
-      const body = editingId ? { ...form, id: editingId } : form;
-
-      const res = await fetch('/api/admin/espaces', {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(body),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast.error(data.error || t('admin.espaces.server_error'));
-        return;
+      if (editingId) {
+        const { error } = await supabaseClient
+          .from('espaces')
+          .update(form)
+          .eq('id', editingId);
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+        toast.success(t('admin.espaces.updated'));
+      } else {
+        const { error } = await supabaseClient
+          .from('espaces')
+          .insert(form);
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+        toast.success(t('admin.espaces.created'));
       }
-
-      toast.success(editingId ? t('admin.espaces.updated') : t('admin.espaces.created'));
       setShowForm(false);
       await fetchEspaces();
     } catch {
@@ -166,22 +161,17 @@ export default function AdminEspacesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!token) return;
     if (!window.confirm(t('admin.espaces.delete_confirm'))) return;
 
     try {
-      const res = await fetch(`/api/admin/espaces?id=${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast.error(data.error || t('admin.espaces.server_error'));
+      const { error } = await supabaseClient
+        .from('espaces')
+        .delete()
+        .eq('id', id);
+      if (error) {
+        toast.error(error.message);
         return;
       }
-
       toast.success(t('admin.espaces.deleted'));
       await fetchEspaces();
     } catch {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 import { createConversation } from '@/hooks/useChat';
 import { toEmbedUrl } from '@/lib/utils';
@@ -85,6 +85,7 @@ export default function ExposantDetailPage() {
   const [contacting, setContacting] = useState(false);
   const [blocking, setBlocking] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const router = useRouter();
 
   const { blockUser, unblockUser, isBlocked, loadBlockedUsers } = useBlockedUsers();
 
@@ -143,7 +144,7 @@ export default function ExposantDetailPage() {
           });
         }
       }
-      window.location.href = `/chat/${data.id}`;
+      router.push(`/chat/${data.id}`);
     } else {
       toast.error(t('annuaire.detail.contact_error'));
     }

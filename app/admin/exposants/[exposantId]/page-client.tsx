@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth/context';
 import { compressImage, compressImages } from '@/lib/compress-image';
 import { supabaseClient } from '@/lib/supabase/client';
 import {
@@ -95,8 +94,6 @@ export default function AdminExposantVitrinePage() {
   const router = useRouter();
   const params = useParams();
   const exposantId = params.exposantId as string;
-  const { session } = useAuth();
-  const token = session?.access_token || null;
 
   const [loading, setLoading] = useState(true);
   const [exposant, setExposant] = useState<Exposant | null>(null);
@@ -140,82 +137,82 @@ export default function AdminExposantVitrinePage() {
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
 
   const fetchExposant = useCallback(async () => {
-    if (!token) return;
     try {
-      const res = await fetch('/api/admin/espaces/exposants', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      const found = (data.exposants || []).find((e: Exposant) => e.id === exposantId);
-      if (found) {
-        setExposant(found);
+      const { data, error } = await supabaseClient
+        .from('exposants')
+        .select('*')
+        .eq('id', exposantId)
+        .single();
+      if (error) throw error;
+      if (data) {
+        setExposant(data);
         setShowcaseForm({
-          nom: found.nom || '',
-          description: found.description || '',
-          long_description: found.long_description || '',
-          secteur: found.secteur || '',
-          pavillon: found.pavillon || '',
-          stand: found.stand || '',
-          pays: found.pays || '',
-          website: found.website || '',
-          email_contact: found.email_contact || '',
-          phone_contact: found.phone_contact || '',
-          facebook_url: found.facebook_url || '',
-          linkedin_url: found.linkedin_url || '',
-          twitter_url: found.twitter_url || '',
-          instagram_url: found.instagram_url || '',
-          cover_url: found.cover_url || '',
-          logo_url: found.logo_url || '',
-          brochure_url: found.brochure_url || '',
-          video_url: found.video_url || '',
-          chiffre_affaires: found.chiffre_affaires || '',
-          annee_creation: found.annee_creation || '',
-          nombre_employes: found.nombre_employes || '',
-          gallery_urls: (found.gallery_urls as string[]) || [],
-          is_featured: found.is_featured || false,
-          espace_id: found.espace_id || '',
+          nom: data.nom || '',
+          description: data.description || '',
+          long_description: data.long_description || '',
+          secteur: data.secteur || '',
+          pavillon: data.pavillon || '',
+          stand: data.stand || '',
+          pays: data.pays || '',
+          website: data.website || '',
+          email_contact: data.email_contact || '',
+          phone_contact: data.phone_contact || '',
+          facebook_url: data.facebook_url || '',
+          linkedin_url: data.linkedin_url || '',
+          twitter_url: data.twitter_url || '',
+          instagram_url: data.instagram_url || '',
+          cover_url: data.cover_url || '',
+          logo_url: data.logo_url || '',
+          brochure_url: data.brochure_url || '',
+          video_url: data.video_url || '',
+          chiffre_affaires: data.chiffre_affaires || '',
+          annee_creation: data.annee_creation || '',
+          nombre_employes: data.nombre_employes || '',
+          gallery_urls: (data.gallery_urls as string[]) || [],
+          is_featured: data.is_featured || false,
+          espace_id: data.espace_id || '',
         });
       }
     } catch {
       toast.error(t('admin.exposants.toast_load_error'));
     }
-  }, [token, exposantId, t]);
+  }, [exposantId, t]);
 
   const fetchProducts = useCallback(async () => {
-    if (!token) return;
     try {
-      const res = await fetch(`/api/admin/espaces/produits?exposant_id=${exposantId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setProducts(data.produits || []);
+      const { data, error } = await supabaseClient
+        .from('produits')
+        .select('*, exposants(nom, profile_id, logo_url)')
+        .eq('exposant_id', exposantId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setProducts(data || []);
     } catch {
       // silent
     }
-  }, [token, exposantId]);
+  }, [exposantId]);
 
   const fetchEspaces = useCallback(async () => {
-    if (!token) return;
     try {
-      const res = await fetch('/api/admin/espaces', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setEspaces(data.espaces || []);
+      const { data, error } = await supabaseClient
+        .from('espaces')
+        .select('*')
+        .order('sort_order');
+      if (error) throw error;
+      setEspaces(data || []);
     } catch {
       // silent
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (!token) return;
     const load = async () => {
       setLoading(true);
       await Promise.all([fetchExposant(), fetchProducts(), fetchEspaces()]);
       setLoading(false);
     };
     void load();
-  }, [token, fetchExposant, fetchProducts, fetchEspaces]);
+  }, [fetchExposant, fetchProducts, fetchEspaces]);
 
   const handleImageUpload = async (file: File | null, field: 'logo_url' | 'cover_url') => {
     if (!file) return;
@@ -283,7 +280,6 @@ export default function AdminExposantVitrinePage() {
   };
 
   const saveShowcase = async () => {
-    if (!token) return;
     if (!showcaseForm.nom.trim()) {
       toast.error(t('exposant.vitrine.name_required'));
       return;
@@ -291,7 +287,6 @@ export default function AdminExposantVitrinePage() {
     setSaving(true);
     try {
       const body = {
-        id: exposantId,
         nom: showcaseForm.nom.trim(),
         description: showcaseForm.description.trim() || null,
         long_description: showcaseForm.long_description.trim() || null,
@@ -317,15 +312,12 @@ export default function AdminExposantVitrinePage() {
         is_featured: showcaseForm.is_featured,
         espace_id: showcaseForm.espace_id || null,
       };
-      const res = await fetch('/api/admin/espaces/exposants', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Save failed');
-      }
+      const { espace_id: _, ...updateData } = body;
+      const { error } = await supabaseClient
+        .from('exposants')
+        .update(updateData)
+        .eq('id', exposantId);
+      if (error) throw error;
       toast.success(t('exposant.vitrine.saved'));
       await fetchExposant();
     } catch (error) {
@@ -336,15 +328,13 @@ export default function AdminExposantVitrinePage() {
   };
 
   const saveProduct = async () => {
-    if (!token) return;
     if (!productForm.nom.trim()) {
       toast.error(t('exposant.vitrine.product_name_required'));
       return;
     }
     setSavingProduct(true);
     try {
-      const body = {
-        ...(productForm.id ? { id: productForm.id } : { exposant_id: exposantId }),
+      const productData = {
         nom: productForm.nom.trim(),
         description: productForm.description.trim() || null,
         categorie: productForm.categorie.trim() || null,
@@ -352,14 +342,17 @@ export default function AdminExposantVitrinePage() {
         type: productForm.type,
         image_url: productForm.image_url || null,
       };
-      const res = await fetch('/api/admin/espaces/produits', {
-        method: productForm.id ? 'PATCH' : 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Product save failed');
+      if (productForm.id) {
+        const { error } = await supabaseClient
+          .from('produits')
+          .update(productData)
+          .eq('id', productForm.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabaseClient
+          .from('produits')
+          .insert({ ...productData, exposant_id: exposantId });
+        if (error) throw error;
       }
       setProductForm(emptyProductForm);
       await fetchProducts();
@@ -384,14 +377,13 @@ export default function AdminExposantVitrinePage() {
   };
 
   const deleteProduct = async (productId: string) => {
-    if (!token) return;
     setDeletingProductId(productId);
     try {
-      const res = await fetch(`/api/admin/espaces/produits?id=${productId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error('Delete failed');
+      const { error } = await supabaseClient
+        .from('produits')
+        .delete()
+        .eq('id', productId);
+      if (error) throw error;
       await fetchProducts();
       toast.success(t('exposant.vitrine.product_deleted'));
     } catch {

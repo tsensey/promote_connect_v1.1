@@ -21,9 +21,12 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SearchResultItem } from '@/components/search/SearchResultItem';
 import { useTranslation } from '@/lib/i18n';
+import { supabaseClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
-import type { SearchEntity, SearchResult, SearchResponse } from '@/types/search';
+import type { SearchEntity, SearchResult } from '@/types/search';
 import { SEARCH_ENTITY_ORDER } from '@/types/search';
+
+const VALID_TYPES: SearchEntity[] = ['exposant', 'produit', 'evenement', 'post', 'espace'];
 
 const ENTITY_CONFIG: Record<SearchEntity, { icon: typeof Store; color: string; gradient: string }> = {
   exposant: { icon: Store, color: 'text-blue-500', gradient: 'from-blue-500/10 to-transparent' },
@@ -66,26 +69,44 @@ export default function RecherchePage() {
     setError(null);
 
     try {
-      const params = new URLSearchParams({
-        q: searchQuery,
-        page: String(searchPage),
-        limit: String(pageSize),
+      const searchTypes = searchType ? [searchType] : VALID_TYPES;
+
+      const { data: results, error: searchError } = await supabaseClient.rpc('search_all' as any, {
+        search_query: searchQuery,
+        result_types: searchTypes,
+        result_limit: pageSize,
+        result_offset: searchPage * pageSize,
       });
-      if (searchType) {
-        params.set('types', searchType);
+
+      if (searchError) throw new Error(`Erreur de recherche: ${searchError.message}`);
+
+      const { data: counts } = await supabaseClient.rpc('search_count' as any, {
+        search_query: searchQuery,
+        result_types: searchTypes,
+      });
+
+      let facetsMap: Record<string, number> = {};
+      if (counts && Array.isArray(counts)) {
+        for (const row of counts as Array<{ entity_type: string; count: number }>) {
+          facetsMap[row.entity_type] = row.count;
+        }
       }
 
-      const res = await fetch(`/api/search?${params}`);
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || 'Erreur de recherche');
-      }
+      const totalCount = Object.values(facetsMap).reduce((a, b) => a + b, 0);
+      const mapped = (results || []).map((r: Record<string, unknown>) => ({
+        entity_type: r.entity_type as SearchEntity,
+        entity_id: r.entity_id as string,
+        title: r.title as string,
+        description: r.description as string | null,
+        url: r.url as string,
+        metadata: r.metadata as Record<string, unknown>,
+        rank: r.rank as number,
+      }));
 
-      const data: SearchResponse = await res.json();
-      setResults(data.results);
-      setTotal(data.total);
-      setFacets(data.facets.types as Record<string, number>);
-      facetsRef.current = data.facets.types as Record<string, number>;
+      setResults(mapped);
+      setTotal(totalCount);
+      setFacets(facetsMap);
+      facetsRef.current = facetsMap;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur de recherche');
       setResults([]);

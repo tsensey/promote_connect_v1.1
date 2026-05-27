@@ -38,6 +38,7 @@ export const metadata: Metadata = {
     template: '%s | PROMOTE-CONNECT',
   },
   description: 'Plateforme digitale de networking pour salons professionnels PROMOTE',
+  manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     title: 'PROMOTE-CONNECT',

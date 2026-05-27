@@ -113,24 +113,17 @@ export default function NewsletterPage() {
     setError(null);
 
     try {
-      const { data: session } = await supabaseClient.auth.getSession();
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (session.session?.access_token) {
-        headers.Authorization = `Bearer ${session.session.access_token}`;
-      }
+      const { error } = await supabaseClient.from("newsletter_subscriptions").upsert(
+        {
+          email,
+          sectors,
+          frequency,
+          is_active: true,
+        },
+        { onConflict: "email" }
+      );
 
-      const response = await fetch("/api/newsletter/subscribe", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ email, sectors, frequency }),
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || "Failed to subscribe");
-      }
+      if (error) throw new Error(error.message);
 
       setSubscriptionStatus({
         subscribed: true,
@@ -149,13 +142,9 @@ export default function NewsletterPage() {
     if (!email) return;
     setLoading(true);
     try {
-      const response = await fetch("/api/newsletter/subscribe", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+      const { error } = await supabaseClient.from("newsletter_subscriptions").delete().eq("email", email);
 
-      if (!response.ok) throw new Error("Failed to unsubscribe");
+      if (error) throw new Error(error.message);
 
       setSubscriptionStatus(null);
       toast.success("Désabonnement réussi");

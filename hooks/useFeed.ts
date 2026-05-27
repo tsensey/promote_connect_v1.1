@@ -223,17 +223,32 @@ export function useFeed(limit = 20) {
   const uploadImage = useCallback(async (files: File[]): Promise<string[]> => {
     const compressed = await compressImages(files);
     const { data: session } = await supabaseClient.auth.getSession();
-    const token = session?.session?.access_token;
-    const formData = new FormData();
-    compressed.forEach(file => formData.append('files', file));
-    const res = await fetch('/api/feed/upload', {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: formData,
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Upload error");
-    return data.urls || (data.url ? [data.url] : []);
+    const userId = session?.session?.user?.id;
+    if (!userId) throw new Error('Not authenticated');
+
+    const urls: string[] = [];
+    for (const file of compressed) {
+      const ext = file.type === 'image/gif' ? 'gif' : 'jpg';
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`;
+      const filePath = `posts/${fileName}`;
+
+      const { data, error } = await supabaseClient.storage
+        .from('feed-images')
+        .upload(filePath, file, {
+          contentType: file.type === 'image/gif' ? 'image/gif' : 'image/jpeg',
+          cacheControl: '31536000',
+          upsert: false,
+        });
+
+      if (error) throw new Error(`Upload error: ${error.message}`);
+
+      const { data: urlData } = supabaseClient.storage
+        .from('feed-images')
+        .getPublicUrl(data.path);
+
+      urls.push(urlData.publicUrl);
+    }
+    return urls;
   }, []);
 
   const createPost = useCallback(

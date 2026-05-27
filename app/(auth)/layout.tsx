@@ -39,6 +39,7 @@ export default function AuthLayout({
               src="/world-map-dots.png"
               alt="World Map Dots"
               fill
+              sizes="100vw"
               className="object-cover opacity-40 mix-blend-screen"
             />
             <div className="absolute inset-0 bg-gradient-to-br from-[#520a3f]/60 via-transparent to-[#520a3f] z-10" />

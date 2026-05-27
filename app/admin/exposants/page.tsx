@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth/context';
 import { Plus, Search, Trash2, ExternalLink, Loader2, Upload, Users } from 'lucide-react';
 import type { Database } from '@/types/database.types';
+import { supabaseClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -41,7 +41,6 @@ interface Espace {
 export default function AdminExposantsPage() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { session } = useAuth();
   const [exposants, setExposants] = useState<Exposant[]>([]);
   const [espaces, setEspaces] = useState<Espace[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,30 +57,23 @@ export default function AdminExposantsPage() {
     nom: '', description: '', secteur: '', espace_id: '', pavillon: '', stand: '', pays: '', website: '', is_featured: false,
   });
 
-  const token = session?.access_token || null;
-
   const fetchData = useCallback(async () => {
-    if (!token) return;
     setLoading(true);
 
     try {
       const [expRes, espRes] = await Promise.all([
-        fetch('/api/admin/espaces/exposants', {
-          headers: { Authorization: `Bearer ${token}` },
-        }).then((r) => r.json()).catch(() => ({ exposants: [] })),
-        fetch('/api/admin/espaces', {
-          headers: { Authorization: `Bearer ${token}` },
-        }).then((r) => r.json()).catch(() => ({ espaces: [] })),
+        supabaseClient.from('exposants').select('*').order('nom'),
+        supabaseClient.from('espaces').select('*').order('sort_order'),
       ]);
 
-      setExposants(expRes.exposants || []);
-      setEspaces(espRes.espaces || []);
+      setExposants(expRes.data || []);
+      setEspaces(espRes.data || []);
     } catch {
       toast.error(t('admin.exposants.toast_load_error'));
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => { void fetchData(); }, [fetchData]);
 
@@ -92,32 +84,20 @@ export default function AdminExposantsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token) return;
     setFormLoading(true);
 
     try {
-      const method = editingId ? 'PATCH' : 'POST';
-      const body = editingId
-        ? { id: editingId, ...formData }
-        : formData;
-
-      const response = await fetch('/api/admin/espaces/exposants', {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (response.ok) {
-        setShowForm(false);
-        resetForm();
-        await fetchData();
+      if (editingId) {
+        const { error } = await supabaseClient.from('exposants').update(formData).eq('id', editingId);
+        if (error) { toast.error(error.message); return; }
       } else {
-        const payload = await response.json();
-        toast.error(payload.error || t('admin.exposants.toast_error'));
+        const { error } = await supabaseClient.from('exposants').insert(formData);
+        if (error) { toast.error(error.message); return; }
       }
+
+      setShowForm(false);
+      resetForm();
+      await fetchData();
     } catch {
       toast.error(t('admin.exposants.toast_network_error'));
     } finally {
@@ -126,28 +106,19 @@ export default function AdminExposantsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!token) return;
     if (!confirm(t('admin.exposants.delete_confirm'))) return;
 
     try {
-      const response = await fetch(`/api/admin/espaces/exposants?id=${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.ok) {
-        await fetchData();
-      } else {
-        const payload = await response.json();
-        toast.error(payload.error || t('admin.exposants.toast_error'));
-      }
+      const { error } = await supabaseClient.from('exposants').delete().eq('id', id);
+      if (error) { toast.error(error.message); return; }
+      await fetchData();
     } catch {
       toast.error(t('admin.exposants.toast_network_error'));
     }
   };
 
   const handleImport = async () => {
-    if (!token || !importFile) return;
+    if (!importFile) return;
     setImportLoading(true);
     setImportResult(null);
 
@@ -157,7 +128,6 @@ export default function AdminExposantsPage() {
 
       const response = await fetch('/api/admin/espaces/exposants/import', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
         body,
       });
 
