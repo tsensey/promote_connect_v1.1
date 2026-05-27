@@ -25,17 +25,29 @@ export default function AdminLayoutWrapper({ children }: { children: React.React
       return;
     }
 
-    if (profile?.role && profile.role !== 'admin') {
-      router.replace('/app');
+    // Attendre que le profil soit chargé avant de prendre une décision
+    // Si on a un user mais que profile est null, et qu'on n'est plus en loading,
+    // on essaie de fallback sur user_metadata
+    const userRole = profile?.role ?? user?.user_metadata?.role;
+    
+    if (profile === null && !user?.user_metadata?.role) {
+      // profil pas encore chargé et pas de fallback — ne rien faire
+      return;
     }
-  }, [loading, profile?.role, router, user]);
+
+    if (userRole !== 'admin') {
+      router.replace('/feed');
+    }
+  }, [loading, profile, router, user]);
+
 
   const handleSignOut = async () => {
     await signOut();
     router.replace('/login');
   };
 
-  if (loading || !user) {
+  // Afficher le spinner pendant le chargement de la session ET du profil
+  if (loading || !user || profile === null) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="surface-panel flex items-center gap-3 px-6 py-5">
@@ -45,6 +57,14 @@ export default function AdminLayoutWrapper({ children }: { children: React.React
       </div>
     );
   }
+
+  // Si le profil est chargé mais l'utilisateur n'est pas admin, ne pas rendre le layout
+  // (la redirection est gérée dans le useEffect)
+  const userRole = profile?.role ?? user?.user_metadata?.role;
+  if (userRole !== 'admin') {
+    return null;
+  }
+
 
   return (
     <div className="min-h-screen">

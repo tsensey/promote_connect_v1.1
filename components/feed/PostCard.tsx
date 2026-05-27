@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -28,6 +29,7 @@ import {
   PartyPopper,
   Lightbulb,
   Loader2,
+  Sparkles,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
@@ -169,7 +171,12 @@ function CommentItem({
             <div className="rounded-2xl rounded-tl-sm bg-muted/50 px-3 py-2">
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="text-xs font-semibold text-foreground">
-                  {authorDisplayName}
+                  <div className="flex items-center gap-1.5">
+                    {authorDisplayName}
+                    {(comment.author as any).subscription_tier === 'paid' && (
+                      <Badge variant="default" className="h-4 text-[9px] px-1 py-0 uppercase bg-amber-500 hover:bg-amber-600 text-white rounded-sm">PRO</Badge>
+                    )}
+                  </div>
                 </span>
                 <span className="text-[10px] text-muted-foreground/60">
                   {comment.created_at
@@ -455,9 +462,20 @@ export const PostCard = memo(function PostCard({
             <div className="flex flex-wrap items-center gap-1.5">
               <AuthorLink role={displayAuthor.role} exposantId={exposantId ?? null}>
                 <span className="font-semibold text-sm text-foreground hover:underline">
-                  {authorDisplayName}
+                  <div className="flex items-center gap-1.5">
+                    {authorDisplayName}
+                    {(displayAuthor as Record<string, unknown>).subscription_tier === 'paid' && (
+                      <Badge variant="default" className="h-4 text-[9px] px-1 py-0 uppercase bg-amber-500 hover:bg-amber-600 text-white rounded-sm">PRO</Badge>
+                    )}
+                  </div>
                 </span>
               </AuthorLink>
+              {(displayAuthor as Record<string, unknown>).subscription_tier === 'paid' && Boolean((postAuthorExposants?.[0] as Record<string, unknown> | undefined)?.is_featured) && (
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary ring-1 ring-primary/20">
+                  <Sparkles className="size-3" />
+                  {t('feed.sponsored')}
+                </span>
+              )}
               {displayAuthor.role === 'exposant' && (
                 <span className="inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-600/20">
                   {t('feed.post.exposant')}
@@ -909,14 +927,14 @@ export const PostCard = memo(function PostCard({
                  <button 
                    onClick={(e) => { e.stopPropagation(); setSelectedImageIdx(prev => Math.max(0, prev - 1)); }}
                    disabled={selectedImageIdx === 0}
-                   className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/80 disabled:opacity-30 transition-all"
+                   className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/80 disabled:opacity-30 transition-all z-50"
                  >
                    <ChevronLeft className="size-6" />
                  </button>
                  <button 
                    onClick={(e) => { e.stopPropagation(); setSelectedImageIdx(prev => Math.min(displayImageUrl!.split(',').length - 1, prev + 1)); }}
                    disabled={selectedImageIdx === (displayImageUrl?.split(',').length ?? 1) - 1}
-                   className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/80 disabled:opacity-30 transition-all"
+                   className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/80 disabled:opacity-30 transition-all z-50"
                  >
                    <ChevronRight className="size-6" />
                  </button>
@@ -935,8 +953,13 @@ export const PostCard = memo(function PostCard({
                    </Avatar>
                  </AuthorLink>
                  <div>
-            <AuthorLink role={displayAuthor.role} exposantId={exposantId ?? null}>
-                      <span className="font-semibold text-sm block hover:underline">{authorDisplayName}</span>
+                    <AuthorLink role={displayAuthor.role} exposantId={exposantId ?? null}>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-sm block hover:underline">{authorDisplayName}</span>
+                        {(displayAuthor as Record<string, unknown>).subscription_tier === 'paid' && (
+                          <Badge variant="default" className="h-4 text-[9px] px-1 py-0 uppercase bg-amber-500 hover:bg-amber-600 text-white rounded-sm">PRO</Badge>
+                        )}
+                      </div>
                     </AuthorLink>
                     <span className="text-xs text-muted-foreground">{authorCompanyName} • {timeAgo}</span>
                  </div>

@@ -1420,6 +1420,23 @@ export const translations: Record<Locale, Record<string, string>> = {
     'landing.footer.cgu': 'CGU',
     'landing.footer.realized_by': 'Réalisé par {link}BBIT Sarl{/link}',
     'landing.footer.copyright': '{year} PROMOTE-CONNECT. Tous droits réservés.',
+  
+    // ─── Ajouts manquants ───
+    'abonnement.my_limits': "Mes limites",
+    'abonnement.daily_messages': "Messages quotidiens",
+    'abonnement.max_posts': "Publications maximum",
+    'abonnement.max_vitrine': "Produits vitrine maximum",
+    'annuaire.restricted_title': "Accès restreint",
+    'annuaire.restricted_desc': "Cette fonctionnalité est réservée aux abonnés Premium.",
+    'annuaire.unlock_access': "Débloquer l'accès",
+    'annuaire.detail.country': "Pays",
+    'common.reset': "Réinitialiser",
+    'admin.espaces.toast_network': "Espaces mis à jour",
+    'exposant.vitrine.revenue': "Chiffre d'affaires",
+    'admin.users.col_role': "Rôle",
+    'Abonnements': "Abonnements",
+    'Configuration': "Configuration",
+    'Signalements': "Signalements",
   },
   en: {
     // ─── Common ──────────────────────────────────────────────

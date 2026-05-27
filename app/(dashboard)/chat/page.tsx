@@ -297,6 +297,7 @@ function MessageThread({
   } = useMessages(conversationId);
   const { refreshUnreadCount } = useNotificationState();
   const { blockUser, unblockUser, isBlocked, loadBlockedUsers } = useBlockedUsers();
+  const perms = usePermissions();
 
   const [inputValue, setInputValue] = useState('');
   const [sending, setSending] = useState(false);
@@ -425,7 +426,7 @@ function MessageThread({
               {isCurrentlyBlocked ? (
                 <DropdownMenuItem
                   onClick={handleUnblock}
-                  disabled={blocking}
+                  disabled={blocking || !perms.canBlockUsers}
                   className="rounded-lg text-destructive focus:text-destructive"
                 >
                   <Ban className="mr-2 size-4" />
@@ -434,7 +435,7 @@ function MessageThread({
               ) : (
                 <DropdownMenuItem
                   onClick={handleBlock}
-                  disabled={blocking}
+                  disabled={blocking || !perms.canBlockUsers}
                   className="rounded-lg text-destructive focus:text-destructive"
                 >
                   <ShieldAlert className="mr-2 size-4" />

@@ -60,13 +60,14 @@ import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
+  DialogTrigger,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
 import { usePermissions } from '@/hooks/usePermissions';
+import { ReportButton } from '@/components/shared/ReportButton';
 import type { Database } from '@/types/database.types';
 
 type Exposant = Database['public']['Tables']['exposants']['Row'];
@@ -263,16 +264,27 @@ export default function VitrineExposantPage() {
             </div>
 
             {/* CTA */}
-            {exposant.profile_id && perms.canContactExposant && (
-              <Button
-                className="shrink-0 rounded-xl"
-                onClick={() => handleContact()}
-                disabled={contacting}
-              >
-                <MessageSquare className="mr-2 size-4" />
-                {t('vitrine.detail.contact')}
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {exposant.profile_id && perms.canContactExposant && (
+                <Button
+                  className="shrink-0 rounded-xl"
+                  onClick={() => handleContact()}
+                  disabled={contacting}
+                >
+                  <MessageSquare className="mr-2 size-4" />
+                  {t('vitrine.detail.contact')}
+                </Button>
+              )}
+              {exposant.profile_id && (
+                <ReportButton
+                  reportedId={exposant.profile_id}
+                  reportedName={exposant.nom}
+                  variant="outline"
+                  className="rounded-xl px-3 shrink-0 h-10 border-border/60 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+                  showText
+                />
+              )}
+            </div>
           </div>
 
           {/* Badges */}

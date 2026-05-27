@@ -12,7 +12,7 @@ type PostShareInsert = Database['public']['Tables']['post_shares']['Insert'];
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 
 type PostWithAuthor = PostRow & {
-  author: Pick<ProfileRow, 'id' | 'full_name' | 'company' | 'avatar_url' | 'role'> & { exposants?: { id: string; nom?: string; logo_url?: string }[] };
+  author: Pick<ProfileRow, 'id' | 'full_name' | 'company' | 'avatar_url' | 'role' | 'subscription_tier'> & { exposants?: { id: string; nom?: string; logo_url?: string; is_featured?: boolean | null }[] };
 };
 
 export type Post = PostWithAuthor & {
@@ -23,7 +23,7 @@ export type Post = PostWithAuthor & {
   reaction_type: string | null;
   author: PostWithAuthor['author'] & { is_following: boolean };
   repost_of?: (PostRow & {
-    author: Pick<ProfileRow, 'id' | 'full_name' | 'company' | 'avatar_url' | 'role'> & { exposants?: { id: string; nom?: string; logo_url?: string }[] };
+    author: Pick<ProfileRow, 'id' | 'full_name' | 'company' | 'avatar_url' | 'role'> & { exposants?: { id: string; nom?: string; logo_url?: string; is_featured?: boolean | null }[] };
   }) | null;
 };
 
@@ -33,13 +33,15 @@ export type Comment = PostCommentRow & {
   replies?: Comment[];
 };
 
-export function useFeed(limit = 20) {
+export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'recent') {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
+  const pageRef = useRef(0);
+  const [mode, setMode] = useState<'recent' | 'discover'>(initialMode);
   const seenPostIds = useRef<Set<string>>(new Set());
 
   const fetchPosts = useCallback(
@@ -50,31 +52,27 @@ export function useFeed(limit = 20) {
         if (!myId) return;
         setMyUserId(myId);
 
-        if (reset) seenPostIds.current.clear();
-
-        let query = supabaseClient
-          .from('posts')
-          .select(`
-            *,
-            author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
-          `)
-          .limit(limit);
-
-        if (seenPostIds.current.size > 0) {
-          query = query.not('id', 'in', `(${Array.from(seenPostIds.current).join(',')})`);
+        if (reset) {
+          seenPostIds.current.clear();
+          pageRef.current = 0;
         }
 
-        query = query.order('created_at', { ascending: false });
-
-        const { data, error } = await query;
-        if (error) throw error;
+        const currentPage = reset ? 0 : pageRef.current;
+        
+        // Fetch posts from API
+        const response = await fetch(`/api/feed/sorted?mode=${mode}&page=${currentPage}&limit=${limit}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch posts');
+        }
+        const { data } = await response.json();
 
         const newPosts = data || [];
         newPosts.forEach((p: PostWithAuthor) => seenPostIds.current.add(p.id));
 
         const postIds = newPosts.map((p: PostWithAuthor) => p.id);
         const repostOfIds = ((data || []) as any[]).filter((p: any) => p.repost_of_id).map((p: any) => p.repost_of_id);
-        const authorIds = [...new Set((data || []).map((p: PostWithAuthor) => p.author_id))];
+        const authorIds = [...new Set((data || []).map((p: PostWithAuthor) => p.author_id))] as string[];
+
 
         const [likesResult, sharesResult, savesResult, reactionsResult, followsResult] = await Promise.all([
           supabaseClient.from('post_likes').select('post_id').in('post_id', postIds).eq('user_id', myId),
@@ -90,7 +88,7 @@ export function useFeed(limit = 20) {
             .from('posts')
             .select(`
               *,
-              author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+              author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, is_featured))
             `)
             .in('id', repostOfIds);
           if (repostData) {
@@ -123,14 +121,22 @@ export function useFeed(limit = 20) {
           repost_of: post.repost_of_id ? (repostOfMap.get(post.repost_of_id) ?? null) : undefined,
         }));
 
-        const shuffled = enriched.sort(() => Math.random() - 0.5);
-
+        // Sort client side is no longer needed since it's done by the API.
+        // We just maintain the order from the API.
+        
         if (reset) {
-          setPosts(shuffled);
+          setPosts(enriched);
         } else {
-          setPosts((prev) => [...prev, ...shuffled]);
+          setPosts((prev) => {
+            const existingIds = new Set(prev.map(p => p.id));
+            const distinctEnriched = enriched.filter(p => !existingIds.has(p.id));
+            return [...prev, ...distinctEnriched];
+          });
         }
 
+        if (newPosts.length > 0) {
+          pageRef.current = currentPage + 1;
+        }
         setHasMore(newPosts.length === limit);
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Unknown error'));
@@ -138,8 +144,9 @@ export function useFeed(limit = 20) {
         setLoading(false);
       }
     },
-    [limit]
+    [limit, mode]
   );
+
 
   useEffect(() => {
     setLoading(true);
@@ -164,7 +171,7 @@ export function useFeed(limit = 20) {
               .from('posts')
               .select(`
                 *,
-                author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+                author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, is_featured))
               `)
               .eq('id', row.id)
               .single();
@@ -177,7 +184,7 @@ export function useFeed(limit = 20) {
                   .from('posts')
                   .select(`
                     *,
-                    author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+                    author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, is_featured))
                   `)
                   .eq('id', d.repost_of_id)
                   .single();
@@ -257,6 +264,31 @@ export function useFeed(limit = 20) {
       const myId = session?.session?.user?.id;
       if (!myId) return { error: new Error('Not authenticated') };
 
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('subscription_tier, role')
+        .eq('id', myId)
+        .single();
+
+      if (profile?.subscription_tier === 'free_trial' || (profile?.role !== 'admin' && profile?.subscription_tier !== 'paid')) {
+        const { data: config } = await supabaseClient
+          .from('platform_config')
+          .select('value')
+          .eq('key', 'max_posts_free_trial')
+          .single();
+          
+        const maxPosts = config?.value ? parseInt(String(config.value), 10) : 2;
+
+        const { count } = await supabaseClient
+          .from('posts')
+          .select('*', { count: 'exact', head: true })
+          .eq('author_id', myId);
+
+        if (count !== null && count >= maxPosts) {
+          return { error: new Error('Quota de publications atteint pour le mode Free Trial.') };
+        }
+      }
+
       const insertData: PostInsert = {
         author_id: myId,
         content: content.trim(),
@@ -270,7 +302,7 @@ export function useFeed(limit = 20) {
         .insert(insertData)
         .select(`
           *,
-          author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+          author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, is_featured))
         `)
         .single();
 
@@ -313,7 +345,7 @@ export function useFeed(limit = 20) {
       .insert(insertData)
       .select(`
         *,
-        author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+        author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, is_featured))
       `)
       .single();
 
@@ -325,7 +357,7 @@ export function useFeed(limit = 20) {
           .from('posts')
           .select(`
             *,
-            author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+            author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, is_featured))
           `)
           .eq('id', d.repost_of_id)
           .single();
@@ -577,7 +609,7 @@ export function useFeed(limit = 20) {
       .from('post_comments')
       .select(`
         *,
-        author:profiles!post_comments_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+        author:profiles!post_comments_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id))
       `)
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
@@ -619,7 +651,7 @@ export function useFeed(limit = 20) {
         .insert(insertData)
         .select(`
           *,
-          author:profiles!post_comments_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+          author:profiles!post_comments_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id))
         `)
         .single();
 
@@ -657,5 +689,7 @@ export function useFeed(limit = 20) {
     addComment,
     uploadImage,
     myUserId,
+    mode,
+    setMode,
   };
 }

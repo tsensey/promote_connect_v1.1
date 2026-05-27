@@ -375,7 +375,7 @@ export default function ExposantDetailPage() {
                   <Globe className="size-4" />
                 </a>
               )}
-              {exposant.profile_id && (
+              {exposant.profile_id && perms.canBlockUsers && (
                 <Button
                   variant="outline"
                   size="icon"

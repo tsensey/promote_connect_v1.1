@@ -5,35 +5,7 @@ import { resend } from '@/lib/resend/client';
 import { createAdminClient } from '@/lib/supabase/admin';
 import NewsletterEmail from '@/emails/NewsletterEmail';
 
-async function verifyAdmin(request: Request) {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }), adminId: null };
-  }
-
-  const token = authHeader.split('Bearer ')[1];
-  const supabase = createAdminClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser(token);
-
-  if (authError || !user) {
-    return { error: NextResponse.json({ error: 'Invalid token' }, { status: 401 }), adminId: null };
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profile?.role !== 'admin') {
-    return { error: NextResponse.json({ error: 'Admin access required' }, { status: 403 }), adminId: null };
-  }
-
-  return { error: null, adminId: user.id };
-}
+import { verifyAdmin } from '@/lib/admin';
 
 function generateToken(): string {
   return crypto.randomUUID();

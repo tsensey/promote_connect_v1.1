@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useEvenements, useRendezVous } from "@/hooks/useAgenda";
 import { useAuth } from "@/lib/auth/context";
 import { useAgendaStore } from "@/store/agendaStore";
@@ -26,6 +26,7 @@ import { RdvCard } from "@/components/agenda/RdvCard";
 import { NewRdvDialog } from "@/components/agenda/NewRdvDialog";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Crown } from "lucide-react";
+import { ConversionModal } from "@/components/shared/ConversionModal";
 
 export default function AgendaPage() {
   const { evenements, loading: eventsLoading } = useEvenements();
@@ -34,6 +35,7 @@ export default function AgendaPage() {
   const perms = usePermissions();
   const myUserId = user?.id;
   const { t, locale } = useTranslation();
+  const [showConversion, setShowConversion] = useState(false);
 
   const {
     eventFilter,
@@ -132,8 +134,8 @@ export default function AgendaPage() {
                 {t("agenda.request_rdv")}
               </Button>
             ) : (
-              <Button disabled className="whitespace-nowrap rounded-xl shadow-sm" title="Réservé aux visiteurs Premium et exposants">
-                <Crown className="mr-2 size-4 text-amber-500" />
+              <Button onClick={() => setShowConversion(true)} className="whitespace-nowrap rounded-xl shadow-sm border-amber-500/50 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20">
+                <Crown className="mr-2 size-4" />
                 {t("agenda.request_rdv")}
               </Button>
             )}
@@ -373,8 +375,8 @@ export default function AgendaPage() {
                     {t("agenda.request_rdv")}
                   </Button>
                 ) : (
-                  <Button disabled className="rounded-xl" title="Réservé aux visiteurs Premium et exposants">
-                    <Crown className="mr-2 size-4 text-amber-500" />
+                  <Button onClick={() => setShowConversion(true)} className="rounded-xl border-amber-500/50 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20">
+                    <Crown className="mr-2 size-4" />
                     {t("agenda.request_rdv")}
                   </Button>
                 )}
@@ -398,6 +400,7 @@ export default function AgendaPage() {
       </Tabs>
 
       <NewRdvDialog open={showNewRdv} onOpenChange={setShowNewRdv} onCreate={createRdv} />
+      <ConversionModal open={showConversion} onOpenChange={setShowConversion} />
     </div>
   );
 }

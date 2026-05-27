@@ -150,6 +150,25 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'A valid email is required' }, { status: 400 });
     }
 
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.split('Bearer ')[1];
+    const supabase = createClient(
+      supabaseUrl,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      },
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user || user.email?.toLowerCase() !== normalizedEmail) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const supabaseAdmin = createAdminClient();
 
     await supabaseAdmin

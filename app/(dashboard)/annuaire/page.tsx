@@ -37,7 +37,8 @@ import Image from 'next/image';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Ban } from 'lucide-react';
-
+import { ConversionModal } from '@/components/shared/ConversionModal';
+import { ReportButton } from '@/components/shared/ReportButton';
 const COVER_GRADIENTS = [
   'from-blue-600/20 via-blue-500/10 to-transparent',
   'from-emerald-600/20 via-emerald-500/10 to-transparent',
@@ -72,6 +73,7 @@ export default function AnnuairePage() {
   );
   const [page, setPage] = useState(Number(searchParams.get('page')) || 0);
   const [contactingId, setContactingId] = useState<string | null>(null);
+  const [showConversion, setShowConversion] = useState(false);
   const { loadBlockedUsers, isBlocked } = useBlockedUsers();
   const pageSize = 20;
 
@@ -335,8 +337,40 @@ export default function AnnuairePage() {
         </CardContent>
       </Card>
 
-      {/* Grille d'exposants */}
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+      {/* Grille d'exposants ou Conversion */}
+      {!perms.loading && !perms.canAccessDirectory ? (
+        <div className="relative overflow-hidden rounded-2xl border border-border/50">
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/60 backdrop-blur-md">
+            <div className="max-w-md text-center p-8 bg-background/95 rounded-2xl shadow-xl border border-border">
+              <Store className="size-12 text-primary mx-auto mb-4" />
+              <h3 className="text-xl font-bold mb-2">{t('annuaire.restricted_title') || 'Accès réservé'}</h3>
+              <p className="text-muted-foreground mb-6">
+                {t('annuaire.restricted_desc') || "L'annuaire complet des contacts est réservé aux entreprises avec un abonnement actif."}
+              </p>
+              <Button onClick={() => setShowConversion(true)} className="w-full rounded-xl" size="lg">
+                {t('annuaire.unlock_access') || "Débloquer l'accès"}
+              </Button>
+            </div>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 opacity-20 select-none pointer-events-none p-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="overflow-hidden border-border/50 shadow-sm">
+                <div className="h-28 w-full bg-muted" />
+                <CardContent className="space-y-3 p-5">
+                  <div className="flex items-center gap-3">
+                    <div className="size-12 rounded-xl bg-muted" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 w-3/4 rounded-lg bg-muted" />
+                      <div className="h-3 w-1/2 rounded-lg bg-muted" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} className="overflow-hidden border-border/50 shadow-sm">
@@ -401,8 +435,13 @@ export default function AnnuairePage() {
                         {t('annuaire.featured')}
                       </Badge>
                     )}
+                    {(exposant as any).profiles?.subscription_tier === 'paid' && (
+                      <Badge className="rounded-full border-amber-500 bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm self-end">
+                        PRO
+                      </Badge>
+                    )}
                     {isOwn && (
-                      <Badge className="rounded-full border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 shadow-sm">
+                      <Badge className="rounded-full border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 shadow-sm self-end">
                         {t('annuaire.your_stand')}
                       </Badge>
                     )}
@@ -484,20 +523,30 @@ export default function AnnuairePage() {
                         {t('annuaire.detail.blocked')}
                       </div>
                     ) : !isOwn && perms.canContactExposant && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleContact(exposant.id)}
-                        disabled={contactingId === exposant.id}
-                        className="flex-1 rounded-xl text-xs h-9"
-                      >
-                        <MessageSquare className="mr-1.5 size-3.5" />
-                        {contactingId === exposant.id ? (
-                          <span className="animate-pulse">...</span>
-                        ) : (
-                          t('annuaire.contact_btn')
+                      <div className="flex flex-1 gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleContact(exposant.id)}
+                          disabled={contactingId === exposant.id}
+                          className="flex-1 rounded-xl text-xs h-9"
+                        >
+                          <MessageSquare className="mr-1.5 size-3.5" />
+                          {contactingId === exposant.id ? (
+                            <span className="animate-pulse">...</span>
+                          ) : (
+                            t('annuaire.contact_btn')
+                          )}
+                        </Button>
+                        {exposant.profile_id && (
+                          <ReportButton
+                            reportedId={exposant.profile_id}
+                            reportedName={exposant.nom}
+                            variant="outline"
+                            className="h-9 w-9 rounded-xl px-0 shrink-0 border-border/60 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+                          />
                         )}
-                      </Button>
+                      </div>
                     )}
                   </div>
                 </CardContent>
@@ -533,6 +582,7 @@ export default function AnnuairePage() {
           </div>
         )}
       </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -601,6 +651,8 @@ export default function AnnuairePage() {
           </Button>
         </div>
       )}
+
+      <ConversionModal open={showConversion} onOpenChange={setShowConversion} />
     </div>
   );
 }

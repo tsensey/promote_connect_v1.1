@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { useFeed } from '@/hooks/useFeed';
 import { CreatePost } from './CreatePost';
+import { useTranslation } from '@/lib/i18n';
 
 interface CreatePostFABProps {
   onSubmit: ReturnType<typeof useFeed>['createPost'];
@@ -16,6 +17,7 @@ interface CreatePostFABProps {
 }
 
 export function CreatePostFAB({ onSubmit, onUpload }: CreatePostFABProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
   const [visible, setVisible] = useState(false);
@@ -51,7 +53,7 @@ export function CreatePostFAB({ onSubmit, onUpload }: CreatePostFABProps) {
         )}
       >
         <Send className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
-        <span className="hidden sm:inline">Publier</span>
+        <span className="hidden sm:inline">{t('feed.create.publish')}</span>
       </Button>
 
       {/* Modal - Sheet on mobile, Dialog on desktop */}

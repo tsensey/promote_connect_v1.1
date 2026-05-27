@@ -129,6 +129,8 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          initiated_by: string | null
+          initiated_by_tier: string | null
           last_message_at: string | null
           participant_a: string | null
           participant_b: string | null
@@ -136,6 +138,8 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          initiated_by?: string | null
+          initiated_by_tier?: string | null
           last_message_at?: string | null
           participant_a?: string | null
           participant_b?: string | null
@@ -143,6 +147,8 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          initiated_by?: string | null
+          initiated_by_tier?: string | null
           last_message_at?: string | null
           participant_a?: string | null
           participant_b?: string | null
@@ -548,6 +554,30 @@ export type Database = {
           },
         ]
       }
+      platform_config: {
+        Row: {
+          id: string
+          key: string
+          value: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          key: string
+          value: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          key?: string
+          value?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       post_comments: {
         Row: {
           author_id: string
@@ -860,57 +890,126 @@ export type Database = {
           },
         ]
       }
+      reports: {
+        Row: {
+          id: string
+          reporter_id: string
+          reported_id: string
+          reason: string
+          details: string | null
+          status: 'pending' | 'reviewed' | 'dismissed' | 'actioned'
+          reviewed_by: string | null
+          reviewed_at: string | null
+          review_notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          reporter_id: string
+          reported_id: string
+          reason: string
+          details?: string | null
+          status?: 'pending' | 'reviewed' | 'dismissed' | 'actioned'
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          review_notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          reporter_id?: string
+          reported_id?: string
+          reason?: string
+          details?: string | null
+          status?: 'pending' | 'reviewed' | 'dismissed' | 'actioned'
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          review_notes?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_reported_id_fkey"
+            columns: ["reported_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           access_level: string
+          account_status: string
+          subscription_tier: string
           avatar_url: string | null
           company: string | null
           country: string | null
           created_at: string | null
           daily_exchange_count: number
           full_name: string | null
+          fcm_token: string | null
           id: string
           is_active: boolean
           last_exchange_reset: string | null
           pavillon: string | null
           role: string | null
           sector: string | null
+          subscription_ends_at: string | null
           suspended_at: string | null
           suspended_reason: string | null
+          trial_ends_at: string | null
         }
         Insert: {
           access_level?: string
+          account_status?: string
+          subscription_tier?: string
           avatar_url?: string | null
           company?: string | null
           country?: string | null
           created_at?: string | null
           daily_exchange_count?: number
           full_name?: string | null
+          fcm_token?: string | null
           id: string
           is_active?: boolean
           last_exchange_reset?: string | null
           pavillon?: string | null
           role?: string | null
           sector?: string | null
+          subscription_ends_at?: string | null
           suspended_at?: string | null
           suspended_reason?: string | null
+          trial_ends_at?: string | null
         }
         Update: {
           access_level?: string
+          account_status?: string
+          subscription_tier?: string
           avatar_url?: string | null
           company?: string | null
           country?: string | null
           created_at?: string | null
           daily_exchange_count?: number
           full_name?: string | null
+          fcm_token?: string | null
           id?: string
           is_active?: boolean
           last_exchange_reset?: string | null
           pavillon?: string | null
           role?: string | null
           sector?: string | null
+          subscription_ends_at?: string | null
           suspended_at?: string | null
           suspended_reason?: string | null
+          trial_ends_at?: string | null
         }
         Relationships: []
       }

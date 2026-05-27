@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Sparkles,
   Loader2,
@@ -25,6 +26,7 @@ import { supabaseClient } from '@/lib/supabase/client';
 import { createConversation } from '@/hooks/useChat';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
+import { usePermissions } from '@/hooks/usePermissions';
 import Image from 'next/image';
 import type { Database } from '@/types/database.types';
 
@@ -39,6 +41,7 @@ type Product = Database['public']['Tables']['produits']['Row'] & {
 
 export default function FeedPage() {
   const { t } = useTranslation();
+  const perms = usePermissions();
   const router = useRouter();
   const {
     posts,
@@ -58,6 +61,8 @@ export default function FeedPage() {
     addComment,
     uploadImage,
     myUserId,
+    mode,
+    setMode,
   } = useFeed();
 
   const [randomProducts, setRandomProducts] = useState<Product[]>([]);
@@ -224,7 +229,23 @@ export default function FeedPage() {
         </div>
 
         <div className="col-span-12 space-y-4 lg:col-span-6">
-          <CreatePost onSubmit={createPost} onUpload={uploadImage} />
+          {perms.canPublishPost && (
+            <CreatePost onSubmit={createPost} onUpload={uploadImage} />
+          )}
+
+          <div className="flex items-center justify-between pb-2 pt-1">
+            <h2 className="text-lg font-bold tracking-tight">{t('feed.title')}</h2>
+            <Tabs value={mode} onValueChange={(v: string) => setMode(v as 'recent' | 'discover')} className="w-auto">
+              <TabsList className="grid w-full grid-cols-2 rounded-xl">
+                <TabsTrigger value="recent" className="rounded-lg text-xs">
+                  {t('feed.recent')}
+                </TabsTrigger>
+                <TabsTrigger value="discover" className="rounded-lg text-xs">
+                  {t('feed.discover')}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
 
           {loading && posts.length === 0 ? (
             <Card className="border-border/60 p-0">
@@ -344,7 +365,9 @@ export default function FeedPage() {
           </div>
         </div>
       </div>
-      <CreatePostFAB onSubmit={createPost} onUpload={uploadImage} />
+      {perms.canPublishPost && (
+        <CreatePostFAB onSubmit={createPost} onUpload={uploadImage} />
+      )}
     </div>
   );
 }

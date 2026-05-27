@@ -39,7 +39,7 @@ export default function AuthLayout({
               src="/world-map-dots.png"
               alt="World Map Dots"
               fill
-              sizes="100vw"
+              sizes="(max-width: 768px) 0vw, 50vw"
               className="object-cover opacity-40 mix-blend-screen"
             />
             <div className="absolute inset-0 bg-gradient-to-br from-[#520a3f]/60 via-transparent to-[#520a3f] z-10" />
@@ -48,13 +48,13 @@ export default function AuthLayout({
           <div className="relative z-20 flex flex-1 flex-col justify-between p-10 xl:p-12">
             <div className="space-y-8">
               <div className="inline-flex w-fit items-center gap-3 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm shadow-xl">
-                <div className="relative size-8 overflow-hidden rounded-lg bg-white p-1">
+                <div className="relative size-8 overflow-hidden rounded-lg p-1">
                   <Image
-                    src="/logo-promote.png"
+                    src="/logo_transparent.png"
                     alt="PROMOTE"
-                    width={32}
-                    height={32}
-                    className="object-contain"
+                    fill
+                    sizes="32px"
+                    className="object-contain p-1"
                   />
                 </div>
                 {t('auth.layout.salon')}

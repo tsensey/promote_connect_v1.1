@@ -28,6 +28,7 @@ import { useTranslation } from "@/lib/i18n";
 import type { Database } from "@/types/database.types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ConversionModal } from "@/components/shared/ConversionModal";
 
 // ── Icônes de marque (SVG inline) ──
 const IconLinkedin = () => (
@@ -116,6 +117,7 @@ export default function ManageVitrinePage() {
   const [deletingProductId, setDeletingProductId] = useState<string | null>(
     null,
   );
+  const [showConversionModal, setShowConversionModal] = useState(false);
   const [exposant, setExposant] = useState<Exposant | null>(null);
   const [products, setProducts] = useState<Produit[]>([]);
   const [showcaseForm, setShowcaseForm] = useState({
@@ -147,6 +149,7 @@ export default function ManageVitrinePage() {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingProductImage, setUploadingProductImage] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [maxVitrineOffers, setMaxVitrineOffers] = useState(2);
 
   const handleGalleryUpload = async (files: FileList | null) => {
     if (!files || files.length === 0 || !user) return;
@@ -245,6 +248,16 @@ export default function ManageVitrinePage() {
       if (!user) return;
 
       setLoading(true);
+      const { data: config } = await supabaseClient
+        .from("platform_config")
+        .select("value")
+        .eq("key", "max_vitrine_offers_free_trial")
+        .single();
+      
+      if (config && config.value) {
+        setMaxVitrineOffers(Number(config.value));
+      }
+
       const { data: existingExposant } = await supabaseClient
         .from("exposants")
         .select("*")
@@ -388,6 +401,14 @@ export default function ManageVitrinePage() {
       return;
     }
 
+    if (!productForm.id) {
+      const isPaid = (profile as Record<string, unknown>)?.subscription_tier === 'paid';
+      if (!isPaid && products.length >= maxVitrineOffers) {
+        setShowConversionModal(true);
+        return;
+      }
+    }
+
     setSavingProduct(true);
 
     try {
@@ -510,6 +531,7 @@ export default function ManageVitrinePage() {
       </div>
 
       <Tabs defaultValue="presentation" className="flex flex-col gap-y-1.5">
+        <ConversionModal open={showConversionModal} onOpenChange={setShowConversionModal} />
         <TabsList>
           <TabsTrigger value="presentation">
             {t('exposant.vitrine.presentation')}

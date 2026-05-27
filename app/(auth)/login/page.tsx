@@ -55,9 +55,19 @@ function LoginPageContent() {
 
       const { data: profile } = await supabaseClient
         .from('profiles')
-        .select('role')
+        .select('role, account_status')
         .eq('id', user.id)
         .single();
+
+      if (profile?.account_status === 'suspended') {
+        await supabaseClient.auth.signOut();
+        throw new Error('Votre compte est temporairement suspendu. Veuillez contacter le support.');
+      }
+
+      if (profile?.account_status === 'blocked') {
+        await supabaseClient.auth.signOut();
+        throw new Error('Votre compte a été bloqué définitivement pour non-respect de nos conditions d\'utilisation.');
+      }
 
       const role = (profile as { role: string | null } | null)?.role;
       const redirectPath = role === 'admin' ? '/admin' : '/feed';
@@ -128,9 +138,12 @@ function LoginPageContent() {
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3">
               <Label htmlFor="password" className="font-semibold">{t('auth.login.password')}</Label>
-              <span className="text-xs text-muted-foreground">
-                {t('auth.login.password_hint')}
-              </span>
+              <Link 
+                href="/forgot-password" 
+                className="text-xs text-primary hover:underline"
+              >
+                Mot de passe oublié ?
+              </Link>
             </div>
             <div className="relative">
               <KeyRound className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground/70" />

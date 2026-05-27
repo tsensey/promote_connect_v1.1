@@ -27,11 +27,27 @@ export function useContacts() {
       const myId = session?.session?.user?.id;
       if (myId) setMyUserId(myId);
 
-      const { data: profiles } = await supabaseClient
+      // Récupérer les blocages complets
+      let blockedIds: string[] = [];
+      if (myId) {
+        const { data: blocks } = await supabaseClient
+          .from('blocked_users')
+          .select('blocker_id, blocked_id')
+          .or(`blocker_id.eq.${myId},blocked_id.eq.${myId}`);
+        blockedIds = (blocks || []).map(b => b.blocker_id === myId ? b.blocked_id : b.blocker_id);
+      }
+
+      let query = supabaseClient
         .from('profiles')
         .select('id, full_name, company, avatar_url, role')
         .neq('id', myId ?? '')
         .in('role', ['exposant', 'visiteur']);
+
+      if (blockedIds.length > 0) {
+        query = query.not('id', 'in', `(${blockedIds.join(',')})`);
+      }
+
+      const { data: profiles } = await query;
 
       if (!profiles) return;
 
@@ -84,6 +100,13 @@ export function useConversations() {
         if (!myId) return;
         if (mounted) setMyUserId(myId);
 
+        // Récupérer les blocages complets
+        const { data: blocks } = await supabaseClient
+          .from('blocked_users')
+          .select('blocker_id, blocked_id')
+          .or(`blocker_id.eq.${myId},blocked_id.eq.${myId}`);
+        const blockedIds = (blocks || []).map(b => b.blocker_id === myId ? b.blocked_id : b.blocker_id);
+
         const { data, error } = await supabaseClient
           .from('conversations')
           .select('*, participant_a:participant_a(*), participant_b:participant_b(*)')
@@ -93,10 +116,16 @@ export function useConversations() {
         if (error) throw error;
         if (!mounted) return;
 
-        const convs = (data || []) as unknown as (Conversation & {
+        let convs = (data || []) as unknown as (Conversation & {
           participant_a: Profile | null;
           participant_b: Profile | null;
         })[];
+
+        // Exclusion silencieuse
+        convs = convs.filter((c) => {
+          const otherId = c.participant_a?.id === myId ? c.participant_b?.id : c.participant_a?.id;
+          return otherId && !blockedIds.includes(otherId);
+        });
 
         const otherIds = convs.map((c) =>
           c.participant_a?.id === myId ? c.participant_b?.id : c.participant_a?.id

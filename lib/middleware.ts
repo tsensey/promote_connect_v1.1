@@ -1,31 +1,64 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import type { Database } from '@/types/database.types'
+import { shouldShowTrialBanner } from '@/lib/subscription'
 
-const PUBLIC_ROUTES = new Set(['/', '/login', '/register'])
+const PUBLIC_ROUTES = new Set(['/', '/login', '/register', '/forgot-password'])
 
 function isPublicRoute(pathname: string) {
-  return PUBLIC_ROUTES.has(pathname)
+  return PUBLIC_ROUTES.has(pathname) || pathname.startsWith('/reset-password')
 }
 
-async function getUserProfile(supabase: ReturnType<typeof createServerClient<Database>>, userId: string) {
-  const { data } = await (supabase
-    .from('profiles')
-    .select('role, is_active')
-    .eq('id', userId)
-    .single() as never) as { data: { role: string | null; is_active: boolean | null } | null };
-  return data ? { role: data.role, is_active: data.is_active ?? true } : null
+interface UserProfile {
+  role: string | null;
+  account_status: string | null;
+  is_active: boolean | null;
+  subscription_tier: string | null;
+  subscription_status: string | null;
+  trial_ends_at: string | null;
+  subscription_ends_at: string | null;
 }
 
-async function getSubscriptionStatus(supabase: ReturnType<typeof createServerClient<Database>>, userId: string) {
+async function getUserProfile(
+  supabase: ReturnType<typeof createServerClient<Database>>,
+  userId: string
+): Promise<UserProfile | null> {
   const { data, error } = await (supabase
     .from('profiles')
-    .select('subscription_status')
+    .select('role, account_status, is_active, subscription_tier, trial_ends_at')
     .eq('id', userId)
-    .single() as never) as { data: { subscription_status: string | null } | null; error: unknown };
+    .single() as never) as { data: UserProfile | null, error: any };
+    
+  if (error) {
+    console.error('[Middleware] Error fetching profile for user', userId, ':', error);
+  } else {
+    console.log('[Middleware] Successfully fetched profile for user', userId, 'role:', data?.role);
+  }
+  
+  return data;
+}
 
-  if (error) return null
-  return data?.subscription_status ?? null
+function isAccountBlocked(profile: UserProfile): boolean {
+  // Vérifier d'abord le nouveau champ account_status
+  if (profile.account_status) {
+    return profile.account_status === 'suspended' || profile.account_status === 'blocked';
+  }
+  // Fallback legacy is_active
+  return profile.is_active === false;
+}
+
+function hasExpiredAccess(profile: UserProfile): boolean {
+  // Pour les abonnés PAID — vérifier subscription_ends_at
+  if (profile.subscription_tier === 'paid' && profile.subscription_ends_at) {
+    return new Date(profile.subscription_ends_at) < new Date();
+  }
+  // Vérifier subscription_status legacy (Stripe)
+  if (profile.subscription_status === 'expired' ||
+      profile.subscription_status === 'past_due' ||
+      profile.subscription_status === 'canceled') {
+    return true;
+  }
+  return false;
 }
 
 export async function updateSession(request: NextRequest) {
@@ -40,7 +73,8 @@ export async function updateSession(request: NextRequest) {
       cookies: {
         getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options))
         },
       },
     }
@@ -58,30 +92,35 @@ export async function updateSession(request: NextRequest) {
     return response
   }
 
-  const needsProfileCheck = pathname === '/login' || pathname === '/register' || pathname === '/' || pathname.startsWith('/admin') || pathname.startsWith('/exposant') || pathname.startsWith('/app') || pathname.startsWith('/feed') || pathname.startsWith('/chat') || pathname.startsWith('/annuaire') || pathname.startsWith('/agenda') || pathname.startsWith('/vitrine') || pathname.startsWith('/abonnement')
+  // Déterminer si on a besoin de vérifier le profil
+  const needsProfileCheck = !pathname.startsWith('/_next') &&
+    !pathname.startsWith('/api') &&
+    !pathname.startsWith('/offline')
 
-  let profile: { role: string | null; is_active: boolean } | null = null
+  let profile: UserProfile | null = null
   if (needsProfileCheck) {
     profile = await getUserProfile(supabase, user.id)
   }
 
-  const role = profile?.role ?? null
+  // Fallback sur user_metadata si le profil n'a pas pu être chargé (ex: erreur RLS)
+  const role = profile?.role ?? user.user_metadata?.role ?? null
   const isAdmin = role === 'admin'
-  const isExposant = role === 'exposant'
-  const isActive = profile?.is_active ?? true
 
-  if (!isActive) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    url.searchParams.set('suspended', 'true')
-    return NextResponse.redirect(url)
+  // SEC-04 CORRIGÉ: Message générique — ne pas révéler si l'utilisateur est suspendu ou bloqué
+  // CdC §3.1 : "Le message affiché à l'utilisateur à la connexion ne doit pas préciser s'il est suspendu ou bloqué"
+  if (profile && isAccountBlocked(profile)) {
+    if (!isPublicRoute(pathname)) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      // Utiliser un message générique au lieu de 'suspended=true'
+      url.searchParams.set('error', 'access_denied')
+      return NextResponse.redirect(url)
+    }
+    return response
   }
 
-  const subscriptionStatus = !isAdmin && needsProfileCheck
-    ? await getSubscriptionStatus(supabase, user.id)
-    : null
-
-  if (!isAdmin && (subscriptionStatus === 'expired' || subscriptionStatus === 'past_due' || subscriptionStatus === 'canceled')) {
+  // Vérifier l'expiration d'accès pour les non-admins
+  if (!isAdmin && profile && hasExpiredAccess(profile)) {
     if (!isPublicRoute(pathname) && !pathname.startsWith('/abonnement')) {
       const url = request.nextUrl.clone()
       url.pathname = '/abonnement'
@@ -90,6 +129,7 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  // Rediriger les utilisateurs connectés depuis les pages auth
   if (pathname === '/login' || pathname === '/register') {
     const url = request.nextUrl.clone()
     url.pathname = isAdmin ? '/admin' : '/feed'
@@ -97,16 +137,27 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Garder admin uniquement sur /admin/*
   if (pathname.startsWith('/admin') && !isAdmin) {
     const url = request.nextUrl.clone()
     url.pathname = '/feed'
     return NextResponse.redirect(url)
   }
 
-  if (pathname.startsWith('/exposant') && !isExposant) {
+  // Garder exposant uniquement sur /exposant/*
+  if (pathname.startsWith('/exposant') && role !== 'exposant' && !isAdmin) {
     const url = request.nextUrl.clone()
     url.pathname = '/feed'
     return NextResponse.redirect(url)
+  }
+
+  // Injecter un header indiquant si la bannière trial doit s'afficher
+  // Le layout client peut lire ce header pour afficher TrialBanner
+  if (profile?.subscription_tier === 'free_trial' && profile?.trial_ends_at) {
+    if (shouldShowTrialBanner(profile.trial_ends_at)) {
+      response.headers.set('x-show-trial-banner', 'true')
+      response.headers.set('x-trial-ends-at', profile.trial_ends_at)
+    }
   }
 
   return response

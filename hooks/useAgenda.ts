@@ -112,18 +112,15 @@ export function useRendezVous() {
       const myId = session?.session?.user?.id;
       if (!myId) throw new Error('Not authenticated');
 
-      const { data, error } = await supabaseClient
-        .from('rendez_vous')
-        .insert({
+      const { data, error } = await supabaseClient.functions.invoke('generate-rdv', {
+        body: {
           demandeur_id: myId,
           destinataire_id: destinataireId,
           starts_at: startsAt,
           ends_at: endsAt,
           notes,
-          status: 'pending',
-        })
-        .select()
-        .single();
+        },
+      });
 
       if (error) throw error;
       await fetchRdvs();

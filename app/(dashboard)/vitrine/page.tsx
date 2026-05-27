@@ -34,7 +34,9 @@ type Produit = Database['public']['Tables']['produits']['Row'];
 type Exposant = Database['public']['Tables']['exposants']['Row'];
 
 type ProduitWithExposant = Produit & {
-  exposants: Pick<Exposant, 'id' | 'nom' | 'secteur' | 'pays' | 'pavillon' | 'logo_url'> | null;
+  exposants: Pick<Exposant, 'id' | 'nom' | 'secteur' | 'pays' | 'pavillon' | 'logo_url' | 'is_featured'> & {
+    profiles?: { subscription_tier?: string | null } | null;
+  } | null;
 };
 
 const TYPE_STYLES = {
@@ -73,7 +75,7 @@ export default function VitrinePage() {
       setLoading(true);
       const { data, error } = await supabaseClient
         .from('produits')
-        .select('*, exposants(id, nom, secteur, pays, pavillon, logo_url)')
+        .select('*, exposants(id, nom, secteur, pays, pavillon, logo_url, is_featured, profiles(subscription_tier))')
         .order('created_at', { ascending: false });
 
       if (!error && data) {
@@ -97,7 +99,7 @@ export default function VitrinePage() {
   }), [produits]);
 
   const filtered = useMemo(() => {
-    return produits.filter((p) => {
+    const list = produits.filter((p) => {
       const matchSearch =
         !deferredSearch ||
         p.nom.toLowerCase().includes(deferredSearch.toLowerCase()) ||
@@ -106,6 +108,21 @@ export default function VitrinePage() {
       const matchCategorie = !categorie || p.categorie === categorie;
       const matchType = typeFilter === 'all' || (p.type ?? 'produit') === typeFilter;
       return matchSearch && matchCategorie && matchType;
+    });
+
+    return list.sort((a, b) => {
+      const aTier = a.exposants?.profiles?.subscription_tier;
+      const bTier = b.exposants?.profiles?.subscription_tier;
+      const aPaid = aTier === 'paid';
+      const bPaid = bTier === 'paid';
+      const aFeatured = a.exposants?.is_featured;
+      const bFeatured = b.exposants?.is_featured;
+
+      const aScore = (aPaid && aFeatured ? 3 : 0) + (aPaid && !aFeatured ? 2 : 0) + (!aPaid ? 1 : 0);
+      const bScore = (bPaid && bFeatured ? 3 : 0) + (bPaid && !bFeatured ? 2 : 0) + (!bPaid ? 1 : 0);
+
+      if (aScore !== bScore) return bScore - aScore;
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
     });
   }, [produits, deferredSearch, categorie, typeFilter]);
 
@@ -374,9 +391,22 @@ export default function VitrinePage() {
                           {produit.prix_indicatif}
                         </Badge>
                       )}
-                      <Badge className={cn('rounded-full px-2.5 py-0.5 text-[10px] font-semibold shadow-sm ml-auto', typeStyle.badge)}>
-                        {t(typeStyle.label)}
-                      </Badge>
+                      <div className="flex gap-1.5 ml-auto">
+                        {produit.exposants?.profiles?.subscription_tier === 'paid' && produit.exposants?.is_featured && (
+                          <Badge className="rounded-full bg-amber-500 text-white border-amber-400 px-2.5 py-0.5 text-[10px] font-semibold shadow-sm">
+                            <Sparkles className="mr-1 size-3" />
+                            Premium
+                          </Badge>
+                        )}
+                        {produit.exposants?.profiles?.subscription_tier === 'paid' && !produit.exposants?.is_featured && (
+                          <Badge className="rounded-full bg-amber-500 text-white border-amber-400 px-2.5 py-0.5 text-[10px] font-semibold shadow-sm">
+                            PRO
+                          </Badge>
+                        )}
+                        <Badge className={cn('rounded-full px-2.5 py-0.5 text-[10px] font-semibold shadow-sm', typeStyle.badge)}>
+                          {t(typeStyle.label)}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -398,9 +428,22 @@ export default function VitrinePage() {
                           {produit.prix_indicatif}
                         </Badge>
                       )}
-                      <Badge className={cn('rounded-full px-2.5 py-0.5 text-[10px] font-semibold shadow-sm ml-auto', typeStyle.badge)}>
-                        {t(typeStyle.label)}
-                      </Badge>
+                      <div className="flex gap-1.5 ml-auto">
+                        {produit.exposants?.profiles?.subscription_tier === 'paid' && produit.exposants?.is_featured && (
+                          <Badge className="rounded-full bg-amber-500 text-white border-amber-400 px-2.5 py-0.5 text-[10px] font-semibold shadow-sm">
+                            <Sparkles className="mr-1 size-3" />
+                            Premium
+                          </Badge>
+                        )}
+                        {produit.exposants?.profiles?.subscription_tier === 'paid' && !produit.exposants?.is_featured && (
+                          <Badge className="rounded-full bg-amber-500 text-white border-amber-400 px-2.5 py-0.5 text-[10px] font-semibold shadow-sm">
+                            PRO
+                          </Badge>
+                        )}
+                        <Badge className={cn('rounded-full px-2.5 py-0.5 text-[10px] font-semibold shadow-sm', typeStyle.badge)}>
+                          {t(typeStyle.label)}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
                 )}

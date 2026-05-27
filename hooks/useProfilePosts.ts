@@ -51,7 +51,7 @@ export function useProfilePosts(profileId: string | null | undefined) {
       .from('posts')
       .select(`
         *,
-        author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+        author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id))
       `)
       .eq('author_id', profileId)
       .order('created_at', { ascending: false });
@@ -76,7 +76,7 @@ export function useProfilePosts(profileId: string | null | undefined) {
         .from('posts')
         .select(`
           *,
-          author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+          author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id))
         `)
         .in('id', repostOfIds);
       if (repostData) {
@@ -281,7 +281,7 @@ export function useProfilePosts(profileId: string | null | undefined) {
       .insert(insertData)
       .select(`
         *,
-        author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+        author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id))
       `)
       .single();
 
@@ -293,7 +293,7 @@ export function useProfilePosts(profileId: string | null | undefined) {
           .from('posts')
           .select(`
             *,
-            author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+            author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id))
           `)
           .eq('id', d.repost_of_id)
           .single();
@@ -383,7 +383,7 @@ export function useProfilePosts(profileId: string | null | undefined) {
       .from('post_comments')
       .select(`
         *,
-        author:profiles!post_comments_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+        author:profiles!post_comments_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id))
       `)
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
@@ -423,7 +423,7 @@ export function useProfilePosts(profileId: string | null | undefined) {
       .insert(insertData)
       .select(`
         *,
-        author:profiles!post_comments_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+        author:profiles!post_comments_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id))
       `)
       .single();
 
@@ -457,7 +457,7 @@ export function useProfilePosts(profileId: string | null | undefined) {
       .insert(insertData)
       .select(`
         *,
-        author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants(id))
+        author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id))
       `)
       .single();
 

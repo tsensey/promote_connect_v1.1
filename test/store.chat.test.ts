@@ -14,6 +14,8 @@ function createMockConversation(id: string, unread: number): EnrichedConversatio
     other_exposant_nom: null,
     other_exposant_logo: null,
     last_message_content: null,
+    initiated_by: null,
+    initiated_by_tier: null,
   };
 }
 
