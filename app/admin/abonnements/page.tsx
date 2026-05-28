@@ -403,7 +403,7 @@ export default function AdminAbonnementsPage() {
                         <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" className="rounded-full" />}>
                           <MoreVertical className="size-4" />
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-xl">
+                        <DropdownMenuContent align="end" className="rounded-xl w-full">
                           <DropdownMenuItem
                             onClick={() => handleUpdateTier(user.id, user.subscription_tier === 'paid' ? 'free_trial' : 'paid')}
                             disabled={actionLoading === user.id}

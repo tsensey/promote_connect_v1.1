@@ -29,6 +29,8 @@ import {
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth/context';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipArrow } from '@base-ui/react';
 
 type Exposant = Database['public']['Tables']['exposants']['Row'];
 
@@ -226,11 +228,27 @@ export default function AdminExposantsPage() {
                   const espace = espaces.find((e) => e.id === exp.espace_id);
                   return (
                     <TableRow key={exp.id}>
-                      <TableCell>
-                        <div className="font-medium text-foreground">{exp.nom}</div>
-                        {exp.is_featured && <Badge variant="secondary" className="mt-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300">{t('admin.exposants.featured')}</Badge>}
+
+                      <TableCell className='max-w-[400px] truncate'>
+
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <div className="font-medium text-foreground">{exp.nom}</div>
+                            {exp.is_featured && <Badge variant="secondary" className="mt-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300">{t('admin.exposants.featured')}</Badge>}
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{exp.nom}</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{exp.secteur || '-'}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground max-w-[150px] truncate"><Tooltip>
+                        <TooltipTrigger>
+                          <div className="font-medium text-foreground">{exp.secteur}</div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{exp.secteur}</p>
+                        </TooltipContent>
+                      </Tooltip>-</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {espace ? (
                           <Badge variant="outline" className="rounded-full text-xs font-mono">

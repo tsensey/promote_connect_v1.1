@@ -283,7 +283,7 @@ export default function SignalementsPage() {
                               <span className="sr-only">Actions</span>
                               <MoreVertical className="h-4 w-4" />
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" className="rounded-xl w-full" >
                             {report.status === 'pending' && (
                               <>
                                 <DropdownMenuItem onClick={() => updateReportStatus(report.id, 'reviewed')}>

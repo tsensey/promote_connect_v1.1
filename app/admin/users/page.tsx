@@ -278,7 +278,7 @@ export default function AdminUsersPage() {
         if (espData.espaces) setEspaces(espData.espaces);
         if (expData.exposants) setUnlinkedExposants(expData.exposants);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [showCreateDialog, token]);
 
   async function handleCreate() {
@@ -595,57 +595,56 @@ export default function AdminUsersPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('admin.users.col_user')}</TableHead>
-                  <TableHead>{t('admin.users.col_role')}</TableHead>
-                  <TableHead>Accès</TableHead>
-                  <TableHead>{t('admin.users.col_status')}</TableHead>
-                  <TableHead>{t('admin.users.col_profile')}</TableHead>
-                  <TableHead>{t('admin.users.col_creation')}</TableHead>
-                  <TableHead className="text-right">{t('admin.users.col_actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="size-10 border border-border/70">
-                          <AvatarFallback className="bg-primary/10 font-semibold text-primary">
-                            {user.full_name.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-foreground">
-                            {user.full_name}
-                          </p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {[user.company, user.sector, user.country].filter(Boolean).join(' - ') || t('admin.users.profile_title')}
-                          </p>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('admin.users.col_user')}</TableHead>
+                    <TableHead>{t('admin.users.col_role')}</TableHead>
+                    <TableHead>Accès</TableHead>
+                    <TableHead>{t('admin.users.col_status')}</TableHead>
+                    <TableHead>{t('admin.users.col_profile')}</TableHead>
+                    <TableHead>{t('admin.users.col_creation')}</TableHead>
+                    <TableHead className="text-right">{t('admin.users.col_actions')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="size-10 border border-border/70">
+                            <AvatarFallback className="bg-primary/10 font-semibold text-primary">
+                              {user.full_name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-foreground">
+                              {user.full_name}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {[user.company, user.sector, user.country].filter(Boolean).join(' - ') || t('admin.users.profile_title')}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="rounded-full">
-                        {user.role === 'admin' ? t('admin.logs.role_admin') : user.role === 'exposant' ? t('admin.logs.role_exposant') : t('admin.logs.role_visitor')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={user.access_level === 'premium' ? 'default' : 'outline'}
-                        className={`rounded-full ${
-                          user.access_level === 'premium'
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="rounded-full">
+                          {user.role === 'admin' ? t('admin.logs.role_admin') : user.role === 'exposant' ? t('admin.logs.role_exposant') : t('admin.logs.role_visitor')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={user.access_level === 'premium' ? 'default' : 'outline'}
+                          className={`rounded-full ${user.access_level === 'premium'
                             ? 'bg-amber-500/15 text-amber-700 border-amber-200'
                             : 'text-muted-foreground'
-                        }`}
-                      >
-                        {user.access_level === 'premium' ? 'Premium' : 'Classic'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {user.is_active ? (
+                            }`}
+                        >
+                          {user.access_level === 'premium' ? 'Premium' : 'Classic'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {user.is_active ? (
                           <Badge variant="default" className="rounded-full bg-emerald-500/15 text-emerald-700">
                             <CheckCircle2 className="mr-1 size-3" />
                             {t('admin.users.active_badge')}
@@ -654,83 +653,85 @@ export default function AdminUsersPage() {
                           <Badge variant="destructive" className="rounded-full">
                             <Ban className="mr-1 size-3" />
                             {t('admin.users.suspended_badge')}
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {user.role === 'exposant'
-                        ? t('admin.users.pavillon', { pavillon: user.pavillon || '-' })
-                        : user.company || t('admin.users.account_type')}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {new Date(user.created_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" className="rounded-full" />}>
-                          <MoreVertical className="size-4" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-xl">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setShowRoleDialog(user);
-                              setNewRole(user.role || 'visiteur');
-                              setNewAccessLevel(user.access_level || 'classic');
-                            }}
-                          >
-                            <UserCheck className="mr-2 size-4" />
-                            {t('admin.users.role_change_menu')}
-                          </DropdownMenuItem>
-                          {user.role === 'exposant' && user.exposant_id && (
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {user.role === 'exposant'
+                          ? t('admin.users.pavillon', { pavillon: user.pavillon || '-' })
+                          : user.company || t('admin.users.account_type')}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(user.created_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR')}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" className="rounded-full" />}>
+                            <MoreVertical className="size-4" />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="rounded-xl w-full">
                             <DropdownMenuItem
-                              onClick={() => router.push(`/admin/exposants/${user.exposant_id}`)}
+                              onClick={() => {
+                                setShowRoleDialog(user);
+                                setNewRole(user.role || 'visiteur');
+                                setNewAccessLevel(user.access_level || 'classic');
+                              }}
                             >
-                              <Store className="mr-2 size-4" />
-                              {t('admin.users.vitrine_menu')}
+                              <UserCheck className="mr-2 size-4" />
+                              <span className="truncate">
+                                {t('admin.users.role_change_menu')}
+                              </span>
                             </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setShowPasswordDialog(user);
-                              setPasswordResult(null);
-                            }}
-                            disabled={actionLoading === user.id}
-                          >
-                            {actionLoading === user.id ? (
-                              <Loader2 className="mr-2 size-4 animate-spin" />
-                            ) : (
-                              <KeyRound className="mr-2 size-4" />
+                            {user.role === 'exposant' && user.exposant_id && (
+                              <DropdownMenuItem
+                                onClick={() => router.push(`/admin/exposants/${user.exposant_id}`)}
+                              >
+                                <Store className="mr-2 size-4" />
+                                {t('admin.users.vitrine_menu')}
+                              </DropdownMenuItem>
                             )}
-                            {t('admin.users.reset_menu')}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleToggleSuspend(user.id, user.is_active)}
-                            disabled={actionLoading === user.id}
-                          >
-                            {actionLoading === user.id ? (
-                              <Loader2 className="mr-2 size-4 animate-spin" />
-                            ) : user.is_active ? (
-                              <Ban className="mr-2 size-4" />
-                            ) : (
-                              <CheckCircle2 className="mr-2 size-4" />
-                            )}
-                            {user.is_active ? t('admin.users.suspend_btn') : t('admin.users.reactivate_btn')}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => setShowDeleteDialog(user.id)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="mr-2 size-4" />
-                            {t('admin.users.delete_btn')}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setShowPasswordDialog(user);
+                                setPasswordResult(null);
+                              }}
+                              disabled={actionLoading === user.id}
+                            >
+                              {actionLoading === user.id ? (
+                                <Loader2 className="mr-2 size-4 animate-spin" />
+                              ) : (
+                                <KeyRound className="mr-2 size-4" />
+                              )}
+                              {t('admin.users.reset_menu')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleToggleSuspend(user.id, user.is_active)}
+                              disabled={actionLoading === user.id}
+                            >
+                              {actionLoading === user.id ? (
+                                <Loader2 className="mr-2 size-4 animate-spin" />
+                              ) : user.is_active ? (
+                                <Ban className="mr-2 size-4" />
+                              ) : (
+                                <CheckCircle2 className="mr-2 size-4" />
+                              )}
+                              {user.is_active ? t('admin.users.suspend_btn') : t('admin.users.reactivate_btn')}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => setShowDeleteDialog(user.id)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="mr-2 size-4" />
+                              {t('admin.users.delete_btn')}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
@@ -895,9 +896,8 @@ export default function AdminUsersPage() {
                             key={exp.id}
                             type="button"
                             onClick={() => setForm({ ...form, exposant_id: exp.id })}
-                            className={`w-full px-3 py-2 text-left text-sm transition-colors hover:bg-muted ${
-                              form.exposant_id === exp.id ? 'bg-primary/10 font-medium text-primary' : ''
-                            }`}
+                            className={`w-full px-3 py-2 text-left text-sm transition-colors hover:bg-muted ${form.exposant_id === exp.id ? 'bg-primary/10 font-medium text-primary' : ''
+                              }`}
                           >
                             <span>{exp.nom}</span>
                             <span className="ml-2 text-xs text-muted-foreground">

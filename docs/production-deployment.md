@@ -1,531 +1,237 @@
-# Déploiement Production PROMOTE-CONNECT
+# Déploiement Production PROMOTE-CONNECT (100% Self-Hosted)
 
-Ce guide décrit le déploiement production de PROMOTE-CONNECT avec Next.js sur Vercel et Supabase (cloud ou self-hosted).  
-À exécuter depuis une branche validée, idéalement `main`.
+Ce guide décrit le déploiement en production de PROMOTE-CONNECT dans un environnement **100% auto-hébergé sur un VPS** (Virtual Private Server). L'architecture comprend Supabase (Backend/Database), Next.js (Frontend) et n8n/Cron pour les tâches automatisées.
 
----
-
-## 1. Pré-requis
-
-- Node.js 22.x
-- npm avec `package-lock.json` à jour
-- Supabase CLI connectée au projet production
-- Un projet Vercel lié au dépôt GitHub
-- Un domaine HTTPS final, ex. `https://promote-connect.com`
-- Comptes et clés production pour Supabase, Stripe, Resend, Firebase FCM, Sentry et Plausible
+Le but de ce guide est de déployer une application **totalement vierge** (aucune donnée de test) avec le strict nécessaire pour fonctionner, ainsi qu'un unique **compte administrateur**.
 
 ---
 
-## 2. Variables d'environnement
+## 1. Architecture & Pré-requis
 
-Configurer ces variables dans **Vercel** (Production), **GitHub Actions**, et le **VPS Supabase/n8n** le cas échéant.
+### Architecture du Serveur (VPS)
+- **Frontend** : Next.js 16 (Node.js) géré via PM2 ou Docker.
+- **Backend / BDD** : Supabase (PostgreSQL, Auth, Storage, Realtime) géré via Docker Compose.
+- **Automatisation** : n8n (Docker Compose) ou tâches Cron.
+- **Reverse Proxy** : Nginx (pour gérer les requêtes HTTP/HTTPS vers Next.js, Supabase API, et n8n).
 
-### Obligatoires
-
-```bash
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-NEXT_PUBLIC_APP_URL=https://promote-connect.com
-
-STRIPE_SECRET_KEY=
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
-STRIPE_WEBHOOK_SECRET=
-
-RESEND_API_KEY=
-RESEND_FROM_EMAIL=newsletter@promote-connect.com
-```
-
-### Recommandées
-
-```bash
-STRIPE_PRICE_ID_ANNUAL=
-RESEND_FROM_NAME=PROMOTE-CONNECT
-
-FCM_SERVER_KEY=
-NEXT_PUBLIC_FIREBASE_API_KEY=
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
-NEXT_PUBLIC_FIREBASE_APP_ID=
-
-NEXT_PUBLIC_SENTRY_DSN=
-NEXT_PUBLIC_PLAUSIBLE_URL=https://plausible.io
-NEXT_PUBLIC_PLAUSIBLE_DOMAIN=promote-connect.com
-
-NEXT_PUBLIC_ANDROID_PACKAGE_NAME=com.promoteconnect.app
-NEXT_PUBLIC_IOS_TEAM_ID=
-NEXT_PUBLIC_IOS_APP_STORE_ID=
-
-# Seed (optionnel, pour le déploiement initial uniquement)
-SEED_ADMIN_EMAIL=admin@promote-connect.com
-SEED_ADMIN_PASSWORD=<mot_de_passe_fort>
-
-# Supabase Edge Functions (réservé Supabase, pas Vercel)
-# Ces variables sont à définir via `supabase secrets set` (section 8.6)
-# RESEND_API_KEY=
-# RESEND_FROM_EMAIL=
-# RESEND_FROM_NAME=
-# NEXT_PUBLIC_APP_URL=
-```
-
-Vérification locale :
-
-```bash
-npm run check:prod-env
-```
-
-> **Fichier de référence** : `.env.example` à la racine du projet.
+### Pré-requis VPS (Ubuntu / Debian recommandé)
+- VPS avec au moins 4Go de RAM (8Go recommandé pour Supabase + Next.js).
+- Nom de domaine configuré avec les sous-domaines (ex: `promote-connect.pro`, `api.promote-connect.pro`, `n8n.promote-connect.pro`).
+- Accès SSH root ou sudoer.
+- Logiciels installés sur le VPS :
+  - `docker` et `docker-compose` (ou `docker compose`)
+  - `node.js` (version 22.x) et `npm`
+  - `pm2` (`npm install -g pm2`)
+  - `nginx` et `certbot` (pour le SSL Let's Encrypt)
+  - `git`
 
 ---
 
-## 3. Vérification avant livraison
+## 2. Déploiement du Backend (Supabase Self-Hosted)
 
+### 2.1. Installation de Supabase
+1. Clonez le dépôt officiel de Supabase sur le VPS :
+   ```bash
+   git clone --depth 1 https://github.com/supabase/supabase
+   cd supabase/docker
+   cp .env.example .env
+   ```
+2. Modifiez le `.env` pour sécuriser les accès :
+   - `POSTGRES_PASSWORD` : mot de passe très fort
+   - `JWT_SECRET` : générez un JWT secret fort
+   - `ANON_KEY` et `SERVICE_ROLE_KEY` : générez-les à partir du JWT secret
+   - `SITE_URL` : `https://promote-connect.pro`
+   - `API_EXTERNAL_URL` : `https://api.promote-connect.pro`
+
+3. Démarrez les conteneurs :
+   ```bash
+   docker-compose up -d
+   ```
+
+### 2.2. Configuration et Migration de la Base
+1. Sur votre **machine locale** (où le projet PROMOTE-CONNECT est cloné), connectez-vous à la base distante pour y pousser la structure :
+   ```bash
+   # Remplacez les valeurs par celles de votre VPS
+   export SUPABASE_DB_URL="postgresql://postgres:<POSTGRES_PASSWORD>@187.124.0.110:5432/postgres"
+   
+   # Appliquer les migrations (crée les tables, RLS, Storage)
+   supabase db push --db-url $SUPABASE_DB_URL
+   ```
+
+2. Assurez-vous que les buckets Storage nécessaires sont bien créés (`feed-images`, `vitrine-images`, `chat_media`, `avatars`).
+
+### 2.3. Edge Functions
+Le self-hosting des Edge Functions nécessite un serveur Deno. Supabase Docker inclut le service `edge-runtime`.
+Déployez les fonctions depuis votre machine locale vers le serveur auto-hébergé :
 ```bash
+supabase functions deploy --project-ref <LOCAL_OR_REMOTE_REF>
+```
+*Note: Alternativement, les fonctions (newsletter, push, rdv) peuvent être adaptées dans des API routes Next.js sécurisées ou des workflows n8n pour simplifier l'architecture en self-hosting.*
+
+---
+
+## 3. Déploiement du Frontend (Next.js)
+
+### 3.1. Cloner l'application
+Sur le VPS, clonez votre projet :
+```bash
+git clone <url-du-repo-promote-connect> /var/www/promote-connect
+cd /var/www/promote-connect
 npm ci
-npm run lint
-npm run type-check
-npm run test
-npm run build
 ```
 
-Le build doit être vert, les tests doivent passer.
-
----
-
-## 4. Base de données Supabase
-
-### 4.1 Sauvegarde
-
-Toujours sauvegarder la base production avant toute migration.
-
-### 4.2 Lier le projet
-
+### 3.2. Variables d'Environnement (.env.local)
+Créez le fichier `.env.local` :
 ```bash
-supabase link --project-ref <PROJECT_REF>
-```
-
-### 4.3 Appliquer les migrations
-
-```bash
-supabase db push
-```
-
-Les 34 migrations (000 à 034) créent l'ensemble du schéma : tables, RLS, indexes, publications Realtime, buckets Storage.
-
-### 4.4 Régénérer les types TypeScript (après modification de schéma)
-
-```bash
-supabase gen types typescript --project-id <PROJECT_REF> > types/database.types.ts
-```
-
-### 4.5 Seed de la base de données
-
-Le seed **ne doit être exécuté qu'une seule fois**, sur un environnement vierge (ou avec `--clean` pour tout réinitialiser).
-
-```bash
-# Seed standard (ajoute les données sans effacer)
-npm run db:seed
-
-# Seed avec nettoyage préalable (supprime toutes les lignes + utilisateurs Auth)
-npm run db:seed -- --clean
-# ou
-CLEAN_DATABASE=true npm run db:seed
-```
-
-**Ce que le seed créé :**
-
-| Donnée | Détail |
-|--------|--------|
-| **Compte admin** | `admin@promote-connect.com` / `Admin@2026!secure` (surchargeable via `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`) |
-
-> Aucune donnée de test (utilisateurs, exposants, produits, événements, messages, etc.) n'est insérée. Le seed production crée uniquement le compte administrateur nécessaire à l'administration de la plateforme.
-
-### 4.6 Création d'un admin en ligne de commande (alternatif)
-
-Si le seed n'est pas utilisé, un admin peut être créé manuellement :
-
-```bash
-node scripts/create-admin.mjs <email> [nom_complet]
-```
-
-Le script génère un mot de passe aléatoire de 12 caractères et l'affiche en sortie.  
-**Ne pas oublier de le transmettre de manière sécurisée à l'administrateur.**
-
-### 4.7 Politiques RLS à vérifier
-
-- `profiles` : lecture contrôlée, écriture owner ou admin
-- `messages` : lecture/écriture uniquement par participants
-- `exposants` : modification owner ou admin
-- `subscriptions` : lecture owner uniquement
-- `audit_logs` : accès admin uniquement
-
----
-
-## 5. Buckets Storage
-
-Créer ou vérifier les buckets Supabase :
-
-```bash
-# Buckets d'images
-feed-images       # Publications du fil d'actualité
-vitrine-images    # Logos, couvertures, produits, galerie exposants
-chat_media        # Pièces jointes du chat (images, documents)
-avatars           # Avatars des profils utilisateurs
-```
-
-Vérifier pour chaque bucket :
-
-- taille maximale cohérente (5 Mo recommandé pour les images)
-- types MIME autorisés (`image/jpeg`, `image/png`, `image/webp`, `image/gif` ; + `application/pdf` et `application/msword` pour `chat_media`)
-- URLs publiques uniquement pour les assets prévus
-- aucune donnée sensible dans un bucket public
-
----
-
-## 6. Edge Functions Supabase
-
-Déployer :
-
-```bash
-supabase functions deploy send-newsletter --project-ref <PROJECT_REF>
-supabase functions deploy send-push-notification --project-ref <PROJECT_REF>
-supabase functions deploy generate-rdv --project-ref <PROJECT_REF>
-```
-
-Configurer les secrets côté Supabase :
-
-```bash
-supabase secrets set RESEND_API_KEY=<votre_clé> --project-ref <PROJECT_REF>
-supabase secrets set FCM_SERVER_KEY=<votre_clé> --project-ref <PROJECT_REF>
-```
-
----
-
-## 7. Stripe
-
-1. Créer le produit et le prix annuel dans Stripe Dashboard.
-2. Renseigner `STRIPE_PRICE_ID_ANNUAL` avec l'ID du prix (`price_xxx`).
-3. Créer le webhook production vers :
-
-```
-https://promote-connect.com/api/webhooks/stripe
-```
-
-4. Événements à activer :
-
-- `checkout.session.completed`
-- `customer.subscription.created`
-- `customer.subscription.updated`
-- `customer.subscription.deleted`
-- `invoice.payment_failed`
-
-5. Copier le signing secret dans `STRIPE_WEBHOOK_SECRET`.
-
----
-
-## 8. Resend (emails transactionnels)
-
-### 8.1 Vue d'ensemble du système email
-
-PROMOTE-CONNECT envoie des emails via **Resend** (API REST) avec **React Email** pour le rendu des templates côté Next.js, et du HTML inline côté Edge Functions Deno.
-
-#### Types d'emails envoyés
-
-| Type | Expéditeur | Template | Déclencheur |
-|------|-----------|----------|-------------|
-| **Bienvenue newsletter** | `RESEND_FROM_NAME <RESEND_FROM_EMAIL>` | `emails/WelcomeEmail.tsx` | Inscription newsletter |
-| **Newsletter** | `RESEND_FROM_NAME <RESEND_FROM_EMAIL>` | `emails/NewsletterEmail.tsx` | Admin → publie une édition |
-| **Identifiants utilisateur** | `RESEND_FROM_EMAIL` | HTML inline (`buildCredentialsHtml()`) | Admin → crée un utilisateur |
-| **Réinitialisation mot de passe** | `RESEND_FROM_EMAIL` | HTML inline | Admin → réinitialise un mot de passe |
-
-> **Note :** Les templates `emails/CredentialsEmail.tsx` et `emails/RdvConfirmationEmail.tsx` existent mais ne sont pas utilisés actuellement.  
-> Les Edge Functions Deno utilisent leur propre HTML inline (pas les templates React Email).
-
-### 8.2 Configuration Resend
-
-1. Créer un compte sur [Resend](https://resend.com) et vérifier un domaine d'envoi.
-
-2. Configurer les enregistrements DNS pour le domaine d'envoi (SPF, DKIM, DMARC) :
-
-```bash
-# Fournis par Resend dans le Dashboard → Domains → Verify
-# Exemple (à adapter selon votre domaine) :
-SPF : v=spf1 include:spf.resend.com ~all
-DKIM : Clé publique fournie par Resend
-DMARC : v=DMARC1; p=quarantine; adkim=s; aspf=s
-```
-
-3. Générer une **clé API** Resend depuis le Dashboard → API Keys.
-
-4. Renseigner les variables d'environnement :
-
-```bash
-RESEND_API_KEY=re_xxxxxxxxxxxxxx        # Clé API Resend (production)
-RESEND_FROM_EMAIL=newsletter@votre-domaine.com
-RESEND_FROM_NAME=PROMOTE-CONNECT
-```
-
-5. **Envoyer un email de test** depuis l'admin newsletter ou via curl :
-
-```bash
-curl -X POST https://api.resend.com/emails \
-  -H "Authorization: Bearer re_xxxxxxxxxxxxxx" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "from": "PROMOTE-CONNECT <newsletter@votre-domaine.com>",
-    "to": "vous@email.com",
-    "subject": "Test PROMOTE-CONNECT",
-    "text": "Email de test réussi !"
-  }'
-```
-
-### 8.3 Architecture des envois
-
-#### Next.js (API Routes Node.js)
-
-| Route API | Méthode | Template | Auth |
-|-----------|---------|----------|------|
-| `POST /api/newsletter/subscribe` | Inscription newsletter | `WelcomeEmail.tsx` | Optionnelle (Bearer token) |
-| `POST /api/newsletter` | Envoi newsletter | `NewsletterEmail.tsx` | Admin (Bearer + rôle admin) |
-| `DELETE /api/newsletter/subscribe` | Désabonnement | Aucun (JSON) | Optionnelle |
-| `GET /api/newsletter/unsubscribe` | Désabonnement one-click | Aucun (HTML page) | Aucune (via token) |
-| `POST /api/admin/users` | Création utilisateur + envoi identifiants | HTML inline | Admin (Bearer + verifyAdmin) |
-| `POST /api/admin/users/reset-password` | Réinitialisation mot de passe | HTML inline | Admin (Bearer + verifyAdmin) |
-
-#### Edge Functions (Deno / Supabase)
-
-| Fonction | Trigger | Rôle |
-|----------|---------|------|
-| `supabase/functions/send-newsletter/index.ts` | Cron ou n8n | Envoi différé des newsletters (rattrape les éditions non envoyées) |
-| `supabase/functions/generate-rdv/index.ts` | API (appelée depuis le frontend) | Crée un rendez-vous et notifie le destinataire par email |
-
-**Important :** Les Edge Functions utilisent `fetch()` vers l'API Resend (pas le SDK npm) et ne partagent **pas** les templates React Email. Le HTML est construit en string.
-
-### 8.4 Flux newsletter
-
-La newsletter peut être envoyée via **deux chemins** :
-
-```
-Chemin A (Admin UI) :
-  Admin → /admin/newsletter → compose → POST /api/newsletter
-    → render(NewsletterEmail.tsx) → resend.emails.send()
-    → Envoi immédiat (ou draft si sendNow=false)
-
-Chemin B (Edge Function / Cron) :
-  Cron/n8n → POST supabase/functions/send-newsletter
-    → Vérifie newsletter_editions avec sent_at IS NULL
-    → Récupère les abonnés actifs
-    → fetch('https://api.resend.com/emails') pour chaque destinataire (par 50)
-    → Met à jour sent_at et recipient_count
-```
-
-Les deux chemins :
-- Personnalisent chaque email avec un lien de désabonnement unique (`unsubscribe_token`)
-- Respecent les préférences `user_preferences.notify_newsletter = false`
-- Envoient en lots de 50 emails (`Promise.allSettled`)
-
-### 8.5 Gestion des désabonnements
-
-- **Unsubscribe token :** Généré automatiquement à la création de l'abonnement (colonne `unsubscribe_token` dans `newsletter_subscriptions`)
-- **One-click :** `GET /api/newsletter/unsubscribe?token=xxx` → page HTML de confirmation
-- **API :** `DELETE /api/newsletter/subscribe` avec `{ email }` en JSON
-- Lien de désabonnement présent dans chaque newsletter : `{{NEXT_PUBLIC_APP_URL}}/api/newsletter/unsubscribe?token={{token}}`
-
-### 8.6 Configuration Edge Functions (côté Supabase)
-
-Déployer et configurer les secrets pour les Edge Functions :
-
-```bash
-# Déploiement
-supabase functions deploy send-newsletter --project-ref <PROJECT_REF>
-
-# Secrets requis
-supabase secrets set RESEND_API_KEY=re_xxxxxxxxxxxxxx --project-ref <PROJECT_REF>
-supabase secrets set RESEND_FROM_EMAIL=newsletter@votre-domaine.com --project-ref <PROJECT_REF>
-supabase secrets set RESEND_FROM_NAME=PROMOTE-CONNECT --project-ref <PROJECT_REF>
-supabase secrets set NEXT_PUBLIC_APP_URL=https://promote-connect.com --project-ref <PROJECT_REF>
-```
-
-### 8.7 Délivrabilité
-
-- Vérifier que SPF, DKIM et DMARC sont correctement configurés sur le DNS du domaine d'envoi
-- Surveiller le tableau de bord Resend pour les bouncing et les spam complaints
-- Ne jamais exposer les clés API (`RESEND_API_KEY`) côté client
-- Utiliser une adresse FROM dédiée (`newsletter@...`) et un sous-domaine séparé si nécessaire pour préserver la réputation de l'expéditeur principal
-
----
-
-## 9. Firebase FCM et PWA
-
-1. Créer une Firebase Web App et renseigner les variables `NEXT_PUBLIC_FIREBASE_*`.
-2. Configurer `FCM_SERVER_KEY` si l'endpoint legacy est conservé.
-3. Générer les icônes PWA si le logo change :
-
-```bash
-node scripts/generate-pwa-icons.mjs
-```
-
-4. Vérifier en production :
-
-- `/manifest.webmanifest` accessible et valide
-- `/sw.js` enregistré
-- `/offline` accessible
-- icônes 192px, 512px et maskable présentes dans `public/icons/`
-- `worker-src 'self' blob:` dans la CSP (configuré dans `next.config.mjs`)
-
----
-
-## 10. Déploiement Vercel
-
-1. Lier le dépôt au projet Vercel.
-2. Configurer toutes les variables d'environnement en `Production`.
-3. Définir dans Vercel Dashboard :
-
-```
-Build Command    : npm run build
-Install Command  : npm ci
-Output Directory : .next
-Node.js Version  : 22.x
-```
-
-4. Déployer :
-
-```bash
-# Via Vercel CLI
-vercel --prod
-
-# Ou via GitHub Actions (push sur main)
-git push origin main
-```
-
-Le workflow `.github/workflows/deploy.yml` déploie automatiquement `main` vers Vercel si les secrets GitHub `VERCEL_TOKEN`, `VERCEL_ORG_ID` et `VERCEL_PROJECT_ID` sont configurés.
-
----
-
-## 11. Procédure de déploiement initial (première mise en production)
-
-```bash
-# 1. Cloner + installer
-git clone <repo> promote-connect && cd promote-connect
-npm ci
-
-# 2. Copier et renseigner les variables
 cp .env.example .env.local
-# → Éditer .env.local avec les clés de production
+nano .env.local
+```
+Configurez avec les clés de votre Supabase Self-Hosted, Stripe, Resend et FCM :
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://api.promote-connect.pro
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<ANON_KEY_GENEREE_PRECEDEMMENT>
+SUPABASE_SERVICE_ROLE_KEY=<SERVICE_ROLE_KEY_GENEREE_PRECEDEMMENT>
 
-# 3. Vérifier l'environnement
-npm run check:prod-env
+NEXT_PUBLIC_APP_URL=https://promote-connect.pro
 
-# 4. Appliquer les migrations Supabase
-supabase link --project-ref <PROJECT_REF>
-supabase db push
+# Stripe, Resend, FCM (production keys)
+STRIPE_SECRET_KEY=sk_live_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+RESEND_API_KEY=re_...
+RESEND_FROM_EMAIL=newsletter@promote-connect.pro
+```
 
-# 5. Créer les buckets Storage (si pas déjà dans les migrations)
-# Voir section 5
-
-# 6. Seed la base de données
-npm run db:seed
-
-# 7. Déployer les Edge Functions
-supabase functions deploy send-newsletter --project-ref <PROJECT_REF>
-supabase functions deploy send-push-notification --project-ref <PROJECT_REF>
-supabase functions deploy generate-rdv --project-ref <PROJECT_REF>
-supabase functions secrets set RESEND_API_KEY=... --project-ref <PROJECT_REF>
-supabase functions secrets set FCM_SERVER_KEY=... --project-ref <PROJECT_REF>
-
-# 8. Générer les icônes PWA
-node scripts/generate-pwa-icons.mjs
-
-# 9. Configurer Stripe (produit + webhook) et Resend (domaine)
-# Voir sections 7 et 8
-
-# 10. Déployer sur Vercel
+### 3.3. Build et Lancement avec PM2
+Compilez l'application et démarrez-la en arrière-plan :
+```bash
 npm run build
-vercel --prod
+pm2 start npm --name "promote-connect" -- start
+pm2 save
+pm2 startup
 ```
+L'application Next.js tournera localement sur le port `3000`.
 
 ---
 
-## 12. Compte admin par défaut
+## 4. Initialisation Vierge (Seed) : Création de l'Administrateur
 
-Après exécution du seed, un compte administrateur est créé :
+Pour avoir un environnement **entièrement vierge** mais fonctionnel, il ne faut insérer aucune donnée d'exposant, de feed ou de visiteurs.
+Seul le compte administrateur doit être créé.
 
-| Champ | Valeur par défaut |
-|-------|-------------------|
-| Email | `admin@promote-connect.com` |
-| Mot de passe | `Admin@2026!secure` |
-| Rôle | `admin` |
-| Nom | `Administrateur PROMOTE` |
+> **Note :** Les données structurelles nécessaires au fonctionnement de l'application (comme la configuration des espaces et pavillons du salon) sont insérées automatiquement par les migrations Supabase (`021_create_espaces.sql`) et **ne sont pas effacées** par la réinitialisation.
 
-**⚠️ Sécurité :** Changer impérativement le mot de passe après la première connexion.  
-En production, surcharger via les variables d'environnement :
-
+Depuis le répertoire `/var/www/promote-connect` sur le VPS (une fois l'environnement configuré) :
 ```bash
-SEED_ADMIN_EMAIL=admin@votre-domaine.com
-SEED_ADMIN_PASSWORD=<mot_de_passe_complexe_32_caracteres>
+# S'assurer d'utiliser les variables d'environnement de production (NEXT_PUBLIC_SUPABASE_URL, etc.)
+# Exécutez le script avec l'option clean pour vider toute potentielle donnée de test résiduelle
+CLEAN_DATABASE=true SEED_ADMIN_EMAIL=admin@promote-connect.pro SEED_ADMIN_PASSWORD=<MotDePasseTresFort> npm run db:seed -- --clean
 ```
 
-Pour créer un admin **sans seed** (base déjà en production) :
-
+Alternativement, vous pouvez utiliser le script dédié à la création de l'admin (qui ne touchera pas aux autres tables) :
 ```bash
-node scripts/create-admin.mjs admin@votre-domaine.com "Nom Admin"
+node scripts/create-admin.mjs admin@promote-connect.pro "Administrateur PROMOTE"
+```
+Ce script créera le compte Auth, le `profile` avec le rôle `admin`, et affichera le mot de passe généré si vous ne l'avez pas spécifié.
+
+---
+
+## 5. Automatisation (n8n / Cron)
+
+Les envois de newsletters différés, relances, et autres tâches planifiées sont gérés par n8n (ou des scripts Cron).
+
+### 5.1 n8n (Docker Compose)
+1. Créez un répertoire pour n8n (`/opt/n8n`).
+2. Créez un `docker-compose.yml` standard pour l'image `n8nio/n8n`.
+3. Lancez le service : `docker-compose up -d`. Le service sera accessible sur le port `5678`.
+4. Connectez-vous à l'interface, importez les workflows PROMOTE-CONNECT (fichier JSON de vos workflows).
+5. Configurez les credentials dans n8n (Supabase API Key/URL, Resend API Key).
+
+---
+
+## 6. Déploiement Automatique (GitHub Actions)
+
+Pour automatiser la mise à jour de l'application Next.js à chaque `push` sur la branche `main`, un workflow GitHub Actions (`.github/workflows/deploy.yml`) est configuré pour se connecter en SSH au serveur et recompiler l'application.
+
+### 6.1 Configuration des Secrets GitHub
+Allez dans les paramètres de votre dépôt GitHub (`Settings > Secrets and variables > Actions`) et ajoutez les secrets suivants :
+
+- `VPS_HOST` : `187.124.0.110`
+- `VPS_USERNAME` : Le nom d'utilisateur SSH (ex: `root` ou `ubuntu`).
+- `VPS_SSH_KEY` : La clé privée SSH permettant de se connecter au serveur (le contenu de votre `id_rsa` ou `id_ed25519`).
+
+### 6.2 Fonctionnement du Workflow
+À chaque modification envoyée sur la branche `main`, GitHub Actions va se connecter au VPS, se rendre dans le dossier `/var/www/promote-connect`, récupérer le code (`git pull origin main`), installer les dépendances (`npm ci`), recompiler (`npm run build`) et relancer le processus PM2 (`pm2 restart promote-connect`).
+
+---
+
+## 7. Configuration Nginx & SSL
+
+Utilisez Nginx comme reverse proxy pour router le trafic vers les différents services et sécuriser l'accès avec HTTPS.
+
+Dans `/etc/nginx/sites-available/promote-connect` :
+
+```nginx
+# 1. Frontend Next.js
+server {
+    server_name promote-connect.pro;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+
+# 2. API Supabase (Kong gateway)
+server {
+    server_name api.promote-connect.pro;
+
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+    }
+}
+
+# 3. Automatisation n8n
+server {
+    server_name n8n.promote-connect.pro;
+
+    location / {
+        proxy_pass http://localhost:5678;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+    }
+}
 ```
 
----
-
-## 13. Utilitaires disponibles
-
-| Script | Commande | Usage |
-|--------|----------|-------|
-| Seed BDD | `npm run db:seed` | Créer le compte administrateur uniquement |
-| Création admin | `node scripts/create-admin.mjs` | Créer un admin sans seed |
-| Nettoyage orphelins | `npm run db:cleanup-orphans` | Supprimer les données orphelines (profiles sans auth, messages sans conversation, etc.) |
-| Vérification env | `npm run check:prod-env` | Vérifier les variables d'environnement |
-| Icônes PWA | `node scripts/generate-pwa-icons.mjs` | Générer les icônes PWA depuis le logo |
-| Génération types | `supabase gen types typescript` | Régénérer `types/database.types.ts` |
-
----
-
-## 14. Checklist post-déploiement
-
-- [ ] Accéder à la page d'accueil → redirigé vers `/login`
-- [ ] Se connecter avec le compte admin → redirigé vers `/admin`
-- [ ] Vérifier que les non-admins sont redirigés hors de `/admin`
-- [ ] Créer un utilisateur depuis `/admin/users`
-- [ ] Envoyer une newsletter de test depuis l'admin
-- [ ] Uploader une image dans le feed → compression appliquée
-- [ ] Tester le chat (envoi de message + pièce jointe)
-- [ ] Tester la navigation offline après chargement initial
-- [ ] Tester le webhook Stripe avec un événement de test signé
-- [ ] Vérifier Sentry après une erreur volontaire en staging
-- [ ] Vérifier Plausible et l'absence d'erreurs CSP dans la console
-- [ ] Exécuter Lighthouse sur mobile et desktop (LCP < 3s, TTI < 5s)
-- [ ] Vérifier le manifest PWA et l'enregistrement du Service Worker
-- [ ] Vérifier que la compression d'images fonctionne (feed, vitrine, chat, avatar)
-
----
-
-## 15. Rollback
-
-En cas d'incident :
-
-1. Revenir au dernier déploiement stable Vercel (Instantané ou `vercel rollback`).
-2. Désactiver temporairement les webhooks Stripe si l'incident touche les abonnements.
-3. Restaurer la sauvegarde Supabase si une migration a corrompu des données.
-4. Vérifier les logs Vercel, Supabase, Sentry et la table `audit_logs`.
-
----
-
-## 16. État actuel
-
-Les commandes suivantes doivent rester vertes avant chaque mise en production :
-
+Activez la configuration et générez les certificats SSL :
 ```bash
-npm run lint
-npm run type-check
-npm run test
-npm run build
+sudo ln -s /etc/nginx/sites-available/promote-connect /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+
+# Génération des certificats Let's Encrypt
+sudo certbot --nginx -d promote-connect.pro -d api.promote-connect.pro -d n8n.promote-connect.pro
 ```
 
-Le projet utilise `proxy.ts` (convention Next.js 16) pour la protection des routes connectées.
+---
+
+## 8. Checklist Post-Déploiement
+
+- [ ] L'application charge correctement sur `https://promote-connect.pro` sans erreurs CSP.
+- [ ] L'API Supabase est accessible sur `https://api.promote-connect.pro` (ex: `/rest/v1/`).
+- [ ] La connexion avec le compte admin fonctionne (créé via le script de seed).
+- [ ] La base de données ne contient aucune donnée de test (vérifiable dans l'interface admin > Utilisateurs et Exposants).
+- [ ] Les buckets Storage permettent l'upload (testable en uploadant un avatar ou un logo d'exposant).
+- [ ] Le webhook Stripe est configuré pour pointer sur `https://promote-connect.pro/api/webhooks/stripe`.
+- [ ] n8n tourne sur `https://n8n.promote-connect.pro` et les workflows (newsletter, etc.) sont actifs.
+- [ ] Le déploiement automatique s'exécute avec succès lors d'un push sur `main`.
