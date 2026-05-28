@@ -47,7 +47,7 @@ export default function AuthLayout({
 
           <div className="relative z-20 flex flex-1 flex-col justify-between p-10 xl:p-12">
             <div className="space-y-8">
-              <div className="inline-flex w-fit items-center gap-3 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm shadow-xl">
+              <div className="inline-flex w-fit items-center gap-3 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
                 <div className="relative size-8 overflow-hidden rounded-lg p-1">
                   <Image
                     src="/logo_transparent.png"

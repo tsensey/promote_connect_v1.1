@@ -353,7 +353,7 @@ export default function NewsletterPage() {
             editions.map((edition, index) => (
               <article
                 key={edition.id}
-                className="group relative rounded-xl border border-border/60 bg-card p-5 transition-all hover:border-primary/20 hover:shadow-md hover:-translate-y-0.5"
+                className="group relative rounded-xl border border-border/60 bg-card p-5 transition-all hover:border-primary/20 hover:hover:-translate-y-0.5"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 <div className="flex items-start justify-between gap-4">

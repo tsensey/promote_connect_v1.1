@@ -302,7 +302,7 @@ export default function DashboardHome() {
                   href={action.href}
                   className={cn(
                     buttonVariants({ variant: "outline" }),
-                    "group h-auto gap-3 rounded-xl border-border/70 bg-background/50 px-5 py-4 shadow-sm transition-all hover:border-primary/30 hover:bg-background hover:shadow-md",
+                    "group h-auto gap-3 rounded-xl border-border/70 bg-background/50 px-5 py-4 transition-all hover:border-primary/30 hover:bg-background",
                   )}
                 >
                   <action.icon className="size-5 text-primary" />
@@ -342,7 +342,7 @@ export default function DashboardHome() {
                 <Link
                   key={exposant.id}
                   href={`/annuaire/${exposant.id}`}
-                  className="surface-subtle group flex flex-col gap-3 p-5 transition-all hover:border-primary/30 hover:bg-background hover:shadow-md dark:hover:bg-muted/80"
+                  className="surface-subtle group flex flex-col gap-3 p-5 transition-all hover:border-primary/30 hover:bg-background dark:hover:bg-muted/80"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
@@ -425,7 +425,7 @@ export default function DashboardHome() {
                   <Link
                     key={conversation.id}
                     href={`/chat/${conversation.id}`}
-                    className="surface-subtle group flex items-center gap-4 p-4 transition-all hover:border-primary/25 hover:bg-background hover:shadow-sm dark:hover:bg-muted/80"
+                    className="surface-subtle group flex items-center gap-4 p-4 transition-all hover:border-primary/25 hover:bg-background dark:hover:bg-muted/80"
                   >
                     <Avatar className="size-11 border-2 border-border/50">
                       <AvatarFallback className="bg-primary/10 font-semibold text-primary">
@@ -464,7 +464,7 @@ export default function DashboardHome() {
         <Card className="surface-panel overflow-hidden border-0 py-0">
           <div className="brand-gradient px-6 py-5">
             <div className="flex items-center gap-3">
-              <Avatar className="size-14 border-2 border-white/50 shadow-lg">
+              <Avatar className="size-14 border-2 border-white/50 ">
                 <AvatarFallback className="bg-white/20 text-lg font-semibold text-white backdrop-blur-sm">
                   {(identity?.displayName || profile.full_name)?.charAt(0).toUpperCase() || "?"}
                 </AvatarFallback>
@@ -519,7 +519,7 @@ export default function DashboardHome() {
                   <Link
                     key={event.id}
                     href="/agenda"
-                    className="surface-subtle group block p-4 transition-all hover:border-primary/25 hover:bg-background hover:shadow-sm dark:hover:bg-muted/80"
+                    className="surface-subtle group block p-4 transition-all hover:border-primary/25 hover:bg-background  dark:hover:bg-muted/80"
                   >
                     <div className="flex items-start gap-3">
                       <div className="flex shrink-0 flex-col items-center rounded-xl border border-border/60 bg-background px-3 py-2 text-center">
@@ -601,7 +601,7 @@ export default function DashboardHome() {
                     href="/exposant/ma-vitrine"
                     className={cn(
                       buttonVariants({ variant: "default" }),
-                      "w-full rounded-xl bg-gradient-to-r from-primary to-primary/80 shadow-md transition-all hover:shadow-lg",
+                      "w-full rounded-xl bg-gradient-to-r from-primary to-primary/80 transition-all",
                     )}
                   >
                     <Eye className="size-4" />
@@ -669,7 +669,7 @@ function MetricCard({
   };
 
   return (
-    <div className="group rounded-xl border border-border/60 bg-background/50 p-5 shadow-sm transition-all hover:border-primary/20 hover:bg-background hover:shadow-md dark:bg-muted/40 dark:hover:bg-muted/60">
+    <div className="group rounded-xl border border-border/60 bg-background/50 p-5 transition-all hover:border-primary/20 hover:bg-background dark:bg-muted/40 dark:hover:bg-muted/60">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.03em] text-muted-foreground">
@@ -681,7 +681,7 @@ function MetricCard({
         </div>
         <div
           className={cn(
-            "flex size-10 shrink-0 items-center justify-center rounded-xl shadow-sm",
+            "flex size-10 shrink-0 items-center justify-center rounded-xl",
             bgStyles[tone],
             styles[tone],
           )}

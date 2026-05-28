@@ -162,7 +162,7 @@ export function SearchCommandPalette({ open, onOpenChange }: SearchCommandPalett
                       className="group flex items-center gap-2.5 rounded-lg px-3 py-2 cursor-pointer aria-selected:bg-accent/80 my-1"
                     >
                       <div className={cn(
-                        'flex size-8 shrink-0 items-center justify-center rounded-lg transition-all duration-150 group-aria-selected:scale-110 group-aria-selected:shadow-sm',
+                        'flex size-8 shrink-0 items-center justify-center rounded-lg transition-all duration-150 group-aria-selected:scale-110 ',
                         style.bg,
                       )}>
                         <Icon className={cn('size-3.5', style.color)} />

@@ -85,7 +85,7 @@ export function NotificationDropdown() {
           </span>
         )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 rounded-xl p-0 shadow-2xl border-border/40 overflow-hidden">
+      <DropdownMenuContent align="end" className="w-80 rounded-xl p-0 border-border/40 overflow-hidden">
         <div className="flex items-center justify-between p-4 bg-muted/30 border-b border-border/40">
           <DropdownMenuLabel className="p-0 font-bold text-base">
             {t('notifications.title')}
@@ -134,7 +134,7 @@ export function NotificationDropdown() {
                         {n.sender?.full_name?.charAt(0) || '?'}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full bg-background p-1 shadow-sm ring-1 ring-border/20">
+                    <div className="absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full bg-background p-1 ring-1 ring-border/20">
                       {getIcon(n.type)}
                     </div>
                   </div>

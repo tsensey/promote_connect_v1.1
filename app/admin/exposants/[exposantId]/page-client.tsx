@@ -513,7 +513,7 @@ export default function AdminExposantVitrinePage() {
                         pavillon: espace?.code || '',
                       }));
                     }}
-                    className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
+                    className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm"
                   >
                     <option value="">{t('admin.exposants.form_none')}</option>
                     {espaces.map(espace => (
@@ -785,7 +785,7 @@ export default function AdminExposantVitrinePage() {
             {products.map(product => (
               <article
                 key={product.id}
-                className="group relative overflow-hidden rounded-xl border border-border/50 bg-background/50 p-5 transition-all hover:bg-muted/20 hover:shadow-md flex flex-col gap-4"
+                className="group relative overflow-hidden rounded-xl border border-border/50 bg-background/50 p-5 transition-all hover:bg-muted/20 hover:flex flex-col gap-4"
               >
                 {product.image_url && (
                   <div className="relative h-36 w-full overflow-hidden rounded-lg">
@@ -957,7 +957,7 @@ export default function AdminExposantVitrinePage() {
       </Tabs>
 
       <div className="sticky bottom-4 z-10 flex justify-end">
-        <Button onClick={saveShowcase} disabled={saving} size="lg" className="rounded-full shadow-lg px-8 h-12 text-base font-semibold">
+        <Button onClick={saveShowcase} disabled={saving} size="lg" className="rounded-full px-8 h-12 text-base font-semibold">
           {saving && <Loader2 className="mr-2 size-5 animate-spin" />}
           <Save className="mr-2 size-5" /> {t('common.save')}
         </Button>

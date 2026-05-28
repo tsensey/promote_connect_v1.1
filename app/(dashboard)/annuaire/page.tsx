@@ -179,7 +179,7 @@ export default function AnnuairePage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(var(--primary)/0.08),transparent_60%)]" />
         <div className="relative">
           <div className="flex items-center gap-4">
-            <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 shadow-sm shadow-primary/5">
+            <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10-primary/5">
               <Store className="size-7 text-primary" />
             </div>
             <div>
@@ -197,7 +197,7 @@ export default function AnnuairePage() {
       </div>
 
       {/* Filtres */}
-      <Card className="border-border/50 shadow-sm">
+      <Card className="border-border/50">
         <CardContent className="space-y-4 p-5">
           {/* Barre de recherche + actions */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -211,7 +211,7 @@ export default function AnnuairePage() {
                   setSearch(e.target.value);
                   setPage(0);
                 }}
-                className="h-11 rounded-xl border-border/70 bg-muted/30 pl-11 shadow-none focus:bg-background"
+                className="h-11 rounded-xl border-border/70 bg-muted/30 pl-11-none focus:bg-background"
               />
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -341,7 +341,7 @@ export default function AnnuairePage() {
       {!perms.loading && !perms.canAccessDirectory ? (
         <div className="relative overflow-hidden rounded-2xl border border-border/50">
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/60 backdrop-blur-md">
-            <div className="max-w-md text-center p-8 bg-background/95 rounded-2xl shadow-xl border border-border">
+            <div className="max-w-md text-center p-8 bg-background/95 rounded-2xl border border-border">
               <Store className="size-12 text-primary mx-auto mb-4" />
               <h3 className="text-xl font-bold mb-2">{t('annuaire.restricted_title') || 'Accès réservé'}</h3>
               <p className="text-muted-foreground mb-6">
@@ -354,7 +354,7 @@ export default function AnnuairePage() {
           </div>
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 opacity-20 select-none pointer-events-none p-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Card key={i} className="overflow-hidden border-border/50 shadow-sm">
+              <Card key={i} className="overflow-hidden border-border/50">
                 <div className="h-28 w-full bg-muted" />
                 <CardContent className="space-y-3 p-5">
                   <div className="flex items-center gap-3">
@@ -373,7 +373,7 @@ export default function AnnuairePage() {
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i} className="overflow-hidden border-border/50 shadow-sm">
+            <Card key={i} className="overflow-hidden border-border/50">
               <div className="h-28 w-full animate-pulse bg-muted" />
               <CardContent className="space-y-3 p-5">
                 <div className="flex items-center gap-3">
@@ -405,8 +405,8 @@ export default function AnnuairePage() {
               <Card
                 key={exposant.id}
                 className={cn(
-                  'group relative overflow-hidden border-border/50 shadow-sm transition-all duration-200 py-0',
-                  'hover:shadow-md hover:border-primary/20 hover:-translate-y-0.5',
+                  'group relative overflow-hidden border-border/50 transition-all duration-200 py-0',
+                  'hover:hover:border-primary/20 hover:-translate-y-0.5',
                   exposant.is_featured && 'border-amber-200/60 dark:border-amber-800/40',
                 )}
               >
@@ -430,18 +430,18 @@ export default function AnnuairePage() {
                   {/* Badges */}
                   <div className="absolute right-3 top-3 flex flex-col gap-1.5">
                     {exposant.is_featured && (
-                      <Badge className="rounded-full border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 shadow-sm">
+                      <Badge className="rounded-full border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
                         <Star className="mr-0.5 size-3 fill-amber-500 text-amber-500" />
                         {t('annuaire.featured')}
                       </Badge>
                     )}
                     {(exposant as any).profiles?.subscription_tier === 'paid' && (
-                      <Badge className="rounded-full border-amber-500 bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm self-end">
+                      <Badge className="rounded-full border-amber-500 bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white self-end">
                         PRO
                       </Badge>
                     )}
                     {isOwn && (
-                      <Badge className="rounded-full border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 shadow-sm self-end">
+                      <Badge className="rounded-full border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 self-end">
                         {t('annuaire.your_stand')}
                       </Badge>
                     )}
@@ -464,7 +464,7 @@ export default function AnnuairePage() {
                 <CardContent className="space-y-3.5 p-5">
                   {/* Logo + Nom */}
                   <div className="flex items-start gap-3 -mt-8">
-                    <Avatar className="size-12  ring-2 ring-background shadow-md shrink-0">
+                    <Avatar className="size-12  ring-2 ring-background shrink-0">
                       {exposant.logo_url ? (
                         <AvatarImage src={exposant.logo_url} />
                       ) : (
@@ -620,7 +620,7 @@ export default function AnnuairePage() {
                   size="sm"
                   className={cn(
                     'rounded-xl h-9 min-w-9 p-0 text-xs font-medium',
-                    page === p ? 'shadow-sm' : ''
+                    
                   )}
                   onClick={() => setPage(p as number)}
                 >

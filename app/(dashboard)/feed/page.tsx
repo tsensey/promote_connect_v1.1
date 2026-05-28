@@ -315,7 +315,7 @@ export default function FeedPage() {
           <div className="sticky top-20 space-y-4">
             {randomProducts.slice(0, 3).map((product) => {
               return (
-                <Card key={product.id} className="border-border/60 p-0 overflow-hidden group shadow-sm hover:shadow-md transition-all">
+                <Card key={product.id} className="border-border/60 p-0 overflow-hidden group hover:transition-all">
                   {product.image_url && (
                     <div className="relative h-28 w-full overflow-hidden">
                       <Image src={product.image_url} alt={product.nom} fill sizes="300px" className="object-cover transition-transform group-hover:scale-105" />

@@ -137,8 +137,8 @@ export default function AbonnementPage() {
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-4">
             <div className={cn(
-              'flex size-14 items-center justify-center rounded-2xl shadow-sm',
-              isPaidActive ? 'bg-emerald-500/10 shadow-emerald-500/10' : 'bg-amber-500/10 shadow-amber-500/10'
+              'flex size-14 items-center justify-center rounded-2xl',
+              isPaidActive ? 'bg-emerald-500/10-emerald-500/10' : 'bg-amber-500/10-amber-500/10'
             )}>
               {isPaidActive ? (
                 <ShieldCheck className="size-7 text-emerald-500" />
@@ -208,7 +208,7 @@ export default function AbonnementPage() {
         <div className="grid gap-6 md:grid-cols-3">
 
           {/* Carte statut principal */}
-          <Card className="md:col-span-2 overflow-hidden border-emerald-200/40 shadow-sm py-0">
+          <Card className="md:col-span-2 overflow-hidden border-emerald-200/40 py-0">
             <div className="bg-gradient-to-r from-emerald-600 to-emerald-400 px-6 py-7">
               <div className="flex items-center gap-4">
                 <div className="flex size-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
@@ -301,7 +301,7 @@ export default function AbonnementPage() {
           </Card>
 
           {/* Carte features incluses */}
-          <Card className="border-border/50 shadow-sm">
+          <Card className="border-border/50">
             <CardContent className="p-5 space-y-3">
               <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                 {t('abonnement.included_features') || 'Fonctionnalités incluses'}
@@ -329,7 +329,7 @@ export default function AbonnementPage() {
         <div className="grid gap-6 md:grid-cols-3">
 
           {/* Carte principale CTA */}
-          <Card className="md:col-span-2 overflow-hidden border-amber-200/40 shadow-sm py-0">
+          <Card className="md:col-span-2 overflow-hidden border-amber-200/40 py-0">
             <div className="bg-gradient-to-br from-amber-500/15 via-orange-500/5 to-background p-6 sm:p-8 flex flex-col h-full">
               <div className="mb-5 flex size-12 items-center justify-center rounded-2xl bg-amber-100/60">
                 <Sparkles className="size-6 text-amber-600" />
@@ -386,7 +386,7 @@ export default function AbonnementPage() {
           {/* Carte contact / souscription */}
           <div className="flex flex-col gap-4">
             {isFreeTrial && quotas && (
-              <Card className="border-amber-200/50 bg-amber-50/30 shadow-sm">
+              <Card className="border-amber-200/50 bg-amber-50/30">
                 <CardContent className="p-5 space-y-3">
                   <h3 className="font-semibold text-sm text-amber-800 uppercase tracking-wide">
                     {t('abonnement.my_limits') || 'Mes Quotas Actuels'}
@@ -417,7 +417,7 @@ export default function AbonnementPage() {
               </Card>
             )}
 
-            <Card className="border-border/50 shadow-sm flex-1">
+            <Card className="border-border/50 flex-1">
               <CardContent className="p-6 flex flex-col h-full gap-5">
                 <div>
                   <h3 className="font-semibold text-lg mb-1">
@@ -466,7 +466,7 @@ export default function AbonnementPage() {
           </div>
 
           {/* Tableau comparatif */}
-          <Card className="md:col-span-3 border-border/50 shadow-sm">
+          <Card className="md:col-span-3 border-border/50">
             <CardContent className="p-5">
               <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-4">
                 {t('abonnement.feature_comparison') || 'Comparaison des accès'}

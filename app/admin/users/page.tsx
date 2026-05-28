@@ -924,7 +924,7 @@ export default function AdminUsersPage() {
                           id="sector"
                           value={form.sector}
                           onChange={(event) => setForm({ ...form, sector: event.target.value })}
-                          className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
+                          className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm"
                         >
                           <option value="">{t('admin.users.form_select')}</option>
                           {SECTORS.map((sector) => (
@@ -938,7 +938,7 @@ export default function AdminUsersPage() {
                           id="country"
                           value={form.country}
                           onChange={(event) => setForm({ ...form, country: event.target.value })}
-                          className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
+                          className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm"
                         >
                           <option value="">{t('admin.users.form_select')}</option>
                           {COUNTRIES.map((country) => (
@@ -961,7 +961,7 @@ export default function AdminUsersPage() {
                             pavillon: espace?.code || '',
                           });
                         }}
-                        className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
+                        className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm"
                       >
                         <option value="">{t('admin.users.form_select_space')}</option>
                         {espaces.map((espace) => (
@@ -1004,7 +1004,7 @@ export default function AdminUsersPage() {
                         value={form.description}
                         onChange={(event) => setForm({ ...form, description: event.target.value })}
                         placeholder={t('admin.users.form_description_placeholder')}
-                        className="flex min-h-24 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm shadow-sm"
+                        className="flex min-h-24 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
                       />
                     </div>
 
@@ -1024,7 +1024,7 @@ export default function AdminUsersPage() {
                           id="nombre_employes"
                           value={form.nombre_employes}
                           onChange={(event) => setForm({ ...form, nombre_employes: event.target.value })}
-                          className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
+                          className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm"
                         >
                           <option value="">{t('admin.users.form_employees_placeholder')}</option>
                           {NOMBRE_EMPLOYES.map((n) => (

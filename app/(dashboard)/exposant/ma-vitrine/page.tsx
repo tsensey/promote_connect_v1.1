@@ -926,7 +926,7 @@ export default function ManageVitrinePage() {
               <Button
                 onClick={saveShowcase}
                 disabled={savingShowcase}
-                className="rounded-full shadow-lg px-8 h-12 text-base font-semibold"
+                className="rounded-full px-8 h-12 text-base font-semibold"
                 size="lg"
               >
                 {savingShowcase ? (
@@ -1089,7 +1089,7 @@ export default function ManageVitrinePage() {
                     {products.map((product) => (
                       <article
                         key={product.id}
-                        className="group relative overflow-hidden rounded-xl border border-border/50 bg-background/50 p-5 transition-all hover:bg-muted/20 hover:shadow-md flex flex-col gap-4"
+                        className="group relative overflow-hidden rounded-xl border border-border/50 bg-background/50 p-5 transition-all hover:bg-muted/20 hover:flex flex-col gap-4"
                       >
                         <div className="space-y-3">
                           <div className="flex items-start justify-between gap-3">

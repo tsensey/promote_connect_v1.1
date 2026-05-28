@@ -163,7 +163,7 @@ function ImageAttachment({ url }: { url: string }) {
               alt="Photo agrandie"
               fill
               sizes="90vw"
-              className="rounded-2xl object-contain shadow-2xl"
+              className="rounded-2xl object-contain"
               onClick={(e) => e.stopPropagation()}
             />
           </div>

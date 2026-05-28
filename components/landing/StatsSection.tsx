@@ -24,7 +24,7 @@ export function StatsSection() {
               }`}
               style={{ animationDelay: `${i * 0.15}s` }}
             >
-              <div className="flex size-14 md:size-16 items-center justify-center rounded-2xl bg-primary/5 text-primary shadow-inner border border-primary/10 transition-transform hover:rotate-3">
+              <div className="flex size-14 md:size-16 items-center justify-center rounded-2xl bg-primary/5 text-primary-inner border border-primary/10 transition-transform hover:rotate-3">
                 <stat.icon className="size-7 md:size-8" />
               </div>
               <div className="space-y-1">

@@ -26,12 +26,12 @@ export function HeroSection() {
         <div className="grid lg:grid-cols-2 gap-16 lg:gap-12 items-center">
           {/* Left Column: Text Content */}
           <div className="text-left space-y-6 md:space-y-8 animate-reveal">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[10px] sm:text-xs font-semibold text-white tracking-widest uppercase backdrop-blur-md shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[10px] sm:text-xs font-semibold text-white tracking-widest uppercase backdrop-blur-md">
               <span className="size-2 rounded-full bg-[#fcd34d] animate-pulse" />
               {t('landing.hero.badge')}
             </div>
 
-            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.1] tracking-tighter text-white drop-shadow-lg text-balance">
+            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.1] tracking-tighter text-white drop-text-balance">
               {t('landing.hero.tagline')}
             </h1>
 
@@ -41,7 +41,7 @@ export function HeroSection() {
 
             <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
               <Link href="/login" className="w-full sm:w-auto">
-                <Button variant="default" size="lg" className="w-full h-12 px-8 text-base font-bold rounded-full bg-[#fcd34d] text-[#520a3f] hover:bg-[#fcd34d]/90 shadow-md transition-all hover:scale-105 active:scale-95">
+                <Button variant="default" size="lg" className="w-full h-12 px-8 text-base font-bold rounded-full bg-[#fcd34d] text-[#520a3f] hover:bg-[#fcd34d]/90 transition-all hover:scale-105 active:scale-95">
                   {t('landing.hero.cta')}
                 </Button>
               </Link>
@@ -55,7 +55,7 @@ export function HeroSection() {
           <div className="hidden lg:block relative animate-reveal-delay-1">
             <div className="relative aspect-square max-w-[420px] mx-auto ml-auto">
               <div className="absolute inset-0 bg-gradient-to-br from-[#fcd34d]/10 to-transparent rounded-full blur-3xl opacity-40" />
-              <div className="relative z-10 glass-premium p-8 rounded-[36px] border border-white/10 bg-white/10 text-white shadow-2xl backdrop-blur-xl">
+              <div className="relative z-10 glass-premium p-8 rounded-[36px] border border-white/10 bg-white/10 text-white backdrop-blur-xl">
                 <div className="space-y-6">
                   <h3 className="text-xl xl:text-2xl font-bold text-white leading-tight text-balance">
                     {t('landing.hero.secondary.title')}

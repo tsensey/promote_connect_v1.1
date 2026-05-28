@@ -79,7 +79,7 @@ export default function RegisterPage() {
     return (
       <div className="w-full max-w-md mx-auto">
         <div className="surface-card p-10 flex flex-col items-center gap-6 text-center animate-reveal">
-          <div className="flex size-20 items-center justify-center rounded-full bg-emerald-500/10 shadow-inner animate-reveal-delay-1">
+          <div className="flex size-20 items-center justify-center rounded-full bg-emerald-500/10-inner animate-reveal-delay-1">
             <CheckCircle2 className="size-10 text-emerald-500" />
           </div>
           <div className="space-y-2 animate-reveal-delay-1">
@@ -108,7 +108,7 @@ export default function RegisterPage() {
             alt="PROMOTE-CONNECT Logo"
             width={120}
             height={40}
-            className="object-contain rounded-full shadow-md"
+            className="object-contain rounded-full"
           />
         </div>
 

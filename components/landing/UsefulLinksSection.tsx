@@ -56,7 +56,7 @@ export function UsefulLinksSection() {
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex items-center gap-4 p-5 md:p-6 rounded-2xl bg-white dark:bg-card/50 border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all"
+              className="group flex items-center gap-4 p-5 md:p-6 rounded-2xl bg-white dark:bg-card/50 border border-border/50 hover:border-primary/30 hover:transition-all"
             >
               <div className={`flex size-10 md:size-12 items-center justify-center rounded-xl ${link.color} group-hover:scale-110 transition-transform`}>
                 <link.icon className="size-5 md:size-6" />

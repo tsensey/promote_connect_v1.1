@@ -322,7 +322,7 @@ export default function SupportPage() {
                   <Link
                     key={ticket.id}
                     href={`/support/${ticket.id}`}
-                    className="group flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-5 transition-all hover:border-primary/20 hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
+                    className="group flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-5 transition-all hover:border-primary/20 hover:sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex-1">
                       <h3 className="font-heading text-lg font-semibold text-foreground group-hover:text-primary">

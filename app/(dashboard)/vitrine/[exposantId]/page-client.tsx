@@ -244,7 +244,7 @@ export default function VitrineExposantPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-6">
             {/* Logo */}
             <div className="relative -mt-14 shrink-0 sm:-mt-16">
-              <div className="relative flex size-24 items-center justify-center rounded-2xl border-4 border-background bg-primary/10 text-3xl font-bold text-primary shadow-lg">
+              <div className="relative flex size-24 items-center justify-center rounded-2xl border-4 border-background bg-primary/10 text-3xl font-bold text-primary">
                 {exposant.logo_url ? (
                   <Image src={exposant.logo_url} alt={exposant.nom} fill sizes="96px" className="rounded-xl object-contain" />
                 ) : (
@@ -485,7 +485,7 @@ export default function VitrineExposantPage() {
               {produits.map((prod) => (
                 <Dialog key={prod.id}>
                   <DialogTrigger>
-                    <div className="cursor-pointer rounded-xl border border-border/60 bg-muted/20 p-5 transition-all hover:border-primary/30 hover:shadow-md hover:bg-muted/40 group">
+                    <div className="cursor-pointer rounded-xl border border-border/60 bg-muted/20 p-5 transition-all hover:border-primary/30 hover:hover:bg-muted/40 group">
                       {prod.image_url && (
                         <div className="relative mb-3 h-40 w-full">
                           <Image src={prod.image_url} alt={prod.nom} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="rounded-lg object-cover" />

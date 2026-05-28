@@ -114,7 +114,7 @@ export default function AgendaPage() {
         <div className="relative">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 shadow-sm shadow-primary/5">
+              <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10-primary/5">
                 <CalendarDays className="size-7 text-primary" />
               </div>
               <div>
@@ -129,12 +129,12 @@ export default function AgendaPage() {
               </div>
             </div>
             {perms.canRequestRdv ? (
-              <Button onClick={() => setShowNewRdv(true)} className="whitespace-nowrap rounded-xl shadow-sm">
+              <Button onClick={() => setShowNewRdv(true)} className="whitespace-nowrap rounded-xl">
                 <Plus className="mr-2 size-4" />
                 {t("agenda.request_rdv")}
               </Button>
             ) : (
-              <Button onClick={() => setShowConversion(true)} className="whitespace-nowrap rounded-xl shadow-sm border-amber-500/50 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20">
+              <Button onClick={() => setShowConversion(true)} className="whitespace-nowrap rounded-xl border-amber-500/50 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20">
                 <Crown className="mr-2 size-4" />
                 {t("agenda.request_rdv")}
               </Button>
@@ -145,7 +145,7 @@ export default function AgendaPage() {
 
       {/* Prochains RDV */}
       {upcomingRdvs.length > 0 && (
-        <Card className="overflow-hidden border-primary/10 shadow-sm py-0">
+        <Card className="overflow-hidden border-primary/10 py-0">
           <div className="bg-gradient-to-r from-primary to-primary/80 px-5 py-3">
             <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
               <CalendarDays className="size-4" />
@@ -156,7 +156,7 @@ export default function AgendaPage() {
             {upcomingRdvs.slice(0, 3).map((rdv) => (
               <div
                 key={rdv.id}
-                className="flex items-center gap-3 rounded-xl border border-border/60 bg-card px-4 py-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                className="flex items-center gap-3 rounded-xl border border-border/60 bg-card px-4 py-3 transition-all hover:-translate-y-0.5 "
               >
                 <Avatar className="size-10 shrink-0 border-2 border-border/30">
                   <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
@@ -185,11 +185,11 @@ export default function AgendaPage() {
       {/* Tabs */}
       <Tabs defaultValue="programme" className="flex flex-col gap-y-2">
         <TabsList className="w-full rounded-xl bg-muted/80 p-1 sm:w-auto">
-          <TabsTrigger value="programme" className="gap-2 rounded-lg data-[state=active]:shadow-sm">
+          <TabsTrigger value="programme" className="gap-2 rounded-lg ">
             <Calendar className="size-4" />
             {t("agenda.tab_programme")}
           </TabsTrigger>
-          <TabsTrigger value="rdvs" className="gap-2 rounded-lg data-[state=active]:shadow-sm">
+          <TabsTrigger value="rdvs" className="gap-2 rounded-lg ">
             <Users className="size-4" />
             {t("agenda.tab_planning")}
             {pendingForMeCount > 0 && (
@@ -209,7 +209,7 @@ export default function AgendaPage() {
                 placeholder={t("agenda.search")}
                 value={eventSearch}
                 onChange={(e) => setEventSearch(e.target.value)}
-                className="h-11 rounded-xl border-border/70 bg-muted/30 pl-11 shadow-none focus:bg-background"
+                className="h-11 rounded-xl border-border/70 bg-muted/30 pl-11-none focus:bg-background"
               />
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -223,7 +223,7 @@ export default function AgendaPage() {
                     className={cn(
                       "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all",
                       isActive
-                        ? "bg-primary text-primary-foreground shadow-sm"
+                        ? "bg-primary text-primary-foreground"
                         : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
                     )}
                   >
@@ -247,7 +247,7 @@ export default function AgendaPage() {
           {eventsLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <Card key={i} className="overflow-hidden border-border/50 shadow-sm">
+                <Card key={i} className="overflow-hidden border-border/50">
                   <div className="flex gap-4 p-5">
                     <div className="w-20 shrink-0 space-y-2">
                       <div className="h-3 w-full animate-pulse rounded bg-muted" />
@@ -297,7 +297,7 @@ export default function AgendaPage() {
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all",
                   rdvFilter === status
-                    ? "bg-primary text-primary-foreground shadow-sm"
+                    ? "bg-primary text-primary-foreground"
                     : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
               >
@@ -336,7 +336,7 @@ export default function AgendaPage() {
           {rdvsLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, i) => (
-                <Card key={i} className="overflow-hidden border-border/50 shadow-sm">
+                <Card key={i} className="overflow-hidden border-border/50">
                   <div className="flex items-center gap-4 p-5">
                     <div className="size-12 animate-pulse rounded-full bg-muted" />
                     <div className="flex-1 space-y-2">

@@ -166,7 +166,7 @@ export default function VitrinePage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(var(--primary)/0.08),transparent_60%)]" />
         <div className="relative">
           <div className="flex items-center gap-4 mb-4">
-            <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 shadow-sm shadow-primary/5">
+            <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10-primary/5">
               <Store className="size-7 text-primary" />
             </div>
             <div>
@@ -185,7 +185,7 @@ export default function VitrinePage() {
       </div>
 
       {/* Filtres */}
-      <Card className="border-border/50 shadow-sm py-0">
+      <Card className="border-border/50 py-0">
         <CardContent className="space-y-4 p-5">
           {/* Search + actions */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -196,7 +196,7 @@ export default function VitrinePage() {
                 placeholder={t('vitrine.search')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-11 rounded-xl border-border/70 bg-muted/30 pl-11 shadow-none focus:bg-background"
+                className="h-11 rounded-xl border-border/70 bg-muted/30 pl-11-none focus:bg-background"
               />
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -240,7 +240,7 @@ export default function VitrinePage() {
                   className={cn(
                     'rounded-full px-3.5 py-1.5 text-xs font-medium transition-all',
                     !categorie
-                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      ? 'bg-primary text-primary-foreground'
                       : 'bg-muted text-muted-foreground hover:text-foreground'
                   )}
                 >
@@ -253,7 +253,7 @@ export default function VitrinePage() {
                     className={cn(
                       'rounded-full px-3.5 py-1.5 text-xs font-medium transition-all',
                       categorie === c
-                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        ? 'bg-primary text-primary-foreground'
                         : 'bg-muted text-muted-foreground hover:text-foreground'
                     )}
                   >
@@ -278,7 +278,7 @@ export default function VitrinePage() {
               className={cn(
                 'inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all',
                 typeFilter === type
-                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  ? 'bg-primary text-primary-foreground'
                   : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
@@ -307,7 +307,7 @@ export default function VitrinePage() {
       {loading ? (
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i} className="overflow-hidden border-border/50 shadow-sm py-0">
+            <Card key={i} className="overflow-hidden border-border/50 py-0">
               <div className="h-44 w-full animate-pulse bg-muted" />
               <CardContent className="space-y-3 p-5">
                 <div className="h-5 w-2/3 animate-pulse rounded-lg bg-muted" />
@@ -371,7 +371,7 @@ export default function VitrinePage() {
             return (
               <Card
                 key={`${produit.exposant_id}-${produit.id}`}
-                className="group relative overflow-hidden border-border/50 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 flex flex-col py-0"
+                className="group relative overflow-hidden border-border/50 transition-all duration-200 hover:hover:-translate-y-0.5 flex flex-col py-0"
               >
                 {/* Image / Type header */}
                   {produit.image_url ? (
@@ -386,24 +386,24 @@ export default function VitrinePage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
                     <div className="absolute bottom-3 left-3 right-3 flex items-start justify-between gap-2">
                       {produit.prix_indicatif && (
-                        <Badge className="rounded-full border-white/30 bg-black/50 px-2.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm shadow-sm">
+                        <Badge className="rounded-full border-white/30 bg-black/50 px-2.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
                           <Euro className="mr-0.5 size-3" />
                           {produit.prix_indicatif}
                         </Badge>
                       )}
                       <div className="flex gap-1.5 ml-auto">
                         {produit.exposants?.profiles?.subscription_tier === 'paid' && produit.exposants?.is_featured && (
-                          <Badge className="rounded-full bg-amber-500 text-white border-amber-400 px-2.5 py-0.5 text-[10px] font-semibold shadow-sm">
+                          <Badge className="rounded-full bg-amber-500 text-white border-amber-400 px-2.5 py-0.5 text-[10px] font-semibold">
                             <Sparkles className="mr-1 size-3" />
                             Premium
                           </Badge>
                         )}
                         {produit.exposants?.profiles?.subscription_tier === 'paid' && !produit.exposants?.is_featured && (
-                          <Badge className="rounded-full bg-amber-500 text-white border-amber-400 px-2.5 py-0.5 text-[10px] font-semibold shadow-sm">
+                          <Badge className="rounded-full bg-amber-500 text-white border-amber-400 px-2.5 py-0.5 text-[10px] font-semibold">
                             PRO
                           </Badge>
                         )}
-                        <Badge className={cn('rounded-full px-2.5 py-0.5 text-[10px] font-semibold shadow-sm', typeStyle.badge)}>
+                        <Badge className={cn('rounded-full px-2.5 py-0.5 text-[10px] font-semibold', typeStyle.badge)}>
                           {t(typeStyle.label)}
                         </Badge>
                       </div>
@@ -416,31 +416,31 @@ export default function VitrinePage() {
                     'bg-muted'
                   )}>
                     <div className={cn(
-                      'flex size-14 items-center justify-center rounded-2xl shadow-sm',
+                      'flex size-14 items-center justify-center rounded-2xl',
                       typeStyle.iconBg
                     )}>
                       <typeStyle.icon className="size-7" />
                     </div>
                     <div className="absolute bottom-3 left-3 right-3 flex items-start justify-between gap-2">
                       {produit.prix_indicatif && (
-                        <Badge className="rounded-full border-white/30 bg-black/50 px-2.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm shadow-sm">
+                        <Badge className="rounded-full border-white/30 bg-black/50 px-2.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
                           <Euro className="mr-0.5 size-3" />
                           {produit.prix_indicatif}
                         </Badge>
                       )}
                       <div className="flex gap-1.5 ml-auto">
                         {produit.exposants?.profiles?.subscription_tier === 'paid' && produit.exposants?.is_featured && (
-                          <Badge className="rounded-full bg-amber-500 text-white border-amber-400 px-2.5 py-0.5 text-[10px] font-semibold shadow-sm">
+                          <Badge className="rounded-full bg-amber-500 text-white border-amber-400 px-2.5 py-0.5 text-[10px] font-semibold">
                             <Sparkles className="mr-1 size-3" />
                             Premium
                           </Badge>
                         )}
                         {produit.exposants?.profiles?.subscription_tier === 'paid' && !produit.exposants?.is_featured && (
-                          <Badge className="rounded-full bg-amber-500 text-white border-amber-400 px-2.5 py-0.5 text-[10px] font-semibold shadow-sm">
+                          <Badge className="rounded-full bg-amber-500 text-white border-amber-400 px-2.5 py-0.5 text-[10px] font-semibold">
                             PRO
                           </Badge>
                         )}
-                        <Badge className={cn('rounded-full px-2.5 py-0.5 text-[10px] font-semibold shadow-sm', typeStyle.badge)}>
+                        <Badge className={cn('rounded-full px-2.5 py-0.5 text-[10px] font-semibold', typeStyle.badge)}>
                           {t(typeStyle.label)}
                         </Badge>
                       </div>
@@ -546,7 +546,7 @@ export default function VitrinePage() {
       )}
 
       {/* CTA */}
-      <Card className="border-border/50 shadow-sm py-0">
+      <Card className="border-border/50 py-0">
         <CardContent className="flex flex-col items-center gap-4 p-6 text-center sm:flex-row sm:justify-between sm:text-left">
           <div>
             <h2 className="text-lg font-semibold text-foreground">

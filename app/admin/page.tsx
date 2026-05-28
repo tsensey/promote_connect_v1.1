@@ -213,7 +213,7 @@ function KpiCard({
 }) {
   return (
     <Link href={href}>
-      <div className="surface-panel flex items-center justify-between p-5 transition hover:shadow-md">
+      <div className="surface-panel flex items-center justify-between p-5 transition ">
         <div>
           <p className="text-sm text-muted-foreground">{title}</p>
           <p className="mt-2 text-3xl font-semibold text-foreground">{value}</p>

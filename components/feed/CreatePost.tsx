@@ -263,7 +263,7 @@ export function CreatePost({
                       className={cn(
                         "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150",
                         isActive
-                          ? pt.active + " shadow-sm scale-105"
+                          ? pt.active + " scale-105"
                           : pt.color + " hover:opacity-80",
                       )}
                     >
@@ -278,7 +278,7 @@ export function CreatePost({
               <div
                 className={cn(
                   "relative rounded-2xl border transition-all duration-200",
-                  "border-border/60 bg-muted/20 focus-within:border-primary/40 focus-within:bg-background focus-within:shadow-sm",
+                  "border-border/60 bg-muted/20 focus-within:border-primary/40 focus-within:bg-background ",
                 )}
               >
                 <textarea
@@ -415,7 +415,6 @@ export function CreatePost({
                     disabled={!content.trim() || submitting || isOverLimit}
                     className={cn(
                       "rounded-full gap-1.5 font-semibold transition-all",
-                      content.trim() && !isOverLimit && "shadow-sm",
                     )}
                   >
                     {submitting ? (
@@ -446,7 +445,7 @@ export function CreatePost({
     <Card
       className={cn(
         "border-border/60 p-0 transition-all duration-300",
-        isExpanded && "shadow-md border-primary/20",
+        isExpanded && "border-primary/20",
       )}
     >
       <CardContent className="p-4">

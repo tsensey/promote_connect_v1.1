@@ -86,7 +86,7 @@ export function SearchResultItem({ result, onSelect, variant = 'default' }: Sear
       onClick={onSelect}
       className="group block cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 rounded-2xl"
     >
-      <div className="relative flex items-start gap-5 rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition-all duration-200 hover:border-primary/30 hover:shadow-xl hover:-translate-y-1 hover:bg-accent/30">
+      <div className="relative flex items-start gap-5 rounded-2xl border border-border/60 bg-card p-5 transition-all duration-200 hover:border-primary/30 hover:hover:-translate-y-1 hover:bg-accent/30">
         {/* Visit indicator */}
         <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center gap-2 text-xs font-medium text-muted-foreground/0 group-hover:text-primary/70 transition-all duration-200 group-hover:translate-x-1">
           <span className="hidden sm:inline">Voir</span>
@@ -95,7 +95,7 @@ export function SearchResultItem({ result, onSelect, variant = 'default' }: Sear
 
         {/* Entity icon/avatar */}
         {result.entity_type === 'exposant' ? (
-          <Avatar className="size-14 shrink-0 ring-2 ring-background shadow-md transition-all duration-200 group-hover:scale-110 group-hover:shadow-lg group-hover:ring-primary/20">
+          <Avatar className="size-14 shrink-0 ring-2 ring-background transition-all duration-200 group-hover:scale-110 group-hover:group-hover:ring-primary/20">
             {result.metadata?.logo_url ? (
               <AvatarImage src={result.metadata.logo_url as string} />
             ) : (
@@ -105,7 +105,7 @@ export function SearchResultItem({ result, onSelect, variant = 'default' }: Sear
             )}
           </Avatar>
         ) : result.entity_type === 'produit' && result.metadata?.image_url ? (
-          <div className="relative size-14 shrink-0 overflow-hidden rounded-2xl bg-muted transition-all duration-200 group-hover:scale-110 group-hover:shadow-lg ring-1 ring-border/50">
+          <div className="relative size-14 shrink-0 overflow-hidden rounded-2xl bg-muted transition-all duration-200 group-hover:scale-110 group-hover:ring-1 ring-border/50">
             <Image
               src={result.metadata.image_url as string}
               alt={result.title}
@@ -116,7 +116,7 @@ export function SearchResultItem({ result, onSelect, variant = 'default' }: Sear
           </div>
         ) : (
           <div className={cn(
-            'flex size-14 shrink-0 items-center justify-center rounded-2xl transition-all duration-200 group-hover:scale-110 group-hover:shadow-md ring-1 ring-border/30',
+            'flex size-14 shrink-0 items-center justify-center rounded-2xl transition-all duration-200 group-hover:scale-110 group-hover:ring-1 ring-border/30',
             style.iconBg,
           )}>
             <Icon className="size-6" />
@@ -131,7 +131,7 @@ export function SearchResultItem({ result, onSelect, variant = 'default' }: Sear
             </h3>
             <Badge className={cn(
               'shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold border transition-all duration-200',
-              'group-hover:shadow-md group-hover:scale-110',
+              'group-hover:group-hover:scale-110',
               style.badge,
             )}>
               <Icon className="mr-1 size-3" />

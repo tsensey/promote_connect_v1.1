@@ -152,7 +152,7 @@ export const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(({
       />
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverContent 
-          className="p-0 w-[280px] shadow-xl border-border/40" 
+          className="p-0 w-[280px] border-border/40" 
           align="start" 
           side="top"
           sideOffset={4}

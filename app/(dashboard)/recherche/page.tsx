@@ -165,7 +165,7 @@ export default function RecherchePage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(var(--primary)/0.08),transparent_60%)]" />
         <div className="relative">
           <div className="flex items-center gap-4">
-            <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 shadow-sm shadow-primary/5">
+            <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10-primary/5">
               <Search className="size-7 text-primary" />
             </div>
             <div>
@@ -185,7 +185,7 @@ export default function RecherchePage() {
       </div>
 
       {/* Search bar */}
-      <Card className="border-border/50 shadow-sm mb-6 py-0">
+      <Card className="border-border/50 mb-6 py-0">
         <CardContent className="p-5 space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
@@ -195,7 +195,7 @@ export default function RecherchePage() {
                 placeholder={t('search.placeholder')}
                 value={query}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="h-11 rounded-xl border-border/70 bg-muted/30 pl-11 pr-10 shadow-none focus:bg-background"
+                className="h-11 rounded-xl border-border/70 bg-muted/30 pl-11 pr-10-none focus:bg-background"
               />
               {query && (
                 <button
@@ -228,7 +228,7 @@ export default function RecherchePage() {
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all',
                 !activeType
-                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  ? 'bg-primary text-primary-foreground'
                   : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
               )}
             >
@@ -255,7 +255,7 @@ export default function RecherchePage() {
                   className={cn(
                     'inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all',
                     activeType === type
-                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      ? 'bg-primary text-primary-foreground'
                       : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
                   )}
                 >
@@ -284,7 +284,7 @@ export default function RecherchePage() {
         {loading && results.length === 0 ? (
           <div className="space-y-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Card key={i} className="border-border/50 shadow-sm py-0">
+              <Card key={i} className="border-border/50 py-0">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">
                     <Skeleton className="size-12 rounded-xl shrink-0" />
@@ -372,7 +372,7 @@ export default function RecherchePage() {
                         size="sm"
                         className={cn(
                           'rounded-xl h-9 min-w-9 p-0 text-xs font-medium',
-                          page === pageNum && 'shadow-sm',
+                          
                         )}
                         onClick={() => setPage(pageNum)}
                       >

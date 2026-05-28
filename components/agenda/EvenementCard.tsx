@@ -28,8 +28,8 @@ export function EvenementCard({ evenement: evt }: EvenementCardProps) {
   return (
     <Card
       className={cn(
-        "overflow-hidden border-border/50 shadow-sm transition-all duration-200",
-        "hover:shadow-md hover:-translate-y-0.5",
+        "overflow-hidden border-border/50 transition-all duration-200",
+        "hover:hover:-translate-y-0.5",
       )}
     >
       <CardContent className="p-0">

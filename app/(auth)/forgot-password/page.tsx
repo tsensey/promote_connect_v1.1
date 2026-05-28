@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
             alt="PROMOTE-CONNECT Logo"
             width={120}
             height={40}
-            className="object-contain rounded-full shadow-md"
+            className="object-contain rounded-full"
           />
         </div>
         <div className="space-y-2 text-center animate-reveal-delay-1">

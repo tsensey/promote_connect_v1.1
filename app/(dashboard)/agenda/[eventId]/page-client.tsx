@@ -159,7 +159,7 @@ export default function EventDetailPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Description */}
         <div className="lg:col-span-2">
-          <Card className="border-border/50 shadow-sm">
+          <Card className="border-border/50">
             <CardHeader>
               <CardTitle className="text-lg">Description</CardTitle>
             </CardHeader>
@@ -174,7 +174,7 @@ export default function EventDetailPage() {
         {/* Infos sidebar */}
         <div className="space-y-4">
           {/* Lieu */}
-          <Card className="border-border/50 shadow-sm">
+          <Card className="border-border/50">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                 <MapPin className="size-4 text-muted-foreground" />
@@ -189,7 +189,7 @@ export default function EventDetailPage() {
           </Card>
 
           {/* Horaires */}
-          <Card className="border-border/50 shadow-sm">
+          <Card className="border-border/50">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                 <Clock className="size-4 text-muted-foreground" />
@@ -217,7 +217,7 @@ export default function EventDetailPage() {
 
       {/* Speakers */}
       {speakers.length > 0 && (
-        <Card className="border-border/50 shadow-sm">
+        <Card className="border-border/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <User className="size-5 text-muted-foreground" />

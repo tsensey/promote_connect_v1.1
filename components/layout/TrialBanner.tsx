@@ -53,7 +53,7 @@ export function TrialBanner() {
             variant={isExpired ? "secondary" : "default"}
             size="sm"
             onClick={() => router.push('/abonnement')}
-            className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${
+            className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${
               isExpired ? 'bg-white text-destructive hover:bg-white/90' : 'bg-amber-950 text-white hover:bg-amber-900'
             }`}
           >

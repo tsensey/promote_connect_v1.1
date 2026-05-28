@@ -267,7 +267,7 @@ export default function AdminNewsletterPage() {
                 {editions.map((edition) => (
                   <article
                     key={edition.id}
-                    className="group rounded-xl border border-border/60 bg-card p-5 transition-all hover:border-primary/20 hover:shadow-md"
+                    className="group rounded-xl border border-border/60 bg-card p-5 transition-all hover:border-primary/20 "
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">

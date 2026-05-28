@@ -48,7 +48,7 @@ export function CreatePostFAB({ onSubmit, onUpload }: CreatePostFABProps) {
         onClick={() => setOpen(true)}
         size="lg"
         className={cn(
-          "fixed md:hidden bottom-20 right-6 z-40 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 h-14 w-14 sm:h-auto sm:w-auto sm:px-4",
+          "fixed md:hidden bottom-20 right-6 z-40 rounded-full hover:transition-all duration-300 h-14 w-14 sm:h-auto sm:w-auto sm:px-4",
           visible ? "translate-y-0 opacity-100 scale-100" : "translate-y-20 opacity-0 scale-90 pointer-events-none"
         )}
       >
@@ -79,7 +79,7 @@ export function CreatePostFAB({ onSubmit, onUpload }: CreatePostFABProps) {
         <Dialog open={open} onOpenChange={handleOpenChange}>
           <DialogContent className={cn(
             "fixed bottom-0 left-[50%] translate-x-[-50%] top-auto translate-y-0", // Stick to very bottom
-            "max-w-2xl p-0 overflow-hidden border-none shadow-2xl rounded-t-3xl animate-in slide-in-from-bottom-full duration-300"
+            "max-w-2xl p-0 overflow-hidden border-none rounded-t-3xl animate-in slide-in-from-bottom-full duration-300"
           )}>
             <div className="bg-background p-6">
               <CreatePost

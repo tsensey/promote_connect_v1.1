@@ -133,7 +133,7 @@ export default function TicketDetailPage() {
         {t('support.ticket.back')}
       </Link>
 
-      <div className="overflow-hidden rounded-2xl border border-border/40 bg-card shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-border/40 bg-card">
         <div className="brand-gradient relative px-6 py-6">
           <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -151,7 +151,7 @@ export default function TicketDetailPage() {
             <div className="flex shrink-0 flex-wrap gap-2">
               <Badge
                 className={cn(
-                  'rounded-full border text-xs font-medium shadow-sm',
+                  'rounded-full border text-xs font-medium',
                   PRIORITY_STYLES[ticket.priority || 'medium'],
                 )}
               >
@@ -159,7 +159,7 @@ export default function TicketDetailPage() {
               </Badge>
               <Badge
                 className={cn(
-                  'rounded-full border text-xs font-medium shadow-sm',
+                  'rounded-full border text-xs font-medium',
                   STATUS_STYLES[ticket.status || 'open'],
                 )}
               >
@@ -192,7 +192,7 @@ export default function TicketDetailPage() {
         )}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-border/40 bg-card shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-border/40 bg-card">
         <div className="border-b border-border/40 px-6 py-4">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground/70">
             <LifeBuoy className="size-3.5" />
@@ -236,7 +236,7 @@ export default function TicketDetailPage() {
                       )}
                     >
                       <Avatar className={cn(
-                        'size-9 shrink-0 border-2 border-background shadow-sm',
+                        'size-9 shrink-0 border-2 border-background',
                         isAdmin ? 'ring-2 ring-primary/15' : 'ring-2 ring-muted/30',
                       )}>
                         <AvatarFallback
@@ -253,7 +253,7 @@ export default function TicketDetailPage() {
                       <div className="flex flex-col max-w-[85%] sm:max-w-[70%] gap-1">
                         <div
                           className={cn(
-                            'rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap shadow-sm',
+                            'rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap',
                             isAdmin
                               ? 'bg-primary/5 text-foreground ring-1 ring-primary/10 rounded-tl-sm'
                               : 'bg-muted/70 text-foreground ring-1 ring-border/30 rounded-tr-sm',

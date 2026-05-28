@@ -131,7 +131,7 @@ export default function ConfigurationPage() {
 
       <div className="grid gap-8 md:grid-cols-2">
         {/* Section Quotas Free Trial */}
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
+        <div className="rounded-xl border bg-card p-6">
           <h2 className="text-xl font-semibold mb-4">Quotas "Free Trial"</h2>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -223,7 +223,7 @@ export default function ConfigurationPage() {
 
         {/* Section Feed & Admin */}
         <div className="space-y-8">
-          <div className="rounded-xl border bg-card p-6 shadow-sm">
+          <div className="rounded-xl border bg-card p-6">
             <h2 className="text-xl font-semibold mb-4">Fil d'actualité & Sponsorisés</h2>
             <div className="space-y-4">
               <div className="space-y-2">
@@ -261,7 +261,7 @@ export default function ConfigurationPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border bg-card p-6 shadow-sm">
+          <div className="rounded-xl border bg-card p-6">
             <h2 className="text-xl font-semibold mb-4">Modération & Prix</h2>
             <div className="space-y-4">
               <div className="space-y-2">
@@ -302,7 +302,7 @@ export default function ConfigurationPage() {
       </div>
 
       {/* Message de conversion */}
-      <div className="rounded-xl border bg-card p-6 shadow-sm">
+      <div className="rounded-xl border bg-card p-6">
         <h2 className="text-xl font-semibold mb-4">Message de conversion (Free Trial → PAID)</h2>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">

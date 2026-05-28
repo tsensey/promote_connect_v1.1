@@ -60,12 +60,12 @@ export function PwaRegister() {
   return (
     <>
       {offline && (
-        <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground shadow-lg">
+        <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground">
           Vous êtes hors ligne — certaines fonctionnalités peuvent être limitées
         </div>
       )}
       {updateAvailable && (
-        <div className="fixed bottom-20 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-lg">
+        <div className="fixed bottom-20 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
           <span>Nouvelle version disponible</span>
           <button onClick={applyUpdate} className="underline underline-offset-2 hover:no-underline">
             Actualiser

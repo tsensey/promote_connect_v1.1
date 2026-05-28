@@ -384,7 +384,7 @@ export default function AdminExposantsPage() {
                       pavillon: espace?.code || '',
                     });
                   }}
-                  className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm shadow-sm"
+                  className="flex h-10 w-full rounded-xl border border-border bg-background px-3 text-sm"
                 >
                   <option value="">{t('admin.exposants.form_none')}</option>
                   {espaces.map((espace) => (

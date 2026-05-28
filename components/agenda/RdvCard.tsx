@@ -27,7 +27,7 @@ export function RdvCard({ rdv, myUserId, onAccept, onRefuse, onCancel }: RdvCard
   return (
     <Card
       className={cn(
-        "overflow-hidden border shadow-sm transition-all duration-200 hover:shadow-md",
+        "overflow-hidden border transition-all duration-200 ",
         isPendingForMe
           ? "border-amber-200/60 bg-amber-50/40 dark:bg-amber-950/20 dark:border-amber-800/40"
           : "border-border/50",

@@ -157,7 +157,7 @@ export function UserSidebar({
           'flex min-w-0 items-center gap-2.5',
           collapsed && 'flex-col gap-1'
         )}>
-          <div className="relative size-8 shrink-0 overflow-hidden rounded-lg shadow-sm shadow-primary/20 bg-primary/5">
+          <div className="relative size-8 shrink-0 overflow-hidden rounded-lg-primary/20 bg-primary/5">
             <Image
               src="/logo-promote.png"
               alt="Logo"
@@ -264,7 +264,7 @@ export function UserSidebar({
                           ? 'justify-center px-0 py-2.5 mx-auto w-10'
                           : 'px-3 py-2',
                         active
-                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          ? 'bg-primary text-primary-foreground'
                           : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground',
                       )}
                     >

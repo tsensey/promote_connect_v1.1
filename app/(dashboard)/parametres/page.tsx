@@ -92,7 +92,7 @@ function ProfileTab() {
 
   return (
     <div className="space-y-6">
-      <Card className="overflow-hidden border-border/50 shadow-sm transition-shadow hover:shadow-md pt-0">
+      <Card className="overflow-hidden border-border/50 transition-hover:pt-0">
         <div className="h-1.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -108,7 +108,7 @@ function ProfileTab() {
         <CardContent className="space-y-6">
           <div className="flex flex-col items-center gap-4 sm:flex-row">
             <div className="relative group">
-              <Avatar className="size-20 border-2 border-border/50 shadow-sm transition-shadow group-hover:shadow-md">
+              <Avatar className="size-20 border-2 border-border/50 transition-group-">
                 <AvatarImage src={avatarUrl ?? undefined} />
                 <AvatarFallback className="text-xl font-bold text-muted-foreground bg-muted">
                   {fullName?.charAt(0).toUpperCase() || '?'}
@@ -144,7 +144,7 @@ function ProfileTab() {
         </CardContent>
       </Card>
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={!hasChanges || saving} className="min-w-[140px] shadow-sm">
+        <Button onClick={handleSave} disabled={!hasChanges || saving} className="min-w-[140px]">
           {saving ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
           {saving ? t('common.saving') : t('common.save')}
         </Button>
@@ -177,7 +177,7 @@ function NotificationsTab() {
   };
 
   return (
-    <Card className="overflow-hidden border-border/50 shadow-sm transition-shadow hover:shadow-md pt-0">
+    <Card className="overflow-hidden border-border/50 transition-hover:pt-0">
       <div className="h-1.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
       <CardHeader>
         <div className="flex items-center gap-3">
@@ -194,7 +194,7 @@ function NotificationsTab() {
         {toggles.map(({ key, icon: Icon, labelKey, descKey }) => (
           <div
             key={key}
-            className="group flex items-center justify-between rounded-xl border border-border/50 bg-card p-4 transition-all hover:border-border hover:bg-accent/30 hover:shadow-sm"
+            className="group flex items-center justify-between rounded-xl border border-border/50 bg-card p-4 transition-all hover:border-border hover:bg-accent/30 "
           >
             <div className="flex items-start gap-3">
               <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
@@ -234,7 +234,7 @@ function LanguageTab() {
   };
 
   return (
-    <Card className="overflow-hidden border-border/50 shadow-sm transition-shadow hover:shadow-md pt-0">
+    <Card className="overflow-hidden border-border/50 transition-hover:pt-0">
       <div className="h-1.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
       <CardHeader>
         <div className="flex items-center gap-3">
@@ -255,12 +255,12 @@ function LanguageTab() {
             onClick={() => handleChange(value)}
             className={`group relative overflow-hidden rounded-xl border-2 p-5 text-left transition-all ${
               locale === value
-                ? 'border-primary bg-primary/5 shadow-sm'
-                : 'border-border/50 bg-card hover:border-border hover:shadow-sm'
+                ? 'border-primary bg-primary/5'
+                : 'border-border/50 bg-card hover:border-border '
             }`}
           >
             {locale === value && (
-              <div className="absolute right-3 top-3 flex size-6 items-center justify-center rounded-full bg-primary shadow-sm">
+              <div className="absolute right-3 top-3 flex size-6 items-center justify-center rounded-full bg-primary">
                 <Check className="size-3.5 text-primary-foreground" />
               </div>
             )}
@@ -298,7 +298,7 @@ function AccountTab() {
 
   return (
     <div className="space-y-6">
-      <Card className="overflow-hidden border-border/50 shadow-sm transition-shadow hover:shadow-md pt-0">
+      <Card className="overflow-hidden border-border/50 transition-hover:pt-0">
         <div className="h-1.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -331,7 +331,7 @@ function AccountTab() {
           </div>
         </CardContent>
       </Card>
-      <Card className="border-destructive/20 shadow-sm py-0">
+      <Card className="border-destructive/20 py-0">
         <CardContent className="flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10">
@@ -342,7 +342,7 @@ function AccountTab() {
               <p className="text-xs text-muted-foreground">{t('account.sign_out.confirm')}</p>
             </div>
           </div>
-          <Button variant="destructive" size="sm" onClick={handleSignOut} className="shrink-0 shadow-sm">
+          <Button variant="destructive" size="sm" onClick={handleSignOut} className="shrink-0">
             <LogOut className="mr-2 size-4" />
             {t('account.sign_out')}
           </Button>
@@ -371,7 +371,7 @@ export default function SettingsPage() {
         <div className="absolute -right-20 -top-20 size-64 rounded-full bg-primary/5 blur-3xl" />
         <div className="absolute -bottom-10 -left-10 size-48 rounded-full bg-primary/5 blur-3xl" />
         <div className="relative flex items-center gap-4">
-          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20">
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary-primary/20">
             <Settings2 className="size-7 text-primary-foreground" />
           </div>
           <div>
@@ -390,7 +390,7 @@ export default function SettingsPage() {
               onClick={() => setActiveTab(id)}
               className={`flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
                 activeTab === id
-                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-accent hover:text-foreground'
               }`}
             >

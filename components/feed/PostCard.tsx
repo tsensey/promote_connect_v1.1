@@ -433,7 +433,7 @@ export const PostCard = memo(function PostCard({
   return (
     <Card
       id={post.id}
-      className="border-border/50 bg-card transition-all duration-200 hover:shadow-lg hover:border-border/80 dark:hover:shadow-primary/5 p-0"
+      className="border-border/50 bg-card transition-all duration-200   p-0"
     >
       <CardContent className="p-0">
         {/* Repost banner */}
@@ -525,7 +525,7 @@ export const PostCard = memo(function PostCard({
                 <MoreHorizontal className="size-4" />
               </Button>
               {showMenu && (
-                <div className="absolute right-0 top-full z-20 mt-1 w-40 rounded-xl border border-border bg-card shadow-xl">
+                <div className="absolute right-0 top-full z-20 mt-1 w-40 rounded-xl border border-border bg-card">
                   <button
                     onClick={() => { setIsEditing(true); setShowMenu(false); }}
                     className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-foreground hover:bg-muted/50 rounded-xl"
@@ -766,7 +766,7 @@ export const PostCard = memo(function PostCard({
             {/* Reaction picker */}
             {showReactions && (
               <div
-                className="absolute bottom-full left-0 mb-2 flex gap-1 rounded-full border border-border bg-card px-2 py-1.5 shadow-xl z-30"
+                className="absolute bottom-full left-0 mb-2 flex gap-1 rounded-full border border-border bg-card px-2 py-1.5 z-30"
                 onMouseEnter={() => {
                   if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
                   setShowReactions(true);

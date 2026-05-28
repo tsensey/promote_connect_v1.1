@@ -229,7 +229,7 @@ export default function ExposantDetailPage() {
 
   if (!exposant) {
     return (
-      <Card className="border-0 py-0 shadow-none">
+      <Card className="border-0 py-0-none">
         <CardContent className="flex flex-col items-center gap-4 py-20 text-center">
           <div className="flex size-20 items-center justify-center rounded-2xl bg-muted">
             <Building2 className="size-10 text-muted-foreground/40" />
@@ -271,7 +271,7 @@ export default function ExposantDetailPage() {
               alt=""
               fill
               sizes="100vw"
-              className="rounded-2xl object-contain shadow-2xl"
+              className="rounded-2xl object-contain"
               onClick={(e) => e.stopPropagation()}
             />
           </div>
@@ -311,7 +311,7 @@ export default function ExposantDetailPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex items-end gap-5 -mt-12 sm:-mt-16">
               <div className="relative shrink-0">
-                <div className="relative flex size-28 items-center justify-center overflow-hidden rounded-2xl border-[3px] border-background bg-white shadow-lg dark:bg-slate-900 sm:size-36">
+                <div className="relative flex size-28 items-center justify-center overflow-hidden rounded-2xl border-[3px] border-background bg-white dark:bg-slate-900 sm:size-36">
                   {exposant.logo_url ? (
                     <Image src={exposant.logo_url} alt={exposant.nom} fill sizes="(max-width: 640px) 112px, 144px" className="object-contain p-2" />
                   ) : (
@@ -319,7 +319,7 @@ export default function ExposantDetailPage() {
                   )}
                 </div>
                 {exposant.is_featured && (
-                  <div className="absolute -right-1.5 -top-1.5 flex size-7 items-center justify-center rounded-full bg-amber-400 shadow-sm">
+                  <div className="absolute -right-1.5 -top-1.5 flex size-7 items-center justify-center rounded-full bg-amber-400">
                     <Award className="size-4 text-white" />
                   </div>
                 )}
@@ -352,7 +352,7 @@ export default function ExposantDetailPage() {
             <div className="flex flex-wrap items-center gap-2">
               {exposant.profile_id && !isCurrentlyBlocked && perms.canContactExposant && (
                 <Button
-                  className="rounded-full px-5 shadow-sm"
+                  className="rounded-full px-5"
                   onClick={() => handleContact()}
                   disabled={contacting}
                 >
@@ -369,7 +369,7 @@ export default function ExposantDetailPage() {
                   href={exposant.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={cn(buttonVariants({ variant: 'outline', size: 'icon' }), 'rounded-full size-10 shadow-sm')}
+                  className={cn(buttonVariants({ variant: 'outline', size: 'icon' }), 'rounded-full size-10')}
                   title={t('annuaire.detail.visit_website')}
                 >
                   <Globe className="size-4" />
@@ -379,7 +379,7 @@ export default function ExposantDetailPage() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="rounded-full size-10 shadow-sm"
+                  className="rounded-full size-10"
                   onClick={isCurrentlyBlocked ? handleUnblockExposant : handleBlockExposant}
                   disabled={blocking}
                   title={isCurrentlyBlocked ? t('annuaire.detail.unblock') : t('annuaire.detail.block')}
@@ -420,7 +420,7 @@ export default function ExposantDetailPage() {
         {/* Main */}
         <div className="space-y-6">
           {(exposant.long_description || exposant.video_url || exposant.brochure_url) && (
-            <Card className="border-0 shadow-sm py-0">
+            <Card className="border-0 py-0">
               {exposant.long_description && (
                 <CardContent className="p-6">
                   <h2 className="mb-4 text-lg font-semibold text-foreground">{t('annuaire.detail.about')}</h2>
@@ -463,7 +463,7 @@ export default function ExposantDetailPage() {
           )}
 
           {Array.isArray(exposant.gallery_urls) && (exposant.gallery_urls as string[]).length > 0 && (
-            <Card className="border-0 shadow-sm">
+            <Card className="border-0">
               <CardContent className="p-6">
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-foreground">{t('annuaire.detail.gallery')}</h2>
@@ -491,7 +491,7 @@ export default function ExposantDetailPage() {
             </Card>
           )}
 
-          <Card className="border-0 shadow-sm py-0">
+          <Card className="border-0 py-0">
             <CardContent className="p-6">
               <div className="mb-4 flex items-center gap-3">
                 <h2 className="text-lg font-semibold text-foreground">{t('annuaire.detail.posts')}</h2>
@@ -535,7 +535,7 @@ export default function ExposantDetailPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <Card className="border-0 shadow-sm py-0">
+          <Card className="border-0 py-0">
             <CardContent className="p-6">
               <h2 className="mb-5 text-lg font-semibold text-foreground">{t('annuaire.detail.company_details')}</h2>
               <dl className="space-y-4 text-sm">
@@ -640,7 +640,7 @@ export default function ExposantDetailPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm py-0">
+          <Card className="border-0 py-0">
             <CardContent className="p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-foreground">{t('annuaire.detail.products')}</h2>
@@ -656,7 +656,7 @@ export default function ExposantDetailPage() {
                   {produits.map((prod) => (
                     <div
                       key={prod.id}
-                      className="group relative overflow-hidden rounded-xl border border-border/50 bg-card transition-all hover:border-border hover:shadow-sm"
+                      className="group relative overflow-hidden rounded-xl border border-border/50 bg-card transition-all hover:border-border "
                     >
                       <div className="flex gap-3 p-3">
                         {prod.image_url ? (
