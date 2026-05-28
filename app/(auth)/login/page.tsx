@@ -27,7 +27,11 @@ function LoginPageContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    searchParams.get('error') === 'access_denied' 
+      ? "Votre compte est temporairement suspendu ou n'a pas les droits nécessaires. Si vous pensez qu'il s'agit d'une erreur, veuillez contacter le support à support@promote-connect.com" 
+      : null
+  );
   const [loading, setLoading] = useState(false);
   const adminOnly = searchParams.get('admin_only') === '1';
 
@@ -55,13 +59,13 @@ function LoginPageContent() {
 
       const { data: profile } = await supabaseClient
         .from('profiles')
-        .select('role, account_status')
+        .select('role, account_status, is_active')
         .eq('id', user.id)
         .single();
 
-      if (profile?.account_status === 'suspended') {
+      if (profile?.account_status === 'suspended' || profile?.is_active === false) {
         await supabaseClient.auth.signOut();
-        throw new Error('Votre compte est temporairement suspendu. Veuillez contacter le support.');
+        throw new Error("Votre compte est temporairement suspendu. Vous pouvez faire appel en envoyant un mail à l'administration/support : support@promote-connect.com");
       }
 
       if (profile?.account_status === 'blocked') {

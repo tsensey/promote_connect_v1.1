@@ -385,6 +385,43 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
+  // Sync auth metadata and ban status
+  const { data: userData } = await supabaseAdmin.auth.admin.getUserById(id);
+  if (userData?.user) {
+    const newMetaData = {
+      ...userData.user.user_metadata,
+      ...(role !== undefined && { role }),
+      ...(access_level !== undefined && { access_level }),
+      ...(full_name !== undefined && { full_name }),
+      ...(company !== undefined && { company }),
+      ...(sector !== undefined && { sector }),
+      ...(country !== undefined && { country }),
+      ...(pavillon !== undefined && { pavillon }),
+    };
+
+    await supabaseAdmin.auth.admin.updateUserById(id, { user_metadata: newMetaData });
+  }
+
+  // Auto-create exposant record if role changed to exposant
+  if (role === 'exposant') {
+    const { data: existingExposant } = await supabaseAdmin
+      .from('exposants')
+      .select('id')
+      .eq('profile_id', id)
+      .maybeSingle();
+
+    if (!existingExposant) {
+      const exposantName = company || full_name || 'Nouvel Exposant';
+      await supabaseAdmin.from('exposants').insert({
+        profile_id: id,
+        nom: exposantName,
+        secteur: sector || null,
+        pays: country || null,
+        pavillon: pavillon || null,
+      });
+    }
+  }
+
   return NextResponse.json({ success: true });
 }
 
@@ -435,21 +472,34 @@ export async function DELETE(request: Request) {
     await supabaseAdmin.from('conversations').delete().in('id', convoIds);
   }
 
+  const { data: exposantData } = await supabaseAdmin
+    .from('exposants')
+    .select('id')
+    .eq('profile_id', userId)
+    .maybeSingle();
+
+  if (exposantData?.id) {
+    await supabaseAdmin.from('produits').delete().eq('exposant_id', exposantData.id);
+  }
+
+  await supabaseAdmin.from('exposant_views').delete().eq('viewer_id', userId);
+  await supabaseAdmin.from('exposants').delete().eq('profile_id', userId);
+
   await supabaseAdmin.from('post_comments').delete().eq('author_id', userId);
-
   await supabaseAdmin.from('post_likes').delete().eq('user_id', userId);
-
   await supabaseAdmin.from('post_shares').delete().eq('user_id', userId);
-
+  await supabaseAdmin.from('post_reactions').delete().eq('user_id', userId);
+  await supabaseAdmin.from('post_saves').delete().eq('user_id', userId);
   await supabaseAdmin.from('posts').delete().eq('author_id', userId);
 
   await supabaseAdmin.from('rendez_vous').delete().or(`demandeur_id.eq.${userId},destinataire_id.eq.${userId}`);
+  
+  await supabaseAdmin.from('blocked_users').delete().or(`blocker_id.eq.${userId},blocked_id.eq.${userId}`);
+  await supabaseAdmin.from('subscriptions').delete().eq('profile_id', userId);
+  await supabaseAdmin.from('newsletter_subscriptions').delete().eq('profile_id', userId);
 
   await supabaseAdmin.from('support_messages').delete().eq('sender_id', userId);
-
   await supabaseAdmin.from('support_tickets').delete().eq('profile_id', userId);
-
-  await supabaseAdmin.from('exposants').delete().eq('profile_id', userId);
 
   await supabaseAdmin.from('user_preferences').delete().eq('profile_id', userId);
 

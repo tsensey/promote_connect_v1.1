@@ -27,9 +27,15 @@ export async function POST(request: Request) {
 
   const newPassword = randomBytes(9).toString('base64url').slice(0, 12);
 
+  const { data: userData } = await supabaseAdmin.auth.admin.getUserById(user_id);
+  const currentMetadata = userData?.user?.user_metadata || {};
+
   const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
     user_id,
-    { password: newPassword }
+    { 
+      password: newPassword,
+      user_metadata: { ...currentMetadata, temporary_password: true }
+    }
   );
 
   if (updateError) {
