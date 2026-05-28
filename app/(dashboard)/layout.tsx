@@ -108,7 +108,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
       <div
         className={cn(
-          'transition-[margin-left] duration-300 ease-in-out xl:ml-64',
+          'relative flex flex-col h-dvh transition-[margin-left] duration-300 ease-in-out xl:ml-64',
           collapsed && 'xl:ml-24'
         )}
       >
@@ -127,7 +127,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
         <TrialBanner />
 
-        <main className="px-2 pt-2 sm:px-6 xl:px-8 xl:pb-8" style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
+        <main className="flex-1 min-h-0 overflow-y-auto px-2 pt-2 sm:px-6 xl:px-8 xl:pb-8" style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
           <Suspense fallback={
             <div className="flex min-h-[60vh] items-center justify-center">
               <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />

@@ -83,7 +83,7 @@ function ConversationList({
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="border-b border-border/50 px-4 py-3">
-        <div className="mb-3 flex items-center justify-between mt-5">
+        <div className="mb-3 flex items-center justify-between">
           <h1 className="text-base font-semibold text-foreground">{t('chat.title')}</h1>
           <Button
             size="sm"
@@ -617,8 +617,16 @@ export default function ChatPage() {
 
   return (
     <div
-      className="-mx-4 -mt-6 flex overflow-hidden rounded-none border-0 sm:-mx-6 xl:-mx-8"
-      style={{ height: 'calc(100dvh - 64px)' }}
+      className={cn(
+        'flex h-full min-h-0 overflow-hidden bg-background',
+        // On neutralise le padding du layout (main)
+        '-mx-2 -mt-2 sm:-mx-6 xl:-mx-8',
+        // Sur mobile, on s'assure d'être au-dessus du menu du bas (géré par le layout via overflow: auto sur main)
+        // Mais comme on veut que SEUL le chat scrolle, on force h-[calc(100%+80px)] ou similaire ?
+        // Non, le layout a déjà pb-8 et padding-bottom 72px.
+        // Utilisons une approche plus directe : on veut couvrir le padding bottom du parent
+        '-mb-[calc(72px+8px+env(safe-area-inset-bottom,0px))]'
+      )}
     >
       {/* Liste des conversations */}
       <div

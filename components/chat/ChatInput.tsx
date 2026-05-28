@@ -138,7 +138,7 @@ export function ChatInput({
                 ? t('chat.photo')
                 : replyTo.attachment_type === 'document'
                 ? t('chat.document')
-                : replyTo.content}
+                : sanitizeText(replyTo.content)}
             </p>
           </div>
           <button
