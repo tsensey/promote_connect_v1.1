@@ -233,19 +233,6 @@ export default function FeedPage() {
             <CreatePost onSubmit={createPost} onUpload={uploadImage} />
           )}
 
-          <div className="flex items-center justify-between pb-2 pt-1">
-            <h2 className="text-lg font-bold tracking-tight">{t('feed.title')}</h2>
-            <Tabs value={mode} onValueChange={(v: string) => setMode(v as 'recent' | 'discover')} className="w-auto">
-              <TabsList className="grid w-full grid-cols-2 rounded-xl">
-                <TabsTrigger value="recent" className="rounded-lg text-xs">
-                  {t('feed.recent')}
-                </TabsTrigger>
-                <TabsTrigger value="discover" className="rounded-lg text-xs">
-                  {t('feed.discover')}
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
 
           {loading && posts.length === 0 ? (
             <Card className="border-border/60 p-0">
@@ -295,16 +282,13 @@ export default function FeedPage() {
               ))}
 
               {hasMore && (
-                <div ref={sentinelRef} className="flex justify-center py-4">
-                  <Button
-                    variant="outline"
-                    onClick={loadMore}
-                    disabled={loading}
-                    className="rounded-xl"
-                  >
-                    {loading && <Loader2 className="mr-2 size-4 animate-spin" />}
-                    {t('common.load_more')}
-                  </Button>
+                <div ref={sentinelRef} className="flex justify-center py-8">
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="size-8 animate-spin text-primary/60" />
+                    <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
+                      {t('feed.loading')}
+                    </p>
+                  </div>
                 </div>
               )}
             </>

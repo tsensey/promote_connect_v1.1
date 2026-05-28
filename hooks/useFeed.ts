@@ -33,7 +33,7 @@ export type Comment = PostCommentRow & {
   replies?: Comment[];
 };
 
-export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'recent') {
+export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discover') {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);

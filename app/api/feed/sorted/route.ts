@@ -57,26 +57,27 @@ export async function GET(request: Request) {
       return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
     });
   } else if (mode === 'discover') {
-    // Mode "Découvrir" : aléatoire pondéré (ratio depuis `platform_config.sponsored_weight_ratio`)
+    // Mode "Découvrir" : aléatoire pondéré
     const { sponsoredWeightRatio } = await getFeedConfig();
+    
+    // Seed based on current hour to maintain pagination stability within a short time window
+    const hourSeed = Math.floor(Date.now() / (1000 * 60 * 60));
 
     validPosts.sort((a, b) => {
-      // Calculate weight based on whether the post is sponsored
       const isASponsored = a.author.subscription_tier === 'paid' && a.author.exposants?.[0]?.is_featured;
       const isBSponsored = b.author.subscription_tier === 'paid' && b.author.exposants?.[0]?.is_featured;
 
       const aWeight = isASponsored ? sponsoredWeightRatio : 1;
       const bWeight = isBSponsored ? sponsoredWeightRatio : 1;
 
-      // Deterministic random seed per day/hour/post? For now, we can just use random since it's requested on load.
-      // Or to avoid duplicates on pagination, a random number per post id
-      const aRandom = cyrb128(a.id)[0] / 4294967296; // simple hash based random
-      const bRandom = cyrb128(b.id)[0] / 4294967296;
+      // Deterministic but time-sensitive random per post
+      const aRandom = cyrb128(a.id + hourSeed)[0] / 4294967296;
+      const bRandom = cyrb128(b.id + hourSeed)[0] / 4294967296;
 
       const aScore = aRandom * aWeight;
       const bScore = bRandom * bWeight;
 
-      return bScore - aScore; // Highest score first
+      return bScore - aScore;
     });
   }
 

@@ -70,7 +70,7 @@ export const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(({
         const { data, error } = await query;
         if (!error && data) {
           let results = data as Exhibitor[];
-          
+
           // Prioritize author if in results
           if (authorExposantId) {
             results = [...results].sort((a, b) => {
@@ -79,7 +79,7 @@ export const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(({
               return 0;
             });
           }
-          
+
           setExhibitors(results);
         }
       } finally {
@@ -101,7 +101,15 @@ export const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(({
     const atIndex = textBeforeCursor.lastIndexOf('@');
 
     if (atIndex !== -1) {
-      const query = textBeforeCursor.slice(atIndex + 1);
+      const textAfterAt = textBeforeCursor.slice(atIndex + 1);
+
+      // If there's a space after @, it's not a mention anymore
+      if (textAfterAt.includes(' ')) {
+        setOpen(false);
+        return;
+      }
+
+      const query = textAfterAt;
       // Only trigger if @ is at start or preceded by space
       if (atIndex === 0 || textBeforeCursor[atIndex - 1] === ' ') {
         setSearch(query);
@@ -118,19 +126,19 @@ export const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(({
     const cursorPosition = inputRef.current?.selectionStart || 0;
     const textBeforeCursor = value.slice(0, cursorPosition);
     const textAfterCursor = value.slice(cursorPosition);
-    
+
     const atIndex = textBeforeCursor.lastIndexOf('@');
     const startOfMention = textBeforeCursor.slice(0, atIndex);
-    
+
     const newValue = `${startOfMention}@${exposant.nom} ${textAfterCursor}`;
     onChange(newValue);
     if (onMention) onMention(exposant);
-    
+
     // Reset search state completely
     setOpen(false);
     setSearch('');
     setExhibitors([]);
-    
+
     // Focus back and set cursor
     setTimeout(() => {
       inputRef.current?.focus();
@@ -155,9 +163,9 @@ export const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(({
         )}
       />
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverContent 
-          className="p-0 w-[280px] border-border/40" 
-          align="start" 
+        <PopoverContent
+          className="p-0 w-[280px] border-border/40"
+          align="start"
           side="top"
           sideOffset={4}
           anchor={anchorRef}
