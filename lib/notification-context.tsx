@@ -123,23 +123,8 @@ export function NotificationStateProvider({ children }: { children: React.ReactN
 
     safeFetch();
 
-    const channel = supabaseClient
-      .channel('realtime-notifications')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'messages' },
-        () => fetchUnreadCount()
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'notifications' },
-        () => fetchNotifications()
-      )
-      .subscribe();
-
     return () => {
       mounted = false;
-      supabaseClient.removeChannel(channel);
     };
   }, []);
 

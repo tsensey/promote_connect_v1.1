@@ -82,10 +82,15 @@ export function UserTopbar({
             <Button
               variant="ghost"
               size="icon-sm"
-              className="hidden rounded-full text-muted-foreground hover:text-foreground sm:inline-flex"
+              className="hidden relative rounded-full text-muted-foreground hover:text-foreground sm:inline-flex"
               onClick={() => router.push("/chat")}
             >
               <MessageSquare className="size-4" />
+              {unreadMessages > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground ring-2 ring-background">
+                  {unreadMessages > 99 ? '99+' : unreadMessages}
+                </span>
+              )}
             </Button>
             <Button
               variant="ghost"

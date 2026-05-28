@@ -601,6 +601,8 @@ export const PostCard = memo(function PostCard({
                       width={0}
                       height={0}
                       sizes="100vw"
+                      priority={priority}
+                      unoptimized={images[0].toLowerCase().endsWith('.gif')}
                       className="w-full h-auto cursor-pointer hover:opacity-95 transition-opacity"
                       style={{ width: '100%', height: 'auto' }}
                       onClick={() => {
@@ -626,6 +628,8 @@ export const PostCard = memo(function PostCard({
                           src={url}
                           alt=""
                           fill
+                          priority={priority}
+                          unoptimized={url.toLowerCase().endsWith('.gif')}
                           className="object-cover cursor-pointer hover:opacity-95 transition-opacity"
                           onClick={() => {
                             setSelectedImageIdx(i);
@@ -653,6 +657,8 @@ export const PostCard = memo(function PostCard({
                       width={0}
                       height={0}
                       sizes="100vw"
+                      priority={priority}
+                      unoptimized={images[0].toLowerCase().endsWith('.gif')}
                       className="w-full h-auto cursor-pointer hover:opacity-95 transition-opacity"
                       style={{ width: '100%', height: 'auto' }}
                       onClick={() => {
@@ -673,6 +679,8 @@ export const PostCard = memo(function PostCard({
                           src={url}
                           alt=""
                           fill
+                          priority={priority}
+                          unoptimized={url.toLowerCase().endsWith('.gif')}
                           className="object-cover cursor-pointer hover:opacity-95 transition-opacity"
                           onClick={() => {
                             setSelectedImageIdx(i + 1);

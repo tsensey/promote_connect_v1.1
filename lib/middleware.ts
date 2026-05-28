@@ -28,13 +28,13 @@ async function getUserProfile(
     .select('role, account_status, is_active, subscription_tier, trial_ends_at')
     .eq('id', userId)
     .single() as never) as { data: UserProfile | null, error: any };
-    
+
   if (error) {
     console.error('[Middleware] Error fetching profile for user', userId, ':', error);
   } else {
     console.log('[Middleware] Successfully fetched profile for user', userId, 'role:', data?.role);
   }
-  
+
   return data;
 }
 
@@ -54,8 +54,8 @@ function hasExpiredAccess(profile: UserProfile): boolean {
   }
   // Vérifier subscription_status legacy (Stripe)
   if (profile.subscription_status === 'expired' ||
-      profile.subscription_status === 'past_due' ||
-      profile.subscription_status === 'canceled') {
+    profile.subscription_status === 'past_due' ||
+    profile.subscription_status === 'canceled') {
     return true;
   }
   return false;

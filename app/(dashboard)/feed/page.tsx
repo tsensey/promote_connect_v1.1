@@ -297,12 +297,20 @@ export default function FeedPage() {
 
         <div className="hidden space-y-4 lg:col-span-3 lg:block">
           <div className="sticky top-20 space-y-4">
-            {randomProducts.slice(0, 3).map((product) => {
+            {randomProducts.slice(0, 3).map((product, index) => {
               return (
                 <Card key={product.id} className="border-border/60 p-0 overflow-hidden group hover:transition-all">
                   {product.image_url && (
                     <div className="relative h-28 w-full overflow-hidden">
-                      <Image src={product.image_url} alt={product.nom} fill sizes="300px" className="object-cover transition-transform group-hover:scale-105" />
+                      <Image 
+                        src={product.image_url} 
+                        alt={product.nom} 
+                        fill 
+                        sizes="300px" 
+                        priority={index === 0}
+                        unoptimized={product.image_url.toLowerCase().endsWith('.gif')}
+                        className="object-cover transition-transform group-hover:scale-105" 
+                      />
                     </div>
                   )}
                   <CardContent className={product.image_url ? "p-3" : "p-3"}>

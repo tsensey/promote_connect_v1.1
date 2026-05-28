@@ -227,6 +227,8 @@ export default function VitrineExposantPage() {
               alt={t('vitrine.detail.cover_alt', { name: exposant.nom })}
               fill
               sizes="100vw"
+              priority
+              unoptimized={exposant.cover_url.toLowerCase().endsWith('.gif')}
               className="object-cover"
             />
           ) : (
@@ -246,7 +248,15 @@ export default function VitrineExposantPage() {
             <div className="relative -mt-14 shrink-0 sm:-mt-16">
               <div className="relative flex size-24 items-center justify-center rounded-2xl border-4 border-background bg-primary/10 text-3xl font-bold text-primary">
                 {exposant.logo_url ? (
-                  <Image src={exposant.logo_url} alt={exposant.nom} fill sizes="96px" className="rounded-xl object-contain" />
+                  <Image 
+                    src={exposant.logo_url} 
+                    alt={exposant.nom} 
+                    fill 
+                    sizes="96px" 
+                    priority 
+                    unoptimized={exposant.logo_url.toLowerCase().endsWith('.gif')}
+                    className="rounded-xl object-contain" 
+                  />
                 ) : (
                   exposant.nom.charAt(0).toUpperCase()
                 )}
@@ -482,13 +492,21 @@ export default function VitrineExposantPage() {
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {produits.map((prod) => (
+              {produits.map((prod, index) => (
                 <Dialog key={prod.id}>
                   <DialogTrigger>
                     <div className="cursor-pointer rounded-xl border border-border/60 bg-muted/20 p-5 transition-all hover:border-primary/30 hover:hover:bg-muted/40 group">
                       {prod.image_url && (
                         <div className="relative mb-3 h-40 w-full">
-                          <Image src={prod.image_url} alt={prod.nom} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="rounded-lg object-cover" />
+                          <Image 
+                            src={prod.image_url} 
+                            alt={prod.nom} 
+                            fill 
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" 
+                            priority={index < 2}
+                            unoptimized={prod.image_url.toLowerCase().endsWith('.gif')}
+                            className="rounded-lg object-cover" 
+                          />
                         </div>
                       )}
                       <h3 className="font-heading text-lg font-semibold text-foreground group-hover:text-primary transition-colors">

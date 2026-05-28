@@ -140,6 +140,8 @@ export function CreatePost({
   const handleRemoveImage = useCallback((index: number) => {
     setImageFiles((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => {
+      // Nettoyer l'URL pour la mémoire
+      URL.revokeObjectURL(prev[index]);
       const newPreviews = prev.filter((_, i) => i !== index);
       if (newPreviews.length === 0 && fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -170,6 +172,9 @@ export function CreatePost({
         );
 
         if (result && !result.error) {
+          // Nettoyer les URLs previews
+          imagePreviews.forEach(url => URL.revokeObjectURL(url));
+          
           setContent("");
           setImageFiles([]);
           setImagePreviews([]);
@@ -180,17 +185,21 @@ export function CreatePost({
         } else if (result && result.error) {
           toast.error(result.error.message || t('feed.create.post_error'));
         }
-      } catch {
+      } catch (err: any) {
+        console.error("Post error:", err);
         toast.error(t('feed.create.post_error'));
       } finally {
         setSubmitting(false);
         setUploading(false);
       }
     },
-    [content, postType, imageFiles, submitting, isOverLimit, onSubmit, onUpload, t],
+    [content, postType, imageFiles, imagePreviews, submitting, isOverLimit, onSubmit, onUpload, t, initiallyExpanded, onSuccess],
   );
 
   const cancelCreate = () => {
+    // Nettoyer les URLs previews
+    imagePreviews.forEach(url => URL.revokeObjectURL(url));
+    
     setContent("");
     setImageFiles([]);
     setImagePreviews([]);
@@ -332,6 +341,7 @@ export function CreatePost({
                         width={0}
                         height={0}
                         sizes="100vw"
+                        unoptimized={imageFiles[idx]?.type === 'image/gif'}
                         className="max-h-72 w-full object-cover"
                         style={{ width: '100%', height: 'auto' }}
                       />
@@ -423,7 +433,7 @@ export function CreatePost({
                       <Send className="size-3.5" />
                     )}
                     {uploading
-                      ? t('feed.post.uploading')
+                      ? (imageFiles.length > 1 ? t('feed.post.uploading') : t('feed.post.uploading')) 
                       : submitting
                         ? t('feed.create.publishing')
                         : t('feed.create.publish')}

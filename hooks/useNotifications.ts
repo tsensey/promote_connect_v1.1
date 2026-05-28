@@ -15,7 +15,7 @@ type Post = Database['public']['Tables']['posts']['Row'];
 export function useNotifications() {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const { activeConversationId } = useNotificationState();
+  const { activeConversationId, refreshUnreadCount, refreshNotifications } = useNotificationState();
   const myIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -66,6 +66,7 @@ export function useNotifications() {
                   : t('notifications.new_message');
 
           playMessageSound();
+          refreshUnreadCount(); // Immédiat !
 
           toast(senderName, {
             description: preview,
@@ -108,6 +109,8 @@ export function useNotifications() {
             ? post.content.slice(0, 80) + '…'
             : post.content;
 
+          playMessageSound(); // Pip sonore pour les posts aussi
+          
           toast(t('notifications.new_post'), {
             description: `${authorName} : ${preview}`,
             action: {
@@ -122,9 +125,59 @@ export function useNotifications() {
       )
       .subscribe();
 
+    // ─── Notifications Générales (Likes, Commentaires, Mentions) ────────
+    const notificationChannel = supabaseClient
+      .channel('realtime-notifications-general')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `profile_id=eq.${user.id}`,
+        },
+        async (payload) => {
+          const n = payload.new as any;
+          
+          const { data: sender } = await supabaseClient
+            .from('profiles')
+            .select('full_name')
+            .eq('id', n.sender_id)
+            .single();
+
+          const senderName = sender?.full_name ?? t('notifications.someone');
+          let message = '';
+          
+          switch (n.type) {
+            case 'like': message = t('notifications.liked_post', { name: senderName }); break;
+            case 'comment': message = t('notifications.commented_post', { name: senderName }); break;
+            case 'mention_post': message = t('notifications.mentioned_post', { name: senderName }); break;
+            case 'mention_comment': message = t('notifications.mentioned_comment', { name: senderName }); break;
+            default: message = t('notifications.new_activity', { name: senderName });
+          }
+
+          playMessageSound();
+          refreshNotifications(); // Immédiat !
+
+          toast(t('notifications.title'), {
+            description: message,
+            action: {
+              label: t('notifications.view'),
+              onClick: () => {
+                if (n.data?.post_id) window.location.href = `/feed#${n.data.post_id}`;
+                else if (n.data?.conversation_id) window.location.href = `/chat?conv=${n.data.conversation_id}`;
+              },
+            },
+            duration: 5000,
+          });
+        }
+      )
+      .subscribe();
+
     return () => {
       supabaseClient.removeChannel(messageChannel);
       supabaseClient.removeChannel(postChannel);
+      supabaseClient.removeChannel(notificationChannel);
     };
-  }, [user, activeConversationId]);
+  }, [user, activeConversationId, refreshUnreadCount, refreshNotifications]);
 }

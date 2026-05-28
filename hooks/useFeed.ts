@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
-import { compressImages } from '@/lib/compress-image';
+import { compressImages, compressImage } from '@/lib/compress-image';
 import type { Database } from '@/types/database.types';
 
 type PostRow = Database['public']['Tables']['posts']['Row'];
@@ -88,7 +88,7 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
             .from('posts')
             .select(`
               *,
-              author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, is_featured))
+              author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url, is_featured))
             `)
             .in('id', repostOfIds);
           if (repostData) {
@@ -171,7 +171,7 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
               .from('posts')
               .select(`
                 *,
-                author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, is_featured))
+                author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url, is_featured))
               `)
               .eq('id', row.id)
               .single();
@@ -184,7 +184,7 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
                   .from('posts')
                   .select(`
                     *,
-                    author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, is_featured))
+                    author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url, is_featured))
                   `)
                   .eq('id', d.repost_of_id)
                   .single();
@@ -228,34 +228,46 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
   }, [hasMore, loading, fetchPosts]);
 
   const uploadImage = useCallback(async (files: File[]): Promise<string[]> => {
-    const compressed = await compressImages(files);
     const { data: session } = await supabaseClient.auth.getSession();
     const userId = session?.session?.user?.id;
     if (!userId) throw new Error('Not authenticated');
 
-    const urls: string[] = [];
-    for (const file of compressed) {
-      const ext = file.type === 'image/gif' ? 'gif' : 'jpg';
+    // Traitement et upload en parallèle pour plus de rapidité
+    const uploadPromises = files.map(async (file) => {
+      // 1. Compression (via Web Worker)
+      const compressedFile = await compressImage(file);
+      
+      // 2. Génération du nom de fichier
+      // 2. Détermination de l'extension et du type MIME correct
+      const mimeType = compressedFile.type;
+      let ext = 'jpg';
+      if (mimeType === 'image/gif') ext = 'gif';
+      else if (mimeType === 'image/png') ext = 'png';
+      else if (mimeType === 'image/webp') ext = 'webp';
+      
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`;
       const filePath = `posts/${fileName}`;
 
+      // 3. Upload vers Supabase Storage
       const { data, error } = await supabaseClient.storage
         .from('feed-images')
-        .upload(filePath, file, {
-          contentType: file.type === 'image/gif' ? 'image/gif' : 'image/jpeg',
+        .upload(filePath, compressedFile, {
+          contentType: mimeType,
           cacheControl: '31536000',
           upsert: false,
         });
 
       if (error) throw new Error(`Upload error: ${error.message}`);
 
+      // 4. Récupération de l'URL publique
       const { data: urlData } = supabaseClient.storage
         .from('feed-images')
         .getPublicUrl(data.path);
 
-      urls.push(urlData.publicUrl);
-    }
-    return urls;
+      return urlData.publicUrl;
+    });
+
+    return Promise.all(uploadPromises);
   }, []);
 
   const createPost = useCallback(
@@ -302,7 +314,7 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
         .insert(insertData)
         .select(`
           *,
-          author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, is_featured))
+          author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url, is_featured))
         `)
         .single();
 
@@ -345,7 +357,7 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
       .insert(insertData)
       .select(`
         *,
-        author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, is_featured))
+        author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url, is_featured))
       `)
       .single();
 
@@ -357,7 +369,7 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
           .from('posts')
           .select(`
             *,
-            author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, is_featured))
+            author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url, is_featured))
           `)
           .eq('id', d.repost_of_id)
           .single();
@@ -609,7 +621,7 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
       .from('post_comments')
       .select(`
         *,
-        author:profiles!post_comments_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id))
+        author:profiles!post_comments_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url))
       `)
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
@@ -651,7 +663,7 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
         .insert(insertData)
         .select(`
           *,
-          author:profiles!post_comments_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id))
+          author:profiles!post_comments_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url))
         `)
         .single();
 

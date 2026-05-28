@@ -30,7 +30,7 @@ export async function GET(request: Request) {
       *,
       author:profiles!posts_author_id_fkey(
         id, full_name, company, avatar_url, role, subscription_tier, 
-        exposants!exposants_profile_id_fkey(id, is_featured)
+        exposants!exposants_profile_id_fkey(id, nom, is_featured)
       )
     `);
 
