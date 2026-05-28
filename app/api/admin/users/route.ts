@@ -504,10 +504,10 @@ export async function DELETE(request: Request) {
   await supabaseAdmin.from('rendez_vous').delete().or(`demandeur_id.eq.${userId},destinataire_id.eq.${userId}`);
   
   await supabaseAdmin.from('blocked_users').delete().or(`blocker_id.eq.${userId},blocked_id.eq.${userId}`);
-  await supabaseAdmin.from('subscriptions').delete().eq('profile_id', userId);
+  await supabaseAdmin.from('subscriptions' as any).delete().eq('profile_id', userId);
   await supabaseAdmin.from('newsletter_subscriptions').delete().eq('profile_id', userId);
 
-  await supabaseAdmin.from('support_messages').delete().eq('sender_id', userId);
+  await supabaseAdmin.from('support_messages' as any).delete().eq('sender_id', userId);
   await supabaseAdmin.from('support_tickets').delete().eq('profile_id', userId);
 
   await supabaseAdmin.from('user_preferences').delete().eq('profile_id', userId);
