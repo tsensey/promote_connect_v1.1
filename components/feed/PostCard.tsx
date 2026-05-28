@@ -38,6 +38,7 @@ import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
 import type { useFeed, Comment } from '@/hooks/useFeed';
 import { MentionInput } from '@/components/shared/MentionInput';
+import { ParsedMentionText } from '@/components/shared/ParsedMentionText';
 import { supabaseClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth/context';
 import { getDisplayName, getAvatarUrl, getCompanyName, getExposantId } from '@/components/shared/UserIdentity';
@@ -184,7 +185,9 @@ function CommentItem({
                     : ''}
                 </span>
               </div>
-              <p className="text-sm text-foreground/85 leading-relaxed">{comment.content}</p>
+              <p className="text-sm text-foreground/85 leading-relaxed">
+                <ParsedMentionText content={comment.content} />
+              </p>
             </div>
 
             {depth < 2 && (

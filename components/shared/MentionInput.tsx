@@ -125,7 +125,11 @@ export const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(({
     const newValue = `${startOfMention}@${exposant.nom} ${textAfterCursor}`;
     onChange(newValue);
     if (onMention) onMention(exposant);
+    
+    // Reset search state completely
     setOpen(false);
+    setSearch('');
+    setExhibitors([]);
     
     // Focus back and set cursor
     setTimeout(() => {

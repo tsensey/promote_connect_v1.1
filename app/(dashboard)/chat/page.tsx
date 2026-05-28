@@ -83,7 +83,7 @@ function ConversationList({
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="border-b border-border/50 px-4 py-3">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex items-center justify-between mt-5">
           <h1 className="text-base font-semibold text-foreground">{t('chat.title')}</h1>
           <Button
             size="sm"

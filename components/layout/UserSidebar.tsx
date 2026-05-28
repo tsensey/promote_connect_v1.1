@@ -159,7 +159,7 @@ export function UserSidebar({
         )}>
           <div className="relative size-8 shrink-0 overflow-hidden rounded-lg-primary/20 bg-primary/5">
             <Image
-              src="/logo-promote.png"
+              src="/logo_transparent.png"
               alt="Logo"
               fill
               sizes="32px"
@@ -195,7 +195,7 @@ export function UserSidebar({
 
       <div className="flex-1 overflow-y-auto px-3 py-4">
         <div className={cn(
-        'rounded-xl border border-sidebar-border bg-sidebar-accent/50',
+        'rounded-xl border border-sidebar-border bg-sidebar-accent/50 mb-5',
         collapsed ? 'p-2 flex justify-center' : 'p-3'
       )}>
         <div className={cn(
