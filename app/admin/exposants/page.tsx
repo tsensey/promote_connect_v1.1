@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
+import { useAuth } from '@/lib/auth/context';
 
 type Exposant = Database['public']['Tables']['exposants']['Row'];
 
@@ -41,6 +42,8 @@ interface Espace {
 export default function AdminExposantsPage() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { session } = useAuth();
+  const token = session?.access_token || null;
   const [exposants, setExposants] = useState<Exposant[]>([]);
   const [espaces, setEspaces] = useState<Espace[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,6 +131,7 @@ export default function AdminExposantsPage() {
 
       const response = await fetch('/api/admin/espaces/exposants/import', {
         method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body,
       });
 
