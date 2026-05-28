@@ -5,6 +5,7 @@ import {
   Heading,
   Hr,
   Html,
+  Img,
   Link,
   Preview,
   Section,
@@ -30,6 +31,7 @@ export default function WelcomeEmail({
     { daily: 'Quotidienne', weekly: 'Hebdomadaire', monthly: 'Mensuelle' }[
       frequency
     ] || 'Hebdomadaire';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://promote-connect.com';
 
   return (
     <Html>
@@ -38,7 +40,7 @@ export default function WelcomeEmail({
       <Body style={main}>
         <Container style={container}>
           <Section style={header}>
-            <Text style={headerLabel}>PROMOTE-CONNECT</Text>
+            <Img src={`${baseUrl}/logo-promote.png`} width="180" height="auto" alt="PROMOTE-CONNECT" style={logo} />
             <Heading style={headerTitle}>
               Bienvenue à la newsletter !
             </Heading>
@@ -123,13 +125,8 @@ const header = {
   color: '#ffffff',
 };
 
-const headerLabel = {
-  margin: '0 0 8px',
-  fontSize: '11px',
-  fontWeight: 700,
-  letterSpacing: '0.28em',
-  textTransform: 'uppercase' as const,
-  opacity: 0.78,
+const logo = {
+  margin: '0 0 16px',
 };
 
 const headerTitle = {
