@@ -11,14 +11,17 @@ CREATE TABLE IF NOT EXISTS post_shares (
 
 ALTER TABLE post_shares ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Post shares are viewable by authenticated users" ON post_shares;
 CREATE POLICY "Post shares are viewable by authenticated users"
   ON post_shares FOR SELECT
   USING (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "Users can share posts" ON post_shares;
 CREATE POLICY "Users can share posts"
   ON post_shares FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can unshare posts" ON post_shares;
 CREATE POLICY "Users can unshare posts"
   ON post_shares FOR DELETE
   USING (auth.uid() = user_id);
