@@ -6,6 +6,7 @@ import {
   Heading,
   Hr,
   Html,
+  Link,
   Preview,
   Section,
   Text,
@@ -96,6 +97,9 @@ export default function RdvConfirmationEmail({
             <Text style={footerSmall}>
               PROMOTE-CONNECT — Plateforme de networking professionnel
             </Text>
+            <Text style={footerSmall}>
+              Conçu par <Link href="https://bbit-it.com" style={signatureLink}>BBIT Sarl</Link>
+            </Text>
           </Section>
         </Container>
       </Body>
@@ -130,7 +134,7 @@ const container = {
 
 const header = {
   padding: '32px',
-  backgroundColor: '#4f46e5',
+  backgroundColor: '#912450',
   color: '#ffffff',
 };
 
@@ -243,4 +247,9 @@ const footerSmall = {
   margin: '0',
   fontSize: '12px',
   color: '#94a3b8',
+};
+
+const signatureLink = {
+  color: '#94a3b8',
+  textDecoration: 'underline',
 };

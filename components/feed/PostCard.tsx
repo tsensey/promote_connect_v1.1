@@ -249,8 +249,6 @@ export const PostCard = memo(function PostCard({
   onGetComments,
   onAddComment,
 }: PostCardProps) {
-
-  console.log(post)
   const { t, locale } = useTranslation();
   const [comments, setComments] = useState<Comment[]>([]);
   const [showComments, setShowComments] = useState(false);

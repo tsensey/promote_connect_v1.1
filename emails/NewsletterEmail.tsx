@@ -72,6 +72,9 @@ export default function NewsletterEmail({
             <Text style={footerSmall}>
               {year} PROMOTE. Tous droits réservés.
             </Text>
+            <Text style={footerSmall}>
+              Conçu par <Link href="https://bbit-it.com" style={signatureLink}>BBIT Sarl</Link>
+            </Text>
           </Section>
         </Container>
       </Body>
@@ -171,4 +174,9 @@ const footerSmall = {
   margin: '4px 0 0',
   fontSize: '11px',
   color: '#94a3b8',
+};
+
+const signatureLink = {
+  color: '#94a3b8',
+  textDecoration: 'underline',
 };
