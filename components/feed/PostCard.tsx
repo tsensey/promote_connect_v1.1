@@ -249,6 +249,8 @@ export const PostCard = memo(function PostCard({
   onGetComments,
   onAddComment,
 }: PostCardProps) {
+
+  console.log(post)
   const { t, locale } = useTranslation();
   const [comments, setComments] = useState<Comment[]>([]);
   const [showComments, setShowComments] = useState(false);
@@ -475,7 +477,6 @@ export const PostCard = memo(function PostCard({
               </AuthorLink>
               {(displayAuthor as Record<string, unknown>).subscription_tier === 'paid' && Boolean((postAuthorExposants?.[0] as Record<string, unknown> | undefined)?.is_featured) && (
                 <span className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary ring-1 ring-primary/20">
-                  <Sparkles className="size-3" />
                   {t('feed.sponsored')}
                 </span>
               )}

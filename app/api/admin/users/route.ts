@@ -357,6 +357,9 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Niveau d'acces invalide" }, { status: 400 });
     }
     updateData.access_level = access_level;
+    // Map access_level to subscription_tier for the middleware to correctly apply/remove restrictions
+    // @ts-ignore - ensuring it's available even if types are outdated
+    updateData.subscription_tier = access_level === 'premium' ? 'paid' : 'free_trial';
   }
 
   if (full_name !== undefined) updateData.full_name = full_name;
@@ -367,6 +370,10 @@ export async function PATCH(request: Request) {
 
   if (is_active !== undefined) {
     updateData.is_active = is_active;
+    // Set account_status so the middleware's isAccountBlocked works properly
+    // @ts-ignore
+    updateData.account_status = is_active ? 'active' : 'suspended';
+    
     if (!is_active) {
       updateData.suspended_at = new Date().toISOString();
       updateData.suspended_reason = suspension_reason || null;
@@ -397,6 +404,8 @@ export async function PATCH(request: Request) {
       ...(sector !== undefined && { sector }),
       ...(country !== undefined && { country }),
       ...(pavillon !== undefined && { pavillon }),
+      ...(access_level !== undefined && { subscription_tier: access_level === 'premium' ? 'paid' : 'free_trial' }),
+      ...(is_active !== undefined && { account_status: is_active ? 'active' : 'suspended' }),
     };
 
     await supabaseAdmin.auth.admin.updateUserById(id, { user_metadata: newMetaData });

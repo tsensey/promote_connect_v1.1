@@ -170,7 +170,7 @@ export default function FeedPage() {
     <div className="mx-auto max-w-6xl space-y-6 pb-10">
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="hidden space-y-4 lg:col-span-3 lg:block">
-          <div className="sticky top-20 space-y-4">
+          <div className="sticky top-0 space-y-4">
             <Card className="border-border/60 p-0">
               <CardContent className="p-3">
                 <div className="mb-4 flex items-center gap-2">
@@ -296,7 +296,7 @@ export default function FeedPage() {
         </div>
 
         <div className="hidden space-y-4 lg:col-span-3 lg:block">
-          <div className="sticky top-20 space-y-4">
+          <div className="sticky top-0 space-y-4">
             {randomProducts.slice(0, 3).map((product, index) => {
               return (
                 <Card key={product.id} className="border-border/60 p-0 overflow-hidden group hover:transition-all">
