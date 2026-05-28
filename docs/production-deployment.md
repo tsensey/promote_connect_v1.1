@@ -29,44 +29,75 @@ Le but de ce guide est de déployer une application **totalement vierge** (aucun
 
 ## 2. Déploiement du Backend (Supabase Self-Hosted)
 
-### 2.1. Installation de Supabase
-1. Clonez le dépôt officiel de Supabase sur le VPS :
+### 2.1. Cloner et Configurer Supabase sur le VPS
+1. Connectez-vous à votre VPS en SSH.
+2. Clonez le dépôt officiel de Supabase :
    ```bash
    git clone --depth 1 https://github.com/supabase/supabase
    cd supabase/docker
    cp .env.example .env
    ```
-2. Modifiez le `.env` pour sécuriser les accès :
-   - `POSTGRES_PASSWORD` : mot de passe très fort
-   - `JWT_SECRET` : générez un JWT secret fort
-   - `ANON_KEY` et `SERVICE_ROLE_KEY` : générez-les à partir du JWT secret
-   - `SITE_URL` : `https://promote-connect.pro`
-   - `API_EXTERNAL_URL` : `https://api.promote-connect.pro`
 
-3. Démarrez les conteneurs :
+3. **Génération des clés de sécurité :**  
+   Supabase fournit des scripts pour générer des clés robustes. Toujours dans le dossier `supabase/docker`, exécutez :
+   ```bash
+   sh utils/generate-keys.sh
+   sh utils/add-new-auth-keys.sh
+   ```
+   *Ces commandes vont automatiquement pré-remplir votre fichier `.env` avec des clés sécurisées (`JWT_SECRET`, `ANON_KEY`, `SERVICE_ROLE_KEY`, etc.).*
+
+4. **Édition du fichier `.env` :**  
+   Ouvrez le fichier `.env` (`nano .env`) et personnalisez les variables suivantes :
+   - `POSTGRES_PASSWORD` : Définissez un mot de passe extrêmement fort.
+   - `SITE_URL` : `https://promote-connect.pro` (l'URL de votre application Next.js).
+   - `API_EXTERNAL_URL` : `https://api.promote-connect.pro` (l'URL de votre API Supabase gérée via Nginx).
+   - `POOLER_TENANT_ID` : Prenez note de cette valeur (par défaut `your-tenant-id`), elle est cruciale pour le pooler de connexions.
+
+5. **Démarrer les services Supabase :**
    ```bash
    docker-compose up -d
    ```
+   *Supabase va télécharger et lancer une quinzaine de conteneurs (Studio, Postgres, GoTrue, Realtime, Storage, etc.).*
 
-### 2.2. Configuration et Migration de la Base
-1. Sur votre **machine locale** (où le projet PROMOTE-CONNECT est cloné), connectez-vous à la base distante pour y pousser la structure :
+### 2.2. Migration de la Base de Données (Push) depuis votre ordinateur
+Contrairement au projet hébergé sur le Cloud, la version auto-hébergée présente des particularités (notamment avec Supavisor et le TLS).
+
+Sur votre **machine locale** (où le code source de PROMOTE-CONNECT est situé), vous allez transférer la structure de la base vers le VPS.
+
+1. **Construire l'URL de connexion :**  
+   Vous devez utiliser le format `postgres.<POOLER_TENANT_ID>` comme nom d'utilisateur (afin de traverser le Pooler Supavisor).
    ```bash
-   # Remplacez les valeurs par celles de votre VPS
-   export SUPABASE_DB_URL="postgresql://postgres:<POSTGRES_PASSWORD>@187.124.0.110:5432/postgres"
-   
-   # Appliquer les migrations (crée les tables, RLS, Storage)
-   supabase db push --db-url $SUPABASE_DB_URL
+   # Remplacez <POSTGRES_PASSWORD> et <POOLER_TENANT_ID> par les valeurs de votre .env sur le VPS
+   export SUPABASE_DB_URL="postgresql://postgres.<POOLER_TENANT_ID>:<POSTGRES_PASSWORD>@187.124.0.110:5432/postgres"
    ```
 
-2. Assurez-vous que les buckets Storage nécessaires sont bien créés (`feed-images`, `vitrine-images`, `chat_media`, `avatars`).
+2. **Désactiver la vérification SSL/TLS (si pas de tunnel SSH) :**  
+   Le client `supabase` force la vérification TLS par défaut, ce qui échoue sur l'auto-hébergement standard. Forcez la désactivation via la variable `PGSSLMODE` :
+   ```bash
+   PGSSLMODE=disable npx supabase db push --db-url $SUPABASE_DB_URL
+   ```
 
-### 2.3. Edge Functions
-Le self-hosting des Edge Functions nécessite un serveur Deno. Supabase Docker inclut le service `edge-runtime`.
-Déployez les fonctions depuis votre machine locale vers le serveur auto-hébergé :
-```bash
-supabase functions deploy --project-ref <LOCAL_OR_REMOTE_REF>
-```
-*Note: Alternativement, les fonctions (newsletter, push, rdv) peuvent être adaptées dans des API routes Next.js sécurisées ou des workflows n8n pour simplifier l'architecture en self-hosting.*
+*(Alternative plus sécurisée : créez un tunnel SSH `ssh -L 5432:localhost:5432 root@187.124.0.110 -N -f` et poussez sur `localhost:5432` sans avoir besoin d'ouvrir le port 5432 sur internet).*
+
+### 2.3. Configuration du Storage et des Edge Functions
+1. **Buckets Storage :**  
+   Une fois les migrations terminées, assurez-vous que les buckets sont créés et configurés : `feed-images`, `vitrine-images`, `chat_media`, `avatars`.
+   
+2. **Edge Functions (Le piège du Self-Hosting) :**  
+   Contrairement à Supabase Cloud, la commande CLI `supabase functions deploy` **ne fonctionne pas** pour un VPS auto-hébergé. L'environnement `edge-runtime` lit directement les fonctions depuis un dossier local.
+   
+   **Pour déployer vos fonctions :**
+   1. Sur votre VPS, repérez le dossier des volumes Supabase (généralement `/opt/supabase/docker/volumes/functions/`).
+   2. Depuis votre machine locale, transférez le dossier de vos fonctions via `scp` ou `rsync` :
+      ```bash
+      scp -r ./supabase/functions/* root@187.124.0.110:/chemin/vers/supabase/docker/volumes/functions/
+      ```
+   3. Sur le VPS, redémarrez le conteneur Edge Runtime pour qu'il prenne en compte les nouveaux fichiers :
+      ```bash
+      docker restart supabase-edge-runtime
+      ```
+      
+   *Note : Dans une architecture 100% auto-hébergée (Self-hosted) avec n8n, il est très souvent recommandé de déléguer les tâches complexes (Newsletters, Relances B2B) à n8n ou à des API Routes Next.js protégées, plutôt que de maintenir un serveur Edge Deno complet qui complique la gestion des déploiements.*
 
 ---
 
