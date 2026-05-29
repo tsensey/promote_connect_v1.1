@@ -78,12 +78,20 @@ export function MarketingFooter() {
             </h4>
             <ul className="space-y-3">
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/condition"
                   className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   {t('landing.footer.cgu')}
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/privacy"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Politique de confidentialité
+                </Link>
               </li>
               <li>
                 <Link

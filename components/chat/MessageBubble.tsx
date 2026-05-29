@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { memo, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Check, CheckCheck, Reply, FileText, ExternalLink } from 'lucide-react';
+import { Check, CheckCheck, Reply, FileText, ExternalLink, X } from 'lucide-react';
 import type { EnrichedMessage, ProductAttachment } from '@/hooks/useChat';
 import { cn } from '@/lib/utils';
 import { sanitizeHTML, sanitizeText } from '@/lib/sanitize';
@@ -142,13 +142,13 @@ function ImageAttachment({ url }: { url: string }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <div className="relative mt-1 max-h-60 max-w-[240px]">
+      <div className="relative mt-1 h-48 w-48 sm:h-60 sm:w-60">
         <Image
           src={url}
           alt="Photo"
           onClick={() => setOpen(true)}
           fill
-          sizes="240px"
+          sizes="(max-width: 640px) 192px, 240px"
           className="cursor-pointer rounded-xl object-cover ring-1 ring-white/10 transition-opacity hover:opacity-90"
         />
       </div>
@@ -157,14 +157,19 @@ function ImageAttachment({ url }: { url: string }) {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
           onClick={() => setOpen(false)}
         >
-          <div className="relative max-h-[90vh] max-w-[90vw]">
+          <button
+            onClick={() => setOpen(false)}
+            className="absolute top-4 right-4 z-50 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
+          >
+            <X className="size-6" />
+          </button>
+          <div className="relative h-[90vh] w-[90vw]">
             <Image
               src={url}
               alt="Photo agrandie"
               fill
               sizes="90vw"
               className="rounded-2xl object-contain"
-              onClick={(e) => e.stopPropagation()}
             />
           </div>
         </div>

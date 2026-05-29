@@ -16,6 +16,7 @@ import {
   LayoutDashboard,
   Settings,
   Crown,
+  LogOut,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -55,10 +56,10 @@ function LabelText({
   return (
     <div
       className={cn(
-        'overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-in-out',
+        'overflow-hidden whitespace-nowrap transition-[max-width,opacity,max-height,margin] duration-300 ease-in-out',
         collapsed
-          ? 'max-w-0 opacity-0 delay-0'
-          : 'max-w-56 opacity-100 delay-150',
+          ? 'max-w-0 max-h-0 opacity-0 delay-0 m-0'
+          : 'max-w-56 max-h-24 opacity-100 delay-150',
         className
       )}
     >
@@ -154,11 +155,11 @@ export function UserSidebar({
     >
       <div className={cn(
         'flex items-center border-b border-sidebar-border',
-        collapsed ? 'flex-col gap-2 py-3 px-2' : 'justify-between px-4 py-3.5'
+        collapsed ? 'flex-col gap-3 py-4 px-2' : 'justify-between px-4 py-3.5'
       )}>
         <Link href="/feed" className={cn(
           'flex min-w-0 items-center gap-2.5',
-          collapsed && 'flex-col gap-1'
+          collapsed && 'justify-center'
         )}>
           <div className="relative size-8 shrink-0 overflow-hidden rounded-lg-primary/20 bg-primary/5">
             <Image
@@ -183,27 +184,26 @@ export function UserSidebar({
           variant="ghost"
           size="icon-sm"
           className={cn(
-            'shrink-0 text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground',
-            collapsed && 'rotate-90'
+            'shrink-0 text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-all',
           )}
           onClick={onToggle}
         >
           {collapsed ? (
-            <ChevronRight className="size-3.5 transition-transform duration-300" />
+            <ChevronRight className="size-4" />
           ) : (
-            <ChevronLeft className="size-3.5 transition-transform duration-300" />
+            <ChevronLeft className="size-4" />
           )}
         </Button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-4">
         <div className={cn(
-        'rounded-xl border border-sidebar-border bg-sidebar-accent/50 mb-5',
-        collapsed ? 'p-2 flex justify-center' : 'p-3'
+        'rounded-xl border transition-all duration-300 mb-5',
+        collapsed ? 'border-transparent bg-transparent p-1 flex justify-center mb-2' : 'border-sidebar-border bg-sidebar-accent/50 p-3'
       )}>
         <div className={cn(
           'flex items-center gap-2.5',
-          collapsed && 'flex-col gap-1'
+          collapsed && 'justify-center'
         )}>
           <div className={cn(
             'flex shrink-0 items-center justify-center rounded-lg overflow-hidden',
@@ -264,7 +264,7 @@ export function UserSidebar({
         <div className="space-y-5">
           {sections.map((section) => (
             <div key={section.title}>
-              <LabelText collapsed={collapsed} className="mb-1.5 !delay-0">
+              <LabelText collapsed={collapsed} className={cn("!delay-0", collapsed ? "mb-0" : "mb-1.5")}>
                 <p className="truncate px-3 text-[10px] font-bold uppercase tracking-[0.22em] text-sidebar-foreground/35">
                   {section.title}
                 </p>
@@ -327,14 +327,14 @@ export function UserSidebar({
         </div>
       </div>
 
-      <div className="border-t border-sidebar-border p-3">
+      <div className={cn('border-t border-sidebar-border', collapsed ? 'p-2 flex flex-col gap-2 items-center' : 'p-3')}>
         {isFreeTrial && (
-          <Link href="/abonnement" className="block mb-2">
+          <Link href="/abonnement" className={cn('block', collapsed ? 'w-full' : 'mb-2')}>
             <Button
               type="button"
               className={cn(
-                'flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 shadow-sm border-0',
-                collapsed ? 'p-2' : 'px-3 py-2'
+                'flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 shadow-sm border-0 transition-all',
+                collapsed ? 'size-10 mx-auto p-0' : 'w-full px-3 py-2'
               )}
               title={collapsed ? t('layout.sidebar.upgrade') || 'Passer Premium' : undefined}
             >
@@ -346,13 +346,13 @@ export function UserSidebar({
           </Link>
         )}
         {isPaid && (
-          <Link href="/abonnement" className="block mb-2">
+          <Link href="/abonnement" className={cn('block', collapsed ? 'w-full' : 'mb-2')}>
             <Button
               type="button"
               variant="outline"
               className={cn(
-                'flex w-full items-center justify-center gap-2 rounded-lg border-emerald-200/50 bg-emerald-50/50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800',
-                collapsed ? 'p-2' : 'px-3 py-2'
+                'flex items-center justify-center gap-2 rounded-lg border-emerald-200/50 bg-emerald-50/50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 transition-all',
+                collapsed ? 'size-10 mx-auto p-0' : 'w-full px-3 py-2'
               )}
               title={collapsed ? t('layout.sidebar.my_subscription') || 'Mon Abonnement' : undefined}
             >
@@ -368,13 +368,13 @@ export function UserSidebar({
           type="button"
           variant="ghost"
           className={cn(
-            'flex w-full items-center justify-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent/50 text-xs font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground',
-            collapsed ? 'p-2' : 'px-3 py-2'
+            'flex items-center justify-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent/50 text-xs font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-all',
+            collapsed ? 'size-10 mx-auto p-0' : 'w-full px-3 py-2 mt-2'
           )}
           onClick={onSignOut}
           title={collapsed ? t('layout.sidebar.signout') : undefined}
         >
-          <ChevronLeft className={cn('size-3.5 shrink-0 transition-transform duration-300', collapsed && 'rotate-180')} />
+          <LogOut className="size-4 shrink-0" />
           <LabelText collapsed={collapsed}>{t('layout.sidebar.signout')}</LabelText>
         </Button>
       </div>

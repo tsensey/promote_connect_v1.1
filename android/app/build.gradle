@@ -19,9 +19,9 @@ android {
     signingConfigs {
         release {
             storeFile file('promote-connect.keystore')
-            storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD') ?: 'promote2026'
-            keyAlias System.getenv('ANDROID_KEY_ALIAS') ?: 'promote'
-            keyPassword System.getenv('ANDROID_KEY_PASSWORD') ?: 'promote2026'
+            storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD') ?: 'promote2026!'
+            keyAlias System.getenv('ANDROID_KEY_ALIAS') ?: 'promote-connect'
+            keyPassword System.getenv('ANDROID_KEY_PASSWORD') ?: 'promote2026!'
         }
     }
     buildTypes {
