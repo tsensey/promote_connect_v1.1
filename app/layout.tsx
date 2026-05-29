@@ -71,7 +71,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       className={cn(manrope.variable)}
     >
       <body suppressHydrationWarning className="min-h-screen bg-background text-foreground">
-        <AnimatedSplashScreen />
+        {/* <AnimatedSplashScreen /> */}
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
