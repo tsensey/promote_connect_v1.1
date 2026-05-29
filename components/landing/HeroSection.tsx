@@ -13,7 +13,7 @@ export function HeroSection() {
       {/* Background World Map Overlay */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/world-map-dots.png"
+          src="/world-map-dots.jpg"
           alt="World Map Dots"
           fill
           className="object-cover opacity-40 mix-blend-screen"

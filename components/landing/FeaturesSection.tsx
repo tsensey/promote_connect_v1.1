@@ -34,7 +34,7 @@ export function FeaturesSection() {
               <div className="relative animate-reveal-delay-1">
                 <div className="relative aspect-[4/5] md:aspect-square rounded-[2rem] md:rounded-[3rem] overflow-hidden">
                   <Image
-                    src="/entrepreneurs.png"
+                    src="/entrepreneurs.jpg"
                     alt="Entrepreneurs"
                     fill
                     sizes="(max-width: 768px) 100vw, 50vw"

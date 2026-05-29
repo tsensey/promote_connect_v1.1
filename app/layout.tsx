@@ -14,6 +14,7 @@ import { NotificationProvider } from '@/components/shared/NotificationProvider';
 import { PwaRegister } from '@/components/shared/PwaRegister';
 import { CapacitorStatusBar } from '@/components/shared/CapacitorStatusBar';
 import { CapacitorInitializer } from '@/components/shared/CapacitorInitializer';
+import { AnimatedSplashScreen } from '@/components/shared/AnimatedSplashScreen';
 import PlausibleAnalytics from '@/components/shared/PlausibleAnalytics';
 import { cn } from '@/lib/utils';
 import './globals.css';
@@ -70,6 +71,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       className={cn(manrope.variable)}
     >
       <body suppressHydrationWarning className="min-h-screen bg-background text-foreground">
+        <AnimatedSplashScreen />
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

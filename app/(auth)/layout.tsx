@@ -36,7 +36,7 @@ export default function AuthLayout({
           {/* World Map Dots Background */}
           <div className="absolute inset-0 z-0">
             <Image
-              src="/world-map-dots.png"
+              src="/world-map-dots.jpg"
               alt="World Map Dots"
               fill
               sizes="(max-width: 768px) 0vw, 50vw"
