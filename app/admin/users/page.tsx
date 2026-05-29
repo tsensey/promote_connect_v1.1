@@ -63,6 +63,7 @@ import { useTranslation } from '@/lib/i18n';
 interface UserRow {
   id: string;
   full_name: string;
+  email: string | null;
   company: string | null;
   role: string | null;
   sector: string | null;
@@ -621,6 +622,11 @@ export default function AdminUsersPage() {
                             <p className="truncate text-sm font-semibold text-foreground">
                               {user.full_name}
                             </p>
+                            {user.email && (
+                              <p className="truncate text-xs text-muted-foreground">
+                                {user.email}
+                              </p>
+                            )}
                             <p className="truncate text-xs text-muted-foreground">
                               {[user.company, user.sector, user.country].filter(Boolean).join(' - ') || t('admin.users.profile_title')}
                             </p>
@@ -658,7 +664,7 @@ export default function AdminUsersPage() {
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {user.role === 'exposant'
-                          ? t('admin.users.pavillon', { pavillon: user.pavillon || '-' })
+                          ? user.company || t('admin.users.pavillon', { pavillon: user.pavillon || '-' })
                           : user.company || t('admin.users.account_type')}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">

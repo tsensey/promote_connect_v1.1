@@ -7,7 +7,7 @@ import {
   ShieldCheck,
   Mail,
   Users,
-  Sparkles,
+  Gem,
   Phone,
   ArrowRight,
   CheckCircle2,
@@ -208,17 +208,18 @@ export default function AbonnementPage() {
         <div className="grid gap-6 md:grid-cols-3">
 
           {/* Carte statut principal */}
-          <Card className="md:col-span-2 overflow-hidden border-emerald-200/40 py-0">
-            <div className="bg-gradient-to-r from-emerald-600 to-emerald-400 px-6 py-7">
-              <div className="flex items-center gap-4">
-                <div className="flex size-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
-                  <ShieldCheck className="size-6 text-white" />
+          <Card className="md:col-span-2 overflow-hidden border-emerald-500/20 bg-background/50 backdrop-blur-sm py-0">
+            <div className="relative overflow-hidden border-b border-emerald-500/10 bg-emerald-500/5 px-6 py-7">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(16,185,129,0.12),transparent_60%)] dark:bg-[radial-gradient(ellipse_at_top_right,rgba(16,185,129,0.08),transparent_60%)]" />
+              <div className="relative flex items-center gap-4">
+                <div className="flex size-12 items-center justify-center rounded-2xl bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20">
+                  <ShieldCheck className="size-6" />
                 </div>
-                <div className="text-white">
-                  <h2 className="text-xl font-bold tracking-tight">
+                <div>
+                  <h2 className="text-xl font-bold tracking-tight text-emerald-950 dark:text-emerald-50">
                     {t('abonnement.full_access') || 'Accès complet PROMOTE-CONNECT'}
                   </h2>
-                  <p className="text-sm text-emerald-50 mt-0.5">
+                  <p className="text-sm text-emerald-700/80 dark:text-emerald-200/70 mt-0.5">
                     {t('abonnement.full_access_desc') || 'Toutes les fonctionnalités débloquées'}
                   </p>
                 </div>
@@ -232,8 +233,8 @@ export default function AbonnementPage() {
                   <div className={cn(
                     'rounded-xl border p-4',
                     subscriptionDaysLeft !== null && subscriptionDaysLeft <= 30
-                      ? 'border-amber-200/50 bg-amber-50/50'
-                      : 'border-emerald-100 bg-emerald-50/30'
+                      ? 'border-amber-500/20 bg-amber-500/5'
+                      : 'border-emerald-500/20 bg-emerald-500/5'
                   )}>
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">
                       {t('abonnement.expires_on') || 'Expire le'}
@@ -308,14 +309,14 @@ export default function AbonnementPage() {
               </h3>
               <div className="space-y-2">
                 {ALL_FEATURES.map((f, i) => (
-                  <div key={i} className="flex items-center gap-3 rounded-xl p-2.5 bg-emerald-50/30">
-                    <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-100/60 shrink-0">
-                      <f.icon className="size-4 text-emerald-600" />
+                  <div key={i} className="flex items-center gap-3 rounded-xl p-3 border border-emerald-500/10 bg-emerald-500/[0.03] hover:bg-emerald-500/[0.06] transition-colors">
+                    <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 shrink-0">
+                      <f.icon className="size-4 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <span className="text-sm font-medium text-foreground flex-1">
                       {t(f.labelKey) || f.labelKey.split('.').pop()}
                     </span>
-                    <CheckCircle2 className="size-4 text-emerald-500 shrink-0" />
+                    <CheckCircle2 className="size-4 text-emerald-500 dark:text-emerald-400 shrink-0" />
                   </div>
                 ))}
               </div>
@@ -329,21 +330,23 @@ export default function AbonnementPage() {
         <div className="grid gap-6 md:grid-cols-3">
 
           {/* Carte principale CTA */}
-          <Card className="md:col-span-2 overflow-hidden border-amber-200/40 py-0">
-            <div className="bg-gradient-to-br from-amber-500/15 via-orange-500/5 to-background p-6 sm:p-8 flex flex-col h-full">
-              <div className="mb-5 flex size-12 items-center justify-center rounded-2xl bg-amber-100/60">
-                <Sparkles className="size-6 text-amber-600" />
+          <Card className="md:col-span-2 overflow-hidden border-amber-500/20 bg-background/50 backdrop-blur-sm py-0">
+            <div className="relative overflow-hidden border-b border-amber-500/10 bg-amber-500/5 p-6 sm:p-8 flex flex-col h-full">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(245,158,11,0.12),transparent_60%)] dark:bg-[radial-gradient(ellipse_at_top_right,rgba(245,158,11,0.08),transparent_60%)]" />
+              
+              <div className="relative z-10 mb-5 flex size-12 items-center justify-center rounded-2xl bg-amber-500/15 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/20">
+                <Gem className="size-6" />
               </div>
-              <h2 className="text-2xl font-bold mb-3 text-foreground">{msg.title}</h2>
-              <p className="text-muted-foreground leading-relaxed mb-6">{msg.body}</p>
+              <h2 className="relative z-10 text-2xl font-bold mb-3 text-foreground">{msg.title}</h2>
+              <p className="relative z-10 text-muted-foreground leading-relaxed mb-6">{msg.body}</p>
 
               {/* Compteur essai */}
               {isFreeTrial && trialEndsAt && (
                 <div className={cn(
-                  'rounded-xl border p-4 mb-6',
+                  'relative z-10 rounded-xl border p-4 mb-6',
                   trialDaysLeft !== null && trialDaysLeft <= 3
-                    ? 'border-red-200/50 bg-red-50/50'
-                    : 'border-amber-200/50 bg-amber-50/50'
+                    ? 'border-red-500/20 bg-red-500/5'
+                    : 'border-amber-500/20 bg-amber-500/5'
                 )}>
                   <div className="flex items-center gap-3">
                     <Clock className={cn(
@@ -365,7 +368,7 @@ export default function AbonnementPage() {
               )}
 
               {/* Features grid */}
-              <div className="grid sm:grid-cols-2 gap-3 mt-auto">
+              <div className="relative z-10 grid sm:grid-cols-2 gap-3 mt-auto">
                 {[
                   'Annuaire complet des exposants',
                   'Messagerie B2B illimitée',
@@ -386,9 +389,9 @@ export default function AbonnementPage() {
           {/* Carte contact / souscription */}
           <div className="flex flex-col gap-4">
             {isFreeTrial && quotas && (
-              <Card className="border-amber-200/50 bg-amber-50/30">
+              <Card className="border-amber-500/20 bg-amber-500/[0.03]">
                 <CardContent className="p-5 space-y-3">
-                  <h3 className="font-semibold text-sm text-amber-800 uppercase tracking-wide">
+                  <h3 className="font-semibold text-sm text-amber-700 dark:text-amber-500/80 uppercase tracking-wide">
                     {t('abonnement.my_limits') || 'Mes Quotas Actuels'}
                   </h3>
                   <div className="space-y-3">
@@ -397,7 +400,7 @@ export default function AbonnementPage() {
                         <span className="font-medium text-foreground">{t('abonnement.daily_messages') || 'Messages quotidiens'}</span>
                         <span className="text-muted-foreground">{dailyExchangeCount} / {quotas.dailyMessageLimit}</span>
                       </div>
-                      <div className="h-1.5 w-full bg-amber-100 rounded-full overflow-hidden">
+                      <div className="h-1.5 w-full bg-amber-500/20 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-amber-500" 
                           style={{ width: `${Math.min(100, (dailyExchangeCount / quotas.dailyMessageLimit) * 100)}%` }}

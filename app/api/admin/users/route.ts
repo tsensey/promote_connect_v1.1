@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { verifyAdmin } from '@/lib/admin';
 import type { Database } from '@/types/database.types';
+import { render } from '@react-email/components';
+import CredentialsEmail from '@/emails/CredentialsEmail';
 
 const resendApiKey = process.env.RESEND_API_KEY || '';
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -11,86 +13,7 @@ function generatePassword(): string {
   return randomBytes(9).toString('base64url').slice(0, 12);
 }
 
-function buildCredentialsHtml({
-  fullName,
-  email,
-  password,
-  role,
-  company,
-  pavillon,
-  stand,
-}: {
-  fullName: string;
-  email: string;
-  password: string;
-  role: string;
-  company?: string | null;
-  pavillon?: string | null;
-  stand?: string | null;
-}) {
-  const loginUrl = `${appUrl}/login`;
-  const isExposant = role === 'exposant';
 
-  return `
-    <div style="margin:0;background:#eef4ff;padding:32px 16px;font-family:Arial,sans-serif;color:#172554">
-      <div style="max-width:620px;margin:0 auto;background:#ffffff;border-radius:28px;overflow:hidden;box-shadow:0 30px 80px rgba(15,23,42,0.12)">
-        <div style="padding:36px;background:#2563eb;color:#ffffff">
-          <p style="margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;opacity:0.78">
-            PROMOTE-CONNECT
-          </p>
-          <h1 style="margin:0;font-size:30px;line-height:1.2">Votre acces est pret</h1>
-          <p style="margin:14px 0 0;font-size:15px;line-height:1.7;color:rgba(255,255,255,0.8)">
-            L administrateur a cree votre compte pour rejoindre le reseau professionnel PROMOTE-CONNECT.
-          </p>
-        </div>
-
-        <div style="padding:32px">
-          <h2 style="margin:0 0 14px;font-size:22px;color:#0f172a">Bienvenue, ${fullName}</h2>
-          <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#475569">
-            Vous pouvez maintenant acceder a la plateforme pour consulter l annuaire,
-            dialoguer avec les autres participants et suivre le programme du salon.
-          </p>
-
-          <div style="border:1px solid #dbeafe;background:#f8fbff;border-radius:22px;padding:22px;margin-bottom:24px">
-            <p style="margin:0 0 14px;font-size:12px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#64748b">
-              Vos identifiants
-            </p>
-            <p style="margin:0 0 10px;font-size:14px;color:#64748b">Email</p>
-            <p style="margin:0 0 16px;font-size:16px;font-weight:700;color:#0f172a">${email}</p>
-            <p style="margin:0 0 10px;font-size:14px;color:#64748b">Mot de passe temporaire</p>
-            <p style="display:inline-block;margin:0 0 18px;padding:10px 14px;border-radius:14px;background:#0f172a;color:#ffffff;font-size:16px;font-weight:700;letter-spacing:0.04em">
-              ${password}
-            </p>
-            <p style="margin:0 0 10px;font-size:14px;color:#64748b">Role</p>
-            <p style="margin:0 0 18px;font-size:16px;font-weight:700;color:#0f172a">
-              ${isExposant ? 'Exposant' : role === 'admin' ? 'Administrateur' : 'Visiteur'}
-            </p>
-            ${isExposant ? `
-            <p style="margin:12px 0 8px;font-size:14px;color:#64748b">Entreprise</p>
-            <p style="margin:0 0 18px;font-size:16px;font-weight:700;color:#0f172a">${company || fullName}</p>
-            ${pavillon ? `<p style="margin:0 0 8px;font-size:14px;color:#64748b">Pavillon</p>
-            <p style="margin:0 0 18px;font-size:16px;font-weight:700;color:#0f172a">${pavillon}</p>` : ''}
-            ${stand ? `<p style="margin:0 0 8px;font-size:14px;color:#64748b">Stand</p>
-            <p style="margin:0 0 18px;font-size:16px;font-weight:700;color:#0f172a">${stand}</p>` : ''}
-            ` : ''}
-            <p style="margin:0;font-size:14px;color:#475569">
-              Votre compte dispose d un acces complet a la plateforme.
-            </p>
-          </div>
-
-          <a href="${loginUrl}" style="display:inline-block;padding:14px 24px;border-radius:999px;background:#2563eb;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700">
-            Se connecter a PROMOTE-CONNECT
-          </a>
-
-          <p style="margin:22px 0 0;font-size:13px;line-height:1.7;color:#64748b">
-            Pour des raisons de securite, nous vous recommandons de changer ce mot de passe
-            lors de votre premiere connexion.
-          </p>
-        </div>
-      </div>
-    </div>
-  `;
-}
 
 export async function GET(request: Request) {
   const auth = await verifyAdmin(request);
@@ -104,6 +27,14 @@ export async function GET(request: Request) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  const { data: authData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+  const emailMap = new Map<string, string>();
+  if (authData?.users) {
+    authData.users.forEach(u => {
+      if (u.email) emailMap.set(u.id, u.email);
+    });
   }
 
   const profileIds = users.map(u => u.id).filter(Boolean);
@@ -122,6 +53,7 @@ export async function GET(request: Request) {
   const usersWithExposant = users.map(u => ({
     ...u,
     exposant_id: exposantMap.get(u.id) || null,
+    email: emailMap.get(u.id) || null,
   }));
 
   return NextResponse.json({ users: usersWithExposant });
@@ -285,13 +217,8 @@ export async function POST(request: Request) {
       const { Resend } = await import('resend');
       const resend = new Resend(resendApiKey);
 
-      await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
-        to: [email],
-        subject: role === 'exposant'
-          ? 'Vos acces exposant PROMOTE-CONNECT'
-          : 'Vos acces PROMOTE-CONNECT',
-        html: buildCredentialsHtml({
+      const emailHtml = await render(
+        CredentialsEmail({
           fullName: full_name,
           email,
           password,
@@ -299,7 +226,16 @@ export async function POST(request: Request) {
           company: company || null,
           pavillon: (generate_exposant && pavillon) ? pavillon : null,
           stand: (generate_exposant && stand) ? stand : null,
-        }),
+        })
+      );
+
+      await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+        to: [email],
+        subject: role === 'exposant'
+          ? 'Vos acces exposant PROMOTE-CONNECT'
+          : 'Vos acces PROMOTE-CONNECT',
+        html: emailHtml,
       });
 
       emailSent = true;

@@ -26,18 +26,28 @@ function ResetPasswordContent() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    // Vérifier si nous avons une session active (Supabase auto-connecte après le clic sur le lien)
     const checkSession = async () => {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session) {
-        // Rediriger vers login si le token est invalide ou expiré
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const type = hashParams.get('type');
-        if (type === 'recovery') {
-           // On a les paramètres de hash mais pas encore de session, c'est normal, supabase va les traiter.
-        } else {
-           // Sinon, redirection
-           setError('Lien de réinitialisation invalide ou expiré.');
+      // First, try to get tokens from the URL hash (Implicit flow from generateLink)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      const type = hashParams.get('type');
+
+      if (accessToken && refreshToken && type === 'recovery') {
+        const { error: sessionError } = await supabaseClient.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+        if (sessionError) {
+          setError(sessionError.message);
+        }
+        // Remove hash from URL for cleaner look
+        window.history.replaceState(null, '', window.location.pathname);
+      } else {
+        // Fallback to checking existing session
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session && !window.location.hash.includes('access_token')) {
+          setError('Lien de réinitialisation invalide ou expiré.');
         }
       }
     };

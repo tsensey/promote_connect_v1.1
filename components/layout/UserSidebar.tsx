@@ -15,6 +15,7 @@ import {
   Rss,
   LayoutDashboard,
   Settings,
+  Crown,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -22,6 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNotificationState } from '@/lib/notification-context';
+import { usePermissions } from '@/hooks/usePermissions';
 import Image from 'next/image';
 import { useTranslation } from '@/lib/i18n';
 
@@ -87,6 +89,7 @@ export function UserSidebar({
   const pathname = usePathname();
   const { t } = useTranslation();
   const { unreadMessages } = useNotificationState();
+  const { isPaid, isFreeTrial } = usePermissions();
 
   const VISITOR_SECTIONS: NavSection[] = [
     {
@@ -231,12 +234,30 @@ export function UserSidebar({
           </LabelText>
         </div>
         <LabelText collapsed={collapsed} className="mt-2.5 !delay-0">
-          <Badge
-            variant="secondary"
-            className="rounded-full bg-primary/10 px-2 py-px text-[10px] font-semibold text-primary hover:bg-primary/15"
-          >
-            {role === 'exposant' ? t('layout.sidebar.exposant_space') : t('layout.sidebar.visiteur_space')}
-          </Badge>
+          <div className="flex flex-wrap gap-1.5 items-center justify-center">
+            <Badge
+              variant="secondary"
+              className="rounded-full bg-primary/10 px-2 py-px text-[10px] font-semibold text-primary hover:bg-primary/15"
+            >
+              {role === 'exposant' ? t('layout.sidebar.exposant_space') : t('layout.sidebar.visiteur_space')}
+            </Badge>
+            {isPaid ? (
+              <Badge
+                variant="secondary"
+                className="rounded-full bg-emerald-500/10 border border-emerald-200/50 px-2 py-px text-[10px] font-semibold text-emerald-600 hover:bg-emerald-500/15"
+              >
+                <Crown className="size-3 mr-1" />
+                Premium
+              </Badge>
+            ) : isFreeTrial ? (
+              <Badge
+                variant="secondary"
+                className="rounded-full bg-amber-500/10 border border-amber-200/50 px-2 py-px text-[10px] font-semibold text-amber-600 hover:bg-amber-500/15"
+              >
+                Essai Gratuit
+              </Badge>
+            ) : null}
+          </div>
         </LabelText>
       </div>
 
@@ -307,6 +328,42 @@ export function UserSidebar({
       </div>
 
       <div className="border-t border-sidebar-border p-3">
+        {isFreeTrial && (
+          <Link href="/abonnement" className="block mb-2">
+            <Button
+              type="button"
+              className={cn(
+                'flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 shadow-sm border-0',
+                collapsed ? 'p-2' : 'px-3 py-2'
+              )}
+              title={collapsed ? t('layout.sidebar.upgrade') || 'Passer Premium' : undefined}
+            >
+              <Crown className={cn('size-4 shrink-0', collapsed && 'mr-0')} />
+              <LabelText collapsed={collapsed} className="font-semibold text-xs tracking-wide">
+                {t('layout.sidebar.upgrade') || 'Passer Premium'}
+              </LabelText>
+            </Button>
+          </Link>
+        )}
+        {isPaid && (
+          <Link href="/abonnement" className="block mb-2">
+            <Button
+              type="button"
+              variant="outline"
+              className={cn(
+                'flex w-full items-center justify-center gap-2 rounded-lg border-emerald-200/50 bg-emerald-50/50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800',
+                collapsed ? 'p-2' : 'px-3 py-2'
+              )}
+              title={collapsed ? t('layout.sidebar.my_subscription') || 'Mon Abonnement' : undefined}
+            >
+              <Crown className={cn('size-4 shrink-0', collapsed && 'mr-0')} />
+              <LabelText collapsed={collapsed} className="font-semibold text-xs">
+                {t('layout.sidebar.my_subscription') || 'Mon Abonnement'}
+              </LabelText>
+            </Button>
+          </Link>
+        )}
+
         <Button
           type="button"
           variant="ghost"

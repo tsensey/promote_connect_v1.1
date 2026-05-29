@@ -7,10 +7,12 @@ import {
   MessageSquare,
   CalendarDays,
   Search,
+  Crown,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useNotificationState } from "@/lib/notification-context";
+import { usePermissions } from "@/hooks/usePermissions";
 import { NotificationDropdown } from "./NotificationDropdown";
 import {
   DropdownMenu,
@@ -42,6 +44,7 @@ export function UserTopbar({
   const router = useRouter();
   const { t } = useTranslation();
   const { unreadMessages } = useNotificationState();
+  const { isFreeTrial } = usePermissions();
 
   return (
     <>
@@ -77,6 +80,19 @@ export function UserTopbar({
             >
               <Search className="size-4" />
             </Button>
+            
+            {isFreeTrial && (
+              <Button
+                variant="default"
+                size="sm"
+                className="hidden md:flex h-8 items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 border-0 shadow-sm px-3"
+                onClick={() => router.push("/abonnement")}
+              >
+                <Crown className="size-3.5" />
+                <span className="text-xs font-semibold">{t("layout.sidebar.upgrade") || "Passer Premium"}</span>
+              </Button>
+            )}
+
             <LocaleToggle />
             <ModeToggle />
             <Button
@@ -146,6 +162,13 @@ export function UserTopbar({
                   className="rounded-lg"
                 >
                   {t("layout.topbar.home")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => router.push("/abonnement")}
+                  className="rounded-lg"
+                >
+                  <Crown className="size-4 mr-2 text-amber-500" />
+                  {t("layout.topbar.subscription") || "Mon Abonnement"}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => router.push("/support")}

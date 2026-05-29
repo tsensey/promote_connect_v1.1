@@ -1,6 +1,5 @@
 import {
   Body,
-  Button,
   Container,
   Head,
   Heading,
@@ -11,6 +10,7 @@ import {
   Preview,
   Section,
   Text,
+  Tailwind,
 } from '@react-email/components';
 
 interface RdvConfirmationEmailProps {
@@ -34,6 +34,26 @@ function formatDate(iso: string) {
   });
 }
 
+const tailwindConfig = {
+  theme: {
+    extend: {
+      colors: {
+        brand: '#912450',
+        background: '#f6f8fb',
+        foreground: '#0f172a',
+        muted: '#475569',
+        border: '#e2e8f0',
+        pending: '#f59e0b',
+        confirmed: '#22c55e',
+        cancelled: '#ef4444',
+      },
+      fontFamily: {
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+      },
+    },
+  },
+};
+
 export default function RdvConfirmationEmail({
   demandeurName,
   destinataireName,
@@ -48,205 +68,94 @@ export default function RdvConfirmationEmail({
     cancelled: 'Rendez-vous annulé',
   };
 
-  const statusColors: Record<string, string> = {
-    pending: '#f59e0b',
-    confirmed: '#22c55e',
-    cancelled: '#ef4444',
+  const statusColorClasses: Record<string, string> = {
+    pending: 'bg-pending',
+    confirmed: 'bg-confirmed',
+    cancelled: 'bg-cancelled',
   };
+
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://promote-connect.com';
 
   return (
     <Html>
       <Head />
       <Preview>{statusLabels[status]}</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Section style={header}>
-            <Img src={`${baseUrl}/logo-promote.png`} width="180" height="auto" alt="PROMOTE-CONNECT" style={logo} />
-            <Heading style={headerTitle}>{statusLabels[status]}</Heading>
-          </Section>
+      <Tailwind config={tailwindConfig}>
+        <Body className="bg-background m-0 px-4 py-8 font-sans text-foreground">
+          <Container className="mx-auto max-w-[560px] bg-white rounded-3xl overflow-hidden shadow-xl border border-border">
+            <Section className="bg-brand p-8 text-white">
+              <Img
+                src={`${baseUrl}/logo-promote.png`}
+                width="180"
+                height="auto"
+                alt="PROMOTE-CONNECT"
+                className="mb-4"
+              />
+              <Heading className="m-0 text-2xl font-bold leading-tight">
+                {statusLabels[status]}
+              </Heading>
+            </Section>
 
-          <Section style={bodySection}>
-            <div style={statusBadge}>
-              <span style={{ ...statusDot, backgroundColor: statusColors[status] }} />
-              {statusLabels[status]}
-            </div>
-
-            <div style={detailBox}>
-              <DetailRow label="De" value={demandeurName} />
-              <DetailRow label="À" value={destinataireName} />
-              <DetailRow label="Début" value={formatDate(startsAt)} />
-              <DetailRow label="Fin" value={formatDate(endsAt)} />
-            </div>
-
-            {notes && (
-              <div style={notesBox}>
-                <Text style={notesLabel}>Note :</Text>
-                <Text style={notesContent}>{notes}</Text>
+            <Section className="p-8">
+              <div className="mb-6 flex items-center gap-2 text-sm font-semibold text-muted">
+                <span className={`inline-block h-2 w-2 rounded-full ${statusColorClasses[status]}`} />
+                {statusLabels[status]}
               </div>
-            )}
 
-            <Hr style={hr} />
+              <div className="mb-5 rounded-xl border border-border bg-background p-5">
+                <DetailRow label="De" value={demandeurName} />
+                <DetailRow label="À" value={destinataireName} />
+                <DetailRow label="Début" value={formatDate(startsAt)} />
+                <DetailRow label="Fin" value={formatDate(endsAt)} />
+              </div>
 
-            {status === 'pending' && (
-              <Text style={infoText}>
-                Connectez-vous à PROMOTE-CONNECT pour confirmer ou refuser cette demande.
+              {notes && (
+                <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <Text className="m-0 mb-1 text-xs font-bold uppercase text-amber-900">
+                    Note :
+                  </Text>
+                  <Text className="m-0 text-sm leading-relaxed text-amber-800">
+                    {notes}
+                  </Text>
+                </div>
+              )}
+
+              <Hr className="my-6 border-t border-border" />
+
+              {status === 'pending' && (
+                <Text className="m-0 text-sm leading-relaxed text-slate-500">
+                  Connectez-vous à PROMOTE-CONNECT pour confirmer ou refuser cette demande.
+                </Text>
+              )}
+            </Section>
+
+            <Section className="bg-background px-8 py-5 text-center border-t border-border">
+              <Text className="m-0 text-xs text-slate-400">
+                PROMOTE-CONNECT — Plateforme de networking professionnel
               </Text>
-            )}
-          </Section>
-
-          <Section style={footer}>
-            <Text style={footerSmall}>
-              PROMOTE-CONNECT — Plateforme de networking professionnel
-            </Text>
-            <Text style={footerSmall}>
-              Conçu par <Link href="https://bbit-it.com" style={signatureLink}>BBIT Sarl</Link>
-            </Text>
-          </Section>
-        </Container>
-      </Body>
+              <Text className="m-0 mt-1 text-xs text-slate-400">
+                Conçu par{' '}
+                <Link href="https://bbit-it.com" className="text-slate-400 underline">
+                  BBIT Sarl
+                </Link>
+              </Text>
+            </Section>
+          </Container>
+        </Body>
+      </Tailwind>
     </Html>
   );
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div style={detailRow}>
-      <Text style={detailLabel}>{label}</Text>
-      <Text style={detailValue}>{value}</Text>
+    <div className="mb-3 last:mb-0">
+      <Text className="m-0 mb-0.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        {label}
+      </Text>
+      <Text className="m-0 text-[15px] font-semibold text-foreground">
+        {value}
+      </Text>
     </div>
   );
 }
-
-const main = {
-  margin: '0',
-  padding: '32px 16px',
-  backgroundColor: '#f6f8fb',
-  fontFamily: 'Arial, sans-serif',
-};
-
-const container = {
-  maxWidth: '560px',
-  margin: '0 auto',
-  backgroundColor: '#ffffff',
-  borderRadius: '28px',
-  overflow: 'hidden',
-  boxShadow: '0 30px 80px rgba(15,23,42,0.12)',
-};
-
-const header = {
-  padding: '32px',
-  backgroundColor: '#912450',
-  color: '#ffffff',
-};
-
-const logo = {
-  margin: '0 0 16px',
-};
-
-const headerTitle = {
-  margin: '0',
-  fontSize: '24px',
-};
-
-const bodySection = {
-  padding: '32px',
-};
-
-const statusBadge = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  marginBottom: '24px',
-  fontSize: '14px',
-  fontWeight: 600,
-  color: '#475569',
-};
-
-const statusDot = {
-  display: 'inline-block',
-  width: '8px',
-  height: '8px',
-  borderRadius: '50%',
-};
-
-const detailBox = {
-  backgroundColor: '#f8fafc',
-  border: '1px solid #e2e8f0',
-  borderRadius: '12px',
-  padding: '20px',
-  marginBottom: '20px',
-};
-
-const detailRow = {
-  marginBottom: '12px',
-};
-
-const detailLabel = {
-  margin: '0 0 2px',
-  fontSize: '12px',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.05em',
-  color: '#94a3b8',
-  fontWeight: 600,
-};
-
-const detailValue = {
-  margin: '0',
-  fontSize: '15px',
-  fontWeight: 600,
-  color: '#0f172a',
-};
-
-const notesBox = {
-  backgroundColor: '#fffbeb',
-  border: '1px solid #fde68a',
-  borderRadius: '12px',
-  padding: '16px',
-  marginBottom: '24px',
-};
-
-const notesLabel = {
-  margin: '0 0 4px',
-  fontSize: '12px',
-  fontWeight: 700,
-  textTransform: 'uppercase' as const,
-  color: '#92400e',
-};
-
-const notesContent = {
-  margin: '0',
-  fontSize: '14px',
-  lineHeight: '1.6',
-  color: '#78350f',
-};
-
-const hr = {
-  border: 'none',
-  borderTop: '1px solid #e2e8f0',
-  margin: '24px 0',
-};
-
-const infoText = {
-  margin: '0',
-  fontSize: '14px',
-  color: '#64748b',
-  lineHeight: '1.6',
-};
-
-const footer = {
-  padding: '20px 32px',
-  backgroundColor: '#f8fafc',
-  textAlign: 'center' as const,
-};
-
-const footerSmall = {
-  margin: '0',
-  fontSize: '12px',
-  color: '#94a3b8',
-};
-
-const signatureLink = {
-  color: '#94a3b8',
-  textDecoration: 'underline',
-};

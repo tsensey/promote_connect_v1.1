@@ -10,6 +10,7 @@ import {
   Preview,
   Section,
   Text,
+  Tailwind,
 } from '@react-email/components';
 
 interface WelcomeEmailProps {
@@ -19,6 +20,23 @@ interface WelcomeEmailProps {
   unsubscribeUrl?: string;
   year?: number;
 }
+
+const tailwindConfig = {
+  theme: {
+    extend: {
+      colors: {
+        brand: '#912450',
+        background: '#f6f8fb',
+        foreground: '#0f172a',
+        muted: '#475569',
+        border: '#e2e8f0',
+      },
+      fontFamily: {
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+      },
+    },
+  },
+};
 
 export default function WelcomeEmail({
   email,
@@ -37,181 +55,85 @@ export default function WelcomeEmail({
     <Html>
       <Head />
       <Preview>Bienvenue à la newsletter PROMOTE-CONNECT</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Section style={header}>
-            <Img src={`${baseUrl}/logo-promote.png`} width="180" height="auto" alt="PROMOTE-CONNECT" style={logo} />
-            <Heading style={headerTitle}>
-              Bienvenue à la newsletter !
-            </Heading>
-          </Section>
+      <Tailwind config={tailwindConfig}>
+        <Body className="bg-background m-0 px-4 py-8 font-sans text-foreground">
+          <Container className="mx-auto max-w-[600px] bg-white rounded-3xl overflow-hidden shadow-xl border border-border">
+            <Section className="bg-brand p-8 text-white">
+              <Img
+                src={`${baseUrl}/logo-promote.png`}
+                width="180"
+                height="auto"
+                alt="PROMOTE-CONNECT"
+                className="mb-4"
+              />
+              <Heading className="m-0 text-2xl font-bold leading-tight">
+                Bienvenue à la newsletter !
+              </Heading>
+            </Section>
 
-          <Section style={bodySection}>
-            <Text style={greeting}>Bonjour,</Text>
-            <Text style={paragraphStyle}>
-              Vous êtes maintenant inscrit à la newsletter PROMOTE-CONNECT.
-              Vous recevrez les dernières actualités et opportunités
-              d&rsquo;affaires directement dans votre boîte mail.
-            </Text>
+            <Section className="p-8">
+              <Text className="m-0 mb-4 text-base font-medium text-foreground">
+                Bonjour,
+              </Text>
+              <Text className="m-0 mb-4 text-[15px] leading-relaxed text-muted">
+                Vous êtes maintenant inscrit à la newsletter PROMOTE-CONNECT.
+                Vous recevrez les dernières actualités et opportunités
+                d&rsquo;affaires directement dans votre boîte mail.
+              </Text>
 
-            <Section style={detailsBox}>
-              <Text style={detailsTitle}>Récapitulatif de votre abonnement</Text>
-              <Text style={detailItem}>
-                <strong>Email :</strong> {email}
+              <Section className="mb-4 rounded-xl bg-background p-5 border border-border">
+                <Text className="m-0 mb-3 text-sm font-semibold uppercase tracking-wide text-foreground">
+                  Récapitulatif de votre abonnement
+                </Text>
+                <Text className="m-0 mb-1 text-sm leading-relaxed text-muted">
+                  <strong className="text-foreground">Email :</strong> {email}
+                </Text>
+                <Text className="m-0 mb-1 text-sm leading-relaxed text-muted">
+                  <strong className="text-foreground">Fréquence :</strong> {frequencyLabel}
+                </Text>
+                {sectors && sectors.length > 0 && (
+                  <Text className="m-0 mb-1 text-sm leading-relaxed text-muted">
+                    <strong className="text-foreground">Secteurs :</strong> {sectors.join(', ')}
+                  </Text>
+                )}
+              </Section>
+
+              <Text className="m-0 mb-6 text-[15px] leading-relaxed text-muted">
+                Vous pouvez à tout moment modifier vos préférences ou vous
+                désinscrire depuis votre espace personnel.
               </Text>
-              <Text style={detailItem}>
-                <strong>Fréquence :</strong> {frequencyLabel}
+
+              <Hr className="my-6 border-t border-border" />
+              
+              <Text className="m-0 mb-2 text-[13px] leading-relaxed text-muted">
+                PROMOTE-CONNECT — Plateforme de networking professionnel
               </Text>
-              {sectors && sectors.length > 0 && (
-                <Text style={detailItem}>
-                  <strong>Secteurs :</strong> {sectors.join(', ')}
+              {unsubscribeUrl && (
+                <Text className="m-0 text-xs">
+                  <Link
+                    href={unsubscribeUrl}
+                    className="font-medium text-brand underline"
+                  >
+                    Se désinscrire
+                  </Link>
                 </Text>
               )}
             </Section>
 
-            <Text style={paragraphStyle}>
-              Vous pouvez à tout moment modifier vos préférences ou vous
-              désinscrire depuis votre espace personnel.
-            </Text>
-
-            <Hr style={hr} />
-            <Text style={footerText}>
-              PROMOTE-CONNECT — Plateforme de networking professionnel
-            </Text>
-            {unsubscribeUrl && (
-              <Text style={footerLink}>
-                <Link href={unsubscribeUrl} style={linkStyle}>
-                  Se désinscrire
+            <Section className="bg-background px-8 py-5 text-center border-t border-border">
+              <Text className="m-0 text-xs text-slate-400">
+                {year} PROMOTE. Tous droits réservés.
+              </Text>
+              <Text className="m-0 mt-1 text-xs text-slate-400">
+                Conçu par{' '}
+                <Link href="https://bbit-it.com" className="text-slate-400 underline">
+                  BBIT Sarl
                 </Link>
               </Text>
-            )}
-          </Section>
-
-          <Section style={footer}>
-            <Text style={footerSmall}>
-              {year} PROMOTE. Tous droits réservés.
-            </Text>
-            <Text style={footerSmall}>
-              Conçu par <Link href="https://bbit-it.com" style={signatureLink}>BBIT Sarl</Link>
-            </Text>
-          </Section>
-        </Container>
-      </Body>
+            </Section>
+          </Container>
+        </Body>
+      </Tailwind>
     </Html>
   );
 }
-
-const main = {
-  margin: '0',
-  padding: '32px 16px',
-  backgroundColor: '#f6f8fb',
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,sans-serif',
-  color: '#172554',
-};
-
-const container = {
-  maxWidth: '600px',
-  margin: '0 auto',
-  backgroundColor: '#ffffff',
-  borderRadius: '24px',
-  overflow: 'hidden',
-  boxShadow: '0 20px 60px rgba(15,23,42,0.1)',
-};
-
-const header = {
-  padding: '32px',
-  backgroundColor: '#912450',
-  color: '#ffffff',
-};
-
-const logo = {
-  margin: '0 0 16px',
-};
-
-const headerTitle = {
-  margin: '0',
-  fontSize: '26px',
-  lineHeight: '1.2',
-  fontWeight: 700,
-};
-
-const bodySection = {
-  padding: '28px',
-};
-
-const greeting = {
-  margin: '0 0 16px',
-  fontSize: '16px',
-  color: '#0f172a',
-  fontWeight: 500,
-};
-
-const paragraphStyle = {
-  margin: '0 0 16px',
-  lineHeight: '1.7',
-  color: '#475569',
-  fontSize: '15px',
-};
-
-const detailsBox = {
-  backgroundColor: '#f8fafc',
-  borderRadius: '12px',
-  padding: '16px 20px',
-  margin: '0 0 16px',
-};
-
-const detailsTitle = {
-  margin: '0 0 12px',
-  fontSize: '14px',
-  fontWeight: 600,
-  color: '#0f172a',
-};
-
-const detailItem = {
-  margin: '4px 0',
-  fontSize: '14px',
-  color: '#475569',
-  lineHeight: '1.6',
-};
-
-const hr = {
-  border: 'none',
-  borderTop: '1px solid #e2e8f0',
-  margin: '24px 0',
-};
-
-const footerText = {
-  margin: '0 0 8px',
-  fontSize: '12px',
-  lineHeight: '1.7',
-  color: '#64748b',
-};
-
-const footerLink = {
-  margin: '0',
-  fontSize: '12px',
-};
-
-const linkStyle = {
-  color: '#912450',
-  textDecoration: 'underline',
-  fontWeight: 500,
-};
-
-const footer = {
-  padding: '16px 28px',
-  backgroundColor: '#f8fafc',
-  textAlign: 'center' as const,
-};
-
-const footerSmall = {
-  margin: '4px 0 0',
-  fontSize: '11px',
-  color: '#94a3b8',
-};
-
-const signatureLink = {
-  color: '#94a3b8',
-  textDecoration: 'underline',
-};

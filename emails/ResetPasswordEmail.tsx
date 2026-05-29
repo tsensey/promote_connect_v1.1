@@ -14,22 +14,12 @@ import {
   Tailwind,
 } from '@react-email/components';
 
-export default function CredentialsEmail({
+export default function ResetPasswordEmail({
   fullName,
-  email,
   password,
-  role,
-  company,
-  pavillon,
-  stand,
 }: {
   fullName: string;
-  email: string;
   password: string;
-  role: string;
-  company?: string | null;
-  pavillon?: string | null;
-  stand?: string | null;
 }) {
   const loginUrl = 'https://promote-connect.com/login';
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://promote-connect.com';
@@ -55,7 +45,7 @@ export default function CredentialsEmail({
   return (
     <Html>
       <Head />
-      <Preview>Vos identifiants PROMOTE-CONNECT</Preview>
+      <Preview>Mot de passe réinitialisé - PROMOTE-CONNECT</Preview>
       <Tailwind config={tailwindConfig}>
         <Body className="bg-background m-0 px-4 py-8 font-sans text-foreground">
           <Container className="mx-auto max-w-[600px] bg-white rounded-3xl overflow-hidden shadow-xl border border-border">
@@ -68,69 +58,28 @@ export default function CredentialsEmail({
                 className="mb-4"
               />
               <Heading className="m-0 text-[26px] font-bold leading-tight">
-                Votre accès est prêt
+                Mot de passe réinitialisé
               </Heading>
             </Section>
 
             <Section className="p-8">
               <Text className="m-0 mb-4 text-lg font-semibold text-foreground">
-                Bienvenue, {fullName}
+                Bonjour, {fullName}
               </Text>
               <Text className="m-0 mb-6 text-[15px] leading-relaxed text-muted">
-                Votre compte a été créé par l'administrateur PROMOTE-CONNECT.
-                Vous pouvez dès maintenant accéder à la plateforme.
+                Votre mot de passe a été réinitialisé par un administrateur.
               </Text>
 
               <Section className="mb-6 rounded-xl bg-background p-6 border border-border">
                 <Text className="m-0 mb-4 text-sm font-semibold uppercase tracking-widest text-muted">
-                  Vos identifiants
+                  Nouveau mot de passe
                 </Text>
                 
-                <Text className="m-0 mb-4 leading-relaxed">
-                  <span className="text-[13px] text-slate-400">Email</span>
-                  <br />
-                  <span className="text-[15px] font-semibold text-foreground">{email}</span>
-                </Text>
-                
-                <Text className="m-0 mb-4 leading-relaxed">
-                  <span className="text-[13px] text-slate-400">Mot de passe</span>
-                  <br />
-                  <span className="inline-block mt-1 rounded-md bg-slate-200 px-2 py-1 font-mono text-[15px] font-semibold text-foreground tracking-wide">
+                <Text className="m-0 leading-relaxed">
+                  <span className="inline-block rounded-md bg-slate-200 px-3 py-2 font-mono text-[16px] font-bold text-foreground tracking-wide">
                     {password}
                   </span>
                 </Text>
-
-                <Text className="m-0 leading-relaxed">
-                  <span className="text-[13px] text-slate-400">Rôle</span>
-                  <br />
-                  <span className="text-[15px] font-semibold text-foreground">
-                    {role === 'exposant' ? 'Exposant' : role === 'admin' ? 'Administrateur' : 'Visiteur'}
-                  </span>
-                </Text>
-
-                {role === 'exposant' && (
-                  <>
-                    <Text className="m-0 mt-4 leading-relaxed">
-                      <span className="text-[13px] text-slate-400">Entreprise</span>
-                      <br />
-                      <span className="text-[15px] font-semibold text-foreground">{company || fullName}</span>
-                    </Text>
-                    {pavillon && (
-                      <Text className="m-0 mt-4 leading-relaxed">
-                        <span className="text-[13px] text-slate-400">Pavillon</span>
-                        <br />
-                        <span className="text-[15px] font-semibold text-foreground">{pavillon}</span>
-                      </Text>
-                    )}
-                    {stand && (
-                      <Text className="m-0 mt-4 leading-relaxed">
-                        <span className="text-[13px] text-slate-400">Stand</span>
-                        <br />
-                        <span className="text-[15px] font-semibold text-foreground">{stand}</span>
-                      </Text>
-                    )}
-                  </>
-                )}
               </Section>
 
               <Section className="my-8 text-center">
@@ -143,7 +92,7 @@ export default function CredentialsEmail({
               </Section>
 
               <Text className="m-0 text-[13px] leading-relaxed text-slate-400">
-                Nous vous recommandons de changer votre mot de passe lors de votre première connexion.
+                Pour des raisons de sécurité, nous vous recommandons de changer ce mot de passe lors de votre prochaine connexion.
               </Text>
 
               <Hr className="my-6 border-t border-border" />
