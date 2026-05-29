@@ -174,7 +174,7 @@ export default function AdminTicketsPage() {
           />
         </div>
         <div className="flex gap-2">
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <Select value={categoryFilter} onValueChange={(val) => setCategoryFilter(val || 'all')}>
             <SelectTrigger className="w-[180px] bg-background/50 border-white/5">
               <SelectValue placeholder="Catégorie" />
             </SelectTrigger>
@@ -185,7 +185,7 @@ export default function AdminTicketsPage() {
             </SelectContent>
           </Select>
 
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val || 'all')}>
             <SelectTrigger className="w-[180px] bg-background/50 border-white/5">
               <SelectValue placeholder="Statut" />
             </SelectTrigger>
