@@ -66,7 +66,7 @@ export function useSupportTickets() {
   }, []);
 
   const createTicket = useCallback(
-    async (subject: string, description: string, priority: string) => {
+    async (subject: string, description: string, priority: string, category: string = 'general') => {
       const { data: session } = await supabaseClient.auth.getSession();
       const myId = session?.session?.user?.id;
       if (!myId) throw new Error('Not authenticated');
@@ -78,6 +78,7 @@ export function useSupportTickets() {
           subject,
           description,
           priority,
+          category,
           status: 'open',
         })
         .select()

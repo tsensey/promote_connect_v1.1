@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, LifeBuoy, Loader2, MessageSquare } from 'lucide-react';
+import { AlertCircle, LifeBuoy, Loader2, MessageSquare, Search, Star } from 'lucide-react';
 import { supabaseClient } from '@/lib/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
 
@@ -16,6 +18,7 @@ interface AdminTicketRow {
   description: string | null;
   status: string | null;
   priority: string | null;
+  category: string | null;
   created_at: string | null;
   updated_at: string | null;
   profile_id: string | null;
@@ -50,6 +53,9 @@ export default function AdminTicketsPage() {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [tickets, setTickets] = useState<AdminTicketRow[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
 
   const loadTickets = async () => {
     const { data, error } = await supabaseClient
@@ -122,6 +128,23 @@ export default function AdminTicketsPage() {
     }
   };
 
+  const filteredTickets = tickets.filter((ticket) => {
+    if (statusFilter !== 'all' && ticket.status !== statusFilter) return false;
+    
+    const cat = ticket.category || 'general';
+    if (categoryFilter !== 'all' && cat !== categoryFilter) return false;
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const matchSubject = ticket.subject?.toLowerCase().includes(q) || false;
+      const matchName = ticket.profiles?.full_name?.toLowerCase().includes(q) || false;
+      const matchCompany = ticket.profiles?.company?.toLowerCase().includes(q) || false;
+      if (!matchSubject && !matchName && !matchCompany) return false;
+    }
+
+    return true;
+  });
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -135,9 +158,46 @@ export default function AdminTicketsPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label={t('admin.tickets.tickets_label')} value={tickets.length} />
-        <StatCard label={t('admin.tickets.open')} value={tickets.filter((ticket) => ticket.status === 'open').length} />
-        <StatCard label={t('admin.tickets.high_priority')} value={tickets.filter((ticket) => ticket.priority === 'high').length} />
+        <StatCard label={t('admin.tickets.tickets_label')} value={filteredTickets.length} />
+        <StatCard label={t('admin.tickets.open')} value={filteredTickets.filter((ticket) => ticket.status === 'open').length} />
+        <StatCard label={t('admin.tickets.high_priority')} value={filteredTickets.filter((ticket) => ticket.priority === 'high').length} />
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input 
+            placeholder={t('admin.tickets.search_placeholder')} 
+            className="pl-9 bg-background/50 border-white/5"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="flex gap-2">
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[180px] bg-background/50 border-white/5">
+              <SelectValue placeholder="Catégorie" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('admin.tickets.filter_all_cat')}</SelectItem>
+              <SelectItem value="general">{t('admin.tickets.category_general')}</SelectItem>
+              <SelectItem value="upgrade">{t('admin.tickets.category_upgrade')}</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px] bg-background/50 border-white/5">
+              <SelectValue placeholder="Statut" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('admin.tickets.filter_all_status')}</SelectItem>
+              <SelectItem value="open">{t('admin.tickets.status_open')}</SelectItem>
+              <SelectItem value="in_progress">{t('admin.tickets.status_in_progress')}</SelectItem>
+              <SelectItem value="resolved">{t('admin.tickets.status_resolved')}</SelectItem>
+              <SelectItem value="closed">{t('admin.tickets.status_closed')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <Card className="surface-panel border-0">
@@ -151,19 +211,28 @@ export default function AdminTicketsPage() {
                 <div key={index} className="h-28 animate-pulse rounded-xl bg-muted" />
               ))}
             </div>
-          ) : tickets.length === 0 ? (
+          ) : filteredTickets.length === 0 ? (
             <div className="surface-subtle py-12 text-center">
               <LifeBuoy className="mx-auto mb-3 size-10 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">{t('admin.tickets.no_tickets')}</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {tickets.map((ticket) => (
+              {filteredTickets.map((ticket) => (
                 <article key={ticket.id} className="surface-subtle space-y-4 p-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <h2 className="text-xl text-foreground">{ticket.subject}</h2>
+                        {(ticket.category === 'upgrade') ? (
+                           <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">
+                             <Star className="mr-1 size-3" /> {t('admin.tickets.category_upgrade')}
+                           </Badge>
+                        ) : (
+                           <Badge className="bg-slate-500/15 text-slate-700 dark:text-slate-300">
+                             <MessageSquare className="mr-1 size-3" /> {t('admin.tickets.category_general')}
+                           </Badge>
+                        )}
                         <Badge className={statusClasses[ticket.status || 'open']}>
                           {t(statusLabels[ticket.status || 'open'])}
                         </Badge>

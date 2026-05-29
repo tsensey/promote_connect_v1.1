@@ -772,6 +772,8 @@ export const translations: Record<Locale, Record<string, string>> = {
     'abonnement.feature_newsletter': 'Newsletter PROMOTE',
     'abonnement.feature_support': 'Support technique',
     'abonnement.feature_featured': 'Visibilité sponsorisée',
+    'abonnement.request_upgrade': 'Demander mon passage en Premium',
+    'abonnement.or_contact_us': 'Ou contactez-nous',
 
     // ─── Admin ───────────────────────────────────────────────
     'admin.layout.loading': 'Chargement de l\'administration...',
@@ -1139,6 +1141,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     'admin.tickets.title': 'Support admin',
     'admin.tickets.subtitle': 'Tickets en cours',
     'admin.tickets.desc': 'Suivez les demandes des utilisateurs, priorisez les cas sensibles et faites avancer le support depuis le back-office.',
+    'admin.tickets.search_placeholder': 'Rechercher par sujet, utilisateur...',
+    'admin.tickets.filter_all_cat': 'Toutes catégories',
+    'admin.tickets.category_general': 'Général',
+    'admin.tickets.category_upgrade': 'Passage Premium',
+    'admin.tickets.filter_all_status': 'Tous statuts',
     'admin.tickets.tickets_label': 'Tickets',
     'admin.tickets.open': 'Ouverts',
     'admin.tickets.high_priority': 'Priorité haute',
@@ -1461,10 +1468,6 @@ export const translations: Record<Locale, Record<string, string>> = {
     'landing.footer.copyright': '{year} PROMOTE-CONNECT. Tous droits réservés.',
   
     // ─── Ajouts manquants ───
-    'abonnement.my_limits': "Mes limites",
-    'abonnement.daily_messages': "Messages quotidiens",
-    'abonnement.max_posts': "Publications maximum",
-    'abonnement.max_vitrine': "Produits vitrine maximum",
     'annuaire.restricted_title': "Accès restreint",
     'annuaire.restricted_desc': "Cette fonctionnalité est réservée aux abonnés Premium.",
     'annuaire.unlock_access': "Débloquer l'accès",
@@ -2242,6 +2245,8 @@ export const translations: Record<Locale, Record<string, string>> = {
     'abonnement.feature_newsletter': 'PROMOTE Newsletter',
     'abonnement.feature_support': 'Technical support',
     'abonnement.feature_featured': 'Featured visibility',
+    'abonnement.request_upgrade': 'Request Premium upgrade',
+    'abonnement.or_contact_us': 'Or contact us',
 
     // ─── Admin Dashboard ─────────────────────────────────────
     'admin.layout.loading': 'Loading administration...',
@@ -2609,6 +2614,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     'admin.tickets.title': 'Admin Support',
     'admin.tickets.subtitle': 'Active tickets',
     'admin.tickets.desc': 'Track user requests, prioritize sensitive cases and manage support from the back-office.',
+    'admin.tickets.search_placeholder': 'Search by subject, user...',
+    'admin.tickets.filter_all_cat': 'All categories',
+    'admin.tickets.category_general': 'General',
+    'admin.tickets.category_upgrade': 'Premium Upgrade',
+    'admin.tickets.filter_all_status': 'All statuses',
     'admin.tickets.tickets_label': 'Tickets',
     'admin.tickets.open': 'Open',
     'admin.tickets.high_priority': 'High priority',

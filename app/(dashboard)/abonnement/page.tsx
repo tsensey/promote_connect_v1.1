@@ -24,6 +24,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useSupportTickets } from '@/hooks/useSupport';
 import { useAuth } from '@/lib/auth/context';
 import { supabaseClient } from '@/lib/supabase/client';
 import { type ConversionMessage } from '@/lib/subscription';
@@ -71,6 +72,31 @@ export default function AbonnementPage() {
 
   const [conversionMsg, setConversionMsg] = useState<ConversionMessage | null>(null);
   const [quotas, setQuotas] = useState<{ dailyMessageLimit: number, maxPosts: number, maxVitrine: number } | null>(null);
+
+  const { createTicket, tickets, loading: ticketsLoading } = useSupportTickets();
+  const [isRequesting, setIsRequesting] = useState(false);
+  const [localRequestSent, setLocalRequestSent] = useState(false);
+
+  const hasPendingUpgradeRequest = useMemo(() => {
+    return localRequestSent || tickets.some(t => t.subject === 'Demande de passage à Premium');
+  }, [localRequestSent, tickets]);
+
+  const handleUpgradeRequest = async () => {
+    setIsRequesting(true);
+    try {
+      await createTicket(
+        'Demande de passage à Premium',
+        "Je souhaite passer à l'abonnement Premium pour débloquer toutes les fonctionnalités. Pouvez-vous me recontacter pour finaliser mon abonnement ?",
+        'high',
+        'upgrade'
+      );
+      setLocalRequestSent(true);
+    } catch (e) {
+      console.error('Erreur lors de la création du ticket:', e);
+    } finally {
+      setIsRequesting(false);
+    }
+  };
 
   useEffect(() => {
     async function loadConfig() {
@@ -451,19 +477,52 @@ export default function AbonnementPage() {
                   </a>
                 </div>
 
-                {msg.ctaUrl ? (
-                  <a href={msg.ctaUrl} target="_blank" rel="noopener noreferrer" className="block w-full">
-                    <Button className="w-full rounded-xl" size="lg">
-                      {msg.ctaLabel} <ArrowRight className="ml-2 size-4" />
-                    </Button>
-                  </a>
-                ) : (
-                  <a href={`mailto:${msg.email}`} className="block w-full">
-                    <Button className="w-full rounded-xl" size="lg">
-                      {msg.ctaLabel}
-                    </Button>
-                  </a>
-                )}
+                <div className="flex flex-col gap-2 w-full mt-2">
+                  <Button 
+                    className="w-full rounded-xl" 
+                    size="lg"
+                    onClick={handleUpgradeRequest}
+                    disabled={isRequesting || hasPendingUpgradeRequest || ticketsLoading}
+                  >
+                    {isRequesting || ticketsLoading ? (
+                      <span className="flex items-center gap-2">
+                         <div className="size-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                         Envoi en cours...
+                      </span>
+                    ) : hasPendingUpgradeRequest ? (
+                      <span className="flex items-center gap-2">
+                         <CheckCircle2 className="size-4" /> Demande envoyée
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        {t('abonnement.request_upgrade') || 'Demander mon passage en Premium'} <Crown className="size-4" />
+                      </span>
+                    )}
+                  </Button>
+
+                  <div className="relative my-3">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-border/50" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">{t('abonnement.or_contact_us') || 'Ou contactez-nous'}</span>
+                    </div>
+                  </div>
+                  
+                  {msg.ctaUrl ? (
+                    <a href={msg.ctaUrl} target="_blank" rel="noopener noreferrer" className="block w-full">
+                      <Button variant="outline" className="w-full rounded-xl" size="lg">
+                        {msg.ctaLabel} <ArrowRight className="ml-2 size-4" />
+                      </Button>
+                    </a>
+                  ) : (
+                    <a href={`mailto:${msg.email}`} className="block w-full">
+                      <Button variant="outline" className="w-full rounded-xl" size="lg">
+                        {msg.ctaLabel}
+                      </Button>
+                    </a>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>

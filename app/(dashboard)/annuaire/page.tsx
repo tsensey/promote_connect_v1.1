@@ -585,7 +585,7 @@ export default function AnnuairePage() {
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {perms.canAccessDirectory && totalPages > 1 && (
         <div className="flex items-center justify-center gap-1.5">
           <Button
             variant="outline"
