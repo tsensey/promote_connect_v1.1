@@ -166,9 +166,15 @@ export default function AdminAbonnementsPage() {
 
     try {
       const field = showDateDialog.subscription_tier === 'paid' ? 'subscription_ends_at' : 'trial_ends_at';
+      const dateValue = newDate ? new Date(newDate).toISOString() : null;
+      
+      const updateData = field === 'subscription_ends_at' 
+        ? { subscription_ends_at: dateValue } 
+        : { trial_ends_at: dateValue };
+
       const { error } = await supabaseClient
         .from('profiles')
-        .update({ [field]: newDate ? new Date(newDate).toISOString() : null })
+        .update(updateData)
         .eq('id', showDateDialog.id);
 
       if (error) throw error;
