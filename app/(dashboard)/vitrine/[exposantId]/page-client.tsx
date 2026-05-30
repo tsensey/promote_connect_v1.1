@@ -64,7 +64,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
+import { cn, getValidImageUrl } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
 import { usePermissions } from '@/hooks/usePermissions';
 import { ReportButton } from '@/components/shared/ReportButton';
@@ -223,7 +223,7 @@ export default function VitrineExposantPage() {
         >
           {exposant.cover_url ? (
             <Image
-              src={exposant.cover_url}
+              src={getValidImageUrl(exposant.cover_url)}
               alt={t('vitrine.detail.cover_alt', { name: exposant.nom })}
               fill
               sizes="100vw"
@@ -249,7 +249,7 @@ export default function VitrineExposantPage() {
               <div className="relative flex size-24 items-center justify-center rounded-2xl border-4 border-background bg-primary/10 text-3xl font-bold text-primary">
                 {exposant.logo_url ? (
                   <Image 
-                    src={exposant.logo_url} 
+                    src={getValidImageUrl(exposant.logo_url)} 
                     alt={exposant.nom} 
                     fill 
                     sizes="96px" 
@@ -499,7 +499,7 @@ export default function VitrineExposantPage() {
                       {prod.image_url && (
                         <div className="relative mb-3 h-40 w-full">
                           <Image 
-                            src={prod.image_url} 
+                            src={getValidImageUrl(prod.image_url)} 
                             alt={prod.nom} 
                             fill 
                             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" 
@@ -536,7 +536,7 @@ export default function VitrineExposantPage() {
                     <div className="space-y-4 py-2">
                       {prod.image_url && (
                         <div className="relative h-52 w-full">
-                          <Image src={prod.image_url} alt={prod.nom} fill sizes="(max-width: 640px) 100vw, 512px" className="rounded-xl object-cover" />
+                          <Image src={getValidImageUrl(prod.image_url)} alt={prod.nom} fill sizes="(max-width: 640px) 100vw, 512px" className="rounded-xl object-cover" />
                         </div>
                       )}
                       {prod.categorie && <Badge>{prod.categorie}</Badge>}

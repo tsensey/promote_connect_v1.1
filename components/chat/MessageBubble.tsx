@@ -5,7 +5,7 @@ import { memo, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Check, CheckCheck, Reply, FileText, ExternalLink, X } from 'lucide-react';
 import type { EnrichedMessage, ProductAttachment } from '@/hooks/useChat';
-import { cn } from '@/lib/utils';
+import { cn, getValidImageUrl } from '@/lib/utils';
 import { sanitizeHTML, sanitizeText } from '@/lib/sanitize';
 import { useTranslation } from '@/lib/i18n';
 
@@ -86,7 +86,7 @@ function ProductCard({
     >
       {product.image_url ? (
         <Image
-          src={product.image_url}
+          src={getValidImageUrl(product.image_url)}
           alt={product.nom}
           width={48}
           height={48}
@@ -144,7 +144,7 @@ function ImageAttachment({ url }: { url: string }) {
     <>
       <div className="relative mt-1 h-48 w-48 sm:h-60 sm:w-60">
         <Image
-          src={url}
+          src={getValidImageUrl(url)}
           alt="Photo"
           onClick={() => setOpen(true)}
           fill
@@ -165,7 +165,7 @@ function ImageAttachment({ url }: { url: string }) {
           </button>
           <div className="relative h-[90vh] w-[90vw]">
             <Image
-              src={url}
+              src={getValidImageUrl(url)}
               alt="Photo agrandie"
               fill
               sizes="90vw"

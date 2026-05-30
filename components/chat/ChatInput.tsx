@@ -13,7 +13,7 @@ import {
   FileText,
 } from 'lucide-react';
 import type { EnrichedMessage, ProductAttachment } from '@/hooks/useChat';
-import { cn } from '@/lib/utils';
+import { cn, getValidImageUrl } from '@/lib/utils';
 import { sanitizeText } from '@/lib/sanitize';
 import { useTranslation } from '@/lib/i18n';
 
@@ -156,7 +156,7 @@ export function ChatInput({
           <Tag className="size-4 shrink-0 text-amber-500" />
           {productContext.image_url && (
             <Image
-              src={productContext.image_url}
+              src={getValidImageUrl(productContext.image_url)}
               alt={productContext.nom}
               width={32}
               height={32}

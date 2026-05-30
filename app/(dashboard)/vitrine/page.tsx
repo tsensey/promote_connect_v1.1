@@ -25,7 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Database } from '@/types/database.types';
-import { cn } from '@/lib/utils';
+import { cn, getValidImageUrl } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
 import Image from 'next/image';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -377,7 +377,7 @@ export default function VitrinePage() {
                   {produit.image_url ? (
                   <div className="relative h-44 overflow-hidden bg-muted">
                     <Image
-                      src={produit.image_url}
+                      src={getValidImageUrl(produit.image_url)}
                       alt={produit.nom}
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
@@ -472,7 +472,7 @@ export default function VitrinePage() {
                     <div className="flex items-center gap-2.5 rounded-xl border border-border/50 bg-muted/30 p-2.5">
                       <Avatar className="size-8 shrink-0 ring-1 ring-border/30">
                         {produit.exposants.logo_url ? (
-                          <AvatarImage src={produit.exposants.logo_url} />
+                          <AvatarImage src={getValidImageUrl(produit.exposants.logo_url)} />
                         ) : (
                           <AvatarFallback className="bg-primary/10 text-[11px] font-bold text-primary">
                             {produit.exposants.nom.charAt(0).toUpperCase()}

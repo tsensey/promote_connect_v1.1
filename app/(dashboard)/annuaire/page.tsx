@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useTranslation } from '@/lib/i18n';
-import { cn } from '@/lib/utils';
+import { cn, getValidImageUrl } from '@/lib/utils';
 import Image from 'next/image';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -418,7 +418,7 @@ export default function AnnuairePage() {
                 )}>
                   {exposant.cover_url && (
                     <Image
-                      src={exposant.cover_url}
+                      src={getValidImageUrl(exposant.cover_url)}
                       alt=""
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
@@ -466,7 +466,7 @@ export default function AnnuairePage() {
                   <div className="flex items-start gap-3 -mt-8">
                     <Avatar className="size-12  ring-2 ring-background shrink-0">
                       {exposant.logo_url ? (
-                        <AvatarImage src={exposant.logo_url} />
+                        <AvatarImage src={getValidImageUrl(exposant.logo_url)} />
                       ) : (
                         <AvatarFallback className="bg-primary/10 text-base font-bold text-primary">
                           {exposant.nom.charAt(0).toUpperCase()}

@@ -34,7 +34,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
+import { cn, getValidImageUrl } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
 import type { Database } from '@/types/database.types';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
@@ -267,7 +267,7 @@ export default function ExposantDetailPage() {
           )}
           <div className="relative flex h-[85vh] w-[90vw] max-h-[85vh] max-w-[90vw] items-center justify-center">
             <Image
-              src={(exposant.gallery_urls as string[])[lightboxIndex]}
+              src={getValidImageUrl((exposant.gallery_urls as string[])[lightboxIndex])}
               alt=""
               fill
               sizes="100vw"
@@ -300,7 +300,7 @@ export default function ExposantDetailPage() {
       <Card className="surface-panel overflow-hidden border-0 p-0">
         <div className="relative h-48 w-full bg-muted sm:h-64">
           {exposant.cover_url ? (
-            <Image src={exposant.cover_url} alt={t('annuaire.detail.cover_alt')} fill sizes="100vw" className="object-cover" />
+            <Image src={getValidImageUrl(exposant.cover_url)} alt={t('annuaire.detail.cover_alt')} fill sizes="100vw" className="object-cover" />
           ) : (
             <div className={cn("h-full w-full bg-gradient-to-br", getGradient(exposant.id))} />
           )}
@@ -313,7 +313,7 @@ export default function ExposantDetailPage() {
               <div className="relative shrink-0">
                 <div className="relative flex size-28 items-center justify-center overflow-hidden rounded-2xl border-[3px] border-background bg-white dark:bg-slate-900 sm:size-36">
                   {exposant.logo_url ? (
-                    <Image src={exposant.logo_url} alt={exposant.nom} fill sizes="(max-width: 640px) 112px, 144px" className="object-contain p-2" />
+                    <Image src={getValidImageUrl(exposant.logo_url)} alt={exposant.nom} fill sizes="(max-width: 640px) 112px, 144px" className="object-contain p-2" />
                   ) : (
                     <Building2 className="size-14 text-muted-foreground/30" />
                   )}
@@ -477,7 +477,7 @@ export default function ExposantDetailPage() {
                       className="group relative aspect-square overflow-hidden rounded-xl bg-muted"
                     >
                       <Image
-                        src={url}
+                        src={getValidImageUrl(url)}
                         alt=""
                         fill
                         sizes="(max-width: 640px) 50vw, 33vw"
@@ -661,7 +661,7 @@ export default function ExposantDetailPage() {
                       <div className="flex gap-3 p-3">
                         {prod.image_url ? (
                           <div className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-muted">
-                            <Image src={prod.image_url} alt="" fill sizes="80px" className="object-cover" />
+                            <Image src={getValidImageUrl(prod.image_url)} alt="" fill sizes="80px" className="object-cover" />
                           </div>
                         ) : (
                           <div className="flex size-20 shrink-0 items-center justify-center rounded-lg bg-muted/50">

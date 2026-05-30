@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
+import { cn, getValidImageUrl } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
 import type { SearchResult } from '@/types/search';
 
@@ -107,7 +107,7 @@ export function SearchResultItem({ result, onSelect, variant = 'default' }: Sear
         ) : result.entity_type === 'produit' && result.metadata?.image_url ? (
           <div className="relative size-14 shrink-0 overflow-hidden rounded-2xl bg-muted transition-all duration-200 group-hover:scale-110 group-hover:ring-1 ring-border/50">
             <Image
-              src={result.metadata.image_url as string}
+              src={getValidImageUrl(result.metadata.image_url as string)}
               alt={result.title}
               fill
               sizes="56px"

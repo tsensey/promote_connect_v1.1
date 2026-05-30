@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { cn, getValidImageUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
 import type { useFeed, Comment } from '@/hooks/useFeed';
@@ -595,7 +595,7 @@ export const PostCard = memo(function PostCard({
                 return (
                   <div className="overflow-hidden rounded-xl border border-border/60">
                     <Image
-                      src={images[0]}
+                      src={getValidImageUrl(images[0])}
                       alt=""
                       width={0}
                       height={0}
@@ -624,7 +624,7 @@ export const PostCard = memo(function PostCard({
                     {images.map((url, i) => (
                       <div key={i} className="relative aspect-square overflow-hidden rounded-xl border border-border/60">
                         <Image
-                          src={url}
+                          src={getValidImageUrl(url)}
                           alt=""
                           fill
                           priority={priority}
@@ -651,7 +651,7 @@ export const PostCard = memo(function PostCard({
                 <div className="flex flex-col gap-0.5">
                   <div className="overflow-hidden rounded-xl border border-border/60">
                     <Image
-                      src={images[0]}
+                      src={getValidImageUrl(images[0])}
                       alt=""
                       width={0}
                       height={0}
@@ -675,7 +675,7 @@ export const PostCard = memo(function PostCard({
                     {images.slice(1).map((url, i) => (
                       <div key={i + 1} className="relative aspect-square overflow-hidden rounded-xl border border-border/60">
                         <Image
-                          src={url}
+                          src={getValidImageUrl(url)}
                           alt=""
                           fill
                           priority={priority}
@@ -910,7 +910,7 @@ export const PostCard = memo(function PostCard({
              {/* Blurred background image */}
              {displayImageUrl && (
                <Image 
-                 src={displayImageUrl.split(',')[selectedImageIdx]} 
+                 src={getValidImageUrl(displayImageUrl.split(',')[selectedImageIdx])} 
                  alt=""
                  fill
                  sizes="(max-width: 1200px) 95vw, 1200px"
@@ -923,7 +923,7 @@ export const PostCard = memo(function PostCard({
              </button>
                {displayImageUrl && (
                   <Image 
-                    src={displayImageUrl.split(',')[selectedImageIdx]} 
+                    src={getValidImageUrl(displayImageUrl.split(',')[selectedImageIdx])} 
                     alt={t('common.preview')}
                     fill
                     sizes="(max-width: 1200px) 95vw, 1200px"

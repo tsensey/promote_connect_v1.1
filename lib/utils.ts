@@ -22,3 +22,11 @@ export function toEmbedUrl(url?: string | undefined): string | undefined {
 
   return url;
 }
+
+export function getValidImageUrl(url: string | null | undefined): string {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')) {
+    return url;
+  }
+  return `/${url}`;
+}

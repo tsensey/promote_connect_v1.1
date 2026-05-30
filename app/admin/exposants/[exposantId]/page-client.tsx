@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { cn, getValidImageUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -627,7 +628,7 @@ export default function AdminExposantVitrinePage() {
                   <div className="flex items-center gap-4">
                     {showcaseForm.logo_url && (
                       <div className="relative size-16 overflow-hidden rounded-xl border border-border/50 shrink-0 bg-white">
-                        <Image src={showcaseForm.logo_url} alt="Logo" fill sizes="64px" className="object-contain" />
+                        <Image src={getValidImageUrl(showcaseForm.logo_url)} alt="Logo" fill sizes="64px" className="object-contain" />
                       </div>
                     )}
                     <div className="relative flex-1">
@@ -648,7 +649,7 @@ export default function AdminExposantVitrinePage() {
                   <div className="flex items-center gap-4">
                     {showcaseForm.cover_url && (
                       <div className="relative h-24 w-full max-w-[200px] overflow-hidden rounded-xl border border-border/50 shrink-0 bg-muted">
-                        <Image src={showcaseForm.cover_url} alt="Cover" fill sizes="200px" className="object-cover" />
+                        <Image src={getValidImageUrl(showcaseForm.cover_url)} alt="Cover" fill sizes="200px" className="object-cover" />
                       </div>
                     )}
                     <div className="relative flex-1">
@@ -725,7 +726,7 @@ export default function AdminExposantVitrinePage() {
                 <div className="flex items-center gap-4">
                   {productForm.image_url && (
                     <div className="relative size-16 overflow-hidden rounded-xl border border-border/50 shrink-0">
-                      <Image src={productForm.image_url} alt="" fill sizes="64px" className="object-cover" />
+                      <Image src={getValidImageUrl(productForm.image_url)} alt="" fill sizes="64px" className="object-cover" />
                     </div>
                   )}
                   <div className="relative flex-1">
@@ -789,7 +790,7 @@ export default function AdminExposantVitrinePage() {
               >
                 {product.image_url && (
                   <div className="relative h-36 w-full overflow-hidden rounded-lg">
-                    <Image src={product.image_url} alt={product.nom} fill sizes="(max-width:768px) 100vw, 50vw" className="object-cover" />
+                    <Image src={getValidImageUrl(product.image_url)} alt={product.nom} fill sizes="(max-width:768px) 100vw, 50vw" className="object-cover" />
                   </div>
                 )}
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -869,7 +870,7 @@ export default function AdminExposantVitrinePage() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {showcaseForm.gallery_urls.map((url, i) => (
                     <div key={i} className="group relative aspect-square rounded-xl overflow-hidden border border-border/50 bg-muted">
-                      <Image src={url} alt="" fill sizes="200px" className="object-cover" />
+                      <Image src={getValidImageUrl(url)} alt="" fill sizes="200px" className="object-cover" />
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Button
                           variant="destructive"
