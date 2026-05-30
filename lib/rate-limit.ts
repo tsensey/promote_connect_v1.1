@@ -1,33 +1,33 @@
-const store = new Map<string, { count: number; resetAt: number }>();
+import { createAdminClient } from './supabase/admin';
 
-const CLEANUP_INTERVAL = 60_000;
-
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of store) {
-    if (now > entry.resetAt) store.delete(key);
-  }
-}, CLEANUP_INTERVAL);
-
-export function rateLimit(
+export async function rateLimit(
   key: string,
   maxRequests: number,
   windowMs: number,
-): { allowed: boolean; remaining: number; resetAt: number } {
-  const now = Date.now();
-  const entry = store.get(key);
+): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await (supabase.rpc as any)('check_rate_limit', {
+      p_ip_key: key,
+      p_max_requests: maxRequests,
+      p_window_ms: windowMs,
+    });
 
-  if (!entry || now > entry.resetAt) {
-    store.set(key, { count: 1, resetAt: now + windowMs });
-    return { allowed: true, remaining: maxRequests - 1, resetAt: now + windowMs };
+    if (error) {
+      console.error('[RateLimit] Error calling check_rate_limit:', error);
+      return { allowed: true, remaining: 1, resetAt: Date.now() + windowMs };
+    }
+
+    const result = data as any;
+    return {
+      allowed: result.allowed,
+      remaining: result.remaining,
+      resetAt: result.resetAt,
+    };
+  } catch (err) {
+    console.error('[RateLimit] Exception:', err);
+    return { allowed: true, remaining: 1, resetAt: Date.now() + windowMs };
   }
-
-  if (entry.count >= maxRequests) {
-    return { allowed: false, remaining: 0, resetAt: entry.resetAt };
-  }
-
-  entry.count++;
-  return { allowed: true, remaining: maxRequests - entry.count, resetAt: entry.resetAt };
 }
 
 export function getClientIp(request: Request): string {

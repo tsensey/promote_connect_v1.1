@@ -1,0 +1,62 @@
+{
+  "name": "PROMOTE-CONNECT : 3. Relances Abonnements",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [ { "field": "days", "triggerAtHour": 8 } ]
+        }
+      },
+      "id": "trigger-sub",
+      "name": "Schedule Trigger (Tous les jours 8h)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [ 100, 300 ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "getAll",
+        "table": "v_n8n_expiring_subscriptions",
+        "returnAll": true,
+        "options": {}
+      },
+      "id": "get-expiring-subs",
+      "name": "Récupérer Abonnements",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [ 300, 300 ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"from\": \"PROMOTE <noreply@promote-connect.pro>\",\n  \"to\": [\"{{ $json.email }}\"],\n  \"subject\": \"Renouvellement de votre accès PROMOTE-CONNECT\",\n  \"html\": \"<p>Bonjour {{ $json.full_name }},</p><p>Votre abonnement d'un an à PROMOTE-CONNECT arrive à expiration le <b>{{ $json.subscription_ends_at }}</b>.</p><p>Pour continuer à réseauter, veuillez renouveler votre accès via votre tableau de bord.</p>\"\n}"
+      },
+      "id": "send-resend-sub",
+      "name": "Envoyer via Resend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [ 500, 300 ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger (Tous les jours 8h)": {
+      "main": [ [ { "node": "Récupérer Abonnements", "type": "main", "index": 0 } ] ]
+    },
+    "Récupérer Abonnements": {
+      "main": [ [ { "node": "Envoyer via Resend", "type": "main", "index": 0 } ] ]
+    }
+  },
+  "settings": {}
+}

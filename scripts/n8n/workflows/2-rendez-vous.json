@@ -1,0 +1,62 @@
+{
+  "name": "PROMOTE-CONNECT : 2. Rappels de Rendez-vous",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [ { "field": "minutes", "minutesInterval": 60 } ]
+        }
+      },
+      "id": "trigger-rdv",
+      "name": "Schedule Trigger (Toutes les heures)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [ 100, 300 ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "getAll",
+        "table": "v_rdv_reminders",
+        "returnAll": true,
+        "options": {}
+      },
+      "id": "get-rdv",
+      "name": "Récupérer RDV à J-1",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [ 300, 300 ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"from\": \"PROMOTE <noreply@promote-connect.pro>\",\n  \"to\": [\"{{ $json.demandeur_email }}\", \"{{ $json.destinataire_email }}\"],\n  \"subject\": \"Rappel : Votre Rendez-vous approche\",\n  \"html\": \"<p>Bonjour,</p><p>Ceci est un rappel pour votre rendez-vous B2B prévu le <b>{{ $json.starts_at }}</b>.</p><p>Connectez-vous sur PROMOTE-CONNECT pour plus de détails.</p>\"\n}"
+      },
+      "id": "send-resend-rdv",
+      "name": "Envoyer via Resend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [ 500, 300 ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger (Toutes les heures)": {
+      "main": [ [ { "node": "Récupérer RDV à J-1", "type": "main", "index": 0 } ] ]
+    },
+    "Récupérer RDV à J-1": {
+      "main": [ [ { "node": "Envoyer via Resend", "type": "main", "index": 0 } ] ]
+    }
+  },
+  "settings": {}
+}

@@ -1,0 +1,73 @@
+{
+  "name": "PROMOTE-CONNECT : Envoi Newsletter (Template)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "promote-newsletter",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "c1f7a0b3-1a2b-4c3d-8e5f-9f0a1b2c3d4e",
+      "name": "Webhook (Déclencheur)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "webhookId": "promote-newsletter"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer VOTRE_CLE_API_RESEND"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"from\": \"PROMOTE <newsletter@promote-connect.pro>\",\n  \"to\": [\"{{ $json.body.email }}\"],\n  \"subject\": \"Nouvelle actualité PROMOTE-CONNECT\",\n  \"html\": \"<p>Bonjour,</p><p>Voici les dernières actualités du salon...</p>\"\n}",
+        "options": {}
+      },
+      "id": "a2b3c4d5-e6f7-8g9h-0i1j-2k3l4m5n6o7p",
+      "name": "Envoyer via Resend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        500,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook (Déclencheur)": {
+      "main": [
+        [
+          {
+            "node": "Envoyer via Resend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

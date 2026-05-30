@@ -172,11 +172,58 @@ Ce script créera le compte Auth, le `profile` avec le rôle `admin`, et affiche
 Les envois de newsletters différés, relances, et autres tâches planifiées sont gérés par n8n (ou des scripts Cron).
 
 ### 5.1 n8n (Docker Compose)
-1. Créez un répertoire pour n8n (`/opt/n8n`).
-2. Créez un `docker-compose.yml` standard pour l'image `n8nio/n8n`.
-3. Lancez le service : `docker-compose up -d`. Le service sera accessible sur le port `5678`.
-4. Connectez-vous à l'interface, importez les workflows PROMOTE-CONNECT (fichier JSON de vos workflows).
-5. Configurez les credentials dans n8n (Supabase API Key/URL, Resend API Key).
+
+Pour déployer n8n de manière robuste :
+
+1. Créez un répertoire pour n8n :
+   ```bash
+   mkdir -p /opt/n8n
+   cd /opt/n8n
+   ```
+
+2. Créez un fichier `docker-compose.yml` :
+   ```bash
+   nano docker-compose.yml
+   ```
+   *Insérez le contenu suivant :*
+   ```yaml
+   version: "3.7"
+   services:
+     n8n:
+       image: n8nio/n8n:latest
+       restart: always
+       environment:
+         - N8N_HOST=n8n.promote-connect.pro
+         - N8N_PORT=5678
+         - N8N_PROTOCOL=https
+         - NODE_ENV=production
+         - WEBHOOK_URL=https://n8n.promote-connect.pro/
+         - GENERIC_TIMEZONE=Africa/Douala
+       ports:
+         - "5678:5678"
+       volumes:
+         - ./n8n_data:/home/node/.n8n
+   ```
+
+3. Créez le dossier de données et appliquez les bonnes permissions :
+   ```bash
+   mkdir n8n_data
+   chown -R 1000:1000 n8n_data
+   ```
+
+4. Lancez le service n8n en tâche de fond :
+   ```bash
+   docker-compose up -d
+   ```
+   *Le service sera accessible localement sur le port `5678`, et exposé sur `https://n8n.promote-connect.pro` via le reverse proxy Nginx.*
+
+5. Configuration initiale :
+   - Rendez-vous sur `https://n8n.promote-connect.pro` pour créer le compte administrateur (Owner).
+   - Dans le menu **Credentials**, ajoutez les accès requis :
+     - **Supabase API** : Utilisez l'URL de votre API et la clé `SERVICE_ROLE_KEY` (indispensable pour contourner les RLS lors des tâches de fond).
+     - **Resend API** : Pour l'envoi des emails (newsletters).
+   - Importez les workflows PROMOTE-CONNECT (depuis un fichier JSON d'export).
+   - Activez les workflows (`Active` switch on).
 
 ---
 

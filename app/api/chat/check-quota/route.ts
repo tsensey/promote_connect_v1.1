@@ -15,7 +15,7 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 export async function POST(request: NextRequest) {
   // Rate limiting — max 60 vérifications/minute par IP
   const ip = getClientIp(request);
-  const rateLimitResult = rateLimit(`chat-quota:${ip}`, 60, 60_000);
+  const rateLimitResult = await rateLimit(`chat-quota:${ip}`, 60, 60_000);
   if (!rateLimitResult.allowed) {
     return NextResponse.json(
       { error: 'rate_limit_exceeded' },

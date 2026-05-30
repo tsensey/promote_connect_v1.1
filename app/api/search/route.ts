@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     // Rate limiting
     const ip = getClientIp(request);
-    const { allowed } = rateLimit(`search:${ip}`, 60, 60_000);
+    const { allowed } = await rateLimit(`search:${ip}`, 60, 60_000);
     if (!allowed) {
       return NextResponse.json(
         { error: 'Too many requests. Please slow down.' },

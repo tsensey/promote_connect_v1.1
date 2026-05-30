@@ -5,7 +5,7 @@ import sharp from 'sharp';
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
-  const { allowed, remaining } = rateLimit(`upload:${ip}`, 30, 60_000);
+  const { allowed, remaining } = await rateLimit(`upload:${ip}`, 30, 60_000);
   if (!allowed) {
     return NextResponse.json(
       { error: 'Too many requests' },

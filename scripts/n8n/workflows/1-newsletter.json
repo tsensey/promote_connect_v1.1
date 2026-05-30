@@ -1,0 +1,71 @@
+{
+  "name": "PROMOTE-CONNECT : 1. Envoi Newsletters",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [ 4 ],
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "id": "trigger-newsletter",
+      "name": "Schedule Trigger (Jeudi 10h)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [ 100, 300 ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "getAll",
+        "table": "v_newsletter_ready_to_send",
+        "returnAll": true,
+        "options": {}
+      },
+      "id": "get-subscribers",
+      "name": "Récupérer Abonnés & Édition",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [ 300, 300 ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"from\": \"PROMOTE <newsletter@promote-connect.pro>\",\n  \"to\": [\"{{ $json.email }}\"],\n  \"subject\": \"{{ $json.titre }}\",\n  \"html\": \"{{ $json.contenu }}\"\n}"
+      },
+      "id": "send-resend",
+      "name": "Envoyer via Resend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [ 500, 300 ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger (Jeudi 10h)": {
+      "main": [ [ { "node": "Récupérer Abonnés & Édition", "type": "main", "index": 0 } ] ]
+    },
+    "Récupérer Abonnés & Édition": {
+      "main": [ [ { "node": "Envoyer via Resend", "type": "main", "index": 0 } ] ]
+    }
+  },
+  "settings": {}
+}

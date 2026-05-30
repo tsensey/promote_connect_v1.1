@@ -34,7 +34,7 @@ function normalizeFrequency(value: unknown): 'daily' | 'weekly' | 'monthly' {
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
-  const { allowed, remaining } = rateLimit(`newsletter:subscribe:${ip}`, 10, 60_000);
+  const { allowed, remaining } = await rateLimit(`newsletter:subscribe:${ip}`, 10, 60_000);
   if (!allowed) {
     return NextResponse.json(
       { error: 'Too many requests' },
@@ -134,7 +134,7 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   const ip = getClientIp(request);
-  const { allowed, remaining } = rateLimit(`newsletter:unsubscribe:${ip}`, 20, 60_000);
+  const { allowed, remaining } = await rateLimit(`newsletter:unsubscribe:${ip}`, 20, 60_000);
   if (!allowed) {
     return NextResponse.json(
       { error: 'Too many requests' },

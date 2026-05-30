@@ -40,7 +40,7 @@ async function sendFcmNotification(token: string, payload: { title: string; body
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
-  const { allowed, remaining } = rateLimit(`fcm:${ip}`, 60, 60_000);
+  const { allowed, remaining } = await rateLimit(`fcm:${ip}`, 60, 60_000);
   if (!allowed) {
     return NextResponse.json(
       { error: 'Too many requests' },
