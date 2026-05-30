@@ -23,64 +23,7 @@ export function useNotifications() {
     myIdRef.current = user.id;
 
     // ─── Messages entrants ──────────────────────────────────────────────
-    const messageChannel = supabaseClient
-      .channel('notifications-messages')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-        },
-        async (payload) => {
-          const msg = payload.new as Message;
-          const myId = myIdRef.current;
-          if (!myId) return;
-          if (msg.sender_id === myId) return;
-          if (msg.conversation_id === activeConversationId) return;
-
-          const { data: conv } = await supabaseClient
-            .from('conversations')
-            .select('participant_a, participant_b')
-            .eq('id', msg.conversation_id!)
-            .single();
-
-          if (!conv) return;
-          if (conv.participant_a !== myId && conv.participant_b !== myId) return;
-
-          const { data: sender } = await supabaseClient
-            .from('profiles')
-            .select('full_name, company')
-            .eq('id', msg.sender_id!)
-            .single();
-
-          const senderName = sender?.company || sender?.full_name || t('notifications.someone');
-          const preview = msg.content
-            ? msg.content.length > 60 ? msg.content.slice(0, 60) + '…' : msg.content
-            : msg.attachment_type === 'image'
-              ? t('notifications.photo')
-              : msg.attachment_type === 'document'
-                ? t('notifications.document')
-                : msg.product_attachment
-                  ? t('notifications.product')
-                  : t('notifications.new_message');
-
-          playMessageSound();
-          refreshUnreadCount(); // Immédiat !
-
-          toast(senderName, {
-            description: preview,
-            action: {
-              label: t('notifications.view'),
-              onClick: () => {
-                window.location.href = `/chat?conv=${msg.conversation_id}`;
-              },
-            },
-            duration: 5000,
-          });
-        }
-      )
-      .subscribe();
+    // Les messages entrants sont désormais gérés via la table notifications et le trigger trg_notify_on_new_message
 
     // ─── Nouvelles publications ─────────────────────────────────────────
     const postChannel = supabaseClient
@@ -153,6 +96,13 @@ export function useNotifications() {
             case 'comment': message = t('notifications.commented_post', { name: senderName }); break;
             case 'mention_post': message = t('notifications.mentioned_post', { name: senderName }); break;
             case 'mention_comment': message = t('notifications.mentioned_comment', { name: senderName }); break;
+            case 'new_ticket': message = t('notifications.new_ticket', { name: senderName, subject: n.data?.subject || '' }); break;
+            case 'ticket_reply': message = t('notifications.ticket_reply', { name: senderName }); break;
+            case 'new_message': 
+              if (n.data?.conversation_id === activeConversationId) return; // Skip toast if in conversation
+              message = t('notifications.new_message_from', { name: senderName }); 
+              refreshUnreadCount(); // update unread messages counter
+              break;
             default: message = t('notifications.new_activity', { name: senderName });
           }
 
@@ -166,6 +116,13 @@ export function useNotifications() {
               onClick: () => {
                 if (n.data?.post_id) window.location.href = `/feed#${n.data.post_id}`;
                 else if (n.data?.conversation_id) window.location.href = `/chat?conv=${n.data.conversation_id}`;
+                else if (n.data?.ticket_id) {
+                  if (user.user_metadata?.role === 'admin') {
+                    window.location.href = `/admin/tickets/${n.data.ticket_id}`;
+                  } else {
+                    window.location.href = `/support/${n.data.ticket_id}`;
+                  }
+                }
               },
             },
             duration: 5000,
@@ -175,7 +132,6 @@ export function useNotifications() {
       .subscribe();
 
     return () => {
-      supabaseClient.removeChannel(messageChannel);
       supabaseClient.removeChannel(postChannel);
       supabaseClient.removeChannel(notificationChannel);
     };

@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/lib/auth/context';
 
 export function NotificationDropdown() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export function NotificationDropdown() {
     markAsRead, 
     markAllAsRead 
   } = useNotificationState();
+  const { user, profile } = useAuth();
 
   const handleNotificationClick = async (n: Notification) => {
     if (!n.is_read) {
@@ -39,6 +41,12 @@ export function NotificationDropdown() {
       router.push(`/feed#${n.data.post_id}`);
     } else if (n.data?.conversation_id) {
       router.push(`/chat?conv=${n.data.conversation_id}`);
+    } else if (n.data?.ticket_id) {
+      if (profile?.role === 'admin') {
+        router.push(`/admin/tickets/${n.data.ticket_id}`);
+      } else {
+        router.push(`/support/${n.data.ticket_id}`);
+      }
     }
   };
 
@@ -68,6 +76,12 @@ export function NotificationDropdown() {
         return t('notifications.mentioned_post', { name: senderName });
       case 'mention_comment':
         return t('notifications.mentioned_comment', { name: senderName });
+      case 'new_ticket':
+        return t('notifications.new_ticket', { name: senderName, subject: n.data?.subject || '' });
+      case 'ticket_reply':
+        return t('notifications.ticket_reply', { name: senderName });
+      case 'new_message':
+        return t('notifications.new_message_from', { name: senderName });
       default:
         return t('notifications.new_activity', { name: senderName });
     }
