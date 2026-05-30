@@ -14,6 +14,7 @@ export interface Notification {
   sender?: {
     full_name: string;
     avatar_url: string;
+    company: string | null;
   };
 }
 
@@ -72,7 +73,7 @@ export function NotificationStateProvider({ children }: { children: React.ReactN
       .from('notifications')
       .select(`
         *,
-        sender:profiles!notifications_sender_id_fkey(full_name, avatar_url)
+        sender:profiles!notifications_sender_id_fkey(full_name, avatar_url, company)
       `)
       .eq('profile_id', myId)
       .order('created_at', { ascending: false })

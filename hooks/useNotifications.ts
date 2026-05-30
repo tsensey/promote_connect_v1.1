@@ -50,11 +50,11 @@ export function useNotifications() {
 
           const { data: sender } = await supabaseClient
             .from('profiles')
-            .select('full_name')
+            .select('full_name, company')
             .eq('id', msg.sender_id!)
             .single();
 
-          const senderName = sender?.full_name ?? t('notifications.someone');
+          const senderName = sender?.company || sender?.full_name || t('notifications.someone');
           const preview = msg.content
             ? msg.content.length > 60 ? msg.content.slice(0, 60) + '…' : msg.content
             : msg.attachment_type === 'image'
@@ -100,11 +100,11 @@ export function useNotifications() {
 
           const { data: author } = await supabaseClient
             .from('profiles')
-            .select('full_name')
+            .select('full_name, company')
             .eq('id', post.author_id)
             .single();
 
-          const authorName = author?.full_name ?? t('notifications.someone');
+          const authorName = author?.company || author?.full_name || t('notifications.someone');
           const preview = post.content.length > 80
             ? post.content.slice(0, 80) + '…'
             : post.content;
@@ -141,11 +141,11 @@ export function useNotifications() {
           
           const { data: sender } = await supabaseClient
             .from('profiles')
-            .select('full_name')
+            .select('full_name, company')
             .eq('id', n.sender_id)
             .single();
 
-          const senderName = sender?.full_name ?? t('notifications.someone');
+          const senderName = sender?.company || sender?.full_name || t('notifications.someone');
           let message = '';
           
           switch (n.type) {
