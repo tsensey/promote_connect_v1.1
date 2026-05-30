@@ -210,6 +210,16 @@ export async function POST(request: Request) {
     }
   }
 
+  await supabaseAdmin.from('audit_logs').insert({
+    actor_id: auth.user!.id,
+    actor_email: auth.user!.email,
+    actor_role: 'admin',
+    action: 'create_profiles',
+    entity_type: 'profiles',
+    entity_id: userId,
+    metadata: { email, full_name, role, company, sector, country, pavillon }
+  });
+
   let emailSent = false;
 
   if (resendApiKey) {
@@ -367,6 +377,16 @@ export async function PATCH(request: Request) {
     }
   }
 
+  await supabaseAdmin.from('audit_logs').insert({
+    actor_id: auth.user!.id,
+    actor_email: auth.user!.email,
+    actor_role: 'admin',
+    action: 'update_profiles',
+    entity_type: 'profiles',
+    entity_id: id,
+    metadata: { new: updateData }
+  });
+
   return NextResponse.json({ success: true });
 }
 
@@ -455,6 +475,16 @@ export async function DELETE(request: Request) {
   if (deleteError) {
     return NextResponse.json({ error: deleteError.message }, { status: 500 });
   }
+
+  await supabaseAdmin.from('audit_logs').insert({
+    actor_id: auth.user!.id,
+    actor_email: auth.user!.email,
+    actor_role: 'admin',
+    action: 'delete_profiles',
+    entity_type: 'profiles',
+    entity_id: userId,
+    metadata: { deleted_user_id: userId }
+  });
 
   return NextResponse.json({ success: true });
 }

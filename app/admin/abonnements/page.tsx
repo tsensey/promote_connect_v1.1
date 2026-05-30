@@ -26,6 +26,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
   Table,
@@ -62,6 +69,8 @@ export default function AdminAbonnementsPage() {
   const [tierFilter, setTierFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended' | 'blocked'>('all');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showDateDialog, setShowDateDialog] = useState<SubscriptionRow | null>(null);
+  const [newDate, setNewDate] = useState('');
 
   const token = session?.access_token || null;
 
@@ -146,6 +155,29 @@ export default function AdminAbonnementsPage() {
       await fetchUsers();
     } catch (e) {
       toast.error('Erreur lors de la mise à jour de l\'abonnement');
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleUpdateDate() {
+    if (!token || !showDateDialog) return;
+    setActionLoading(showDateDialog.id);
+
+    try {
+      const field = showDateDialog.subscription_tier === 'paid' ? 'subscription_ends_at' : 'trial_ends_at';
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({ [field]: newDate ? new Date(newDate).toISOString() : null })
+        .eq('id', showDateDialog.id);
+
+      if (error) throw error;
+
+      toast.success('Date d\'expiration mise à jour');
+      setShowDateDialog(null);
+      await fetchUsers();
+    } catch {
+      toast.error('Erreur lors de la mise à jour de la date');
     } finally {
       setActionLoading(null);
     }
@@ -412,6 +444,18 @@ export default function AdminAbonnementsPage() {
                             {user.subscription_tier === 'paid' ? 'Passer en Free Trial' : 'Passer en PAID'}
                           </DropdownMenuItem>
                           
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setShowDateDialog(user);
+                              const date = user.subscription_tier === 'paid' ? user.subscription_ends_at : user.trial_ends_at;
+                              setNewDate(date ? new Date(date).toISOString().split('T')[0] : '');
+                            }}
+                            disabled={actionLoading === user.id}
+                          >
+                            <CreditCard className="mr-2 size-4" />
+                            Modifier la date d'expiration
+                          </DropdownMenuItem>
+                          
                           {user.subscription_tier === 'paid' && user.role === 'exposant' && (
                             <DropdownMenuItem
                               onClick={() => handleToggleFeatured(user.id, user.is_featured)}
@@ -463,6 +507,40 @@ export default function AdminAbonnementsPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!showDateDialog} onOpenChange={(open) => !open && setShowDateDialog(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier la date d'expiration</DialogTitle>
+            <DialogDescription>
+              {showDateDialog && (
+                <>
+                  Définir la nouvelle date de fin {showDateDialog.subscription_tier === 'paid' ? "d'abonnement" : "d'essai"} pour {showDateDialog.company || showDateDialog.full_name}.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Date de fin</label>
+              <Input
+                type="date"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" className="rounded-xl" onClick={() => setShowDateDialog(null)}>
+              Annuler
+            </Button>
+            <Button className="rounded-xl" disabled={actionLoading === showDateDialog?.id} onClick={handleUpdateDate}>
+              {actionLoading === showDateDialog?.id && <Loader2 className="mr-2 size-4 animate-spin" />}
+              Enregistrer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

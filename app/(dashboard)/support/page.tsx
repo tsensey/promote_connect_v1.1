@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -39,6 +40,7 @@ export default function SupportPage() {
     subject: '',
     description: '',
     priority: 'medium',
+    category: 'general',
   });
   const [submitting, setSubmitting] = useState(false);
   const [faqSearch, setFaqSearch] = useState('');
@@ -74,9 +76,10 @@ export default function SupportPage() {
         ticketForm.subject,
         ticketForm.description,
         ticketForm.priority,
+        ticketForm.category,
       );
       setShowNewTicket(false);
-      setTicketForm({ subject: '', description: '', priority: 'medium' });
+      setTicketForm({ subject: '', description: '', priority: 'medium', category: 'general' });
       toast.success(t('support.tickets.created'));
       router.push(`/support/${ticket.id}`);
     } catch {
@@ -261,6 +264,22 @@ export default function SupportPage() {
                   rows={4}
                   className="rounded-xl"
                 />
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <div className="flex-1">
+                    <Select
+                      value={ticketForm.category}
+                      onValueChange={(val) => setTicketForm({ ...ticketForm, category: val || 'general' })}
+                    >
+                      <SelectTrigger className="w-full rounded-xl bg-background/50 border-white/5 h-10">
+                        <SelectValue placeholder={t('support.tickets.category')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="general">{t('support.tickets.category_general')}</SelectItem>
+                        <SelectItem value="upgrade">{t('support.tickets.category_upgrade')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {['low', 'medium', 'high'].map((p) => (
                     <Button
