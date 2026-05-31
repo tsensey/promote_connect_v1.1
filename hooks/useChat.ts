@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import { supabaseClient } from '@/lib/supabase/client';
 import { uploadChatFile } from '@/lib/chat/storage';
 import type { Database, Json } from '@/types/database.types';
@@ -417,6 +418,26 @@ export function useMessages(conversationId: string) {
         attachmentType = 'product';
       }
 
+      // 1. Vérifier le quota via l'API (cela incrémente aussi le compteur serveur)
+      const res = await fetch('/api/chat/check-quota', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId }),
+      });
+      const quotaData = await res.json();
+
+      if (!res.ok || !quotaData.allowed) {
+        // Déclencher un événement global pour afficher la modale de conversion si nécessaire
+        if (quotaData.showConversionModal) {
+          window.dispatchEvent(new CustomEvent('show-conversion-modal'));
+        } else {
+          // Toast d'erreur générique ou raison spécifique
+          toast.error('Quota de messagerie atteint ou accès refusé.');
+        }
+        return;
+      }
+
+      // 2. Si le quota est ok, on insère le message
       const { error } = await supabaseClient.from('messages').insert({
         conversation_id: conversationId,
         sender_id: myId,

@@ -10,6 +10,7 @@ import {
   Preview,
   Section,
   Text,
+  Button,
   Tailwind,
 } from '@react-email/components';
 
@@ -96,6 +97,21 @@ export default function WelcomeEmail({
                     <strong className="text-foreground">Secteurs :</strong> {sectors.join(', ')}
                   </Text>
                 )}
+              </Section>
+
+              <Section className="mb-6 rounded-xl bg-[#f8fafc] p-6 border border-[#e2e8f0]">
+                <Text className="m-0 mb-3 text-[16px] font-bold text-foreground">
+                  📖 Guide de démarrage / Quick Start Guide
+                </Text>
+                <Text className="m-0 mb-4 text-[14px] leading-relaxed text-muted">
+                  Besoin d'aide pour prendre en main la plateforme ? Consultez notre guide d'utilisation ou regardez notre courte vidéo de démonstration. / Need help getting started? Check out our user guide or watch our short demo video.
+                </Text>
+                <Button
+                  href={`${baseUrl}/guide`}
+                  className="inline-block rounded-lg bg-slate-800 px-5 py-3 text-[14px] font-medium text-white no-underline"
+                >
+                  Consulter le guide / View the guide
+                </Button>
               </Section>
 
               <Text className="m-0 mb-6 text-[15px] leading-relaxed text-muted">

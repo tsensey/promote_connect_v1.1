@@ -142,6 +142,21 @@ export default function CredentialsEmail({
                 </Button>
               </Section>
 
+              <Section className="mb-6 rounded-xl bg-[#f8fafc] p-6 border border-[#e2e8f0]">
+                <Text className="m-0 mb-3 text-[16px] font-bold text-foreground">
+                  📖 Guide de démarrage / Quick Start Guide
+                </Text>
+                <Text className="m-0 mb-4 text-[14px] leading-relaxed text-muted">
+                  Découvrez comment utiliser la plateforme PROMOTE-CONNECT pour maximiser vos opportunités d'affaires. / Discover how to use the PROMOTE-CONNECT platform to maximize your business opportunities.
+                </Text>
+                <Button
+                  href={`${baseUrl}/guide`}
+                  className="inline-block rounded-lg bg-slate-800 px-5 py-3 text-[14px] font-medium text-white no-underline"
+                >
+                  Consulter le guide / View the guide
+                </Button>
+              </Section>
+
               <Text className="m-0 text-[13px] leading-relaxed text-slate-400">
                 Nous vous recommandons de changer votre mot de passe lors de votre première connexion.
               </Text>

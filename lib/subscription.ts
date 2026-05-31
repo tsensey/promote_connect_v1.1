@@ -274,7 +274,8 @@ export async function checkMessageQuota(
     .single();
 
   // Si la conversation a été initiée par un PAID → le free trial répond librement
-  if (conversation?.initiated_by_tier === 'paid') {
+  // (Mais le free trial ne bénéficie pas de l'illimité s'il est lui-même l'initiateur de cette conversation et qu'il a été rétrogradé)
+  if (conversation?.initiated_by_tier === 'paid' && conversation?.initiated_by !== senderId) {
     return { allowed: true };
   }
 
