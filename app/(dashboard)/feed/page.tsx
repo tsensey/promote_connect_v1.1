@@ -35,7 +35,7 @@ type Product = Database['public']['Tables']['produits']['Row'] & {
     nom: string;
     profile_id: string;
     logo_url: string | null;
-    profiles: { access_level: string } | null;
+    profiles: { subscription_tier: string | null } | null;
   } | null;
 };
 
@@ -73,15 +73,15 @@ export default function FeedPage() {
     async function loadRandomProducts() {
       const { data } = await supabaseClient
         .from('produits')
-        .select('*, exposants!inner(nom, profile_id, logo_url, profiles(access_level))')
+        .select('*, exposants!inner(nom, profile_id, logo_url, profiles(subscription_tier))')
         .limit(30);
       if (data && data.length > 0) {
         const products = data as Product[];
         const premium = products.filter(
-          p => p.exposants?.profiles?.access_level === 'premium'
+          p => p.exposants?.profiles?.subscription_tier === 'paid'
         );
         const classic = products.filter(
-          p => p.exposants?.profiles?.access_level !== 'premium'
+          p => p.exposants?.profiles?.subscription_tier !== 'paid'
         );
         const shuffledPremium = premium.sort(() => 0.5 - Math.random()).slice(0, 3);
         const countNeeded = Math.max(0, 4 - shuffledPremium.length);
