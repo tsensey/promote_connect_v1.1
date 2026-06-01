@@ -327,7 +327,7 @@ export function UserSidebar({
         </div>
       </div>
 
-      <div className={cn('border-t border-sidebar-border', collapsed ? 'p-2 flex flex-col gap-2 items-center' : 'p-3')}>
+      <div className={cn('border-t border-sidebar-border', collapsed ? 'p-2 flex flex-col gap-2 items-center safe-bottom' : 'p-3')}>
         {isFreeTrial && (
           <Link href="/abonnement" className={cn('block', collapsed ? 'w-full' : 'mb-2')}>
             <Button
