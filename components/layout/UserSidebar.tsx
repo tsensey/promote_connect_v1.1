@@ -196,70 +196,70 @@ export function UserSidebar({
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-4">
+      <div className={`flex-1 overflow-y-auto  py-4 ${collapsed ? 'px-3' : 'px-2'}`}>
         <div className={cn(
-        'rounded-xl border transition-all duration-300 mb-5',
-        collapsed ? 'border-transparent bg-transparent p-1 flex justify-center mb-2' : 'border-sidebar-border bg-sidebar-accent/50 p-3'
-      )}>
-        <div className={cn(
-          'flex items-center gap-2.5',
-          collapsed && 'justify-center'
+          'rounded-xl border transition-all duration-300 mb-5',
+          collapsed ? 'border-transparent bg-transparent p-1 flex justify-center mb-2' : 'border-sidebar-border bg-sidebar-accent/50 p-3'
         )}>
           <div className={cn(
-            'flex shrink-0 items-center justify-center rounded-lg overflow-hidden',
-            collapsed ? 'size-10 text-sm' : 'size-9 text-xs'
+            'flex items-center',
+            collapsed ? 'justify-center' : 'gap-2.5'
           )}>
-            {user?.avatar ? (
-              <Avatar className={cn('rounded-lg', collapsed ? 'size-10' : 'size-9')}>
-                <AvatarImage src={user.avatar} />
-                <AvatarFallback className="bg-primary/10 font-semibold text-primary text-xs rounded-lg">
-                  {user.name?.charAt(0).toUpperCase() || '?'}
-                </AvatarFallback>
-              </Avatar>
-            ) : (
-              <div className="flex size-full items-center justify-center bg-primary/10 font-semibold text-primary">
-                {user?.name?.charAt(0).toUpperCase() || '?'}
+            <div className={cn(
+              'flex shrink-0 items-center justify-center rounded-lg overflow-hidden',
+              collapsed ? 'size-10 text-sm' : 'size-9 text-xs'
+            )}>
+              {user?.avatar ? (
+                <Avatar className={cn('rounded-lg', collapsed ? 'size-10' : 'size-9')}>
+                  <AvatarImage src={user.avatar} />
+                  <AvatarFallback className="bg-primary/10 font-semibold text-primary text-xs rounded-lg">
+                    {user.name?.charAt(0).toUpperCase() || '?'}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <div className="flex size-full items-center justify-center bg-primary/10 font-semibold text-primary">
+                  {user?.name?.charAt(0).toUpperCase() || '?'}
+                </div>
+              )}
+            </div>
+            <LabelText collapsed={collapsed}>
+              <div className="min-w-0">
+                <p className="truncate text-xs font-semibold text-sidebar-foreground">
+                  {user?.name}
+                </p>
+                <p className="truncate text-[11px] text-sidebar-foreground/50">
+                  {user?.company || t(role === 'exposant' ? 'layout.sidebar.exposant' : 'layout.sidebar.visiteur')}
+                </p>
               </div>
-            )}
+            </LabelText>
           </div>
-          <LabelText collapsed={collapsed}>
-            <div className="min-w-0">
-              <p className="truncate text-xs font-semibold text-sidebar-foreground">
-                {user?.name}
-              </p>
-              <p className="truncate text-[11px] text-sidebar-foreground/50">
-                {user?.company || t(role === 'exposant' ? 'layout.sidebar.exposant' : 'layout.sidebar.visiteur')}
-              </p>
+          <LabelText collapsed={collapsed} className="mt-2.5 !delay-0">
+            <div className="flex flex-wrap gap-1.5 items-center justify-center">
+              <Badge
+                variant="secondary"
+                className="rounded-full bg-primary/10 px-2 py-px text-[10px] font-semibold text-primary hover:bg-primary/15"
+              >
+                {role === 'exposant' ? t('layout.sidebar.exposant_space') : t('layout.sidebar.visiteur_space')}
+              </Badge>
+              {isPaid ? (
+                <Badge
+                  variant="secondary"
+                  className="rounded-full bg-emerald-500/10 border border-emerald-200/50 px-2 py-px text-[9px] font-semibold text-emerald-600 hover:bg-emerald-500/15"
+                >
+                  <Crown className="size-3 mr-1" />
+                  Premium
+                </Badge>
+              ) : isFreeTrial ? (
+                <Badge
+                  variant="secondary"
+                  className="rounded-full bg-amber-500/10 border border-amber-200/50 px-2 py-px text-[9px] font-semibold text-amber-600 hover:bg-amber-500/15"
+                >
+                  Essai Gratuit
+                </Badge>
+              ) : null}
             </div>
           </LabelText>
         </div>
-        <LabelText collapsed={collapsed} className="mt-2.5 !delay-0">
-          <div className="flex flex-wrap gap-1.5 items-center justify-center">
-            <Badge
-              variant="secondary"
-              className="rounded-full bg-primary/10 px-2 py-px text-[10px] font-semibold text-primary hover:bg-primary/15"
-            >
-              {role === 'exposant' ? t('layout.sidebar.exposant_space') : t('layout.sidebar.visiteur_space')}
-            </Badge>
-            {isPaid ? (
-              <Badge
-                variant="secondary"
-                className="rounded-full bg-emerald-500/10 border border-emerald-200/50 px-2 py-px text-[10px] font-semibold text-emerald-600 hover:bg-emerald-500/15"
-              >
-                <Crown className="size-3 mr-1" />
-                Premium
-              </Badge>
-            ) : isFreeTrial ? (
-              <Badge
-                variant="secondary"
-                className="rounded-full bg-amber-500/10 border border-amber-200/50 px-2 py-px text-[10px] font-semibold text-amber-600 hover:bg-amber-500/15"
-              >
-                Essai Gratuit
-              </Badge>
-            ) : null}
-          </div>
-        </LabelText>
-      </div>
 
         <div className="space-y-5">
           {sections.map((section) => (
@@ -280,10 +280,10 @@ export function UserSidebar({
                       href={item.href}
                       onClick={() => { onNavigate?.(); onItemClick?.(); }}
                       className={cn(
-                        'group flex items-center gap-3 rounded-lg text-sm font-medium transition-all',
+                        'group flex items-center rounded-lg text-sm font-medium transition-all',
                         collapsed
                           ? 'justify-center px-0 py-2.5 mx-auto w-10'
-                          : 'px-3 py-2',
+                          : 'px-3 py-2 gap-3',
                         active
                           ? 'bg-primary text-primary-foreground'
                           : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground',
