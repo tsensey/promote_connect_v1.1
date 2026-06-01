@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Plus, Search, Trash2, ExternalLink, Loader2, Upload, Users } from 'lucide-react';
 import type { Database } from '@/types/database.types';
 import { supabaseClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -266,9 +267,12 @@ export default function AdminExposantsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/exposants/${exp.id}`)} className="h-8 w-8 p-0">
+                          <Link 
+                            href={`/admin/exposants/${exp.id}`} 
+                            className={buttonVariants({ variant: "ghost", size: "sm", className: "h-8 w-8 p-0" })}
+                          >
                             <ExternalLink className="size-4" />
-                          </Button>
+                          </Link>
                           <Button variant="ghost" size="sm" onClick={() => handleDelete(exp.id)} className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10">
                             <Trash2 className="size-4" />
                           </Button>

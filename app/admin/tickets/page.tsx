@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { AlertCircle, LifeBuoy, Loader2, MessageSquare, Search, Star } from 'lucide-react';
 import { supabaseClient } from '@/lib/supabase/client';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -266,15 +266,12 @@ export default function AdminTicketsPage() {
                   </p>
 
                   <div className="flex flex-wrap gap-2">
-                    <Link href={`/admin/tickets/${ticket.id}`}>
-                      <Button
-                        size="sm"
-                        variant="default"
-                        className="rounded-full"
-                      >
-                        <MessageSquare className="size-3.5 mr-1.5" />
-                        {t('admin.tickets.conversation_btn')}
-                      </Button>
+                    <Link 
+                      href={`/admin/tickets/${ticket.id}`}
+                      className={buttonVariants({ size: "sm", variant: "default", className: "rounded-full" })}
+                    >
+                      <MessageSquare className="size-3.5 mr-1.5" />
+                      {t('admin.tickets.conversation_btn')}
                     </Link>
                     <Button
                       size="sm"
