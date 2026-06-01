@@ -87,7 +87,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
       />
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/45 xl:hidden" onClick={() => setMobileOpen(false)}>
+        <div className="fixed inset-0 z-[60] bg-slate-950/45 xl:hidden" onClick={() => setMobileOpen(false)}>
           <div
             className="h-full w-[86%] max-w-sm bg-sidebar"
             onClick={(event) => event.stopPropagation()}

@@ -153,10 +153,16 @@ export function UserSidebar({
         !mobile && (collapsed ? 'w-24' : 'w-64'),
       )}
     >
-      <div className={cn(
-        'flex items-center border-b border-sidebar-border',
-        collapsed ? 'flex-col gap-3 py-4 px-2' : 'justify-between px-4 py-3.5'
-      )}>
+      <div 
+        className={cn(
+          'flex items-center border-b border-sidebar-border',
+          collapsed ? 'flex-col gap-3 py-4 px-2' : 'justify-between px-4 pb-3.5',
+          !mobile && !collapsed && 'pt-3.5'
+        )}
+        style={{
+          paddingTop: (mobile && !collapsed) ? 'calc(max(env(safe-area-inset-top), 0px) + 0.875rem)' : undefined
+        }}
+      >
         <Link href="/feed" className={cn(
           'flex min-w-0 items-center gap-2.5',
           collapsed && 'justify-center'
@@ -327,7 +333,12 @@ export function UserSidebar({
         </div>
       </div>
 
-      <div className={cn('border-t border-sidebar-border', collapsed ? 'p-2 flex flex-col gap-2 items-center safe-bottom' : 'p-3')}>
+      <div 
+        className={cn('border-t border-sidebar-border', collapsed ? 'p-2 flex flex-col gap-2 items-center safe-bottom' : 'px-3 pt-3 pb-3')}
+        style={{
+          paddingBottom: (!collapsed) ? 'calc(max(env(safe-area-inset-bottom), 0px) + 0.75rem)' : undefined
+        }}
+      >
         {isFreeTrial && (
           <Link href="/abonnement" className={cn('block', collapsed ? 'w-full' : 'mb-2')}>
             <Button

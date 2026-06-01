@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
-import { Manrope } from 'next/font/google';
 import { Suspense } from 'react';
 import { ThemeProvider } from 'next-themes';
 import { AuthProvider } from '@/lib/auth/context';
@@ -18,11 +17,7 @@ import { AnimatedSplashScreen } from '@/components/shared/AnimatedSplashScreen';
 import PlausibleAnalytics from '@/components/shared/PlausibleAnalytics';
 import { cn } from '@/lib/utils';
 import './globals.css';
-
-const manrope = Manrope({
-  subsets: ['latin'],
-  variable: '--font-sans',
-});
+// Removed next/font/google to bypass build-time fetch errors
 
 export const viewport: Viewport = {
   themeColor: { media: '(prefers-color-scheme: dark)', color: '#0f0f0f' },
@@ -68,8 +63,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       lang={initialLocale}
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={cn(manrope.variable)}
     >
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap" rel="stylesheet" />
+      </head>
       <body suppressHydrationWarning className="min-h-screen bg-background text-foreground">
         {/* <AnimatedSplashScreen /> */}
         <ThemeProvider

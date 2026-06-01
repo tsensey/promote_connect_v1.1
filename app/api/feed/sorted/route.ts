@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     
   const blockedIds = Array.from(new Set((blocks || []).map(b => b.blocker_id === myId ? b.blocked_id : b.blocker_id)));
 
-  let query = supabase
+    let query = supabase
     .from('posts')
     .select(`
       *,
