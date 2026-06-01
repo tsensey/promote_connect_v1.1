@@ -39,7 +39,7 @@ export function AnimatedSplashScreen() {
       )}
     >
       <div className="flex flex-col items-center justify-center animate-in fade-in zoom-in duration-700">
-        <div className="relative w-32 h-32 mb-6 bg-white rounded-2xl p-2 shadow-2xl">
+        <div className="relative w-32 h-32 mb-6 bg-white rounded-2xl p-2 shadow-md">
           <Image
             src="/logo_transparent.png"
             alt="PROMOTE-CONNECT Logo"
