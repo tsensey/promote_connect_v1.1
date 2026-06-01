@@ -41,7 +41,7 @@ export function AnimatedSplashScreen() {
       <div className="flex flex-col items-center justify-center animate-in fade-in zoom-in duration-700">
         <div className="relative w-32 h-32 mb-6 bg-white rounded-2xl p-2 shadow-2xl">
           <Image
-            src="/logo-promote.png"
+            src="/logo_transparent.png"
             alt="PROMOTE-CONNECT Logo"
             fill
             className="object-contain"
@@ -49,7 +49,7 @@ export function AnimatedSplashScreen() {
           />
         </div>
         <h1 className="text-white text-2xl font-bold tracking-wider mb-8 drop-shadow-md">
-          PROMOTE-CONNECT
+          Promote Connect
         </h1>
         <Loader2 className="w-10 h-10 text-white animate-spin opacity-80" />
       </div>
