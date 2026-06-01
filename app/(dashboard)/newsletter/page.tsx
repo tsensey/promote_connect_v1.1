@@ -113,17 +113,22 @@ export default function NewsletterPage() {
     setError(null);
 
     try {
-      const { error } = await supabaseClient.from("newsletter_subscriptions").upsert(
-        {
-          email,
-          sectors,
-          frequency,
-          is_active: true,
-        },
-        { onConflict: "email" }
-      );
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const token = session?.access_token;
 
-      if (error) throw new Error(error.message);
+      const res = await fetch("/api/newsletter/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ email, sectors, frequency }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || t("common.error"));
+      }
 
       setSubscriptionStatus({
         subscribed: true,
@@ -142,14 +147,27 @@ export default function NewsletterPage() {
     if (!email) return;
     setLoading(true);
     try {
-      const { error } = await supabaseClient.from("newsletter_subscriptions").delete().eq("email", email);
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const token = session?.access_token;
 
-      if (error) throw new Error(error.message);
+      const res = await fetch("/api/newsletter/subscribe", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Erreur lors du désabonnement");
+      }
 
       setSubscriptionStatus(null);
       toast.success("Désabonnement réussi");
-    } catch {
-      toast.error("Erreur lors du désabonnement");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors du désabonnement");
     } finally {
       setLoading(false);
     }
