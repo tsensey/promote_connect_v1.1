@@ -31,6 +31,8 @@ import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth/context';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { AdminPagination } from '@/components/shared/AdminPagination';
+
 import { TooltipArrow } from '@base-ui/react';
 
 type Exposant = Database['public']['Tables']['exposants']['Row'];
@@ -51,6 +53,8 @@ export default function AdminExposantsPage() {
   const [espaces, setEspaces] = useState<Espace[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
@@ -161,7 +165,14 @@ export default function AdminExposantsPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
   const filtered = exposants.filter((exp) => exp.nom.toLowerCase().includes(search.toLowerCase()));
+  
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   const selectedEspace = espaces.find((e) => e.id === formData.espace_id);
 
@@ -224,8 +235,8 @@ export default function AdminExposantsPage() {
                     <TableCell><div className="h-5 w-20 animate-pulse rounded bg-muted ml-auto" /></TableCell>
                   </TableRow>
                 ))
-              ) : filtered.length > 0 ? (
-                filtered.map((exp) => {
+              ) : paginated.length > 0 ? (
+                paginated.map((exp) => {
                   const espace = espaces.find((e) => e.id === exp.espace_id);
                   return (
                     <TableRow key={exp.id}>
@@ -292,6 +303,13 @@ export default function AdminExposantsPage() {
             </TableBody>
           </Table>
         </div>
+        {!loading && (
+          <AdminPagination 
+            currentPage={currentPage} 
+            totalPages={totalPages} 
+            onPageChange={setCurrentPage} 
+          />
+        )}
       </div>
 
       <Dialog open={showImport} onOpenChange={(open) => { if (!open) { setShowImport(false); setTimeout(resetImport, 200); } }}>

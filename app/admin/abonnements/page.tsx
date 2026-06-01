@@ -45,6 +45,8 @@ import {
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
 import { supabaseClient } from '@/lib/supabase/client';
+import { AdminPagination } from '@/components/shared/AdminPagination';
+
 
 interface SubscriptionRow {
   id: string;
@@ -71,6 +73,8 @@ export default function AdminAbonnementsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showDateDialog, setShowDateDialog] = useState<SubscriptionRow | null>(null);
   const [newDate, setNewDate] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const token = session?.access_token || null;
 
@@ -131,6 +135,15 @@ export default function AdminAbonnementsPage() {
   useEffect(() => {
     void fetchUsers();
   }, [fetchUsers]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, tierFilter, statusFilter]);
+
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const paginatedUsers = useMemo(() => {
+    return filteredUsers.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  }, [filteredUsers, currentPage]);
 
   async function handleUpdateTier(userId: string, newTier: string) {
     if (!token) return;
@@ -371,7 +384,7 @@ export default function AdminAbonnementsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
+                {paginatedUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -510,6 +523,14 @@ export default function AdminAbonnementsPage() {
               </TableBody>
             </Table>
             </div>
+          )}
+          
+          {!loading && filteredUsers.length > 0 && (
+            <AdminPagination 
+              currentPage={currentPage} 
+              totalPages={totalPages} 
+              onPageChange={setCurrentPage} 
+            />
           )}
         </CardContent>
       </Card>

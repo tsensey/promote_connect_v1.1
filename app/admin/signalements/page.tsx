@@ -43,6 +43,8 @@ import {
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { AdminPagination } from '@/components/shared/AdminPagination';
+
 
 interface ReportRow {
   id: string;
@@ -61,6 +63,8 @@ export default function SignalementsPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
     if (!authLoading && (!user || profile?.role !== 'admin')) {
@@ -127,6 +131,13 @@ export default function SignalementsPage() {
       loadReports();
     }
   }, [loadReports, user, profile]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter]);
+
+  const totalPages = Math.ceil(reports.length / ITEMS_PER_PAGE);
+  const paginatedReports = reports.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   const updateReportStatus = async (reportId: string, newStatus: 'reviewed' | 'dismissed' | 'actioned') => {
     try {
@@ -243,7 +254,7 @@ export default function SignalementsPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  reports.map((report) => (
+                  paginatedReports.map((report) => (
                     <TableRow key={report.id}>
                       <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                         {format(new Date(report.created_at), 'dd MMM yyyy HH:mm', { locale: fr })}
@@ -317,6 +328,14 @@ export default function SignalementsPage() {
               </TableBody>
             </Table>
           </div>
+          
+          {!loading && reports.length > 0 && (
+            <AdminPagination 
+              currentPage={currentPage} 
+              totalPages={totalPages} 
+              onPageChange={setCurrentPage} 
+            />
+          )}
         </CardContent>
       </Card>
     </div>

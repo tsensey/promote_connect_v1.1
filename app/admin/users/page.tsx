@@ -59,6 +59,7 @@ import {
 } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
+import { AdminPagination } from '@/components/shared/AdminPagination';
 
 interface UserRow {
   id: string;
@@ -172,6 +173,10 @@ export default function AdminUsersPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [creating, setCreating] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
   const [lastInvite, setLastInvite] = useState<{
     email: string;
     emailSent: boolean;
@@ -219,6 +224,17 @@ export default function AdminUsersPage() {
       return matchesSearch && matchesRole && matchesStatus;
     });
   }, [roleFilter, search, statusFilter, users]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, roleFilter, statusFilter]);
+
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredUsers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredUsers, currentPage]);
+
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
 
   const stats = useMemo(
     () => ({
@@ -609,7 +625,7 @@ export default function AdminUsersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((user) => (
+                  {paginatedUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -739,6 +755,13 @@ export default function AdminUsersPage() {
                 </TableBody>
               </Table>
             </div>
+          )}
+          {!loading && paginatedUsers.length > 0 && (
+            <AdminPagination 
+              currentPage={currentPage} 
+              totalPages={totalPages} 
+              onPageChange={setCurrentPage} 
+            />
           )}
         </CardContent>
       </Card>

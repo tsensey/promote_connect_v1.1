@@ -33,6 +33,8 @@ import {
 } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
+import { AdminPagination } from '@/components/shared/AdminPagination';
+
 
 interface AuditLog {
   id: string;
@@ -141,7 +143,7 @@ export default function AdminLogsPage() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const limit = 50;
+  const limit = 10;
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -468,29 +470,11 @@ export default function AdminLogsPage() {
           )}
 
           {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-xl"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                {t('admin.logs.prev')}
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                {t('admin.logs.page_info', { page, total: totalPages })}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-xl"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                {t('admin.logs.next')}
-              </Button>
-            </div>
+            <AdminPagination 
+              currentPage={page} 
+              totalPages={totalPages} 
+              onPageChange={setPage} 
+            />
           )}
         </CardContent>
       </Card>

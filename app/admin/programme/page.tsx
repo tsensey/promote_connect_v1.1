@@ -21,6 +21,8 @@ import {
   ProgrammeFormDialog,
   type ProgrammeFormData,
 } from "@/components/agenda/ProgrammeFormDialog";
+import { AdminPagination } from "@/components/shared/AdminPagination";
+
 
 type Evenement = Database["public"]["Tables"]["evenements"]["Row"];
 
@@ -51,6 +53,8 @@ export default function AdminProgrammePage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   const [formData, setFormData] = useState<ProgrammeFormData>(INITIAL_FORM);
 
   const fetchEvenements = useCallback(async () => {
@@ -138,6 +142,13 @@ export default function AdminProgrammePage() {
     evt.titre.toLowerCase().includes(search.toLowerCase()),
   );
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -200,8 +211,8 @@ export default function AdminProgrammePage() {
                     </TableCell>
                   </TableRow>
                 ))
-              ) : filtered.length > 0 ? (
-                filtered.map((evt) => (
+              ) : paginated.length > 0 ? (
+                paginated.map((evt) => (
                   <TableRow key={evt.id} className="group">
                     <TableCell>
                       <div>
@@ -287,6 +298,13 @@ export default function AdminProgrammePage() {
             </TableBody>
           </Table>
         </div>
+        {!loading && filtered.length > 0 && (
+          <AdminPagination 
+            currentPage={currentPage} 
+            totalPages={totalPages} 
+            onPageChange={setCurrentPage} 
+          />
+        )}
       </div>
 
       <ProgrammeFormDialog

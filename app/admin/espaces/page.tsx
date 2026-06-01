@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
+import { AdminPagination } from '@/components/shared/AdminPagination';
 
 interface Espace {
   id: string;
@@ -60,6 +61,8 @@ export default function AdminEspacesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   const [form, setForm] = useState(defaultForm);
 
   const fetchEspaces = useCallback(async () => {
@@ -95,6 +98,15 @@ export default function AdminEspacesPage() {
         (e.description || '').toLowerCase().includes(q)
     );
   }, [espaces, search]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginated = useMemo(() => {
+    return filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  }, [filtered, currentPage]);
 
   const stats = useMemo(
     () => ({
@@ -270,7 +282,7 @@ export default function AdminEspacesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((espace) => (
+                {paginated.map((espace) => (
                   <TableRow key={espace.id}>
                     <TableCell>
                       <Badge
@@ -321,6 +333,14 @@ export default function AdminEspacesPage() {
               </TableBody>
             </Table>
             </div>
+          )}
+          
+          {!loading && filtered.length > 0 && (
+            <AdminPagination 
+              currentPage={currentPage} 
+              totalPages={totalPages} 
+              onPageChange={setCurrentPage} 
+            />
           )}
         </CardContent>
       </Card>
