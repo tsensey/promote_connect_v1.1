@@ -6,6 +6,7 @@ import { compressImage, compressImages } from '@/lib/compress-image';
 import { supabaseClient } from '@/lib/supabase/client';
 import {
   ArrowLeft, Loader2, Store, Upload, PackagePlus, PencilLine, Trash2, Save, ImagePlus,
+  Mail, Key, CheckCircle, XCircle, AlertCircle,
 } from 'lucide-react';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +19,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { cn, getValidImageUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
+import { useAuth } from '@/lib/auth/context';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Database } from '@/types/database.types';
@@ -89,6 +91,140 @@ const emptyProductForm = {
   type: 'produit' as string | null,
   image_url: '',
 };
+
+function AccountTabContent({ exposantId, exposant }: { exposantId: string; exposant: Database['public']['Tables']['exposants']['Row'] }) {
+  const { t } = useTranslation();
+  const { session } = useAuth();
+  const token = session?.access_token || null;
+  const [creating, setCreating] = useState(false);
+  const [accountInfo, setAccountInfo] = useState<{ id?: string; email?: string } | null>(null);
+
+  const checkExistingAccount = useCallback(async () => {
+    if (!exposant.profile_id) return;
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('id')
+      .eq('id', exposant.profile_id)
+      .single();
+    if (profile) {
+      setAccountInfo({ id: profile.id });
+    }
+  }, [exposant.profile_id]);
+
+  useEffect(() => { void checkExistingAccount(); }, [checkExistingAccount]);
+
+  const handleCreateAccount = async () => {
+    setCreating(true);
+    try {
+      const res = await fetch('/api/admin/exposants/create-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          exposant_id: exposantId,
+          email1: exposant.email1,
+          email2: exposant.email2,
+        }),
+      });
+      const result = await res.json();
+      if (result.success && result.account) {
+        const sentCount = result.account.recipients.filter((r: { sent: boolean }) => r.sent).length;
+        setAccountInfo({ id: result.account.id, email: result.account.email });
+        toast.success(t('admin.exposants.account_created', { email: result.account.email, sent: sentCount }));
+      } else {
+        toast.error(result.error || t('admin.exposants.account_create_error'));
+      }
+    } catch {
+      toast.error(t('admin.exposants.toast_network_error'));
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!exposant.profile_id) return;
+    try {
+      const res = await fetch('/api/admin/users/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ user_id: exposant.profile_id, send_email: true }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        toast.success(t('admin.exposants.password_reset'));
+      } else {
+        toast.error(result.error || t('admin.exposants.password_reset_error'));
+      }
+    } catch {
+      toast.error(t('admin.exposants.toast_network_error'));
+    }
+  };
+
+  const canCreate = (exposant.email1 || exposant.email2) && !exposant.profile_id;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="space-y-3">
+          <Label>{t('admin.exposants.account_email1')}</Label>
+          <p className="text-sm font-medium">{exposant.email1 || '—'}</p>
+        </div>
+        <div className="space-y-3">
+          <Label>{t('admin.exposants.account_email2')}</Label>
+          <p className="text-sm font-medium">{exposant.email2 || '—'}</p>
+        </div>
+      </div>
+
+      <div className="rounded-xl border p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          {exposant.profile_id ? (
+            <CheckCircle className="size-5 text-emerald-600" />
+          ) : (
+            <XCircle className="size-5 text-muted-foreground" />
+          )}
+          <span className="text-sm font-medium">
+            {exposant.profile_id
+              ? t('admin.exposants.account_linked')
+              : t('admin.exposants.account_not_linked')}
+          </span>
+        </div>
+
+        {accountInfo?.email && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Mail className="size-4" />
+            {accountInfo.email}
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        {canCreate && (
+          <Button onClick={handleCreateAccount} disabled={creating} className="rounded-xl">
+            {creating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Key className="mr-2 size-4" />}
+            {t('admin.exposants.create_account')}
+          </Button>
+        )}
+        {!canCreate && !exposant.email1 && !exposant.email2 && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <AlertCircle className="size-4" />
+            {t('admin.exposants.no_email_to_create')}
+          </div>
+        )}
+        {exposant.profile_id && (
+          <Button variant="outline" onClick={handleResetPassword} className="rounded-xl">
+            <Key className="mr-2 size-4" />
+            {t('admin.exposants.reset_password')}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function AdminExposantVitrinePage() {
   const { t } = useTranslation();
@@ -453,6 +589,7 @@ export default function AdminExposantVitrinePage() {
           <TabsTrigger value="products">{t('exposant.vitrine.my_products')} ({products.length})</TabsTrigger>
           <TabsTrigger value="gallery">{t('exposant.vitrine.gallery')} ({showcaseForm.gallery_urls.length})</TabsTrigger>
           <TabsTrigger value="social">{t('exposant.vitrine.social')}</TabsTrigger>
+          <TabsTrigger value="account">{t('admin.exposants.account_tab')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="presentation" className="space-y-6">
@@ -952,6 +1089,20 @@ export default function AdminExposantVitrinePage() {
                   </div>
                 </Field>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="account" className="space-y-6">
+          <Card className="surface-panel border-0">
+            <CardHeader className="border-b border-border/50 pb-4">
+              <CardTitle className="text-lg">{t('admin.exposants.account_tab')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-6">
+              <AccountTabContent
+                exposantId={exposantId}
+                exposant={exposant!}
+              />
             </CardContent>
           </Card>
         </TabsContent>

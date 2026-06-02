@@ -283,6 +283,8 @@ export type Database = {
           cover_url: string | null
           created_at: string | null
           description: string | null
+          email1: string | null
+          email2: string | null
           email_contact: string | null
           espace_id: string | null
           facebook_url: string | null
@@ -312,6 +314,8 @@ export type Database = {
           cover_url?: string | null
           created_at?: string | null
           description?: string | null
+          email1?: string | null
+          email2?: string | null
           email_contact?: string | null
           espace_id?: string | null
           facebook_url?: string | null

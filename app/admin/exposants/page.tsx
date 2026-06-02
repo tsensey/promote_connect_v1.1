@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Search, Trash2, ExternalLink, Loader2, Upload, Users } from 'lucide-react';
+import { Plus, Search, Trash2, ExternalLink, Loader2, Upload, Users, Mail, Key } from 'lucide-react';
 import type { Database } from '@/types/database.types';
 import { supabaseClient } from '@/lib/supabase/client';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -61,10 +61,12 @@ export default function AdminExposantsPage() {
   const [showImport, setShowImport] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importLoading, setImportLoading] = useState(false);
-  const [importResult, setImportResult] = useState<{ imported: number; total: number } | null>(null);
+  const [importResult, setImportResult] = useState<{ imported: number; total: number; accounts_created?: number; without_email?: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
-    nom: '', description: '', secteur: '', espace_id: '', pavillon: '', stand: '', pays: '', website: '', is_featured: false,
+    nom: '', description: '', secteur: '', espace_id: '', pavillon: '', stand: '', pays: '', website: '',
+    email1: '', email2: '',
+    is_featured: false,
   });
 
   const fetchData = useCallback(async () => {
@@ -88,7 +90,7 @@ export default function AdminExposantsPage() {
   useEffect(() => { void fetchData(); }, [fetchData]);
 
   const resetForm = () => {
-    setFormData({ nom: '', description: '', secteur: '', espace_id: '', pavillon: '', stand: '', pays: '', website: '', is_featured: false });
+    setFormData({ nom: '', description: '', secteur: '', espace_id: '', pavillon: '', stand: '', pays: '', website: '', email1: '', email2: '', is_featured: false });
     setEditingId(null);
   };
 
@@ -98,11 +100,36 @@ export default function AdminExposantsPage() {
 
     try {
       if (editingId) {
-        const { error } = await supabaseClient.from('exposants').update(formData).eq('id', editingId);
+        const { error } = await supabaseClient.from('exposants').update(formData as any).eq('id', editingId);
         if (error) { toast.error(error.message); return; }
+        toast.success(t('admin.exposants.updated'));
       } else {
-        const { error } = await supabaseClient.from('exposants').insert(formData);
-        if (error) { toast.error(error.message); return; }
+        const { data: insertData, error: insertError } = await supabaseClient.from('exposants').insert(formData as any).select('id, email1, email2').single();
+        if (insertError) { toast.error(insertError.message); return; }
+
+        if (insertData.email1 || insertData.email2) {
+          const res = await fetch('/api/admin/exposants/create-account', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+              exposant_id: insertData.id,
+              email1: insertData.email1,
+              email2: insertData.email2,
+            }),
+          });
+          const accountResult = await res.json();
+          if (accountResult.success && accountResult.account) {
+            const sentCount = accountResult.account.recipients.filter((r: { sent: boolean }) => r.sent).length;
+            toast.success(t('admin.exposants.account_created', { email: accountResult.account.email, sent: sentCount }));
+          } else if (accountResult.error) {
+            toast.warning(t('admin.exposants.account_error', { error: accountResult.error }));
+          }
+        } else {
+          toast.success(t('admin.exposants.created_no_account'));
+        }
       }
 
       setShowForm(false);
@@ -149,7 +176,7 @@ export default function AdminExposantsPage() {
         return;
       }
 
-      setImportResult({ imported: payload.imported, total: payload.total });
+      setImportResult({ imported: payload.imported, total: payload.total, accounts_created: payload.accounts_created, without_email: payload.without_email });
       toast.success(t('admin.exposants.import_success', { count: payload.imported }));
       await fetchData();
     } catch {
@@ -170,7 +197,7 @@ export default function AdminExposantsPage() {
   }, [search]);
 
   const filtered = exposants.filter((exp) => exp.nom.toLowerCase().includes(search.toLowerCase()));
-  
+
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
@@ -278,8 +305,8 @@ export default function AdminExposantsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Link 
-                            href={`/admin/exposants/${exp.id}`} 
+                          <Link
+                            href={`/admin/exposants/${exp.id}`}
                             className={buttonVariants({ variant: "ghost", size: "sm", className: "h-8 w-8 p-0" })}
                           >
                             <ExternalLink className="size-4" />
@@ -304,10 +331,10 @@ export default function AdminExposantsPage() {
           </Table>
         </div>
         {!loading && (
-          <AdminPagination 
-            currentPage={currentPage} 
-            totalPages={totalPages} 
-            onPageChange={setCurrentPage} 
+          <AdminPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
           />
         )}
       </div>
@@ -328,6 +355,19 @@ export default function AdminExposantsPage() {
                   <p className="mt-2 text-xs text-muted-foreground">
                     {t('admin.exposants.import_skipped', { count: importResult.total - importResult.imported })}
                   </p>
+                )}
+                {importResult.accounts_created !== undefined && (
+                  <>
+                    <div className="mt-4 border-t border-emerald-500/20 pt-4">
+                      <p className="text-sm font-medium text-emerald-700">{t('admin.exposants.accounts_created')}</p>
+                      <p className="text-lg font-bold text-emerald-700">{importResult.accounts_created}</p>
+                    </div>
+                    {importResult.without_email && importResult.without_email > 0 ? (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {t('admin.exposants.without_email', { count: importResult.without_email })}
+                      </p>
+                    ) : null}
+                  </>
                 )}
               </div>
               <DialogFooter>
@@ -407,6 +447,7 @@ export default function AdminExposantsPage() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{editingId ? t('admin.exposants.form_edit') : t('admin.exposants.form_new')}</DialogTitle>
+            <DialogDescription>{editingId ? t('admin.exposants.form_edit_desc') : t('admin.exposants.form_new_desc')}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="grid gap-3 py-4">
             <Input placeholder={t('admin.exposants.form_name_placeholder')} value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} required />
@@ -444,17 +485,34 @@ export default function AdminExposantsPage() {
               </div>
             </div>
 
-            {selectedEspace && (
-              <div className="rounded-xl bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-                {t('admin.exposants.form_pavillon_code')} <strong>{selectedEspace.code}</strong> — {selectedEspace.type === 'pavillon' ? t('admin.exposants.form_type_pavillon') : t('admin.exposants.form_type_espace')} {selectedEspace.code} — {selectedEspace.nom}
-              </div>
-            )}
-
             <div className="grid grid-cols-2 gap-3">
               <Input placeholder={t('admin.exposants.form_sector')} value={formData.secteur} onChange={(e) => setFormData({ ...formData, secteur: e.target.value })} />
               <Input placeholder={t('admin.exposants.form_country')} value={formData.pays} onChange={(e) => setFormData({ ...formData, pays: e.target.value })} />
             </div>
             <Input placeholder={t('admin.exposants.form_website')} value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} />
+
+            <div className="border-t border-border/50 pt-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Mail className="size-4 text-muted-foreground" />
+                <p className="text-xs font-medium text-muted-foreground">{t('admin.exposants.form_credentials')}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  type="email"
+                  placeholder={t('admin.exposants.form_email1')}
+                  value={formData.email1}
+                  onChange={(e) => setFormData({ ...formData, email1: e.target.value })}
+                />
+                <Input
+                  type="email"
+                  placeholder={t('admin.exposants.form_email2')}
+                  value={formData.email2}
+                  onChange={(e) => setFormData({ ...formData, email2: e.target.value })}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">{t('admin.exposants.form_email_hint')}</p>
+            </div>
+
             <Textarea placeholder={t('admin.exposants.form_description')} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} />
             <div className="flex items-center gap-2">
               <Checkbox id="featured" checked={formData.is_featured} onCheckedChange={(checked) => setFormData({ ...formData, is_featured: checked === true })} />
