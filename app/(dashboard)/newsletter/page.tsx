@@ -12,12 +12,15 @@ import {
   BellRing,
   Settings2,
   ChevronRight,
+  LockKeyhole,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { usePermissions } from '@/hooks/usePermissions';
+import { ConversionModal } from '@/components/shared/ConversionModal';
 
 interface SectorItem {
   value: string;
@@ -33,6 +36,8 @@ interface NewsletterEdition {
 
 export default function NewsletterPage() {
   const { t, locale } = useTranslation();
+  const perms = usePermissions();
+  const [showConversion, setShowConversion] = useState(false);
   const SECTORS: SectorItem[] = [
     { value: "Technology", labelKey: "sector.it" },
     { value: "Energy", labelKey: "sector.energie" },
@@ -173,8 +178,28 @@ export default function NewsletterPage() {
     }
   };
 
-  return (
-    <div className="space-y-8 pb-8 max-w-6xl mx-auto">
+  const renderConversionGate = () => (
+    <div className="relative overflow-hidden rounded-2xl border border-border/50">
+      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/60 backdrop-blur-md">
+        <div className="max-w-md text-center p-8 bg-background/95 rounded-2xl border border-border">
+          <LockKeyhole className="size-12 text-primary mx-auto mb-4" />
+          <h3 className="text-xl font-bold mb-2">{t('newsletter.restricted_title') || 'Accès réservé'}</h3>
+          <p className="text-muted-foreground mb-6">
+            {t('newsletter.restricted_desc') || "La newsletter PROMOTE est réservée aux entreprises avec un abonnement actif."}
+          </p>
+          <Button onClick={() => setShowConversion(true)} className="w-full rounded-xl" size="lg">
+            {t('newsletter.unlock_access') || "Débloquer l'accès"}
+          </Button>
+        </div>
+      </div>
+      <div className="opacity-20 select-none pointer-events-none">
+        {renderContent()}
+      </div>
+    </div>
+  );
+
+  const renderContent = () => (
+    <>
       {/* Header */}
       <div className="space-y-2">
         <div className="flex items-center gap-3">
@@ -419,6 +444,23 @@ export default function NewsletterPage() {
           )}
         </div>
       </section>
+    </>
+  );
+
+  if (perms.loading) {
+    return (
+      <div className="space-y-8 pb-8 max-w-6xl mx-auto">
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="size-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8 pb-8 max-w-6xl mx-auto">
+      {!perms.canReceiveNewsletter ? renderConversionGate() : renderContent()}
+      <ConversionModal open={showConversion} onOpenChange={setShowConversion} />
     </div>
   );
 }

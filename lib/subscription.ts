@@ -246,15 +246,23 @@ export async function checkMessageQuota(
   const supabase = await createClient();
 
   // 1. Vérifier le tier de l'expéditeur
-  const { data: senderProfile } = await supabase
+  const { data: rawSenderProfile } = await supabase
     .from('profiles')
-    .select('subscription_tier, account_status, daily_exchange_count, last_exchange_reset')
+    .select('subscription_tier, account_status, daily_exchange_count, last_exchange_reset, quota_override_messages')
     .eq('id', senderId)
     .single();
 
-  if (!senderProfile) {
+  if (!rawSenderProfile) {
     return { allowed: false, reason: 'profile_not_found' };
   }
+
+  const senderProfile = rawSenderProfile as unknown as {
+    subscription_tier: string | null;
+    account_status: string | null;
+    daily_exchange_count: number | null;
+    last_exchange_reset: string | null;
+    quota_override_messages: number | null;
+  };
 
   // Vérifier que le compte est actif
   if (senderProfile.account_status !== 'active') {
@@ -279,9 +287,24 @@ export async function checkMessageQuota(
     return { allowed: true };
   }
 
-  // 3. Vérifier le quota journalier depuis platform_config
+  // 3. Vérifier le quota total depuis platform_config (CdC §1.2)
   const quotaConfig = await getQuotaConfig();
-  const dailyLimit = quotaConfig.dailyMessageLimit;
+
+  const { count: totalSent } = await supabase
+    .from('messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('sender_id', senderId);
+
+  if (totalSent !== null && totalSent >= quotaConfig.totalMessageLimit) {
+    return {
+      allowed: false,
+      reason: 'total_quota_exceeded',
+      remaining: 0,
+    };
+  }
+
+  // 4. Vérifier le quota journalier (surcharge individuelle possible, CdC §1.3)
+  const dailyLimit = senderProfile.quota_override_messages ?? quotaConfig.dailyMessageLimit;
 
   const now = new Date();
   const lastReset = senderProfile.last_exchange_reset
@@ -305,7 +328,7 @@ export async function checkMessageQuota(
     };
   }
 
-  // 4. Incrémenter le compteur en DB
+  // 5. Incrémenter le compteur en DB
   const newCount = currentCount + 1;
   await supabase
     .from('profiles')
@@ -330,19 +353,24 @@ export async function checkPostQuota(
 ): Promise<{ allowed: boolean; currentCount?: number; limit?: number }> {
   const supabase = await createClient();
 
-  const { data: profile } = await supabase
+  const { data: rawProfile } = await supabase
     .from('profiles')
-    .select('subscription_tier')
+    .select('subscription_tier, quota_override_posts')
     .eq('id', userId)
     .single();
 
-  if (!profile) return { allowed: false };
+  if (!rawProfile) return { allowed: false };
+
+  const profile = rawProfile as unknown as {
+    subscription_tier: string | null;
+    quota_override_posts: number | null;
+  };
 
   // Les PAID n'ont pas de limite
   if (profile.subscription_tier === 'paid') return { allowed: true };
 
   const quotaConfig = await getQuotaConfig();
-  const limit = quotaConfig.maxPostsFreeTrial;
+  const limit = profile.quota_override_posts ?? quotaConfig.maxPostsFreeTrial;
 
   // Compter les posts actifs de l'utilisateur
   const { count } = await supabase
@@ -369,19 +397,24 @@ export async function checkVitrineQuota(
 ): Promise<{ allowed: boolean; currentCount?: number; limit?: number }> {
   const supabase = await createClient();
 
-  const { data: profile } = await supabase
+  const { data: rawProfile } = await supabase
     .from('profiles')
-    .select('subscription_tier')
+    .select('subscription_tier, quota_override_vitrine')
     .eq('id', userId)
     .single();
 
-  if (!profile) return { allowed: false };
+  if (!rawProfile) return { allowed: false };
+
+  const profile = rawProfile as unknown as {
+    subscription_tier: string | null;
+    quota_override_vitrine: number | null;
+  };
 
   // Les PAID n'ont pas de limite
   if (profile.subscription_tier === 'paid') return { allowed: true };
 
   const quotaConfig = await getQuotaConfig();
-  const limit = quotaConfig.maxVitrineOffersFreeTrial;
+  const limit = profile.quota_override_vitrine ?? quotaConfig.maxVitrineOffersFreeTrial;
 
   // Compter les offres actives de l'exposant
   const { count } = await supabase

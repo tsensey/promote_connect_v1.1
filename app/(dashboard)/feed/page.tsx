@@ -106,11 +106,26 @@ export default function FeedPage() {
     setContactingProd(product.id);
     const { data } = await createConversation(product.exposants.profile_id);
     if (data) {
+      const quotaRes = await fetch('/api/chat/check-quota', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId: data.id }),
+      });
+      const quotaData = await quotaRes.json();
+      if (!quotaRes.ok || !quotaData.allowed) {
+        if (quotaData.showConversionModal) {
+          window.dispatchEvent(new CustomEvent('show-conversion-modal'));
+        } else {
+          toast.error('Quota de messagerie atteint ou accès refusé.');
+        }
+        setContactingProd(null);
+        return;
+      }
+
       const { data: session } = await supabaseClient.auth.getSession();
       if (session?.session?.user) {
         const type = (product.type ?? 'produit') === 'service' ? 'service' : 'produit';
         
-        // Créer un message structuré avec les informations du produit
         const productLink = `${window.location.origin}/vitrine/${product.exposants.profile_id}?product=${product.id}`;
         const messageContent = `${t('feed.contact_about', { type, product: product.nom })}\n\n<a href="${productLink}" target="_blank" rel="noopener noreferrer">🔗 ${t('common.view_product')}</a>`;
         
@@ -121,7 +136,6 @@ export default function FeedPage() {
           is_read: false,
         }).select('id').single();
         
-        // Redirige vers la conversation avec ancre au message
         if (messageInsert.data?.id) {
           router.push(`/chat?conv=${data.id}#${messageInsert.data.id}`);
         } else {
@@ -335,20 +349,26 @@ export default function FeedPage() {
                       <span className="truncate text-[11px] font-medium text-muted-foreground flex-1">
                         {product.exposants?.nom || t('common.exposant')}
                       </span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 rounded-lg text-[10px] px-2.5 gap-1 shrink-0"
-                        disabled={contactingProd === product.id}
-                        onClick={() => handleContactProduct(product)}
-                      >
-                        {contactingProd === product.id ? (
-                          <Loader2 className="size-3 animate-spin" />
-                        ) : (
-                          <Send className="size-3" />
-                        )}
-                        {t('feed.contact')}
-                      </Button>
+                      {perms.canContactExposant ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 rounded-lg text-[10px] px-2.5 gap-1 shrink-0"
+                          disabled={contactingProd === product.id}
+                          onClick={() => handleContactProduct(product)}
+                        >
+                          {contactingProd === product.id ? (
+                            <Loader2 className="size-3 animate-spin" />
+                          ) : (
+                            <Send className="size-3" />
+                          )}
+                          {t('feed.contact')}
+                        </Button>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground italic">
+                          {t('feed.contact_upgrade') || 'Abonnez-vous pour contacter'}
+                        </span>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

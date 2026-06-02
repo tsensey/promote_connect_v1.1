@@ -25,7 +25,7 @@ async function getUserProfile(
 ): Promise<UserProfile | null> {
   const { data, error } = await (supabase
     .from('profiles')
-    .select('role, account_status, is_active, subscription_tier, trial_ends_at')
+    .select('role, account_status, is_active, subscription_tier, trial_ends_at, subscription_ends_at, subscription_status')
     .eq('id', userId)
     .single() as never) as { data: UserProfile | null, error: any };
 

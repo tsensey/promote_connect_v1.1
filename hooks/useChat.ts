@@ -489,11 +489,23 @@ export async function createConversation(otherUserId: string) {
   if (!session?.session?.user) return { error: new Error('Not authenticated') };
 
   const myId = session.session.user.id;
+
+  const { data: profile } = await supabaseClient
+    .from('profiles')
+    .select('subscription_tier')
+    .eq('id', myId)
+    .single();
+
   const [a, b] = [myId, otherUserId].sort();
 
   const { data, error } = await supabaseClient
     .from('conversations')
-    .upsert({ participant_a: a, participant_b: b }, { onConflict: 'participant_a,participant_b' })
+    .upsert({
+      participant_a: a,
+      participant_b: b,
+      initiated_by: myId,
+      initiated_by_tier: profile?.subscription_tier ?? 'free_trial',
+    }, { onConflict: 'participant_a,participant_b' })
     .select()
     .single();
 

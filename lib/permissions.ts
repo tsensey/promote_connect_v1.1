@@ -142,7 +142,7 @@ export function canReceiveNewsletter(user: PermissionUser): boolean {
  * CdC §1.2 : "Support technique PROMOTE — Non/Oui pendant un temps [free trial] / Oui [PAID]"
  */
 export function canAccessSupport(user: PermissionUser): boolean {
-  return isActive(user); // Accès basique pour tous, fonctionnalités avancées PAID
+  return isActive(user); // FAQ accessible à tous, tickets/chat réservés PAID (géré dans l'UI)
 }
 
 // ---------------------------------------------------------------------------

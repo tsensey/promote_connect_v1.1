@@ -401,14 +401,6 @@ export default function ManageVitrinePage() {
       return;
     }
 
-    if (!productForm.id) {
-      const isPaid = (profile as Record<string, unknown>)?.subscription_tier === 'paid';
-      if (!isPaid && products.length >= maxVitrineOffers) {
-        setShowConversionModal(true);
-        return;
-      }
-    }
-
     setSavingProduct(true);
 
     try {
@@ -427,17 +419,29 @@ export default function ManageVitrinePage() {
 
         if (error) throw error;
       } else {
-        const { error } = await supabaseClient.from("produits").insert({
-          exposant_id: exposant.id,
-          nom: productForm.nom.trim(),
-          description: productForm.description.trim() || null,
-          categorie: productForm.categorie.trim() || null,
-          prix_indicatif: productForm.prix_indicatif.trim() || null,
-          type: productForm.type,
-          image_url: productForm.image_url || null,
+        const res = await fetch('/api/vitrine/offers/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: productForm.nom.trim(),
+            description: productForm.description.trim() || null,
+            categorie: productForm.categorie.trim() || null,
+            prixIndicatif: productForm.prix_indicatif.trim() || null,
+            type: productForm.type,
+            imageUrl: productForm.image_url || null,
+          }),
         });
 
-        if (error) throw error;
+        const responseBody = await res.json();
+        if (!res.ok) {
+          throw new Error(responseBody.error || 'Erreur lors de la création');
+        }
+
+        if (responseBody.allowed === false) {
+          setShowConversionModal(true);
+          setSavingProduct(false);
+          return;
+        }
       }
 
       setProductForm(emptyProductForm);

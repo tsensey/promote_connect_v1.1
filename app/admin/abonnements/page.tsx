@@ -59,6 +59,9 @@ interface SubscriptionRow {
   subscription_ends_at: string | null;
   created_at: string;
   is_featured: boolean;
+  quota_override_messages: number | null;
+  quota_override_posts: number | null;
+  quota_override_vitrine: number | null;
 }
 
 export default function AdminAbonnementsPage() {
@@ -73,6 +76,8 @@ export default function AdminAbonnementsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showDateDialog, setShowDateDialog] = useState<SubscriptionRow | null>(null);
   const [newDate, setNewDate] = useState('');
+  const [showQuotaDialog, setShowQuotaDialog] = useState<SubscriptionRow | null>(null);
+  const [quotaForm, setQuotaForm] = useState({ messages: '', posts: '', vitrine: '' });
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -111,7 +116,7 @@ export default function AdminAbonnementsPage() {
         .from('profiles')
         .select(`
           id, full_name, company, role, account_status, subscription_tier, 
-          trial_ends_at, created_at,
+          trial_ends_at, created_at, quota_override_messages, quota_override_posts, quota_override_vitrine,
           exposants!exposants_profile_id_fkey(is_featured)
         `)
         .neq('role', 'admin')
@@ -222,6 +227,36 @@ export default function AdminAbonnementsPage() {
       await fetchUsers();
     } catch {
       toast.error('Erreur lors de la mise à jour du statut');
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleUpdateQuota() {
+    if (!token || !showQuotaDialog) return;
+    setActionLoading(showQuotaDialog.id);
+
+    try {
+      const updateData: Record<string, unknown> = {};
+      if (quotaForm.messages !== '') updateData.quota_override_messages = Number(quotaForm.messages);
+      else updateData.quota_override_messages = null;
+      if (quotaForm.posts !== '') updateData.quota_override_posts = Number(quotaForm.posts);
+      else updateData.quota_override_posts = null;
+      if (quotaForm.vitrine !== '') updateData.quota_override_vitrine = Number(quotaForm.vitrine);
+      else updateData.quota_override_vitrine = null;
+
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update(updateData as never)
+        .eq('id', showQuotaDialog.id);
+
+      if (error) throw error;
+
+      toast.success('Quotas individuels mis à jour');
+      setShowQuotaDialog(null);
+      await fetchUsers();
+    } catch {
+      toast.error('Erreur lors de la mise à jour des quotas');
     } finally {
       setActionLoading(null);
     }
@@ -474,6 +509,21 @@ export default function AdminAbonnementsPage() {
                             <CreditCard className="mr-2 size-4" />
                             Modifier la date d'expiration
                           </DropdownMenuItem>
+
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setShowQuotaDialog(user);
+                              setQuotaForm({
+                                messages: user.quota_override_messages?.toString() ?? '',
+                                posts: user.quota_override_posts?.toString() ?? '',
+                                vitrine: user.quota_override_vitrine?.toString() ?? '',
+                              });
+                            }}
+                            disabled={actionLoading === user.id}
+                          >
+                            <Shield className="mr-2 size-4" />
+                            Modifier les quotas individuels
+                          </DropdownMenuItem>
                           
                           {user.subscription_tier === 'paid' && user.role === 'exposant' && (
                             <DropdownMenuItem
@@ -563,6 +613,60 @@ export default function AdminAbonnementsPage() {
             </Button>
             <Button className="rounded-xl" disabled={actionLoading === showDateDialog?.id} onClick={handleUpdateDate}>
               {actionLoading === showDateDialog?.id && <Loader2 className="mr-2 size-4 animate-spin" />}
+              Enregistrer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!showQuotaDialog} onOpenChange={(open) => !open && setShowQuotaDialog(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier les quotas individuels</DialogTitle>
+            <DialogDescription>
+              {showQuotaDialog && (
+                <>Définir des limites personnalisées pour {showQuotaDialog.company || showQuotaDialog.full_name}. Laisser vide pour utiliser les valeurs par défaut.</>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Messages quotidiens max</label>
+              <Input
+                type="number"
+                min="0"
+                placeholder="Défaut plateforme"
+                value={quotaForm.messages}
+                onChange={(e) => setQuotaForm({ ...quotaForm, messages: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Publications max</label>
+              <Input
+                type="number"
+                min="0"
+                placeholder="Défaut plateforme"
+                value={quotaForm.posts}
+                onChange={(e) => setQuotaForm({ ...quotaForm, posts: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Offres vitrine max</label>
+              <Input
+                type="number"
+                min="0"
+                placeholder="Défaut plateforme"
+                value={quotaForm.vitrine}
+                onChange={(e) => setQuotaForm({ ...quotaForm, vitrine: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" className="rounded-xl" onClick={() => setShowQuotaDialog(null)}>
+              Annuler
+            </Button>
+            <Button className="rounded-xl" disabled={actionLoading === showQuotaDialog?.id} onClick={handleUpdateQuota}>
+              {actionLoading === showQuotaDialog?.id && <Loader2 className="mr-2 size-4 animate-spin" />}
               Enregistrer
             </Button>
           </div>

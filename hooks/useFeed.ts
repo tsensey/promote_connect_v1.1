@@ -276,66 +276,51 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
       const myId = session?.session?.user?.id;
       if (!myId) return { error: new Error('Not authenticated') };
 
-      const { data: profile } = await supabaseClient
-        .from('profiles')
-        .select('subscription_tier, role')
-        .eq('id', myId)
-        .single();
+      const res = await fetch('/api/posts/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, type, category, imageUrls }),
+      });
 
-      if (profile?.subscription_tier === 'free_trial' || (profile?.role !== 'admin' && profile?.subscription_tier !== 'paid')) {
-        const { data: config } = await supabaseClient
-          .from('platform_config')
-          .select('value')
-          .eq('key', 'max_posts_free_trial')
-          .single();
-          
-        const maxPosts = config?.value ? parseInt(String(config.value), 10) : 2;
+      const responseBody = await res.json();
+      if (!res.ok) {
+        return { error: new Error(responseBody.error || 'Erreur lors de la création') };
+      }
 
-        const { count } = await supabaseClient
+      if (responseBody.allowed === false) {
+        return { error: new Error('Quota de publications atteint pour le mode Free Trial.') };
+      }
+
+      const newPost = responseBody.data;
+      if (newPost) {
+        const { data: fullPost } = await supabaseClient
           .from('posts')
-          .select('*', { count: 'exact', head: true })
-          .eq('author_id', myId);
+          .select(`
+            *,
+            author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url, is_featured))
+          `)
+          .eq('id', newPost.id)
+          .single();
 
-        if (count !== null && count >= maxPosts) {
-          return { error: new Error('Quota de publications atteint pour le mode Free Trial.') };
+        if (fullPost) {
+          const enriched: Post = {
+            ...(fullPost as unknown as PostWithAuthor),
+            is_liked: false,
+            is_shared: false,
+            is_reposted: false,
+            is_saved: false,
+            reaction_type: null,
+            author: {
+              ...(fullPost as unknown as PostWithAuthor).author,
+              is_following: false,
+            },
+            repost_of: undefined,
+          };
+          setPosts((prev) => [enriched, ...prev]);
         }
       }
 
-      const insertData: PostInsert = {
-        author_id: myId,
-        content: content.trim(),
-        type,
-        category: category || null,
-        image_url: imageUrls?.length ? imageUrls.join(',') : null,
-      };
-
-      const { data: newPost, error } = await supabaseClient
-        .from('posts')
-        .insert(insertData)
-        .select(`
-          *,
-          author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url, is_featured))
-        `)
-        .single();
-
-      if (!error && newPost) {
-        const enriched: Post = {
-          ...(newPost as unknown as PostWithAuthor),
-          is_liked: false,
-          is_shared: false,
-          is_reposted: false,
-          is_saved: false,
-          reaction_type: null,
-          author: {
-            ...(newPost as unknown as PostWithAuthor).author,
-            is_following: false,
-          },
-          repost_of: undefined,
-        };
-        setPosts((prev) => [enriched, ...prev]);
-      }
-
-      return { error };
+      return { error: null };
     },
     []
   );
@@ -345,64 +330,75 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
     const myId = session?.session?.user?.id;
     if (!myId) return { error: new Error('Not authenticated') };
 
-    const insertData = {
-      author_id: myId,
-      content: content.trim(),
-      type: 'repost',
-      repost_of_id: originalPostId,
-    };
+    const res = await fetch('/api/posts/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, type: 'repost', repostOfId: originalPostId }),
+    });
 
-    const { data: newPost, error } = await (supabaseClient as any)
-      .from('posts')
-      .insert(insertData)
-      .select(`
-        *,
-        author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url, is_featured))
-      `)
-      .single();
-
-    if (!error && newPost) {
-      let repostOfData = undefined;
-      const d = newPost as PostWithAuthor & { repost_of_id?: string };
-      if (d.repost_of_id) {
-        const { data: rData } = await supabaseClient
-          .from('posts')
-          .select(`
-            *,
-            author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url, is_featured))
-          `)
-          .eq('id', d.repost_of_id)
-          .single();
-        if (rData) repostOfData = rData as unknown as PostWithAuthor;
-      }
-
-      const enriched: Post = {
-        ...(newPost as PostWithAuthor),
-        is_liked: false,
-        is_shared: false,
-        is_reposted: false,
-        is_saved: false,
-        reaction_type: null,
-        author: {
-          ...(newPost as PostWithAuthor).author,
-          is_following: false,
-        },
-        repost_of: repostOfData ?? null,
-      };
-      setPosts((prev) => [enriched, ...prev]);
-
-      await supabaseClient.from('post_shares').insert({ post_id: originalPostId, user_id: myId, type: 'repost' });
-      const originalPost = posts.find((p) => p.id === originalPostId);
-      const newCount = (originalPost?.reposts_count || 0) + 1;
-      await supabaseClient.from('posts').update({ reposts_count: newCount }).eq('id', originalPostId);
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === originalPostId ? { ...p, is_reposted: true, reposts_count: newCount } : p
-        )
-      );
+    const responseBody = await res.json();
+    if (!res.ok) {
+      return { error: new Error(responseBody.error || 'Erreur lors du repost') };
     }
 
-    return { error };
+    if (responseBody.allowed === false) {
+      return { error: new Error('Quota de publications atteint pour le mode Free Trial.') };
+    }
+
+    const newPost = responseBody.data;
+    if (newPost) {
+      const { data: fullPost } = await supabaseClient
+        .from('posts')
+        .select(`
+          *,
+          author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url, is_featured))
+        `)
+        .eq('id', newPost.id)
+        .single();
+
+      if (fullPost) {
+        let repostOfData = undefined;
+        const d = fullPost as PostWithAuthor & { repost_of_id?: string };
+        if (d.repost_of_id) {
+          const { data: rData } = await supabaseClient
+            .from('posts')
+            .select(`
+              *,
+              author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url, is_featured))
+            `)
+            .eq('id', d.repost_of_id)
+            .single();
+          if (rData) repostOfData = rData as unknown as PostWithAuthor;
+        }
+
+        const enriched: Post = {
+          ...(fullPost as PostWithAuthor),
+          is_liked: false,
+          is_shared: false,
+          is_reposted: false,
+          is_saved: false,
+          reaction_type: null,
+          author: {
+            ...(fullPost as PostWithAuthor).author,
+            is_following: false,
+          },
+          repost_of: repostOfData ?? null,
+        };
+        setPosts((prev) => [enriched, ...prev]);
+
+        await supabaseClient.from('post_shares').insert({ post_id: originalPostId, user_id: myId, type: 'repost' });
+        const originalPost = posts.find((p) => p.id === originalPostId);
+        const newCount = (originalPost?.reposts_count || 0) + 1;
+        await supabaseClient.from('posts').update({ reposts_count: newCount }).eq('id', originalPostId);
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === originalPostId ? { ...p, is_reposted: true, reposts_count: newCount } : p
+          )
+        );
+      }
+    }
+
+    return { error: null };
   }, [posts]);
 
   const deletePost = useCallback(async (postId: string) => {

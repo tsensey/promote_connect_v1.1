@@ -8,6 +8,7 @@ import { UserSidebar } from '@/components/layout/UserSidebar';
 import { UserTopbar } from '@/components/layout/UserTopbar';
 import { SearchCommandPalette } from '@/components/search/SearchCommandPalette';
 import { TrialBanner } from '@/components/layout/TrialBanner';
+import { ConversionModal } from '@/components/shared/ConversionModal';
 import { cn } from '@/lib/utils';
 import { isNativePlatform } from '@/lib/capacitor';
 
@@ -18,6 +19,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showConversionModal, setShowConversionModal] = useState(false);
 
   useEffect(() => {
     if (loading) {
@@ -45,6 +47,13 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Global event listener for conversion modal (dispatched by useChat.ts on quota exceeded)
+  useEffect(() => {
+    const handleConversion = () => setShowConversionModal(true);
+    window.addEventListener('show-conversion-modal', handleConversion);
+    return () => window.removeEventListener('show-conversion-modal', handleConversion);
   }, []);
 
   const handleSignOut = async () => {
@@ -138,6 +147,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
         </main>
       </div>
 
+      <ConversionModal open={showConversionModal} onOpenChange={setShowConversionModal} />
       <SearchCommandPalette open={searchOpen} onOpenChange={setSearchOpen} />
     </div>
   );

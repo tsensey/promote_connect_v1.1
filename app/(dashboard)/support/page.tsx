@@ -15,6 +15,7 @@ import {
   ChevronUp,
   Loader2,
   Ticket,
+  LockKeyhole,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { usePermissions } from '@/hooks/usePermissions';
+import { ConversionModal } from '@/components/shared/ConversionModal';
 
 interface FaqItem {
   question: string;
@@ -33,8 +36,10 @@ interface FaqItem {
 export default function SupportPage() {
   const { t, locale } = useTranslation();
   const router = useRouter();
+  const perms = usePermissions();
   const { tickets, createTicket } = useSupportTickets();
   const [activeTab, setActiveTab] = useState<'chat' | 'tickets' | 'faq'>('faq');
+  const [showConversion, setShowConversion] = useState(false);
   const [showNewTicket, setShowNewTicket] = useState(false);
   const [ticketForm, setTicketForm] = useState({
     subject: '',
@@ -169,24 +174,31 @@ export default function SupportPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {(['faq', 'tickets', 'chat'] as const).map((tab) => (
-              <Button
-                key={tab}
-                variant={activeTab === tab ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setActiveTab(tab)}
-                className="rounded-full"
-              >
-                {tab === 'faq' ? (
-                  <BookOpen className="mr-1.5 size-3.5" />
-                ) : tab === 'tickets' ? (
-                  <Ticket className="mr-1.5 size-3.5" />
-                ) : (
-                  <MessageCircle className="mr-1.5 size-3.5" />
-                )}
-                {tab === 'faq' ? t('support.tab_faq') : tab === 'tickets' ? t('support.tab_tickets') : t('support.tab_chat')}
-              </Button>
-            ))}
+            {(['faq', 'tickets', 'chat'] as const).map((tab) => {
+              const isPaidOnly = tab === 'tickets' || tab === 'chat';
+              const canAccess = !isPaidOnly || perms.canAccessSupport;
+              return (
+                <Button
+                  key={tab}
+                  variant={activeTab === tab ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    if (!canAccess) { setShowConversion(true); return; }
+                    setActiveTab(tab);
+                  }}
+                  className="rounded-full"
+                >
+                  {tab === 'faq' ? (
+                    <BookOpen className="mr-1.5 size-3.5" />
+                  ) : tab === 'tickets' ? (
+                    <Ticket className="mr-1.5 size-3.5" />
+                  ) : (
+                    <MessageCircle className="mr-1.5 size-3.5" />
+                  )}
+                  {tab === 'faq' ? t('support.tab_faq') : tab === 'tickets' ? t('support.tab_tickets') : t('support.tab_chat')}
+                </Button>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
@@ -405,6 +417,7 @@ export default function SupportPage() {
           </CardContent>
         </Card>
       )}
+      <ConversionModal open={showConversion} onOpenChange={setShowConversion} />
     </div>
   );
 }

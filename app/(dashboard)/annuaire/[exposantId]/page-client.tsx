@@ -133,6 +133,22 @@ export default function ExposantDetailPage() {
     setContacting(true);
     const { data } = await createConversation(exposant.profile_id);
     if (data) {
+      const quotaRes = await fetch('/api/chat/check-quota', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId: data.id }),
+      });
+      const quotaData = await quotaRes.json();
+      if (!quotaRes.ok || !quotaData.allowed) {
+        if (quotaData.showConversionModal) {
+          window.dispatchEvent(new CustomEvent('show-conversion-modal'));
+        } else {
+          toast.error('Quota de messagerie atteint ou accès refusé.');
+        }
+        setContacting(false);
+        return;
+      }
+
       if (productName) {
         const { data: session } = await supabaseClient.auth.getSession();
         if (session?.session?.user) {

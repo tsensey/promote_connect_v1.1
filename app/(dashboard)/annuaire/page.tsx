@@ -39,6 +39,12 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { Ban } from 'lucide-react';
 import { ConversionModal } from '@/components/shared/ConversionModal';
 import { ReportButton } from '@/components/shared/ReportButton';
+import type { Database } from '@/types/database.types';
+
+type ExposantWithProfile = Database['public']['Tables']['exposants']['Row'] & {
+  profiles: { subscription_tier: string | null } | null;
+};
+
 const COVER_GRADIENTS = [
   'from-blue-600/20 via-blue-500/10 to-transparent',
   'from-emerald-600/20 via-emerald-500/10 to-transparent',
@@ -145,11 +151,22 @@ export default function AnnuairePage() {
         return;
       }
 
+      const { data: myProfile } = await supabaseClient
+        .from('profiles')
+        .select('subscription_tier')
+        .eq('id', myId)
+        .single();
+
       const [a, b] = [myId, exposant.profile_id].sort();
       const { data: conv, error: convError } = await supabaseClient
         .from('conversations')
         .upsert(
-          { participant_a: a, participant_b: b },
+          {
+            participant_a: a,
+            participant_b: b,
+            initiated_by: myId,
+            initiated_by_tier: myProfile?.subscription_tier ?? 'free_trial',
+          },
           { onConflict: 'participant_a,participant_b' },
         )
         .select()
@@ -397,7 +414,7 @@ export default function AnnuairePage() {
             {t('annuaire.load_error', { error: error.message })}
           </div>
         ) : exposants.length > 0 ? (
-          exposants.map((exposant) => {
+          (exposants as ExposantWithProfile[]).map((exposant) => {
             const gradient = getGradient(exposant.id);
             const isOwn = exposant.profile_id === user?.id;
 
@@ -435,7 +452,7 @@ export default function AnnuairePage() {
                         {t('annuaire.featured')}
                       </Badge>
                     )}
-                    {(exposant as any).profiles?.subscription_tier === 'paid' && (
+                    {exposant.profiles?.subscription_tier === 'paid' && (
                       <Badge className="rounded-full border-amber-500 bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white self-end">
                         PRO
                       </Badge>

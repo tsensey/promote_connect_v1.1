@@ -73,13 +73,14 @@ export default function VitrinePage() {
   useEffect(() => {
     const fetchProduits = async () => {
       setLoading(true);
-      const { data, error } = await supabaseClient
-        .from('produits')
-        .select('*, exposants(id, nom, secteur, pays, pavillon, logo_url, is_featured, profiles(subscription_tier))')
-        .order('created_at', { ascending: false });
-
-      if (!error && data) {
-        setProduits(data as ProduitWithExposant[]);
+      try {
+        const res = await fetch('/api/vitrine/list');
+        const body = await res.json();
+        if (res.ok && body.data) {
+          setProduits(body.data as ProduitWithExposant[]);
+        }
+      } catch {
+        // fallback silencieux
       }
       setLoading(false);
     };
@@ -110,20 +111,7 @@ export default function VitrinePage() {
       return matchSearch && matchCategorie && matchType;
     });
 
-    return list.sort((a, b) => {
-      const aTier = a.exposants?.profiles?.subscription_tier;
-      const bTier = b.exposants?.profiles?.subscription_tier;
-      const aPaid = aTier === 'paid';
-      const bPaid = bTier === 'paid';
-      const aFeatured = a.exposants?.is_featured;
-      const bFeatured = b.exposants?.is_featured;
-
-      const aScore = (aPaid && aFeatured ? 3 : 0) + (aPaid && !aFeatured ? 2 : 0) + (!aPaid ? 1 : 0);
-      const bScore = (bPaid && bFeatured ? 3 : 0) + (bPaid && !bFeatured ? 2 : 0) + (!bPaid ? 1 : 0);
-
-      if (aScore !== bScore) return bScore - aScore;
-      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
-    });
+    return list;
   }, [produits, deferredSearch, categorie, typeFilter]);
 
   const handleContact = async (exposantId: string, productName: string, exposantProfileId?: string) => {
@@ -134,6 +122,22 @@ export default function VitrinePage() {
     setContacting(exposantId + productName);
     const { data } = await createConversation(exposantProfileId);
     if (data) {
+      const quotaRes = await fetch('/api/chat/check-quota', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId: data.id }),
+      });
+      const quotaData = await quotaRes.json();
+      if (!quotaRes.ok || !quotaData.allowed) {
+        if (quotaData.showConversionModal) {
+          window.dispatchEvent(new CustomEvent('show-conversion-modal'));
+        } else {
+          toast.error('Quota de messagerie atteint ou accès refusé.');
+        }
+        setContacting(null);
+        return;
+      }
+
       const { data: session } = await supabaseClient.auth.getSession();
       if (session?.session?.user) {
         const type = (produits.find(p => p.exposant_id === exposantId)?.type ?? 'produit') === 'service' ? 'service' : 'produit';
