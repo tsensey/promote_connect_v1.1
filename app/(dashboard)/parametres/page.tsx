@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/lib/auth/context';
 import { useTranslation } from '@/lib/i18n';
 import { useSettings } from '@/hooks/useSettings';
+import { useBlockedUsers, BLOCK_TYPE_LABELS } from '@/hooks/useBlockedUsers';
+import type { BlockType } from '@/hooks/useBlockedUsers';
 import { supabaseClient } from '@/lib/supabase/client';
 import { compressImage } from '@/lib/compress-image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,12 +34,14 @@ import {
   Rss,
   Volume2,
   Camera,
+  Ban,
 } from 'lucide-react';
 import type { Locale } from '@/lib/i18n';
 
 const TABS = [
   { id: 'profile', icon: User, key: 'settings.profile' },
   { id: 'notifications', icon: Bell, key: 'settings.notifications' },
+  { id: 'blocked', icon: Ban, key: 'settings.blocked' },
   { id: 'language', icon: Globe, key: 'settings.language' },
   { id: 'account', icon: Shield, key: 'settings.account' },
 ] as const;
@@ -352,6 +356,141 @@ function AccountTab() {
   );
 }
 
+function BlockedTab() {
+  const { t } = useTranslation();
+  const { blockedUsers, loading, loadBlockedUsers, unblockUser, blockUser } = useBlockedUsers();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<BlockType>('complete');
+
+  useEffect(() => {
+    loadBlockedUsers();
+  }, [loadBlockedUsers]);
+
+  const [profiles, setProfiles] = useState<Record<string, { full_name: string | null; company: string | null }>>({});
+
+  useEffect(() => {
+    if (blockedUsers.length === 0) return;
+    const ids = blockedUsers.map(b => b.blocked_id);
+    supabaseClient
+      .from('profiles')
+      .select('id, full_name, company')
+      .in('id', ids)
+      .then(({ data }) => {
+        if (data) {
+          const map: Record<string, { full_name: string | null; company: string | null }> = {};
+          for (const p of data) {
+            map[p.id] = { full_name: p.full_name, company: p.company };
+          }
+          setProfiles(map);
+        }
+      });
+  }, [blockedUsers]);
+
+  const handleUpdateType = async (blockedId: string, blockType: BlockType) => {
+    const blocked = blockedUsers.find(b => b.blocked_id === blockedId);
+    if (!blocked) return;
+    await blockUser(blockedId, blocked.reason, blockType);
+    setEditingId(null);
+  };
+
+  const handleUnblock = async (blockedId: string) => {
+    await unblockUser(blockedId);
+    toast.success(t('blocked.unblocked'));
+  };
+
+  const filtered = searchTerm
+    ? blockedUsers.filter(b => {
+        const p = profiles[b.blocked_id];
+        return p?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               p?.company?.toLowerCase().includes(searchTerm.toLowerCase());
+      })
+    : blockedUsers;
+
+  return (
+    <Card className="overflow-hidden border-border/50">
+      <div className="h-1.5 bg-gradient-to-r from-destructive/60 via-destructive to-destructive/60" />
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-destructive/10">
+            <Ban className="size-5 text-destructive" />
+          </div>
+          <div>
+            <CardTitle className="text-lg">{t('settings.blocked')}</CardTitle>
+            <CardDescription>{t('settings.blocked.description')}</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Input
+          placeholder={t('blocked.search')}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        {loading && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          </div>
+        )}
+        {!loading && blockedUsers.length === 0 && (
+          <p className="py-8 text-center text-sm text-muted-foreground">{t('blocked.empty')}</p>
+        )}
+        {!loading && filtered.length > 0 && (
+          <div className="space-y-2">
+            {filtered.map((b) => {
+              const profile = profiles[b.blocked_id];
+              return (
+                <div key={b.blocked_id} className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-card p-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{profile?.full_name || b.blocked_id.slice(0, 8)}</p>
+                    {profile?.company && (
+                      <p className="truncate text-xs text-muted-foreground">{profile.company}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {editingId === b.blocked_id ? (
+                      <select
+                        className="rounded-md border border-input bg-background px-2 py-1 text-xs"
+                        value={selectedType}
+                        onChange={(e) => {
+                          const val = e.target.value as BlockType;
+                          setSelectedType(val);
+                          handleUpdateType(b.blocked_id, val);
+                        }}
+                        autoFocus
+                        onBlur={() => setEditingId(null)}
+                      >
+                        {Object.entries(BLOCK_TYPE_LABELS).map(([value, label]) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <button
+                        type="button"
+                        className="rounded-md border border-border/50 px-2 py-1 text-xs text-muted-foreground hover:bg-accent"
+                        onClick={() => { setEditingId(b.blocked_id); setSelectedType(b.block_type); }}
+                      >
+                        {BLOCK_TYPE_LABELS[b.block_type]}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="rounded-md px-2 py-1 text-xs text-destructive hover:bg-destructive/10"
+                      onClick={() => handleUnblock(b.blocked_id)}
+                    >
+                      {t('blocked.unblock')}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function InfoItem({ label, value, badge }: { label: string; value?: string | null; badge?: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-border/50 bg-muted/30 p-4">
@@ -407,6 +546,9 @@ export default function SettingsPage() {
           </div>
           <div className={`transition-opacity duration-200 ${activeTab === 'notifications' ? 'opacity-100' : 'hidden'}`}>
             <NotificationsTab />
+          </div>
+          <div className={`transition-opacity duration-200 ${activeTab === 'blocked' ? 'opacity-100' : 'hidden'}`}>
+            <BlockedTab />
           </div>
           <div className={`transition-opacity duration-200 ${activeTab === 'language' ? 'opacity-100' : 'hidden'}`}>
             <LanguageTab />

@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  let filtered = (produits || []).filter((p: any) => {
+  const filtered = (produits || []).filter((p: any) => {
     if (search && !p.nom?.toLowerCase().includes(search) && !p.description?.toLowerCase().includes(search) && !p.exposants?.nom?.toLowerCase().includes(search)) {
       return false;
     }

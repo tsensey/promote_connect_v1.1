@@ -2,9 +2,16 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { render } from '@react-email/components';
 import ForgotPasswordEmail from '@/emails/ForgotPasswordEmail';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const rl = await rateLimit(`forgot-password:${ip}`, 3, 15 * 60 * 1000);
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Trop de tentatives. Réessayez dans 15 minutes.' }, { status: 429 });
+    }
+
     const { email } = await request.json();
     if (!email) {
       return NextResponse.json({ error: 'Email requis' }, { status: 400 });
@@ -22,12 +29,10 @@ export async function POST(request: Request) {
     });
 
     if (linkError) {
-      // Even if error (e.g. user not found), return success to avoid email enumeration
       console.error('Error generating recovery link:', linkError.message);
       return NextResponse.json({ success: true });
     }
 
-    // Attempt to get the user's full name from profiles
     let fullName = 'Utilisateur';
     if (linkData?.user?.id) {
       const { data: profile } = await supabaseAdmin
@@ -35,7 +40,7 @@ export async function POST(request: Request) {
         .select('full_name')
         .eq('id', linkData.user.id)
         .single();
-      
+
       if (profile?.full_name) {
         fullName = profile.full_name;
       }

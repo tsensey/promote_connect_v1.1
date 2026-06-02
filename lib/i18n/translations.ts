@@ -1328,6 +1328,12 @@ export const translations: Record<Locale, Record<string, string>> = {
     'settings.saved.description': 'Vos modifications ont été appliquées avec succès.',
     'settings.error': 'Erreur lors de l\'enregistrement',
     'settings.error.description': 'Veuillez réessayer plus tard.',
+    'settings.blocked': 'Blocages',
+    'settings.blocked.description': 'Gérez les utilisateurs que vous avez bloqués',
+    'blocked.search': 'Rechercher un utilisateur bloqué...',
+    'blocked.empty': 'Vous n\'avez bloqué aucun utilisateur.',
+    'blocked.unblock': 'Débloquer',
+    'blocked.unblocked': 'Utilisateur débloqué',
 
     // ─── Profile ─────────────────────────────────────────────
     'profile.full_name': 'Nom complet',
@@ -2808,6 +2814,12 @@ export const translations: Record<Locale, Record<string, string>> = {
     'settings.saved.description': 'Your changes have been applied successfully.',
     'settings.error': 'Error saving settings',
     'settings.error.description': 'Please try again later.',
+    'settings.blocked': 'Blocked Users',
+    'settings.blocked.description': 'Manage users you have blocked',
+    'blocked.search': 'Search blocked user...',
+    'blocked.empty': 'You haven\'t blocked any users.',
+    'blocked.unblock': 'Unblock',
+    'blocked.unblocked': 'User unblocked',
 
     // ─── Profile ─────────────────────────────────────────────
     'profile.full_name': 'Full name',

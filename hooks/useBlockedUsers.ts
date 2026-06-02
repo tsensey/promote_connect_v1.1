@@ -8,7 +8,14 @@ export type BlockType = 'messages' | 'rdv' | 'complete';
 export interface BlockedUser {
   blocked_id: string;
   reason: string;
+  block_type: BlockType;
 }
+
+const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
+  messages: 'Messages uniquement',
+  rdv: 'Rendez-vous uniquement',
+  complete: 'Blocage complet',
+};
 
 export function useBlockedUsers() {
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
@@ -22,30 +29,38 @@ export function useBlockedUsers() {
     setLoading(true);
     const { data } = await supabaseClient
       .from('blocked_users')
-      .select('blocked_id, reason')
-      .eq('blocker_id', myId);
+      .select('blocked_id, reason, block_type')
+      .eq('blocker_id', myId) as unknown as {
+        data: { blocked_id: string; reason: string | null; block_type: BlockType | null }[] | null;
+        error: unknown;
+      };
 
     if (data) {
-      setBlockedUsers(data as BlockedUser[]);
+      setBlockedUsers(data.map((d) => ({
+        blocked_id: d.blocked_id,
+        reason: d.reason || '',
+        block_type: d.block_type || 'complete',
+      })));
     }
     setLoading(false);
   }, []);
 
-  const blockUser = useCallback(async (blockedId: string, reason = 'harassment') => {
+  const blockUser = useCallback(async (blockedId: string, reason = 'harassment', blockType: BlockType = 'complete') => {
     const { data: session } = await supabaseClient.auth.getSession();
     const myId = session?.session?.user?.id;
     if (!myId) return { error: new Error('Not authenticated') };
 
-    const { error } = await supabaseClient.from('blocked_users').upsert({
+    const { error } = await (supabaseClient.from('blocked_users').upsert as any)({
       blocker_id: myId,
       blocked_id: blockedId,
       reason,
+      block_type: blockType,
     }, { onConflict: 'blocker_id,blocked_id' });
 
     if (!error) {
       setBlockedUsers((prev) => {
         const filtered = prev.filter(b => b.blocked_id !== blockedId);
-        return [...filtered, { blocked_id: blockedId, reason }];
+        return [...filtered, { blocked_id: blockedId, reason, block_type: blockType }];
       });
     }
     return { error };
@@ -68,8 +83,6 @@ export function useBlockedUsers() {
     return { error };
   }, []);
 
-
-
   const isBlocked = useCallback(
     (userId: string) => {
       return blockedUsers.some(b => b.blocked_id === userId);
@@ -83,7 +96,9 @@ export function useBlockedUsers() {
     loadBlockedUsers,
     blockUser,
     unblockUser,
-
     isBlocked,
+    BLOCK_TYPE_LABELS,
   };
 }
+
+export { BLOCK_TYPE_LABELS };
