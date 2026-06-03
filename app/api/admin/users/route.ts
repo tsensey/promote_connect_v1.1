@@ -23,7 +23,7 @@ export async function GET(request: Request) {
   const supabase = createAdminClient();
   const { data: users, error } = await supabase
     .from('profiles')
-    .select('id, full_name, company, role, sector, country, pavillon, is_active, created_at, access_level')
+    .select('id, full_name, company, role, sector, country, pavillon, is_active, created_at, access_level, subscription_ends_at, subscription_tier')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -291,6 +291,7 @@ export async function PATCH(request: Request) {
   const is_active = body.is_active as boolean | undefined;
   const access_level = body.access_level as string | undefined;
   const suspension_reason = body.suspension_reason as string | undefined;
+  const subscription_ends_at = body.subscription_ends_at as string | undefined;
 
   if (!id) {
     return NextResponse.json({ error: 'User ID requis' }, { status: 400 });
@@ -322,6 +323,10 @@ export async function PATCH(request: Request) {
   if (sector !== undefined) updateData.sector = sector;
   if (country !== undefined) updateData.country = country;
   if (pavillon !== undefined) updateData.pavillon = pavillon;
+
+  if (subscription_ends_at !== undefined) {
+    updateData.subscription_ends_at = subscription_ends_at as any;
+  }
 
   if (is_active !== undefined) {
     updateData.is_active = is_active;

@@ -5,7 +5,16 @@
 -- 1. Activer la réplication de la table notifications dans supabase_realtime
 --    (était commenté dans migration 027 — cause racine : les notifications
 --     ne sont jamais diffusées en temps réel vers le client)
-ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'notifications' AND schemaname = 'public'
+  ) THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications';
+  END IF;
+END;
+$$;
 
 -- 2. Trigger : créer une notification lorsqu'un utilisateur like un post
 --    (actuellement, toggleLike() dans useFeed.ts n'insère jamais de notification)
@@ -58,7 +67,6 @@ CREATE TRIGGER trg_notify_on_post_reaction
 CREATE OR REPLACE FUNCTION public.auto_downgrade_on_subscription_expiry()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Si le statut passe à 'expired', 'past_due' ou 'canceled' → downgrade
   IF NEW.status IN ('expired', 'past_due', 'canceled', 'incomplete_expired') THEN
     UPDATE public.profiles
     SET subscription_tier = 'free_trial'
@@ -69,9 +77,19 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-DROP TRIGGER IF EXISTS trg_auto_downgrade_on_subscription_expiry ON public.subscriptions;
-CREATE TRIGGER trg_auto_downgrade_on_subscription_expiry
-  AFTER UPDATE OF status ON public.subscriptions
-  FOR EACH ROW
-  WHEN (OLD.status IS DISTINCT FROM NEW.status)
-  EXECUTE FUNCTION public.auto_downgrade_on_subscription_expiry();
+-- Ne créer le trigger que si la table subscriptions existe
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'subscriptions'
+  ) THEN
+    EXECUTE 'DROP TRIGGER IF EXISTS trg_auto_downgrade_on_subscription_expiry ON public.subscriptions';
+    EXECUTE 'CREATE TRIGGER trg_auto_downgrade_on_subscription_expiry
+      AFTER UPDATE OF status ON public.subscriptions
+      FOR EACH ROW
+      WHEN (OLD.status IS DISTINCT FROM NEW.status)
+      EXECUTE FUNCTION public.auto_downgrade_on_subscription_expiry()';
+  END IF;
+END;
+$$;

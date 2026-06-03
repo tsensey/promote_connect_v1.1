@@ -65,7 +65,9 @@ export function NotificationDropdown() {
   };
 
   const getMessage = (n: Notification) => {
-    const senderName = n.sender?.company || n.sender?.full_name || t('notifications.someone');
+    const senderName = n.sender?.full_name && n.sender?.company
+      ? `${n.sender.full_name} (${n.sender.company})`
+      : n.sender?.full_name || n.sender?.company || t('notifications.someone');
     
     switch (n.type) {
       case 'like':

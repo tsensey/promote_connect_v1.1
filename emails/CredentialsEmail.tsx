@@ -12,7 +12,7 @@ import {
   Text,
   Button,
   Tailwind,
-} from '@react-email/components';
+} from "@react-email/components";
 
 export default function CredentialsEmail({
   fullName,
@@ -31,22 +31,39 @@ export default function CredentialsEmail({
   pavillon?: string | null;
   stand?: string | null;
 }) {
-  const loginUrl = 'https://promote-connect.com/login';
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://promote-connect.com';
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL || "https://promote-connect.pro";
+  const loginUrl = baseUrl + "/login";
 
   const tailwindConfig = {
     theme: {
       extend: {
         colors: {
-          brand: '#912450',
-          background: '#f6f8fb',
-          foreground: '#0f172a',
-          muted: '#475569',
-          border: '#e2e8f0',
+          brand: "#4A072B",
+          background: "#f6f8fb",
+          foreground: "#0f172a",
+          muted: "#475569",
+          border: "#e2e8f0",
         },
         fontFamily: {
-          sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
-          mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', '"Liberation Mono"', '"Courier New"', 'monospace'],
+          sans: [
+            "Inter",
+            "-apple-system",
+            "BlinkMacSystemFont",
+            '"Segoe UI"',
+            "Roboto",
+            "sans-serif",
+          ],
+          mono: [
+            "ui-monospace",
+            "SFMono-Regular",
+            "Menlo",
+            "Monaco",
+            "Consolas",
+            '"Liberation Mono"',
+            '"Courier New"',
+            "monospace",
+          ],
         },
       },
     },
@@ -61,9 +78,9 @@ export default function CredentialsEmail({
           <Container className="mx-auto max-w-[600px] bg-white rounded-3xl overflow-hidden shadow-xl border border-border">
             <Section className="bg-brand p-8 text-white">
               <Img
-                src={`${baseUrl}/logo-promote.png`}
-                width="180"
-                height="auto"
+                src={`${baseUrl}/pro_connect_fr.webp`}
+                width="auto"
+                height="180"
                 alt="PROMOTE-CONNECT"
                 className="mb-4"
               />
@@ -77,23 +94,27 @@ export default function CredentialsEmail({
                 Bienvenue, {fullName}
               </Text>
               <Text className="m-0 mb-6 text-[15px] leading-relaxed text-muted">
-                Votre compte a été créé par l'administrateur PROMOTE-CONNECT.
-                Vous pouvez dès maintenant accéder à la plateforme.
+                {`Votre compte a été créé par l'administrateur PROMOTE-CONNECT.
+                Vous pouvez dès maintenant accéder à la plateforme.`}
               </Text>
 
               <Section className="mb-6 rounded-xl bg-background p-6 border border-border">
                 <Text className="m-0 mb-4 text-sm font-semibold uppercase tracking-widest text-muted">
                   Vos identifiants
                 </Text>
-                
+
                 <Text className="m-0 mb-4 leading-relaxed">
                   <span className="text-[13px] text-slate-400">Email</span>
                   <br />
-                  <span className="text-[15px] font-semibold text-foreground">{email}</span>
+                  <span className="text-[15px] font-semibold text-foreground">
+                    {email}
+                  </span>
                 </Text>
-                
+
                 <Text className="m-0 mb-4 leading-relaxed">
-                  <span className="text-[13px] text-slate-400">Mot de passe</span>
+                  <span className="text-[13px] text-slate-400">
+                    Mot de passe
+                  </span>
                   <br />
                   <span className="inline-block mt-1 rounded-md bg-slate-200 px-2 py-1 font-mono text-[15px] font-semibold text-foreground tracking-wide">
                     {password}
@@ -104,29 +125,45 @@ export default function CredentialsEmail({
                   <span className="text-[13px] text-slate-400">Rôle</span>
                   <br />
                   <span className="text-[15px] font-semibold text-foreground">
-                    {role === 'exposant' ? 'Exposant' : role === 'admin' ? 'Administrateur' : 'Visiteur'}
+                    {role === "exposant"
+                      ? "Exposant"
+                      : role === "admin"
+                        ? "Administrateur"
+                        : "Visiteur"}
                   </span>
                 </Text>
 
-                {role === 'exposant' && (
+                {role === "exposant" && (
                   <>
                     <Text className="m-0 mt-4 leading-relaxed">
-                      <span className="text-[13px] text-slate-400">Entreprise</span>
+                      <span className="text-[13px] text-slate-400">
+                        Entreprise
+                      </span>
                       <br />
-                      <span className="text-[15px] font-semibold text-foreground">{company || fullName}</span>
+                      <span className="text-[15px] font-semibold text-foreground">
+                        {company || fullName}
+                      </span>
                     </Text>
                     {pavillon && (
                       <Text className="m-0 mt-4 leading-relaxed">
-                        <span className="text-[13px] text-slate-400">Pavillon</span>
+                        <span className="text-[13px] text-slate-400">
+                          Pavillon
+                        </span>
                         <br />
-                        <span className="text-[15px] font-semibold text-foreground">{pavillon}</span>
+                        <span className="text-[15px] font-semibold text-foreground">
+                          {pavillon}
+                        </span>
                       </Text>
                     )}
                     {stand && (
                       <Text className="m-0 mt-4 leading-relaxed">
-                        <span className="text-[13px] text-slate-400">Stand</span>
+                        <span className="text-[13px] text-slate-400">
+                          Stand
+                        </span>
                         <br />
-                        <span className="text-[15px] font-semibold text-foreground">{stand}</span>
+                        <span className="text-[15px] font-semibold text-foreground">
+                          {stand}
+                        </span>
                       </Text>
                     )}
                   </>
@@ -144,10 +181,10 @@ export default function CredentialsEmail({
 
               <Section className="mb-6 rounded-xl bg-[#f8fafc] p-6 border border-[#e2e8f0]">
                 <Text className="m-0 mb-3 text-[16px] font-bold text-foreground">
-                  📖 Guide de démarrage / Quick Start Guide
+                  Guide de démarrage / Quick Start Guide
                 </Text>
                 <Text className="m-0 mb-4 text-[14px] leading-relaxed text-muted">
-                  Découvrez comment utiliser la plateforme PROMOTE-CONNECT pour maximiser vos opportunités d'affaires. / Discover how to use the PROMOTE-CONNECT platform to maximize your business opportunities.
+                  {`Découvrez comment utiliser la plateforme PROMOTE-CONNECT pour maximiser vos opportunités d'affaires. / Discover how to use the PROMOTE-CONNECT platform to maximize your business opportunities.`}
                 </Text>
                 <Button
                   href={`${baseUrl}/guide`}
@@ -158,13 +195,15 @@ export default function CredentialsEmail({
               </Section>
 
               <Text className="m-0 text-[13px] leading-relaxed text-slate-400">
-                Nous vous recommandons de changer votre mot de passe lors de votre première connexion.
+                Nous vous recommandons de changer votre mot de passe lors de
+                votre première connexion.
               </Text>
 
               <Hr className="my-6 border-t border-border" />
-              
+
               <Text className="m-0 text-[13px] leading-relaxed text-slate-500">
-                Ce mail a été envoyé automatiquement. Ne répondez pas à ce message.
+                Ce mail a été envoyé automatiquement. Ne répondez pas à ce
+                message.
               </Text>
             </Section>
 
@@ -173,8 +212,11 @@ export default function CredentialsEmail({
                 PROMOTE-CONNECT — Plateforme de networking professionnel
               </Text>
               <Text className="m-0 mt-1 text-xs text-slate-400">
-                Conçu par{' '}
-                <Link href="https://bbit-it.com" className="text-slate-400 underline">
+                Conçu par{" "}
+                <Link
+                  href="https://bbit-it.com"
+                  className="text-slate-400 underline"
+                >
                   BBIT Sarl
                 </Link>
               </Text>

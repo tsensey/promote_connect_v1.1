@@ -60,8 +60,8 @@ export function NewRdvDialog({ open, onOpenChange, onCreate }: NewRdvDialogProps
       const { data } = await supabaseClient
         .from("profiles")
         .select("id, full_name, company, avatar_url")
-        .not("company", "is", null)
-        .ilike("company", `%${searchQuery}%`)
+        .not("full_name", "is", null)
+        .or(`full_name.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%`)
         .limit(20);
       if (data) setContacts(data as typeof contacts);
     };
@@ -117,7 +117,7 @@ export function NewRdvDialog({ open, onOpenChange, onCreate }: NewRdvDialogProps
                     className="h-auto w-full justify-start rounded-lg px-3 py-2.5 text-sm hover:bg-muted"
                     onClick={() => {
                       setDestinataireId(c.id);
-                      setSearchQuery(c.company || c.full_name || "");
+                      setSearchQuery(c.full_name || c.company || "");
                     }}
                   >
                     <Avatar className="mr-2.5 size-7 shrink-0">
@@ -127,9 +127,9 @@ export function NewRdvDialog({ open, onOpenChange, onCreate }: NewRdvDialogProps
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 text-left">
-                      <p className="truncate text-sm font-medium">{c.company || "Entreprise"}</p>
-                      {c.full_name && (
-                        <p className="truncate text-xs text-muted-foreground">{c.full_name}</p>
+                      <p className="truncate text-sm font-medium">{c.full_name || "Contact"}</p>
+                      {c.company && (
+                        <p className="truncate text-xs text-muted-foreground">{c.company}</p>
                       )}
                     </div>
                   </Button>

@@ -74,6 +74,8 @@ interface UserRow {
   access_level: string;
   created_at: string;
   exposant_id: string | null;
+  subscription_ends_at: string | null;
+  subscription_tier: string | null;
 }
 
 const SECTORS = [
@@ -208,6 +210,7 @@ export default function AdminUsersPage() {
   const [showRoleDialog, setShowRoleDialog] = useState<UserRow | null>(null);
   const [newRole, setNewRole] = useState('');
   const [newAccessLevel, setNewAccessLevel] = useState('classic');
+  const [newSubscriptionEndDate, setNewSubscriptionEndDate] = useState('');
   const [showPasswordDialog, setShowPasswordDialog] = useState<UserRow | null>(null);
   const [passwordResult, setPasswordResult] = useState<{ new_password: string; email_sent: boolean } | null>(null);
 
@@ -374,6 +377,9 @@ export default function AdminUsersPage() {
       const body: Record<string, unknown> = { id: userId, role: newRoleValue };
       if (newAccessLevel) {
         body.access_level = newAccessLevel;
+      }
+      if (newAccessLevel === 'premium' && newSubscriptionEndDate) {
+        body.subscription_ends_at = new Date(newSubscriptionEndDate).toISOString();
       }
 
       const response = await fetch('/api/admin/users', {
@@ -697,6 +703,11 @@ export default function AdminUsersPage() {
                                 setShowRoleDialog(user);
                                 setNewRole(user.role || 'visiteur');
                                 setNewAccessLevel(user.access_level || 'classic');
+                                setNewSubscriptionEndDate(
+                                  user.subscription_ends_at
+                                    ? new Date(user.subscription_ends_at).toISOString().split('T')[0]
+                                    : ''
+                                );
                               }}
                             >
                               <UserCheck className="mr-2 size-4" />
@@ -1236,6 +1247,17 @@ export default function AdminUsersPage() {
                 </Button>
               </div>
             </div>
+            {newAccessLevel === 'premium' && (
+              <div className="space-y-2">
+                <Label>Date de fin d'abonnement</Label>
+                <Input
+                  type="date"
+                  value={newSubscriptionEndDate}
+                  onChange={(e) => setNewSubscriptionEndDate(e.target.value)}
+                  className="rounded-xl"
+                />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" className="rounded-xl" onClick={() => setShowRoleDialog(null)}>

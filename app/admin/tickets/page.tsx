@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, LifeBuoy, Loader2, MessageSquare, Search, Star } from 'lucide-react';
+import { AlertCircle, Crown, LifeBuoy, Loader2, MessageSquare, Search, Star } from 'lucide-react';
 import { supabaseClient } from '@/lib/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -25,6 +25,7 @@ interface AdminTicketRow {
   profiles?: {
     full_name: string | null;
     company: string | null;
+    subscription_tier: string | null;
   } | null;
 }
 
@@ -60,7 +61,7 @@ export default function AdminTicketsPage() {
   const loadTickets = async () => {
     const { data, error } = await supabaseClient
       .from('support_tickets')
-      .select('*, profiles(full_name, company)')
+      .select('*, profiles(full_name, company, subscription_tier)')
       .order('updated_at', { ascending: false });
 
     if (error) {
@@ -79,7 +80,7 @@ export default function AdminTicketsPage() {
     const bootstrap = async () => {
       const { data, error } = await supabaseClient
         .from('support_tickets')
-        .select('*, profiles(full_name, company)')
+        .select('*, profiles(full_name, company, subscription_tier)')
         .order('updated_at', { ascending: false });
 
       if (!active) {
@@ -242,8 +243,13 @@ export default function AdminTicketsPage() {
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {ticket.profiles?.full_name || t('admin.tickets.default_user')}{' '}
-                        {ticket.profiles?.company ? `- ${ticket.profiles.company}` : ''}
+                        {ticket.profiles?.company ? ` - ${ticket.profiles.company}` : ''}
                       </p>
+                      {ticket.profiles?.subscription_tier === 'paid' && (
+                        <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300 ml-2">
+                          <Crown className="mr-1 size-3" /> Premium
+                        </Badge>
+                      )}
                     </div>
                     <div className="text-right text-xs text-muted-foreground">
                       <p>

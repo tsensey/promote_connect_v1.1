@@ -26,7 +26,7 @@ const tailwindConfig = {
   theme: {
     extend: {
       colors: {
-        brand: '#912450',
+        brand: '#4A072B',
         background: '#f6f8fb',
         foreground: '#0f172a',
         muted: '#475569',
@@ -50,7 +50,7 @@ export default function WelcomeEmail({
     { daily: 'Quotidienne', weekly: 'Hebdomadaire', monthly: 'Mensuelle' }[
       frequency
     ] || 'Hebdomadaire';
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://promote-connect.com';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://promote-connect.pro';
 
   return (
     <Html>
@@ -61,7 +61,7 @@ export default function WelcomeEmail({
           <Container className="mx-auto max-w-[600px] bg-white rounded-3xl overflow-hidden shadow-xl border border-border">
             <Section className="bg-brand p-8 text-white">
               <Img
-                src={`${baseUrl}/logo-promote.png`}
+                src={`${baseUrl}/pro_connect_fr.webp`}
                 width="180"
                 height="auto"
                 alt="PROMOTE-CONNECT"
@@ -101,10 +101,10 @@ export default function WelcomeEmail({
 
               <Section className="mb-6 rounded-xl bg-[#f8fafc] p-6 border border-[#e2e8f0]">
                 <Text className="m-0 mb-3 text-[16px] font-bold text-foreground">
-                  📖 Guide de démarrage / Quick Start Guide
+                  Guide de démarrage / Quick Start Guide
                 </Text>
                 <Text className="m-0 mb-4 text-[14px] leading-relaxed text-muted">
-                  Besoin d'aide pour prendre en main la plateforme ? Consultez notre guide d'utilisation ou regardez notre courte vidéo de démonstration. / Need help getting started? Check out our user guide or watch our short demo video.
+                  {`Besoin d'aide pour prendre en main la plateforme ? Consultez notre guide d'utilisation ou regardez notre courte vidéo de démonstration. / Need help getting started? Check out our user guide or watch our short demo video.`}
                 </Text>
                 <Button
                   href={`${baseUrl}/guide`}

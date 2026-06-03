@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   .card{max-width:480px;margin:40px auto;background:#fff;border-radius:28px;padding:40px 32px;text-align:center;box-shadow:0 20px 60px rgba(15,23,42,0.1)}
   h1{font-size:24px;margin:0 0 12px}
   p{color:#64748b;line-height:1.7;margin:0 0 24px;font-size:15px}
-  .btn{display:inline-block;background:#912450;color:#fff;text-decoration:none;padding:12px 24px;border-radius:12px;font-weight:600;font-size:14px}
+  .btn{display:inline-block;background:#4A072B;color:#fff;text-decoration:none;padding:12px 24px;border-radius:12px;font-weight:600;font-size:14px}
 </style>
 </head>
 <body>
@@ -62,7 +62,7 @@ export async function GET(request: Request) {
   .card{max-width:480px;margin:40px auto;background:#fff;border-radius:28px;padding:40px 32px;text-align:center;box-shadow:0 20px 60px rgba(15,23,42,0.1)}
   h1{font-size:24px;margin:0 0 12px}
   p{color:#64748b;line-height:1.7;margin:0 0 24px;font-size:15px}
-  .btn{display:inline-block;background:#912450;color:#fff;text-decoration:none;padding:12px 24px;border-radius:12px;font-weight:600;font-size:14px}
+  .btn{display:inline-block;background:#4A072B;color:#fff;text-decoration:none;padding:12px 24px;border-radius:12px;font-weight:600;font-size:14px}
 </style>
 </head>
 <body>
@@ -128,7 +128,7 @@ export async function GET(request: Request) {
   .card{max-width:480px;margin:40px auto;background:#fff;border-radius:28px;padding:40px 32px;text-align:center;box-shadow:0 20px 60px rgba(15,23,42,0.1)}
   h1{font-size:24px;margin:0 0 12px}
   p{color:#64748b;line-height:1.7;margin:0 0 24px;font-size:15px}
-  .btn{display:inline-block;background:#912450;color:#fff;text-decoration:none;padding:12px 24px;border-radius:12px;font-weight:600;font-size:14px}
+  .btn{display:inline-block;background:#4A072B;color:#fff;text-decoration:none;padding:12px 24px;border-radius:12px;font-weight:600;font-size:14px}
 </style>
 </head>
 <body>

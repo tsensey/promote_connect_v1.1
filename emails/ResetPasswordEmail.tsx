@@ -21,8 +21,8 @@ export default function ResetPasswordEmail({
   fullName: string;
   password: string;
 }) {
-  const loginUrl = 'https://promote-connect.com/login';
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://promote-connect.com';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://promote-connect.pro';
+  const loginUrl = baseUrl + '/login';
 
   const tailwindConfig = {
     theme: {
@@ -51,7 +51,7 @@ export default function ResetPasswordEmail({
           <Container className="mx-auto max-w-[600px] bg-white rounded-3xl overflow-hidden shadow-xl border border-border">
             <Section className="bg-brand p-8 text-white">
               <Img
-                src={`${baseUrl}/logo-promote.png`}
+                src={`${baseUrl}/pro_connect_fr.webp`}
                 width="180"
                 height="auto"
                 alt="PROMOTE-CONNECT"

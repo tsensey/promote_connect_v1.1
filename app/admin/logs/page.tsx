@@ -459,7 +459,7 @@ export default function AdminLogsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <span className="text-xs text-muted-foreground font-mono">
-                          {log.entity_id ? log.entity_id.slice(0, 8) + '...' : '-'}
+                          {log.entity_id ? log.entity_id.slice(0, 16) + '...' : '-'}
                         </span>
                       </TableCell>
                     </TableRow>

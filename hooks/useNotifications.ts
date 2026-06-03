@@ -47,7 +47,9 @@ export function useNotifications() {
             .eq('id', post.author_id)
             .single();
 
-          const authorName = author?.company || author?.full_name || t('notifications.someone');
+          const authorName = author?.full_name && author?.company
+            ? `${author.full_name} (${author.company})`
+            : author?.full_name || author?.company || t('notifications.someone');
           const preview = post.content.length > 80
             ? post.content.slice(0, 80) + '…'
             : post.content;
@@ -88,7 +90,9 @@ export function useNotifications() {
             .eq('id', n.sender_id)
             .single();
 
-          const senderName = sender?.company || sender?.full_name || t('notifications.someone');
+          const senderName = sender?.full_name && sender?.company
+            ? `${sender.full_name} (${sender.company})`
+            : sender?.full_name || sender?.company || t('notifications.someone');
           let message = '';
           
           switch (n.type) {

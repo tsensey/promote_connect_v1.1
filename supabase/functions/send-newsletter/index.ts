@@ -176,7 +176,7 @@ function buildEmailHtml({
 <title>${titre}</title></head>
 <body style="margin:0;padding:32px 16px;background:#f6f8fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;color:#172554">
 <div style="max-width:680px;margin:0 auto;background:#ffffff;border-radius:28px;overflow:hidden;box-shadow:0 30px 80px rgba(15,23,42,0.12)">
-  <div style="padding:36px;background:#912450;color:#ffffff">
+  <div style="padding:36px;background:#4A072B;color:#ffffff">
     <p style="margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;opacity:0.78">PROMOTE-CONNECT</p>
     <h1 style="margin:0;font-size:30px;line-height:1.2;font-weight:700">${titre}</h1>
   </div>
@@ -186,7 +186,7 @@ function buildEmailHtml({
     <p style="margin:0;font-size:13px;line-height:1.7;color:#64748b">Vous recevez cette newsletter car vous êtes inscrit à PROMOTE-CONNECT.</p>
   </div>
   <div style="padding:20px 32px;background:#f8fafc;text-align:center">
-    <p style="margin:0 0 8px;font-size:12px"><a href="${unsubscribeUrl}" style="color:#912450;text-decoration:underline;font-weight:500">Se désinscrire de la newsletter</a></p>
+    <p style="margin:0 0 8px;font-size:12px"><a href="${unsubscribeUrl}" style="color:#4A072B;text-decoration:underline;font-weight:500">Se désinscrire de la newsletter</a></p>
     <p style="margin:4px 0 0;font-size:11px;color:#94a3b8">PROMOTE-CONNECT — Plateforme de networking professionnel</p>
     <p style="margin:4px 0 0;font-size:11px;color:#94a3b8">&copy; ${year} PROMOTE. Tous droits réservés.</p>
   </div>

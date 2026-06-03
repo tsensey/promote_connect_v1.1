@@ -637,6 +637,18 @@ export default function ChatPage() {
         )}
       >
         <ConversationList selectedId={selectedId} onSelect={handleSelect} />
+        {perms.isFreeTrial && (
+          <div className="flex items-center gap-2 border-t border-border/50 px-4 py-2.5">
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] text-muted-foreground">
+                {perms.hasReachedLimit
+                  ? 'Quota quotidien atteint'
+                  : `${perms.dailyLimit} messages/jour`}
+              </p>
+            </div>
+            <Crown className="size-3.5 shrink-0 text-amber-500" />
+          </div>
+        )}
       </div>
 
       {/* Fil de messages */}

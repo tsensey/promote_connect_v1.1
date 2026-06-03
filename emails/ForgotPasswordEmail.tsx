@@ -21,7 +21,7 @@ export default function ForgotPasswordEmail({
   fullName?: string;
   actionLink: string;
 }) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://promote-connect.com';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://promote-connect.pro';
 
   const tailwindConfig = {
     theme: {
@@ -49,7 +49,7 @@ export default function ForgotPasswordEmail({
           <Container className="mx-auto max-w-[600px] bg-white rounded-3xl overflow-hidden shadow-xl border border-border">
             <Section className="bg-brand p-8 text-white">
               <Img
-                src={`${baseUrl}/logo-promote.png`}
+                src={`${baseUrl}/pro_connect_fr.webp`}
                 width="180"
                 height="auto"
                 alt="PROMOTE-CONNECT"
@@ -65,8 +65,8 @@ export default function ForgotPasswordEmail({
                 Bonjour {fullName},
               </Text>
               <Text className="m-0 mb-6 text-[15px] leading-relaxed text-muted">
-                Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte PROMOTE-CONNECT. 
-                Si vous êtes à l'origine de cette demande, veuillez cliquer sur le bouton ci-dessous.
+                {`Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte PROMOTE-CONNECT. 
+                Si vous êtes à l'origine de cette demande, veuillez cliquer sur le bouton ci-dessous.`}
               </Text>
 
               <Section className="my-8 text-center">
@@ -87,7 +87,7 @@ export default function ForgotPasswordEmail({
               </Text>
 
               <Text className="m-0 mt-6 text-[13px] leading-relaxed text-slate-400">
-                Si vous n'avez pas demandé à réinitialiser votre mot de passe, vous pouvez ignorer cet email en toute sécurité.
+                {`Si vous n'avez pas demandé à réinitialiser votre mot de passe, vous pouvez ignorer cet email en toute sécurité.`}
               </Text>
 
               <Hr className="my-6 border-t border-border" />

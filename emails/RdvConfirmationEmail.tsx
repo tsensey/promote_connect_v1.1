@@ -38,7 +38,7 @@ const tailwindConfig = {
   theme: {
     extend: {
       colors: {
-        brand: '#912450',
+        brand: '#4A072B',
         background: '#f6f8fb',
         foreground: '#0f172a',
         muted: '#475569',
@@ -74,7 +74,7 @@ export default function RdvConfirmationEmail({
     cancelled: 'bg-cancelled',
   };
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://promote-connect.com';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://promote-connect.pro';
 
   return (
     <Html>
@@ -85,7 +85,7 @@ export default function RdvConfirmationEmail({
           <Container className="mx-auto max-w-[560px] bg-white rounded-3xl overflow-hidden shadow-xl border border-border">
             <Section className="bg-brand p-8 text-white">
               <Img
-                src={`${baseUrl}/logo-promote.png`}
+                src={`${baseUrl}/pro_connect_fr.webp`}
                 width="180"
                 height="auto"
                 alt="PROMOTE-CONNECT"
