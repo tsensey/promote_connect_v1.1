@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { memo, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Check, CheckCheck, Reply, FileText, ExternalLink, X } from 'lucide-react';
+import { Check, CheckCheck, Reply, FileText, ExternalLink, X, Loader2 } from 'lucide-react';
 import type { EnrichedMessage, ProductAttachment } from '@/hooks/useChat';
 import { cn, getValidImageUrl } from '@/lib/utils';
 import { sanitizeHTML, sanitizeText } from '@/lib/sanitize';
@@ -269,11 +269,13 @@ export const MessageBubble = memo(function MessageBubble({ message, isMine, show
           </span>
           {isMine && (
             <span className="text-[10px]">
-              {message.is_read ? (
-                <CheckCheck className="size-3 text-blue-500" />
-              ) : (
-                <Check className="size-3 text-muted-foreground/60" />
-              )}
+              {(() => {
+                const status = (message as any).status;
+                if (status === 'read') return <CheckCheck className="size-3 text-blue-500" />;
+                if (status === 'delivered') return <CheckCheck className="size-3 text-muted-foreground/60" />;
+                if (status === 'sending') return <span className="size-3 text-muted-foreground/30"><Loader2 className="size-3 animate-spin" /></span>;
+                return <Check className="size-3 text-muted-foreground/60" />; // 'sent' ou fallback
+              })()}
             </span>
           )}
         </div>

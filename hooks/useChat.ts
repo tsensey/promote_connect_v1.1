@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { supabaseClient } from '@/lib/supabase/client';
 import { uploadChatFile } from '@/lib/chat/storage';
+import { isNativePlatform } from '@/lib/capacitor';
+import { mobileSendMessage, mobileCreateConversation } from '@/lib/mobile-fallback';
 import type { Database } from '@/types/database.types';
 import type {
   EnrichedConversation,
@@ -235,17 +237,22 @@ export function useMessages(conversationId: string) {
   const [otherUser, setOtherUser] = useState<Profile | null>(null);
   const [otherExposant, setOtherExposant] = useState<{ nom: string; logo_url: string | null } | null>(null);
   const [typingUser, setTypingUser] = useState<string | null>(null);
+  const [otherUserOnline, setOtherUserOnline] = useState(false);
 
   useEffect(() => {
     let mounted = true;
+    let myIdAtInit: string | null = null;
     let channel: ReturnType<typeof supabaseClient.channel> | null = null;
     let presenceChannel: ReturnType<typeof supabaseClient.channel> | null = null;
+    let onlineHeartbeatInterval: ReturnType<typeof setInterval> | null = null;
+    let onlineChannel: ReturnType<typeof supabaseClient.channel> | null = null;
 
     const setup = async () => {
       try {
         const { data: session } = await supabaseClient.auth.getSession();
         if (!mounted) return;
         const myId = session?.session?.user?.id;
+        myIdAtInit = myId || null;
         if (myId) setMyUserId(myId);
 
         let other: Profile | null = null;
@@ -362,6 +369,37 @@ export function useMessages(conversationId: string) {
             }
           });
 
+        // Présence en ligne : heartbeat toutes les 30s + écoute des changements
+        if (myId) {
+          try {
+            await (supabaseClient.rpc as any)('upsert_online_user', { p_user_id: myId });
+          } catch {
+            // RPC pas encore disponible
+          }
+          onlineHeartbeatInterval = setInterval(async () => {
+            try {
+              await (supabaseClient.rpc as any)('upsert_online_user', { p_user_id: myId });
+            } catch {
+              // silence
+            }
+          }, 30_000);
+
+          onlineChannel = supabaseClient
+            .channel('online-users-watch')
+            .on('postgres_changes', {
+              event: '*',
+              schema: 'public',
+              table: 'online_users',
+              filter: `user_id=eq.${other?.id ?? 'none'}`,
+            }, (payload) => {
+              const row = payload.new as { user_id: string; status: string } | null;
+              if (row && mounted) {
+                setOtherUserOnline(row.status === 'online');
+              }
+            })
+            .subscribe();
+        }
+
       } catch (err) {
         if (mounted) setError(err instanceof Error ? err : new Error('Unknown error'));
       } finally {
@@ -375,6 +413,12 @@ export function useMessages(conversationId: string) {
       mounted = false;
       if (channel) supabaseClient.removeChannel(channel);
       if (presenceChannel) supabaseClient.removeChannel(presenceChannel);
+      if (onlineChannel) supabaseClient.removeChannel(onlineChannel);
+      if (onlineHeartbeatInterval) clearInterval(onlineHeartbeatInterval);
+      // Marquer hors-ligne
+      if (myIdAtInit) {
+        (supabaseClient.rpc as any)('set_user_offline', { p_user_id: myIdAtInit }).catch(() => {});
+      }
     };
   }, [conversationId]);
 
@@ -383,12 +427,19 @@ export function useMessages(conversationId: string) {
     const myId = session?.session?.user?.id;
     if (!myId) return;
 
-    await supabaseClient
-      .from('messages')
-      .update({ is_read: true })
-      .eq('conversation_id', conversationId)
-      .neq('sender_id', myId)
-      .eq('is_read', false);
+    const { error } = await (supabaseClient.rpc as any)('mark_messages_as_read', {
+      p_conversation_id: conversationId,
+      p_reader_id: myId,
+    });
+    if (error) {
+      // Fallback: update direct (pour les migrations qui n'ont pas encore le RPC)
+      await supabaseClient
+        .from('messages')
+        .update({ is_read: true })
+        .eq('conversation_id', conversationId)
+        .neq('sender_id', myId)
+        .eq('is_read', false);
+    }
   }, [conversationId]);
 
   const sendMessage = useCallback(
@@ -415,6 +466,24 @@ export function useMessages(conversationId: string) {
       }
 
       // 1. Envoyer via l'API route (vérifie quota + insère message atomiquement)
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const myUserId = session?.user?.id;
+
+      if (isNativePlatform() && myUserId) {
+        const result = await mobileSendMessage(conversationId, content, myUserId, {
+          replyToId,
+          productAttachment: productAttachment as Record<string, unknown> | null | undefined,
+          attachmentUrl,
+          attachmentType,
+        });
+        if (result.error === 'daily_quota_exceeded') {
+          toast.error('Quota journalier de messages atteint. Passez à PAID pour continuer.');
+        } else if (result.error === 'total_quota_exceeded') {
+          toast.error('Vous avez atteint votre quota total de messages. Passez à PAID pour continuer.');
+        }
+        return;
+      }
+
       const res = await fetch('/api/chat/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -465,11 +534,21 @@ export function useMessages(conversationId: string) {
     otherExposant,
     typingUser,
     sendTypingEvent,
+    otherUserOnline,
   };
 }
 
 export async function createConversation(otherUserId: string) {
   try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const myUserId = session?.user?.id;
+
+    if (isNativePlatform() && myUserId) {
+      const result = await mobileCreateConversation(otherUserId, myUserId);
+      if (result.error) return { error: new Error(result.error), data: null };
+      return { data: result.data, error: null };
+    }
+
     const res = await fetch('/api/chat/initiate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

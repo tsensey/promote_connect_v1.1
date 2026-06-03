@@ -11,6 +11,8 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { supabaseClient } from '@/lib/supabase/client';
+import { isNativePlatform } from '@/lib/capacitor';
+import { mobileResetPassword } from '@/lib/mobile-fallback';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,17 +32,22 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
+      if (isNativePlatform()) {
+        const result = await mobileResetPassword(email);
+        if (result.error) throw new Error(result.error);
+      } else {
+        const response = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email }),
+        });
 
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || 'Une erreur est survenue lors de l\'envoi de l\'email.');
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || 'Une erreur est survenue lors de l\'envoi de l\'email.');
+        }
       }
 
       setSuccess(true);

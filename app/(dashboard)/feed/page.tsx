@@ -24,9 +24,11 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 import { createConversation } from '@/hooks/useChat';
-import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
+import { isNativePlatform } from '@/lib/capacitor';
+import { mobileCheckQuota } from '@/lib/mobile-fallback';
 import { usePermissions } from '@/hooks/usePermissions';
+import { toast } from 'sonner';
 import Image from 'next/image';
 import type { Database } from '@/types/database.types';
 
@@ -106,14 +108,29 @@ export default function FeedPage() {
     setContactingProd(product.id);
     const { data } = await createConversation(product.exposants.profile_id);
     if (data) {
-      const quotaRes = await fetch('/api/chat/check-quota', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId: data.id }),
-      });
-      const quotaData = await quotaRes.json();
-      if (!quotaRes.ok || !quotaData.allowed) {
-        if (quotaData.showConversionModal) {
+      const { data: sess } = await supabaseClient.auth.getSession();
+      const myId = sess?.session?.user?.id;
+
+      let quotaAllowed = true;
+      let showConversion = false;
+
+      if (isNativePlatform() && myId) {
+        const result = await mobileCheckQuota(myId);
+        quotaAllowed = result.allowed;
+        showConversion = result.reason === 'daily_quota_exceeded';
+      } else {
+        const quotaRes = await fetch('/api/chat/check-quota', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conversationId: data.id }),
+        });
+        const quotaData = await quotaRes.json();
+        quotaAllowed = quotaRes.ok && quotaData.allowed;
+        showConversion = quotaData.showConversionModal;
+      }
+
+      if (!quotaAllowed) {
+        if (showConversion) {
           window.dispatchEvent(new CustomEvent('show-conversion-modal'));
         } else {
           toast.error('Quota de messagerie atteint ou accès refusé.');

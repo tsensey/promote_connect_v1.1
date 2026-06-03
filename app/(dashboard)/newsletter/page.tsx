@@ -21,6 +21,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { usePermissions } from '@/hooks/usePermissions';
 import { ConversionModal } from '@/components/shared/ConversionModal';
+import { isNativePlatform } from '@/lib/capacitor';
+import { mobileSubscribeNewsletter, mobileUnsubscribeNewsletter } from '@/lib/mobile-fallback';
 
 interface SectorItem {
   value: string;
@@ -118,21 +120,26 @@ export default function NewsletterPage() {
     setError(null);
 
     try {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      const token = session?.access_token;
+      if (isNativePlatform()) {
+        const result = await mobileSubscribeNewsletter(email, { sectors, frequency });
+        if (result.error) throw new Error(result.error);
+      } else {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const token = session?.access_token;
 
-      const res = await fetch("/api/newsletter/subscribe", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ email, sectors, frequency }),
-      });
+        const res = await fetch("/api/newsletter/subscribe", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ email, sectors, frequency }),
+        });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || t("common.error"));
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || t("common.error"));
+        }
       }
 
       setSubscriptionStatus({
@@ -152,21 +159,26 @@ export default function NewsletterPage() {
     if (!email) return;
     setLoading(true);
     try {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      const token = session?.access_token;
+      if (isNativePlatform()) {
+        const result = await mobileUnsubscribeNewsletter(email);
+        if (result.error) throw new Error(result.error);
+      } else {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const token = session?.access_token;
 
-      const res = await fetch("/api/newsletter/subscribe", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ email }),
-      });
+        const res = await fetch("/api/newsletter/subscribe", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ email }),
+        });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Erreur lors du désabonnement");
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || "Erreur lors du désabonnement");
+        }
       }
 
       setSubscriptionStatus(null);

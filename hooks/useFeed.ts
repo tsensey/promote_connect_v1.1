@@ -2,6 +2,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
 import { compressImages, compressImage } from '@/lib/compress-image';
+import { isNativePlatform } from '@/lib/capacitor';
+import { mobileFetchFeed, mobileCreatePost } from '@/lib/mobile-fallback';
 import type { Database } from '@/types/database.types';
 
 type PostRow = Database['public']['Tables']['posts']['Row'];
@@ -60,6 +62,26 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
         const currentPage = reset ? 0 : pageRef.current;
         
         // Fetch posts from API
+        if (isNativePlatform()) {
+          const posts = await mobileFetchFeed(mode, currentPage, limit, myId);
+          if (reset) {
+            seenPostIds.current.clear();
+            posts.forEach((p: any) => seenPostIds.current.add(p.id));
+          }
+          if (reset) {
+            setPosts(posts as any);
+          } else {
+            setPosts((prev) => {
+              const existingIds = new Set(prev.map(p => p.id));
+              const distinct = (posts as any[]).filter((p: any) => !existingIds.has(p.id));
+              return [...prev, ...distinct as any];
+            });
+          }
+          setHasMore(posts.length >= limit);
+          setLoading(false);
+          return;
+        }
+
         const response = await fetch(`/api/feed/sorted?mode=${mode}&page=${currentPage}&limit=${limit}`);
         if (!response.ok) {
           throw new Error('Failed to fetch posts');
@@ -273,11 +295,47 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
     return Promise.all(uploadPromises);
   }, []);
 
+  const enrichPost = useCallback((fullPost: PostWithAuthor, likedPostIds: string[]): Post => ({
+    ...(fullPost as unknown as PostWithAuthor),
+    is_liked: likedPostIds.includes(fullPost.id),
+    is_shared: false,
+    is_reposted: false,
+    is_saved: false,
+    reaction_type: null,
+    author: {
+      ...(fullPost as unknown as PostWithAuthor).author,
+      is_following: false,
+    },
+    repost_of: undefined,
+  }), []);
+
   const createPost = useCallback(
     async (content: string, type = 'general', category?: string, imageUrls?: string[]) => {
       const { data: session } = await supabaseClient.auth.getSession();
       const myId = session?.session?.user?.id;
       if (!myId) return { error: new Error('Not authenticated') };
+
+      if (isNativePlatform()) {
+        const result = await mobileCreatePost(content, myId, { type, category, imageUrls });
+        if (result.error === 'post_quota_exceeded') {
+          return { error: new Error('Quota de publications atteint pour le mode Free Trial.') };
+        }
+        if (result.error) return { error: new Error(result.error) };
+        if (result.data) {
+          const { data: fullPost } = await supabaseClient
+            .from('posts')
+            .select(`
+              *,
+              author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url, is_featured))
+            `)
+            .eq('id', result.data.id)
+            .single();
+          if (fullPost) {
+            setPosts((prev) => [enrichPost(fullPost as any, []), ...prev]);
+          }
+        }
+        return { error: null };
+      }
 
       const res = await fetch('/api/posts/create', {
         method: 'POST',
@@ -306,20 +364,7 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
           .single();
 
         if (fullPost) {
-          const enriched: Post = {
-            ...(fullPost as unknown as PostWithAuthor),
-            is_liked: false,
-            is_shared: false,
-            is_reposted: false,
-            is_saved: false,
-            reaction_type: null,
-            author: {
-              ...(fullPost as unknown as PostWithAuthor).author,
-              is_following: false,
-            },
-            repost_of: undefined,
-          };
-          setPosts((prev) => [enriched, ...prev]);
+          setPosts((prev) => [enrichPost(fullPost as any, []), ...prev]);
         }
       }
 
@@ -332,6 +377,28 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
     const { data: session } = await supabaseClient.auth.getSession();
     const myId = session?.session?.user?.id;
     if (!myId) return { error: new Error('Not authenticated') };
+
+    if (isNativePlatform()) {
+      const result = await mobileCreatePost(content, myId, { type: 'repost', repostOfId: originalPostId });
+      if (result.error === 'post_quota_exceeded') {
+        return { error: new Error('Quota de publications atteint pour le mode Free Trial.') };
+      }
+      if (result.error) return { error: new Error(result.error) };
+      if (result.data) {
+        const { data: fullPost } = await supabaseClient
+          .from('posts')
+          .select(`
+            *,
+            author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url, is_featured))
+          `)
+          .eq('id', result.data.id)
+          .single();
+        if (fullPost) {
+          setPosts((prev) => [enrichPost(fullPost as any, []), ...prev]);
+        }
+      }
+      return { error: null };
+    }
 
     const res = await fetch('/api/posts/create', {
       method: 'POST',

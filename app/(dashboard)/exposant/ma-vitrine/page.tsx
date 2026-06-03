@@ -29,6 +29,8 @@ import type { Database } from "@/types/database.types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConversionModal } from "@/components/shared/ConversionModal";
+import { isNativePlatform } from '@/lib/capacitor';
+import { mobileCreateOffer } from '@/lib/mobile-fallback';
 
 // ── Icônes de marque (SVG inline) ──
 const IconLinkedin = () => (
@@ -418,6 +420,26 @@ export default function ManageVitrinePage() {
           .eq("id", productForm.id);
 
         if (error) throw error;
+      } else if (isNativePlatform()) {
+        if (!exposant?.id) throw new Error('Exposant non trouvé');
+        const exposantId: string = exposant.id;
+        const { data: sess } = await supabaseClient.auth.getSession();
+        const myUserId = sess?.session?.user?.id;
+        if (!myUserId) throw new Error('Not authenticated');
+
+        const result = await mobileCreateOffer(exposantId, myUserId, {
+          name: productForm.nom.trim(),
+          description: productForm.description?.trim() || null,
+          categorie: productForm.categorie?.trim() || null,
+          prixIndicatif: productForm.prix_indicatif?.trim() || null,
+          imageUrl: productForm.image_url || null,
+        });
+        if (result.error === 'vitrine_quota_exceeded') {
+          setShowConversionModal(true);
+          setSavingProduct(false);
+          return;
+        }
+        if (result.error) throw new Error(result.error);
       } else {
         const res = await fetch('/api/vitrine/offers/create', {
           method: 'POST',

@@ -293,7 +293,7 @@ function MessageThread({
   const { t } = useTranslation();
   const {
     messages, loading, sendMessage, markAsRead, myUserId,
-    otherUser, otherExposant, typingUser, sendTypingEvent,
+    otherUser, otherExposant, typingUser, sendTypingEvent, otherUserOnline,
   } = useMessages(conversationId);
   const { refreshUnreadCount } = useNotificationState();
   const { blockUser, unblockUser, isBlocked, loadBlockedUsers } = useBlockedUsers();
@@ -395,18 +395,25 @@ function MessageThread({
         >
           <ArrowLeft className="size-4" />
         </button>
-        <Avatar className="size-9 shrink-0">
-          {avatarUrl ? (
-            <AvatarImage src={avatarUrl} />
-          ) : (
-            <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
-              {getInitials(displayName)}
-            </AvatarFallback>
+        <div className="relative shrink-0">
+          <Avatar className="size-9">
+            {avatarUrl ? (
+              <AvatarImage src={avatarUrl} />
+            ) : (
+              <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+                {getInitials(displayName)}
+              </AvatarFallback>
+            )}
+          </Avatar>
+          {otherUserOnline && (
+            <span className="absolute bottom-0 right-0 size-2.5 rounded-full border-2 border-background bg-emerald-500" />
           )}
-        </Avatar>
+        </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-foreground">{displayName}</p>
-          {subName && <p className="truncate text-xs text-muted-foreground">{subName}</p>}
+          <p className="truncate text-xs text-muted-foreground">
+            {otherUserOnline ? t('chat.online') : (subName ?? '')}
+          </p>
         </div>
         {otherExposant && (
           <Badge variant="secondary" className="shrink-0 text-[10px]">

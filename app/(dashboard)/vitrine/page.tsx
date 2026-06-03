@@ -4,6 +4,8 @@ import { useEffect, useState, useDeferredValue, useMemo } from 'react';
 import Link from 'next/link';
 import { supabaseClient } from '@/lib/supabase/client';
 import { createConversation } from '@/hooks/useChat';
+import { isNativePlatform } from '@/lib/capacitor';
+import { mobileFetchVitrine, mobileCheckQuota } from '@/lib/mobile-fallback';
 import { useRouter } from 'next/navigation';
 import {
   Package,
@@ -74,6 +76,12 @@ export default function VitrinePage() {
     const fetchProduits = async () => {
       setLoading(true);
       try {
+        if (isNativePlatform()) {
+          const data = await mobileFetchVitrine();
+          setProduits(data as ProduitWithExposant[]);
+          setLoading(false);
+          return;
+        }
         const res = await fetch('/api/vitrine/list');
         const body = await res.json();
         if (res.ok && body.data) {
@@ -122,20 +130,35 @@ export default function VitrinePage() {
     setContacting(exposantId + productName);
     const { data } = await createConversation(exposantProfileId);
     if (data) {
-      const quotaRes = await fetch('/api/chat/check-quota', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId: data.id }),
-      });
-      const quotaData = await quotaRes.json();
-      if (!quotaRes.ok || !quotaData.allowed) {
-        if (quotaData.showConversionModal) {
-          window.dispatchEvent(new CustomEvent('show-conversion-modal'));
-        } else {
-          toast.error('Quota de messagerie atteint ou accès refusé.');
+      const { data: sess } = await supabaseClient.auth.getSession();
+      const myId = sess?.session?.user?.id;
+      if (isNativePlatform() && myId) {
+        const { allowed, reason } = await mobileCheckQuota(myId);
+        if (!allowed) {
+          if (reason === 'daily_quota_exceeded') {
+            window.dispatchEvent(new CustomEvent('show-conversion-modal'));
+          } else {
+            toast.error('Quota de messagerie atteint ou accès refusé.');
+          }
+          setContacting(null);
+          return;
         }
-        setContacting(null);
-        return;
+      } else {
+        const quotaRes = await fetch('/api/chat/check-quota', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conversationId: data.id }),
+        });
+        const quotaData = await quotaRes.json();
+        if (!quotaRes.ok || !quotaData.allowed) {
+          if (quotaData.showConversionModal) {
+            window.dispatchEvent(new CustomEvent('show-conversion-modal'));
+          } else {
+            toast.error('Quota de messagerie atteint ou accès refusé.');
+          }
+          setContacting(null);
+          return;
+        }
       }
 
       const { data: session } = await supabaseClient.auth.getSession();
