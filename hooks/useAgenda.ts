@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
+import { isNativePlatform } from '@/lib/capacitor';
 import type { Database } from '@/types/database.types';
 
 type Evenement = Database['public']['Tables']['evenements']['Row'];
@@ -112,17 +113,41 @@ export function useRendezVous() {
       const myId = session?.session?.user?.id;
       if (!myId) throw new Error('Not authenticated');
 
-      const { data, error } = await supabaseClient.functions.invoke('generate-rdv', {
-        body: {
-          demandeur_id: myId,
-          destinataire_id: destinataireId,
-          starts_at: startsAt,
-          ends_at: endsAt,
-          notes,
-        },
-      });
+      let data: { id?: string; status?: string };
 
-      if (error) throw error;
+      if (isNativePlatform()) {
+        const result = await supabaseClient.functions.invoke('generate-rdv', {
+          body: {
+            demandeur_id: myId,
+            destinataire_id: destinataireId,
+            starts_at: startsAt,
+            ends_at: endsAt,
+            notes,
+          },
+        });
+        if (result.error) throw result.error;
+        data = result.data as { id?: string; status?: string };
+      } else {
+        const res = await fetch('/api/generate-rdv', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            demandeur_id: myId,
+            destinataire_id: destinataireId,
+            starts_at: startsAt,
+            ends_at: endsAt,
+            notes,
+          }),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || 'Erreur lors de la création du rendez-vous');
+        }
+
+        data = await res.json();
+      }
+
       await fetchRdvs();
       return data;
     },

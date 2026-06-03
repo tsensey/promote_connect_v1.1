@@ -1,6 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
 interface GenerateRdvPayload {
   demandeur_id: string;
   destinataire_id: string;
@@ -10,6 +16,11 @@ interface GenerateRdvPayload {
 }
 
 serve(async (req) => {
+  // Preflight CORS
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
@@ -21,21 +32,34 @@ serve(async (req) => {
     if (!demandeur_id || !destinataire_id || !starts_at || !ends_at) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } },
       );
     }
 
     // Vérifier que le demandeur est PAID
-    const { data: demandeurProfile } = await supabase
+    const { data: demandeurProfile, error: demandeurError } = await supabase
       .from("profiles")
-      .select("subscription_tier, full_name, email")
+      .select("subscription_tier, subscription_ends_at, access_level, full_name, email")
       .eq("id", demandeur_id)
       .single();
 
-    if (!demandeurProfile || demandeurProfile.subscription_tier !== "paid") {
+    if (demandeurError || !demandeurProfile) {
+      return new Response(
+        JSON.stringify({ error: "Profil introuvable" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } },
+      );
+    }
+
+    const isPaid =
+      demandeurProfile.subscription_tier === "paid" ||
+      demandeurProfile.access_level === "premium" ||
+      (demandeurProfile.subscription_ends_at &&
+        new Date(demandeurProfile.subscription_ends_at) > new Date());
+
+    if (!isPaid) {
       return new Response(
         JSON.stringify({ error: "L'abonnement PAID est requis pour créer un rendez-vous" }),
-        { status: 403, headers: { "Content-Type": "application/json" } },
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } },
       );
     }
 
@@ -62,7 +86,7 @@ serve(async (req) => {
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
@@ -97,12 +121,12 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ id: data?.id, status: "created" }), {
       status: 201,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   }
 });
