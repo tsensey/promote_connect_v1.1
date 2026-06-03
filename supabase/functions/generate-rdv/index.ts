@@ -25,6 +25,27 @@ serve(async (req) => {
       );
     }
 
+    // Vérifier que le demandeur est PAID
+    const { data: demandeurProfile } = await supabase
+      .from("profiles")
+      .select("subscription_tier, full_name, email")
+      .eq("id", demandeur_id)
+      .single();
+
+    if (!demandeurProfile || demandeurProfile.subscription_tier !== "paid") {
+      return new Response(
+        JSON.stringify({ error: "L'abonnement PAID est requis pour créer un rendez-vous" }),
+        { status: 403, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    // Récupérer le profil destinataire pour l'email
+    const { data: destinataireProfile } = await supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", destinataire_id)
+      .single();
+
     const { data, error } = await supabase
       .from("rendez_vous")
       .insert({
@@ -45,36 +66,33 @@ serve(async (req) => {
       });
     }
 
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, full_name, email")
-      .in("id", [demandeur_id, destinataire_id]);
-
-    const demandeurProfile = profiles?.find((p) => p.id === demandeur_id);
-    const destinataireProfile = profiles?.find((p) => p.id === destinataire_id);
-
+    // Email non bloquant — ne pas faire échouer la création du RDV
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    if (resendApiKey && demandeurProfile && destinataireProfile) {
-      await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${resendApiKey}`,
-        },
-        body: JSON.stringify({
-          from: "PROMOTE-CONNECT <rdv@promote-connect.com>",
-          to: [destinataireProfile.email],
-          subject: `Nouvelle demande de rendez-vous de ${demandeurProfile.full_name}`,
-          html: `
-            <p>Bonjour ${destinataireProfile.full_name},</p>
-            <p>${demandeurProfile.full_name} vous a envoyé une demande de rendez-vous sur PROMOTE-CONNECT.</p>
-            <p>Début : ${new Date(starts_at).toLocaleString("fr-FR")}</p>
-            <p>Fin : ${new Date(ends_at).toLocaleString("fr-FR")}</p>
-            ${notes ? `<p>Note : ${notes}</p>` : ""}
-            <p>Connectez-vous pour répondre.</p>
-          `,
-        }),
-      });
+    if (resendApiKey && destinataireProfile?.email && demandeurProfile) {
+      try {
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${resendApiKey}`,
+          },
+          body: JSON.stringify({
+            from: "PROMOTE-CONNECT <rdv@promote-connect.com>",
+            to: [destinataireProfile.email],
+            subject: `Nouvelle demande de rendez-vous de ${demandeurProfile.full_name}`,
+            html: `
+              <p>Bonjour ${destinataireProfile.full_name},</p>
+              <p>${demandeurProfile.full_name} vous a envoyé une demande de rendez-vous sur PROMOTE-CONNECT.</p>
+              <p>Début : ${new Date(starts_at).toLocaleString("fr-FR")}</p>
+              <p>Fin : ${new Date(ends_at).toLocaleString("fr-FR")}</p>
+              ${notes ? `<p>Note : ${notes}</p>` : ""}
+              <p>Connectez-vous pour répondre.</p>
+            `,
+          }),
+        });
+      } catch {
+        // Échec d'envoi d'email non critique — le RDV a déjà été créé
+      }
     }
 
     return new Response(JSON.stringify({ id: data?.id, status: "created" }), {

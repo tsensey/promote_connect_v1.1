@@ -105,11 +105,13 @@ export default function SupportPage() {
       open: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
       in_progress: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
       resolved: 'bg-muted text-muted-foreground border-border/60',
+      closed: 'bg-muted text-muted-foreground/60 border-border/40',
     };
     const labels: Record<string, string> = {
-      open: t('common.open'),
-      in_progress: t('common.in_progress'),
-      resolved: t('common.resolved'),
+      open: t('support.tickets.status_open'),
+      in_progress: t('support.tickets.status_progress'),
+      resolved: t('support.tickets.status_resolved'),
+      closed: t('support.tickets.status_closed'),
     };
     return (
       <Badge

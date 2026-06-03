@@ -98,34 +98,45 @@ export default function ExposantDetailPage() {
   }, [loadBlockedUsers]);
 
   useEffect(() => {
+    let cancelled = false;
     const loadData = async () => {
-      const { data: exp } = await supabaseClient
-        .from('exposants')
-        .select('*')
-        .eq('id', exposantId)
-        .single();
+      try {
+        const { data: exp } = await supabaseClient
+          .from('exposants')
+          .select('*')
+          .eq('id', exposantId)
+          .single();
 
-      if (exp) {
-        setExposant(exp);
-        const { data: session } = await supabaseClient.auth.getSession();
-        const viewerId = session?.session?.user?.id;
-        await supabaseClient.from('exposant_views').insert({
-          exposant_id: exposantId,
-          viewer_id: viewerId || null,
-        });
+        if (exp) {
+          if (!cancelled) setExposant(exp);
+          const { data: session } = await supabaseClient.auth.getSession();
+          const viewerId = session?.session?.user?.id;
+          try {
+            await supabaseClient.from('exposant_views').insert({
+              exposant_id: exposantId,
+              viewer_id: viewerId || null,
+            });
+          } catch {
+            // Non bloquant
+          }
+        }
+
+        const { data: prods } = await supabaseClient
+          .from('produits')
+          .select('*')
+          .eq('exposant_id', exposantId)
+          .order('created_at', { ascending: false });
+
+        if (prods && !cancelled) setProduits(prods);
+      } catch (err) {
+        console.error('Erreur chargement exposant:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-
-      const { data: prods } = await supabaseClient
-        .from('produits')
-        .select('*')
-        .eq('exposant_id', exposantId)
-        .order('created_at', { ascending: false });
-
-      if (prods) setProduits(prods);
-      setLoading(false);
     };
 
     loadData();
+    return () => { cancelled = true; };
   }, [exposantId]);
 
   const handleContact = async (productName?: string) => {

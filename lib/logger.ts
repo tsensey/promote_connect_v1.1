@@ -8,9 +8,7 @@ export const logger = {
   },
 
   error: (...args: unknown[]) => {
-    if (isDev) {
-      console.error(...args);
-    }
+    console.error(...args);
   },
 
   warn: (...args: unknown[]) => {

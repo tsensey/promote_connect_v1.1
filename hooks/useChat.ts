@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { supabaseClient } from '@/lib/supabase/client';
 import { uploadChatFile } from '@/lib/chat/storage';
-import type { Database, Json } from '@/types/database.types';
+import type { Database } from '@/types/database.types';
 import type {
   EnrichedConversation,
   EnrichedMessage,
@@ -401,10 +401,6 @@ export function useMessages(conversationId: string) {
       const { content, file, replyToId, productAttachment } = opts;
       if (!content.trim() && !file && !productAttachment) return;
 
-      const { data: session } = await supabaseClient.auth.getSession();
-      if (!session?.session?.user) return;
-      const myId = session.session.user.id;
-
       let attachmentUrl: string | null = null;
       let attachmentType: 'image' | 'document' | 'product' | null = null;
 
@@ -418,43 +414,31 @@ export function useMessages(conversationId: string) {
         attachmentType = 'product';
       }
 
-      // 1. Vérifier le quota via l'API (cela incrémente aussi le compteur serveur)
-      const res = await fetch('/api/chat/check-quota', {
+      // 1. Envoyer via l'API route (vérifie quota + insère message atomiquement)
+      const res = await fetch('/api/chat/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId }),
+        body: JSON.stringify({
+          conversationId,
+          content: content.trim(),
+          replyToId: replyToId ?? null,
+          productAttachment: productAttachment ?? null,
+          attachmentUrl,
+          attachmentType,
+        }),
       });
-      const quotaData = await res.json();
 
-      if (!res.ok || !quotaData.allowed) {
-        // Déclencher un événement global pour afficher la modale de conversion si nécessaire
-        if (quotaData.showConversionModal) {
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        if (errData.showConversionModal) {
           window.dispatchEvent(new CustomEvent('show-conversion-modal'));
         } else {
-          // Toast d'erreur générique ou raison spécifique
-          toast.error('Quota de messagerie atteint ou accès refusé.');
+          toast.error(errData.reason === 'total_quota_exceeded'
+            ? 'Vous avez atteint votre quota total de messages. Passez à PAID pour continuer.'
+            : 'Quota de messagerie atteint ou accès refusé.');
         }
         return;
       }
-
-      // 2. Si le quota est ok, on insère le message
-      const { error } = await supabaseClient.from('messages').insert({
-        conversation_id: conversationId,
-        sender_id: myId,
-        content: content.trim(),
-        attachment_url: attachmentUrl,
-        attachment_type: attachmentType,
-        reply_to_id: replyToId ?? null,
-        product_attachment: productAttachment as unknown as Json,
-        is_read: false,
-      });
-
-      if (error) return;
-
-      await supabaseClient
-        .from('conversations')
-        .update({ last_message_at: new Date().toISOString() })
-        .eq('id', conversationId);
     },
     [conversationId]
   );
@@ -485,29 +469,21 @@ export function useMessages(conversationId: string) {
 }
 
 export async function createConversation(otherUserId: string) {
-  const { data: session } = await supabaseClient.auth.getSession();
-  if (!session?.session?.user) return { error: new Error('Not authenticated') };
+  try {
+    const res = await fetch('/api/chat/initiate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetProfileId: otherUserId }),
+    });
 
-  const myId = session.session.user.id;
+    const json = await res.json();
 
-  const { data: profile } = await supabaseClient
-    .from('profiles')
-    .select('subscription_tier')
-    .eq('id', myId)
-    .single();
+    if (!res.ok) {
+      return { error: new Error(json.error || 'Failed to create conversation'), data: null };
+    }
 
-  const [a, b] = [myId, otherUserId].sort();
-
-  const { data, error } = await supabaseClient
-    .from('conversations')
-    .upsert({
-      participant_a: a,
-      participant_b: b,
-      initiated_by: myId,
-      initiated_by_tier: profile?.subscription_tier ?? 'free_trial',
-    }, { onConflict: 'participant_a,participant_b' })
-    .select()
-    .single();
-
-  return { data, error };
+    return { data: json.data, error: null };
+  } catch (err) {
+    return { error: err instanceof Error ? err : new Error('Network error'), data: null };
+  }
 }

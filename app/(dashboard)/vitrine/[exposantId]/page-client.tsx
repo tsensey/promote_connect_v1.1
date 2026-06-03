@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 import { createConversation } from '@/hooks/useChat';
 import { toast } from 'sonner';
-import { toEmbedUrl } from '@/lib/utils';
+import { toEmbedUrl, safeBtoa } from '@/lib/utils';
 import {
   ArrowLeft,
   Globe,
@@ -86,59 +86,74 @@ export default function VitrineExposantPage() {
   const router = useRouter();
 
   useEffect(() => {
+    let cancelled = false;
     const loadData = async () => {
-      const { data: exp } = await supabaseClient
-        .from('exposants')
-        .select('*')
-        .eq('id', exposantId)
-        .single();
+      try {
+        const { data: exp } = await supabaseClient
+          .from('exposants')
+          .select('*')
+          .eq('id', exposantId)
+          .single();
 
-      if (exp) {
-        setExposant(exp);
+        if (exp) {
+          if (!cancelled) setExposant(exp);
+          const { data: session } = await supabaseClient.auth.getSession();
+          const viewerId = session?.session?.user?.id;
+          try {
+            await supabaseClient.from('exposant_views').insert({
+              exposant_id: exposantId,
+              viewer_id: viewerId || null,
+            });
+          } catch {
+            // Non bloquant
+          }
+        }
 
-        const { data: session } = await supabaseClient.auth.getSession();
-        const viewerId = session?.session?.user?.id;
-        await supabaseClient.from('exposant_views').insert({
-          exposant_id: exposantId,
-          viewer_id: viewerId || null,
-        });
+        const { data: prods } = await supabaseClient
+          .from('produits')
+          .select('*')
+          .eq('exposant_id', exposantId)
+          .order('created_at', { ascending: false });
+
+        if (prods && !cancelled) setProduits(prods);
+      } catch (err) {
+        console.error('Erreur chargement vitrine:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-
-      const { data: prods } = await supabaseClient
-        .from('produits')
-        .select('*')
-        .eq('exposant_id', exposantId)
-        .order('created_at', { ascending: false });
-
-      if (prods) setProduits(prods);
-      setLoading(false);
     };
 
     loadData();
+    return () => { cancelled = true; };
   }, [exposantId]);
 
   const handleContact = async (product?: { id: string; nom: string; image_url: string | null; prix_indicatif: string | null } | null) => {
     if (!exposant?.profile_id) return;
     setContacting(true);
-    const { data } = await createConversation(exposant.profile_id);
-    if (data) {
-      let url = `/chat?conv=${data.id}`;
-      if (product && exposant) {
-        const payload = {
-          id: product.id,
-          nom: product.nom,
-          image_url: product.image_url,
-          prix_indicatif: product.prix_indicatif,
-          exposant_nom: exposant.nom,
-          exposant_id: exposant.id,
-        };
-        url += `&product=${btoa(JSON.stringify(payload))}`;
+    try {
+      const { data } = await createConversation(exposant.profile_id);
+      if (data) {
+        let url = `/chat?conv=${data.id}`;
+        if (product && exposant) {
+          const payload = {
+            id: product.id,
+            nom: product.nom,
+            image_url: product.image_url,
+            prix_indicatif: product.prix_indicatif,
+            exposant_nom: exposant.nom,
+            exposant_id: exposant.id,
+          };
+          url += `&product=${safeBtoa(JSON.stringify(payload))}`;
+        }
+        router.push(url);
+      } else {
+        toast.error(t('vitrine.detail.contact_error'));
       }
-      router.push(url);
-    } else {
+    } catch {
       toast.error(t('vitrine.detail.contact_error'));
+    } finally {
+      setContacting(false);
     }
-    setContacting(false);
   };
 
   const handleShare = async () => {

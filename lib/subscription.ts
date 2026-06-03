@@ -248,7 +248,7 @@ export async function checkMessageQuota(
   // 1. Vérifier le tier de l'expéditeur
   const { data: rawSenderProfile } = await supabase
     .from('profiles')
-    .select('subscription_tier, account_status, daily_exchange_count, last_exchange_reset, quota_override_messages')
+    .select('subscription_tier, account_status, daily_exchange_count, last_exchange_reset, quota_override_messages, subscription_status, subscription_ends_at')
     .eq('id', senderId)
     .single();
 
@@ -262,6 +262,8 @@ export async function checkMessageQuota(
     daily_exchange_count: number | null;
     last_exchange_reset: string | null;
     quota_override_messages: number | null;
+    subscription_status: string | null;
+    subscription_ends_at: string | null;
   };
 
   // Vérifier que le compte est actif
@@ -269,9 +271,17 @@ export async function checkMessageQuota(
     return { allowed: false, reason: 'account_inactive' };
   }
 
-  // Les PAID peuvent toujours envoyer
+  // Les PAID peuvent toujours envoyer — mais vérifier que l'abonnement est valide
   if (senderProfile.subscription_tier === 'paid') {
-    return { allowed: true };
+    const expiredStatuses = ['expired', 'past_due', 'canceled', 'incomplete_expired', 'unpaid'];
+    if (senderProfile.subscription_status && expiredStatuses.includes(senderProfile.subscription_status)) {
+      // L'abonnement a expiré ou est en défaut → traiter comme free_trial
+      // (ne pas return early, laisser le code continuer vers la logique free_trial)
+    } else if (senderProfile.subscription_ends_at && new Date(senderProfile.subscription_ends_at) < new Date()) {
+      // La date de fin est dépassée → traiter comme free_trial
+    } else {
+      return { allowed: true };
+    }
   }
 
   // 2. Pour les free trial — vérifier la logique asymétrique (CdC §2.1)

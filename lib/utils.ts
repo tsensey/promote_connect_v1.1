@@ -23,6 +23,16 @@ export function toEmbedUrl(url?: string | undefined): string | undefined {
   return url;
 }
 
+export function safeBtoa(str: string): string {
+  try {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (_, p1) =>
+      String.fromCharCode(parseInt(p1, 16))
+    ));
+  } catch {
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+}
+
 export function getValidImageUrl(url: string | null | undefined): string {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')) {

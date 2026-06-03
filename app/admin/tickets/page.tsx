@@ -30,7 +30,7 @@ interface AdminTicketRow {
 
 const statusLabels: Record<string, string> = {
   open: 'admin.tickets.status_open',
-  in_progress: 'admin.tickets.status_in_progress',
+  in_progress: 'admin.tickets.status_progress',
   resolved: 'admin.tickets.status_resolved',
   closed: 'admin.tickets.status_closed',
 };

@@ -2,6 +2,7 @@ import { randomBytes } from 'crypto';
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { verifyAdmin } from '@/lib/admin';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import type { Database } from '@/types/database.types';
 import { render } from '@react-email/components';
 import CredentialsEmail from '@/emails/CredentialsEmail';
@@ -60,6 +61,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const rl = await rateLimit(`admin:users:post:${ip}`, 20, 60_000);
+  if (!rl.allowed) return NextResponse.json({ error: 'rate_limit_exceeded' }, { status: 429 });
+
   const auth = await verifyAdmin(request);
   if (auth.error) return auth.error;
 
@@ -262,6 +267,10 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  const ip = getClientIp(request);
+  const rl = await rateLimit(`admin:users:patch:${ip}`, 30, 60_000);
+  if (!rl.allowed) return NextResponse.json({ error: 'rate_limit_exceeded' }, { status: 429 });
+
   const auth = await verifyAdmin(request);
   if (auth.error) return auth.error;
 
@@ -391,6 +400,10 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const ip = getClientIp(request);
+  const rl = await rateLimit(`admin:users:delete:${ip}`, 10, 60_000);
+  if (!rl.allowed) return NextResponse.json({ error: 'rate_limit_exceeded' }, { status: 429 });
+
   const auth = await verifyAdmin(request);
   if (auth.error) return auth.error;
 

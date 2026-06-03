@@ -232,34 +232,37 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
     const userId = session?.session?.user?.id;
     if (!userId) throw new Error('Not authenticated');
 
-    // Traitement et upload en parallèle pour plus de rapidité
+    const uploadWithTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> =>
+      Promise.race([
+        promise,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Upload timeout')), ms)
+        ),
+      ]);
+
     const uploadPromises = files.map(async (file) => {
-      // 1. Compression (via Web Worker)
       const compressedFile = await compressImage(file);
-      
-      // 2. Génération du nom de fichier
-      // 2. Détermination de l'extension et du type MIME correct
+
       const mimeType = compressedFile.type;
       let ext = 'jpg';
       if (mimeType === 'image/gif') ext = 'gif';
       else if (mimeType === 'image/png') ext = 'png';
       else if (mimeType === 'image/webp') ext = 'webp';
-      
+
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`;
       const filePath = `posts/${fileName}`;
 
-      // 3. Upload vers Supabase Storage
-      const { data, error } = await supabaseClient.storage
-        .from('feed-images')
-        .upload(filePath, compressedFile, {
+      const { data, error } = await uploadWithTimeout(
+        supabaseClient.storage.from('feed-images').upload(filePath, compressedFile, {
           contentType: mimeType,
           cacheControl: '31536000',
           upsert: false,
-        });
+        }),
+        30_000
+      );
 
       if (error) throw new Error(`Upload error: ${error.message}`);
 
-      // 4. Récupération de l'URL publique
       const { data: urlData } = supabaseClient.storage
         .from('feed-images')
         .getPublicUrl(data.path);

@@ -1,22 +1,17 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import type { Database } from '@/types/database.types';
-import { createClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/admin';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2026-04-22.dahlia',
-});
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const sb = createClient<Database>(supabaseUrl, supabaseServiceKey, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 
 const processedEvents = new Set<string>();
 const IDEMPOTENCY_TTL = 300_000;
 
 setInterval(() => processedEvents.clear(), IDEMPOTENCY_TTL);
+
+function shouldDowngrade(status: string): boolean {
+  return ['past_due', 'canceled', 'incomplete_expired', 'unpaid'].includes(status);
+}
 
 export async function POST(request: Request) {
   const signature = request.headers.get('stripe-signature');
@@ -42,6 +37,8 @@ export async function POST(request: Request) {
   processedEvents.add(event.id);
 
   try {
+    const sb = createAdminClient();
+
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
@@ -62,11 +59,21 @@ export async function POST(request: Request) {
           periodEnd = rawEnd ? new Date(rawEnd * 1000).toISOString() : null;
         }
 
+        const tier = shouldDowngrade(subscriptionStatus) ? 'free_trial' : 'paid';
+
         await sb.from('profiles').update({
           subscription_status: subscriptionStatus,
           subscription_ends_at: periodEnd,
           stripe_customer_id: customerId,
+          subscription_tier: tier,
         } as never).eq('id', profileId);
+
+        await sb.auth.admin.updateUserById(profileId, {
+          user_metadata: {
+            subscription_tier: tier,
+            subscription_status: subscriptionStatus,
+          },
+        });
 
         break;
       }
@@ -76,9 +83,7 @@ export async function POST(request: Request) {
         const sub = event.data.object as unknown as Record<string, unknown>;
         const customerId = sub.customer as string;
         const rawEnd = sub.current_period_end as number | undefined;
-        const periodEnd = rawEnd
-          ? new Date(rawEnd * 1000).toISOString()
-          : null;
+        const periodEnd = rawEnd ? new Date(rawEnd * 1000).toISOString() : null;
 
         const { data: existing } = await sb
           .from('profiles')
@@ -91,10 +96,21 @@ export async function POST(request: Request) {
           break;
         }
 
+        const status = sub.status as string;
+        const tier = shouldDowngrade(status) ? 'free_trial' : 'paid';
+
         await sb.from('profiles').update({
-          subscription_status: sub.status as string,
+          subscription_status: status,
           subscription_ends_at: periodEnd,
+          subscription_tier: tier,
         } as never).eq('id', existing.id);
+
+        await sb.auth.admin.updateUserById(existing.id, {
+          user_metadata: {
+            subscription_tier: tier,
+            subscription_status: status,
+          },
+        });
 
         break;
       }
@@ -114,13 +130,21 @@ export async function POST(request: Request) {
         await sb.from('profiles').update({
           subscription_status: 'expired',
           subscription_ends_at: null,
+          subscription_tier: 'free_trial',
         } as never).eq('id', existing.id);
+
+        await sb.auth.admin.updateUserById(existing.id, {
+          user_metadata: {
+            subscription_tier: 'free_trial',
+            subscription_status: 'expired',
+          },
+        });
 
         break;
       }
 
       case 'invoice.payment_failed': {
-        const invoice = event.data.object as Stripe.Invoice;
+        const invoice = event.data.object as unknown as Record<string, unknown>;
         const invoiceCustomerId = invoice.customer as string;
 
         const { data: existing } = await sb
@@ -132,7 +156,15 @@ export async function POST(request: Request) {
         if (existing) {
           await sb.from('profiles').update({
             subscription_status: 'past_due',
+            subscription_tier: 'free_trial',
           } as never).eq('id', existing.id);
+
+          await sb.auth.admin.updateUserById(existing.id, {
+            user_metadata: {
+              subscription_tier: 'free_trial',
+              subscription_status: 'past_due',
+            },
+          });
         }
 
         break;

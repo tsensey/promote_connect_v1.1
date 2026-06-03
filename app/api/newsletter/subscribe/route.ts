@@ -68,7 +68,26 @@ export async function POST(request: Request) {
       const {
         data: { user },
       } = await supabase.auth.getUser(token);
-      if (user) profileId = user.id;
+      if (user) {
+        profileId = user.id;
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('subscription_tier')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.subscription_tier !== 'paid') {
+          return NextResponse.json(
+            {
+              error: 'newsletter_paid_only',
+              message: 'La newsletter est réservée aux abonnés PAID.',
+              showConversionModal: true,
+            },
+            { status: 403 },
+          );
+        }
+      }
     }
 
     const unsubscribeToken = generateToken();

@@ -4,10 +4,17 @@ import { verifyAdmin } from '@/lib/admin';
 import { randomBytes } from 'crypto';
 import { render } from '@react-email/components';
 import ResetPasswordEmail from '@/emails/ResetPasswordEmail';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 const resendApiKey = process.env.RESEND_API_KEY || '';
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const rl = await rateLimit(`admin:reset-password:${ip}`, 10, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'rate_limit_exceeded' }, { status: 429 });
+  }
+
   const auth = await verifyAdmin(request);
   if (auth.error) return auth.error;
 

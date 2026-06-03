@@ -176,7 +176,7 @@ export function useTicketMessages(ticketId: string) {
 
       await supabaseClient
         .from('support_tickets')
-        .update({ updated_at: new Date().toISOString(), status: 'open' })
+        .update({ updated_at: new Date().toISOString() })
         .eq('id', ticketId);
     },
     [ticketId, setMessages]

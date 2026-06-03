@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { verifyAdmin } from '@/lib/admin';
 import { createAccountForExposant } from '@/lib/exposant-account';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import type { Database } from '@/types/database.types';
 import * as XLSX from 'xlsx';
 
@@ -112,6 +113,12 @@ function buildInsert(row: FlatExposant, pavillonToEspace: Map<string, { id: stri
 }
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const rl = await rateLimit(`admin:import:${ip}`, 5, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'rate_limit_exceeded' }, { status: 429 });
+  }
+
   const auth = await verifyAdmin(request);
   if (auth.error) return auth.error;
 
