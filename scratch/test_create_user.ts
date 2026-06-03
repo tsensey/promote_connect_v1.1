@@ -19,7 +19,6 @@ async function run() {
     user_metadata: {
       full_name: 'Test User',
       role: 'visiteur',
-      access_level: 'classic'
     }
   });
 

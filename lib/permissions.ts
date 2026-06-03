@@ -19,8 +19,6 @@ export interface PermissionUser {
   role: UserRole | string | null;
   subscription_tier?: SubscriptionTier | string | null;
   account_status?: AccountStatus | string | null;
-  // Legacy — conservé pour compatibilité montante avec les sessions existantes
-  access_level?: string | null;
   is_active?: boolean | null;
 }
 
@@ -30,10 +28,7 @@ export interface PermissionUser {
 
 function isPaid(user: PermissionUser): boolean {
   if (user.role === 'admin') return true;
-  // Priorité au nouveau champ subscription_tier
-  if (user.subscription_tier) return user.subscription_tier === 'paid';
-  // Fallback legacy access_level
-  return user.access_level === 'premium';
+  return user.subscription_tier === 'paid';
 }
 
 function isActive(user: PermissionUser): boolean {
@@ -212,12 +207,11 @@ export function canContactExposant(user: PermissionUser): boolean {
 /** @deprecated Utiliser hasUnlimitedMessaging() */
 export function canExchangeWith(
   currentUser: PermissionUser,
-  targetUser: { subscription_tier?: string | null; access_level?: string | null }
+  targetUser: { subscription_tier?: string | null }
 ): boolean {
   if (isAdmin(currentUser)) return true;
   if (isPaid(currentUser)) return true;
-  // Si le destinataire est PAID, le free trial peut répondre (mais pas initier sans quota)
-  if (targetUser.subscription_tier === 'paid' || targetUser.access_level === 'premium') return true;
+  if (targetUser.subscription_tier === 'paid') return true;
   return false;
 }
 

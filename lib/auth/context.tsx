@@ -10,8 +10,7 @@ export type AppProfile = Pick<
   Database['public']['Tables']['profiles']['Row'],
   | 'id' | 'full_name' | 'company' | 'role' | 'sector' | 'country'
   | 'pavillon' | 'avatar_url' | 'is_active' | 'suspended_at' | 'created_at'
-  | 'access_level' | 'daily_exchange_count' | 'last_exchange_reset'
-  // v1.1 — Nouveau modèle de tiers et statut de compte
+  | 'daily_exchange_count' | 'last_exchange_reset'
   | 'subscription_tier' | 'account_status' | 'trial_ends_at' | 'subscription_ends_at'
 >;
 
@@ -37,7 +36,7 @@ async function loadProfile(userId: string) {
   const { data, error } = await supabaseClient
     .from('profiles')
     .select(
-      'id, full_name, company, role, sector, country, pavillon, avatar_url, is_active, suspended_at, created_at, access_level, daily_exchange_count, last_exchange_reset, subscription_tier, account_status, trial_ends_at, subscription_ends_at'
+      'id, full_name, company, role, sector, country, pavillon, avatar_url, is_active, suspended_at, created_at, daily_exchange_count, last_exchange_reset, subscription_tier, account_status, trial_ends_at, subscription_ends_at'
     )
     .eq('id', userId)
     .single();

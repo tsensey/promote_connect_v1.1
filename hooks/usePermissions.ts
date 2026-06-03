@@ -33,10 +33,9 @@ export function usePermissions(): UserPermissions & {
   isClassicVisitor: boolean; // Legacy compat
   showTrialBanner: boolean;
   trialDaysRemaining: number | null;
-  // Legacy
   canSeeExposants: boolean;
   canContactExposant: boolean;
-  canExchangeWith: (target: { subscription_tier?: string | null; access_level?: string | null }) => boolean;
+  canExchangeWith: (target: { subscription_tier?: string | null }) => boolean;
   hasReachedLimit: boolean;
   dailyLimit: number;
 } {
@@ -47,11 +46,8 @@ export function usePermissions(): UserPermissions & {
     return {
       id: user?.id,
       role: profile.role,
-      // v1.1 — Priorité aux nouveaux champs
       subscription_tier: (profile as Record<string, unknown>).subscription_tier as string | null ?? 'free_trial',
       account_status: (profile as Record<string, unknown>).account_status as string | null ?? 'active',
-      // Legacy fallback
-      access_level: profile.access_level,
       is_active: profile.is_active,
     };
   }, [profile, user?.id]);
@@ -101,7 +97,7 @@ export function usePermissions(): UserPermissions & {
       // Legacy
       canSeeExposants: false,
       canContactExposant: false,
-      canExchangeWith: (_target: { subscription_tier?: string | null; access_level?: string | null }) => false,
+      canExchangeWith: (_target: { subscription_tier?: string | null }) => false,
       hasReachedLimit: false,
       dailyLimit: getDailyExchangeLimit(),
     };

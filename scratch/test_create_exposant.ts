@@ -19,12 +19,11 @@ async function run() {
     email,
     password: 'password123',
     email_confirm: true,
-    user_metadata: {
-      full_name: 'Test Exposant',
-      role: 'exposant',
-      company: 'Test Company',
-      access_level: 'classic'
-    }
+      user_metadata: {
+        full_name: 'Test Exposant',
+        role: 'exposant',
+        company: 'Test Company'
+      }
   });
 
   if (authCreateError) {
@@ -43,7 +42,6 @@ async function run() {
       full_name: 'Test Exposant',
       company: 'Test Company',
       role: 'exposant',
-      access_level: 'classic',
     });
     
   if (profileError) {

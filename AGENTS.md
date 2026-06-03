@@ -201,11 +201,10 @@ profiles (
   country text,
   pavillon text,
   avatar_url text,
-  subscription_status text,     -- 'active' | 'expired' | 'trial' | 'past_due'
+  subscription_tier text DEFAULT 'free_trial', -- 'free_trial' | 'paid'
   subscription_ends_at timestamptz,
   stripe_customer_id text,
   is_active boolean DEFAULT true,
-  access_level text DEFAULT 'classic',
   daily_exchange_count integer DEFAULT 0,
   last_exchange_reset timestamptz,
   suspended_at timestamptz,
@@ -404,7 +403,7 @@ npm run db:cleanup-orphans      # Nettoyage données orphelines
 1. **RGPD** : Consentement explicite requis, droit à l'oubli implémenté
 2. **RLS** : Toutes les tables Supabase ont RLS activé — tester chaque politique
 3. **Performance** : LCP < 3s, TTI < 5s — mesurer avec Lighthouse CI
-4. **Abonnement** : Vérifier `subscription_status === 'active'` avant tout accès aux données protégées
+4. **Abonnement** : Vérifier `subscription_tier === 'paid'` avant tout accès aux données protégées
 5. **Chat** : Données sensibles — ne jamais logger le contenu des messages
 6. **Stripe Webhooks** : Toujours valider la signature (`stripe.webhooks.constructEvent`) + idempotency in-memory
 7. **PWA** : Vérifier le Service Worker après chaque build (`public/sw.js`) — tester offline et push

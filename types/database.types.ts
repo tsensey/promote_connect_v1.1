@@ -950,7 +950,6 @@ export type Database = {
       }
       profiles: {
         Row: {
-          access_level: string
           account_status: string
           subscription_tier: string
           avatar_url: string | null
@@ -972,7 +971,6 @@ export type Database = {
           trial_ends_at: string | null
         }
         Insert: {
-          access_level?: string
           account_status?: string
           subscription_tier?: string
           avatar_url?: string | null
@@ -994,7 +992,6 @@ export type Database = {
           trial_ends_at?: string | null
         }
         Update: {
-          access_level?: string
           account_status?: string
           subscription_tier?: string
           avatar_url?: string | null
@@ -1240,7 +1237,6 @@ export type Database = {
     }
     Functions: {
       is_admin: { Args: never; Returns: boolean }
-      is_premium: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

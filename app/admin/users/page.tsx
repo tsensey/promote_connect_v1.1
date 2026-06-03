@@ -71,11 +71,10 @@ interface UserRow {
   country: string | null;
   pavillon: string | null;
   is_active: boolean;
-  access_level: string;
+  subscription_tier: string | null;
   created_at: string;
   exposant_id: string | null;
   subscription_ends_at: string | null;
-  subscription_tier: string | null;
 }
 
 const SECTORS = [
@@ -202,14 +201,13 @@ export default function AdminUsersPage() {
     annee_creation: '',
     nombre_employes: '',
     generate_exposant: false,
-    access_level: 'classic',
     exposant_id: '',
   });
 
   const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
   const [showRoleDialog, setShowRoleDialog] = useState<UserRow | null>(null);
   const [newRole, setNewRole] = useState('');
-  const [newAccessLevel, setNewAccessLevel] = useState('classic');
+  const [newSubscriptionTier, setNewSubscriptionTier] = useState('free_trial');
   const [newSubscriptionEndDate, setNewSubscriptionEndDate] = useState('');
   const [showPasswordDialog, setShowPasswordDialog] = useState<UserRow | null>(null);
   const [passwordResult, setPasswordResult] = useState<{ new_password: string; email_sent: boolean } | null>(null);
@@ -246,7 +244,7 @@ export default function AdminUsersPage() {
       exposants: users.filter((user) => user.role === 'exposant').length,
       visiteurs: users.filter((user) => user.role === 'visiteur').length,
       suspended: users.filter((user) => !user.is_active).length,
-      premium: users.filter((user) => user.access_level === 'premium').length,
+      premium: users.filter((user) => user.subscription_tier === 'paid').length,
     }),
     [users]
   );
@@ -351,7 +349,6 @@ export default function AdminUsersPage() {
         annee_creation: '',
         nombre_employes: '',
         generate_exposant: false,
-        access_level: 'classic',
         exposant_id: '',
       });
       setLinkExposantMode(false);
@@ -375,10 +372,10 @@ export default function AdminUsersPage() {
 
     try {
       const body: Record<string, unknown> = { id: userId, role: newRoleValue };
-      if (newAccessLevel) {
-        body.access_level = newAccessLevel;
+      if (newSubscriptionTier) {
+        body.subscription_tier = newSubscriptionTier;
       }
-      if (newAccessLevel === 'premium' && newSubscriptionEndDate) {
+      if (newSubscriptionTier === 'paid' && newSubscriptionEndDate) {
         body.subscription_ends_at = new Date(newSubscriptionEndDate).toISOString();
       }
 
@@ -662,13 +659,13 @@ export default function AdminUsersPage() {
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={user.access_level === 'premium' ? 'default' : 'outline'}
-                          className={`rounded-full ${user.access_level === 'premium'
+                          variant={user.subscription_tier === 'paid' ? 'default' : 'outline'}
+                          className={`rounded-full ${user.subscription_tier === 'paid'
                             ? 'bg-amber-500/15 text-amber-700 border-amber-200'
                             : 'text-muted-foreground'
                             }`}
                         >
-                          {user.access_level === 'premium' ? 'Premium' : 'Classic'}
+                          {user.subscription_tier === 'paid' ? 'Premium' : 'Free Trial'}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -702,7 +699,7 @@ export default function AdminUsersPage() {
                               onClick={() => {
                                 setShowRoleDialog(user);
                                 setNewRole(user.role || 'visiteur');
-                                setNewAccessLevel(user.access_level || 'classic');
+                                setNewSubscriptionTier(user.subscription_tier || 'free_trial');
                                 setNewSubscriptionEndDate(
                                   user.subscription_ends_at
                                     ? new Date(user.subscription_ends_at).toISOString().split('T')[0]
@@ -868,27 +865,7 @@ export default function AdminUsersPage() {
               </div>
             </div>
 
-            <div className="space-y-3">
-              <Label>Niveau d{'\u2019'}accès</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  type="button"
-                  variant={form.access_level === 'classic' ? 'default' : 'outline'}
-                  className="rounded-xl"
-                  onClick={() => setForm({ ...form, access_level: 'classic' })}
-                >
-                  Classic
-                </Button>
-                <Button
-                  type="button"
-                  variant={form.access_level === 'premium' ? 'default' : 'outline'}
-                  className="rounded-xl bg-amber-500/10 text-amber-700 hover:bg-amber-500/20"
-                  onClick={() => setForm({ ...form, access_level: 'premium' })}
-                >
-                  Premium
-                </Button>
-              </div>
-            </div>
+
 
             {form.role === 'exposant' && (
               <>
@@ -1227,29 +1204,29 @@ export default function AdminUsersPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Niveau d{'\u2019'}accès</Label>
+              <Label>Type d&apos;abonnement</Label>
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   type="button"
-                  variant={newAccessLevel === 'classic' ? 'default' : 'outline'}
+                  variant={newSubscriptionTier === 'free_trial' ? 'default' : 'outline'}
                   className="rounded-xl"
-                  onClick={() => setNewAccessLevel('classic')}
+                  onClick={() => setNewSubscriptionTier('free_trial')}
                 >
-                  Classic
+                  Free Trial
                 </Button>
                 <Button
                   type="button"
-                  variant={newAccessLevel === 'premium' ? 'default' : 'outline'}
+                  variant={newSubscriptionTier === 'paid' ? 'default' : 'outline'}
                   className="rounded-xl bg-amber-500/10 text-amber-700 hover:bg-amber-500/20"
-                  onClick={() => setNewAccessLevel('premium')}
+                  onClick={() => setNewSubscriptionTier('paid')}
                 >
-                  Premium
+                  Premium (Payant)
                 </Button>
               </div>
             </div>
-            {newAccessLevel === 'premium' && (
+            {newSubscriptionTier === 'paid' && (
               <div className="space-y-2">
-                <Label>Date de fin d'abonnement</Label>
+                <Label>Date de fin d&apos;abonnement</Label>
                 <Input
                   type="date"
                   value={newSubscriptionEndDate}

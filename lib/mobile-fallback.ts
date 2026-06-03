@@ -1,6 +1,19 @@
 import { supabaseClient } from '@/lib/supabase/client';
 import type { Json } from '@/types/database.types';
 
+async function getPlatformConfigValue(key: string, defaultValue: number): Promise<number> {
+  const { data } = await supabaseClient
+    .from('platform_config')
+    .select('value')
+    .eq('key', key)
+    .single();
+  if (data?.value !== undefined && data.value !== null) {
+    const val = Number(data.value);
+    return isNaN(val) ? defaultValue : val;
+  }
+  return defaultValue;
+}
+
 export async function mobileSendMessage(
   conversationId: string,
   content: string,
@@ -12,38 +25,72 @@ export async function mobileSendMessage(
     attachmentType?: 'image' | 'document' | 'product' | null;
   }
 ) {
-  const { data: profile } = await supabaseClient
+  const { data: rawProfile } = await supabaseClient
     .from('profiles')
-    .select('subscription_tier, daily_exchange_count, last_exchange_reset, quota_override_messages')
+    .select('subscription_tier, account_status, daily_exchange_count, last_exchange_reset, quota_override_messages')
     .eq('id', userId)
     .single();
 
-  if (!profile) return { error: 'profile_not_found' };
+  if (!rawProfile) return { error: 'profile_not_found' };
 
-  const { data: config } = await supabaseClient
-    .from('platform_config')
-    .select('daily_message_limit, total_message_limit')
-    .single();
+  const profile = rawProfile as unknown as {
+    subscription_tier: string | null;
+    account_status: string | null;
+    daily_exchange_count: number | null;
+    last_exchange_reset: string | null;
+    quota_override_messages: number | null;
+  };
 
-  const dailyLimit = (profile as any).quota_override_messages ?? (config as any)?.daily_message_limit ?? 10;
+  if (profile.account_status && profile.account_status !== 'active') {
+    return { error: 'account_inactive' };
+  }
+
+  if (profile.subscription_tier === 'paid') {
+    const { data: message, error: insertError } = await supabaseClient
+      .from('messages')
+      .insert({
+        conversation_id: conversationId,
+        sender_id: userId,
+        content: content.trim(),
+        reply_to_id: options?.replyToId ?? null,
+        product_attachment: (options?.productAttachment as Json | null) ?? null,
+        attachment_url: options?.attachmentUrl ?? null,
+        attachment_type: options?.attachmentType ?? null,
+        is_read: false,
+      })
+      .select()
+      .single();
+
+    if (insertError || !message) return { error: 'insert_failed' };
+
+    await supabaseClient
+      .from('conversations')
+      .update({ last_message_at: new Date().toISOString() })
+      .eq('id', conversationId);
+
+    return { data: message };
+  }
+
+  const dailyLimit = profile.quota_override_messages ?? await getPlatformConfigValue('daily_message_limit', 10);
 
   const { count: totalSent } = await supabaseClient
     .from('messages')
     .select('id', { count: 'exact', head: true })
     .eq('sender_id', userId);
 
-  if (totalSent !== null && totalSent >= ((config as any)?.total_message_limit ?? 100)) {
+  const totalLimit = await getPlatformConfigValue('total_message_limit', 100);
+  if (totalSent !== null && totalSent >= totalLimit) {
     return { error: 'total_quota_exceeded' };
   }
 
   const now = new Date();
-  const lastReset = (profile as any).last_exchange_reset ? new Date((profile as any).last_exchange_reset) : null;
+  const lastReset = profile.last_exchange_reset ? new Date(profile.last_exchange_reset) : null;
   const isSameDay = lastReset
     ? lastReset.getFullYear() === now.getFullYear() &&
       lastReset.getMonth() === now.getMonth() &&
       lastReset.getDate() === now.getDate()
     : false;
-  const dailyCount = isSameDay ? ((profile as any).daily_exchange_count ?? 0) : 0;
+  const dailyCount = isSameDay ? (profile.daily_exchange_count ?? 0) : 0;
 
   if (dailyCount >= dailyLimit) {
     return { error: 'daily_quota_exceeded' };
@@ -132,31 +179,31 @@ export async function mobileGetConversationId(targetProfileId: string, userId: s
 }
 
 export async function mobileCheckQuota(userId: string) {
-  const { data: profile } = await supabaseClient
+  const { data: rawProfile } = await supabaseClient
     .from('profiles')
     .select('subscription_tier, daily_exchange_count, last_exchange_reset')
     .eq('id', userId)
     .single();
 
-  if (!profile) return { allowed: false, reason: 'profile_not_found' };
+  if (!rawProfile) return { allowed: false, reason: 'profile_not_found' };
 
-  const isPaid = (profile as any).subscription_tier === 'paid';
-  if (isPaid) return { allowed: true };
+  const profile = rawProfile as unknown as {
+    subscription_tier: string | null;
+    daily_exchange_count: number | null;
+    last_exchange_reset: string | null;
+  };
 
-  const { data: config } = await supabaseClient
-    .from('platform_config')
-    .select('daily_message_limit')
-    .single();
+  if (profile.subscription_tier === 'paid') return { allowed: true };
 
-  const dailyLimit = (config as any)?.daily_message_limit ?? 10;
+  const dailyLimit = await getPlatformConfigValue('daily_message_limit', 10);
   const now = new Date();
-  const lastReset = (profile as any).last_exchange_reset ? new Date((profile as any).last_exchange_reset) : null;
+  const lastReset = profile.last_exchange_reset ? new Date(profile.last_exchange_reset) : null;
   const isSameDay = lastReset
     ? lastReset.getFullYear() === now.getFullYear() &&
       lastReset.getMonth() === now.getMonth() &&
       lastReset.getDate() === now.getDate()
     : false;
-  const currentCount = isSameDay ? ((profile as any).daily_exchange_count ?? 0) : 0;
+  const currentCount = isSameDay ? (profile.daily_exchange_count ?? 0) : 0;
 
   if (currentCount >= dailyLimit) return { allowed: false, reason: 'daily_quota_exceeded' };
   return { allowed: true };
@@ -227,22 +274,23 @@ export async function mobileCreatePost(content: string, userId: string, options?
     .select('id', { count: 'exact', head: true })
     .eq('author_id', userId);
 
-  const { data: profile } = await supabaseClient
+  const { data: rawProfile } = await supabaseClient
     .from('profiles')
     .select('subscription_tier, quota_override_posts')
     .eq('id', userId)
     .single();
 
-  if (!profile) return { error: 'profile_not_found' };
+  if (!rawProfile) return { error: 'profile_not_found' };
 
-  const isPaid = (profile as any).subscription_tier === 'paid';
-  if (!isPaid) {
-    const { data: config } = await supabaseClient
-      .from('platform_config')
-      .select('max_posts')
-      .single();
+  const profile = rawProfile as unknown as {
+    subscription_tier: string | null;
+    quota_override_posts: number | null;
+  };
 
-    const postLimit = (profile as any).quota_override_posts ?? (config as any)?.max_posts ?? 10;
+  if (profile.subscription_tier === 'paid') {
+    // PAID — pas de limite, passer directement à l'insertion
+  } else {
+    const postLimit = profile.quota_override_posts ?? await getPlatformConfigValue('max_posts_free_trial', 2);
     if (totalSent !== null && totalSent >= postLimit) {
       return { error: 'post_quota_exceeded' };
     }
@@ -347,20 +395,20 @@ export async function mobileCreateOffer(
     .select('id', { count: 'exact', head: true })
     .eq('exposant_id', exposantId);
 
-  const { data: profile } = await supabaseClient
+  const { data: rawProfile } = await supabaseClient
     .from('profiles')
     .select('subscription_tier, quota_override_vitrine')
     .eq('id', userId)
     .single();
 
-  const isPaid = (profile as any)?.subscription_tier === 'paid';
-  if (!isPaid) {
-    const { data: config } = await supabaseClient
-      .from('platform_config')
-      .select('max_vitrine')
-      .single();
+  const profile = rawProfile as unknown as {
+    subscription_tier: string | null;
+    quota_override_vitrine: number | null;
+  } | null;
 
-    const limit = (profile as any)?.quota_override_vitrine ?? (config as any)?.max_vitrine ?? 5;
+  const isPaid = profile?.subscription_tier === 'paid';
+  if (!isPaid) {
+    const limit = profile?.quota_override_vitrine ?? await getPlatformConfigValue('max_vitrine_offers_free_trial', 2);
     if (totalSent !== null && totalSent >= limit) {
       return { error: 'vitrine_quota_exceeded' };
     }

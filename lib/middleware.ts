@@ -14,7 +14,6 @@ interface UserProfile {
   account_status: string | null;
   is_active: boolean | null;
   subscription_tier: string | null;
-  subscription_status: string | null;
   trial_ends_at: string | null;
   subscription_ends_at: string | null;
 }
@@ -25,7 +24,7 @@ async function getUserProfile(
 ): Promise<UserProfile | null> {
   const { data, error } = await (supabase
     .from('profiles')
-    .select('role, account_status, is_active, subscription_tier, trial_ends_at, subscription_ends_at, subscription_status')
+    .select('role, account_status, is_active, subscription_tier, trial_ends_at, subscription_ends_at')
     .eq('id', userId)
     .single() as never) as { data: UserProfile | null, error: any };
 
@@ -51,12 +50,6 @@ function hasExpiredAccess(profile: UserProfile): boolean {
   // Pour les abonnés PAID — vérifier subscription_ends_at
   if (profile.subscription_tier === 'paid' && profile.subscription_ends_at) {
     return new Date(profile.subscription_ends_at) < new Date();
-  }
-  // Vérifier subscription_status legacy (Stripe)
-  if (profile.subscription_status === 'expired' ||
-    profile.subscription_status === 'past_due' ||
-    profile.subscription_status === 'canceled') {
-    return true;
   }
   return false;
 }

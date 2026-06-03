@@ -23,7 +23,7 @@ export async function GET(request: Request) {
   const supabase = createAdminClient();
   const { data: users, error } = await supabase
     .from('profiles')
-    .select('id, full_name, company, role, sector, country, pavillon, is_active, created_at, access_level, subscription_ends_at, subscription_tier')
+    .select('id, full_name, company, role, sector, country, pavillon, is_active, created_at, subscription_ends_at, subscription_tier')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -90,8 +90,6 @@ export async function POST(request: Request) {
   const nombre_employes = body.nombre_employes as string | undefined;
   const generate_exposant = body.generate_exposant as boolean | undefined;
   const exposant_id = body.exposant_id as string | undefined;
-  const access_level = body.access_level as string | undefined;
-
   if (!full_name || !email || !role) {
     return NextResponse.json(
       { error: 'full_name, email et role sont requis' },
@@ -122,7 +120,6 @@ export async function POST(request: Request) {
       sector: sector || null,
       country: country || null,
       pavillon: pavillon || null,
-      access_level: access_level || 'classic',
       invited_by_admin: true,
       temporary_password: true,
     },
@@ -157,7 +154,6 @@ export async function POST(request: Request) {
       sector: sector || null,
       country: country || null,
       pavillon: pavillon || null,
-      access_level: access_level || 'classic',
     });
 
   if (profileError) {
@@ -289,7 +285,7 @@ export async function PATCH(request: Request) {
   const country = body.country as string | undefined;
   const pavillon = body.pavillon as string | undefined;
   const is_active = body.is_active as boolean | undefined;
-  const access_level = body.access_level as string | undefined;
+  const subscription_tier = body.subscription_tier as string | undefined;
   const suspension_reason = body.suspension_reason as string | undefined;
   const subscription_ends_at = body.subscription_ends_at as string | undefined;
 
@@ -308,14 +304,11 @@ export async function PATCH(request: Request) {
     updateData.role = role;
   }
 
-  if (access_level !== undefined) {
-    if (!['classic', 'premium'].includes(access_level)) {
-      return NextResponse.json({ error: "Niveau d'acces invalide" }, { status: 400 });
+  if (subscription_tier !== undefined) {
+    if (!['free_trial', 'paid'].includes(subscription_tier)) {
+      return NextResponse.json({ error: "Tier d'abonnement invalide" }, { status: 400 });
     }
-    updateData.access_level = access_level;
-    // Map access_level to subscription_tier for the middleware to correctly apply/remove restrictions
-    // @ts-ignore - ensuring it's available even if types are outdated
-    updateData.subscription_tier = access_level === 'premium' ? 'paid' : 'free_trial';
+    updateData.subscription_tier = subscription_tier;
   }
 
   if (full_name !== undefined) updateData.full_name = full_name;
@@ -325,13 +318,12 @@ export async function PATCH(request: Request) {
   if (pavillon !== undefined) updateData.pavillon = pavillon;
 
   if (subscription_ends_at !== undefined) {
-    updateData.subscription_ends_at = subscription_ends_at as any;
+    updateData.subscription_ends_at = subscription_ends_at;
   }
 
   if (is_active !== undefined) {
     updateData.is_active = is_active;
     // Set account_status so the middleware's isAccountBlocked works properly
-    // @ts-ignore
     updateData.account_status = is_active ? 'active' : 'suspended';
     
     if (!is_active) {
@@ -358,13 +350,12 @@ export async function PATCH(request: Request) {
     const newMetaData = {
       ...userData.user.user_metadata,
       ...(role !== undefined && { role }),
-      ...(access_level !== undefined && { access_level }),
+      ...(subscription_tier !== undefined && { subscription_tier }),
       ...(full_name !== undefined && { full_name }),
       ...(company !== undefined && { company }),
       ...(sector !== undefined && { sector }),
       ...(country !== undefined && { country }),
       ...(pavillon !== undefined && { pavillon }),
-      ...(access_level !== undefined && { subscription_tier: access_level === 'premium' ? 'paid' : 'free_trial' }),
       ...(is_active !== undefined && { account_status: is_active ? 'active' : 'suspended' }),
     };
 

@@ -49,7 +49,7 @@ export async function createAccountForExposant(
     full_name: fullName,
     role: 'exposant',
     subscription_tier: 'free_trial',
-    subscription_status: 'active',
+    account_status: 'active',
     is_active: true,
   } as any);
 
