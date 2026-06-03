@@ -306,6 +306,38 @@ export const PostCard = memo(function PostCard({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!showComments) return;
+
+    const channel = supabaseClient
+      .channel(`post-comments-${post.id}`)
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'post_comments', filter: `post_id=eq.${post.id}` },
+        async (payload: unknown) => {
+          const newComment = (payload as { new: { id: string; author_id: string } }).new;
+          const { data } = await supabaseClient
+            .from('post_comments')
+            .select(`
+              *,
+              author:profiles!post_comments_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url))
+            `)
+            .eq('id', newComment.id)
+            .single();
+
+          if (data) {
+            const comment = { ...(data as unknown as Comment), replies: [] };
+            setComments((prev) => {
+              if (prev.some((c) => c.id === comment.id)) return prev;
+              return [...prev, comment];
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabaseClient.removeChannel(channel); };
+  }, [showComments, post.id]);
+
   const handleLike = useCallback(() => {
     setLikeAnim(true);
     onLike();

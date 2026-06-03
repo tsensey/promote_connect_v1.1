@@ -79,8 +79,13 @@ export async function POST(request: NextRequest) {
     .select()
     .single();
 
-  if (insertError || !message) {
-    return NextResponse.json({ error: 'insert_failed' }, { status: 500 });
+  if (insertError) {
+    console.error('Message insert error:', insertError);
+    return NextResponse.json({ error: 'insert_failed', details: insertError.message }, { status: 500 });
+  }
+
+  if (!message) {
+    return NextResponse.json({ error: 'insert_failed', details: 'No message returned' }, { status: 500 });
   }
 
   await supabase

@@ -40,26 +40,40 @@ export function useExposants(options: UseExposantsOptions = {}) {
 
     const fetchExposants = async () => {
       try {
-        let query = supabaseClient.from('exposants').select('*, profiles!exposants_profile_id_fkey(subscription_tier)', { count: 'exact' });
+        let query = supabaseClient.from('exposants').select('*, profiles!exposants_profile_id_fkey(subscription_tier, account_status)', { count: 'exact' });
 
         const { data: sessionData } = await supabaseClient.auth.getSession();
         const myId = sessionData?.session?.user?.id;
 
+        // IDs à exclure : bloqués + suspendus/bloqués
+        const excludeIds = new Set<string>();
+
         if (myId) {
-          // Filtrer les blocages complets (moi bloquant ou moi bloqué)
           const { data: blocks } = await supabaseClient
             .from('blocked_users')
             .select('blocker_id, blocked_id')
             .or(`blocker_id.eq.${myId},blocked_id.eq.${myId}`);
 
           if (blocks && blocks.length > 0) {
-            const blockedIds = blocks.map(b => b.blocker_id === myId ? b.blocked_id : b.blocker_id);
-            // Supprimer les nulls et dupliqués potentiels
-            const validIds = Array.from(new Set(blockedIds.filter(Boolean)));
-            if (validIds.length > 0) {
-              query = query.not('profile_id', 'in', `(${validIds.join(',')})`);
-            }
+            blocks.forEach(b => {
+              const id = b.blocker_id === myId ? b.blocked_id : b.blocker_id;
+              if (id) excludeIds.add(id);
+            });
           }
+        }
+
+        // Exclure les comptes suspendus ou bloqués
+        const { data: inactiveProfiles } = await supabaseClient
+          .from('profiles')
+          .select('id')
+          .in('account_status', ['suspended', 'blocked']);
+
+        if (inactiveProfiles) {
+          inactiveProfiles.forEach(p => excludeIds.add(p.id));
+        }
+
+        if (excludeIds.size > 0) {
+          query = query.not('profile_id', 'in', `(${Array.from(excludeIds).join(',')})`);
         }
 
         if (search.trim()) {

@@ -139,16 +139,26 @@ export default function SignalementsPage() {
   const totalPages = Math.ceil(reports.length / ITEMS_PER_PAGE);
   const paginatedReports = reports.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  const updateReportStatus = async (reportId: string, newStatus: 'reviewed' | 'dismissed' | 'actioned') => {
+  const updateReportStatus = async (reportId: string, newStatus: 'pending' | 'reviewed' | 'dismissed' | 'actioned') => {
     try {
+      const updateData: Record<string, unknown> = { status: newStatus };
+      if (newStatus === 'pending') {
+        updateData.reviewed_by = null;
+        updateData.reviewed_at = null;
+        updateData.review_notes = null;
+      } else {
+        updateData.reviewed_by = user?.id;
+        updateData.reviewed_at = new Date().toISOString();
+      }
+
       const { error } = await supabaseClient
         .from('reports')
-        .update({ status: newStatus, reviewed_by: user?.id, reviewed_at: new Date().toISOString() })
+        .update(updateData)
         .eq('id', reportId);
 
       if (error) throw error;
       
-      toast.success('Statut mis à jour', { description: `Signalement marqué comme ${newStatus}` });
+      toast.success('Statut mis à jour', { description: `Signalement marqué comme ${newStatus === 'pending' ? 'en attente' : newStatus}` });
       loadReports();
     } catch (err: any) {
       console.error('Update error:', err);
@@ -160,16 +170,44 @@ export default function SignalementsPage() {
     try {
       const { error } = await supabaseClient
         .from('profiles')
-        .update({ account_status: 'suspended', suspended_at: new Date().toISOString() })
+        .update({
+          account_status: 'suspended',
+          is_active: false,
+          suspended_at: new Date().toISOString(),
+        })
         .eq('id', profileId);
         
       if (error) throw error;
 
       toast.success('Compte suspendu', { description: `Le compte ${email} a été suspendu.` });
       loadReports();
+      return true;
     } catch (err: any) {
       console.error('Suspension error:', err);
       toast.error('Erreur', { description: "Impossible de suspendre le compte." });
+      return false;
+    }
+  };
+
+  const reactivateAccount = async (profileId: string, email: string) => {
+    try {
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({
+          account_status: 'active',
+          is_active: true,
+          suspended_at: null,
+          suspended_reason: null,
+        })
+        .eq('id', profileId);
+        
+      if (error) throw error;
+
+      toast.success('Compte réactivé', { description: `Le compte ${email} a été réactivé.` });
+      loadReports();
+    } catch (err: any) {
+      console.error('Reactivation error:', err);
+      toast.error('Erreur', { description: "Impossible de réactiver le compte." });
     }
   };
 
@@ -295,7 +333,7 @@ export default function SignalementsPage() {
                               <MoreVertical className="h-4 w-4" />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="rounded-xl w-full" >
-                            {report.status === 'pending' && (
+                            {report.status === 'pending' ? (
                               <>
                                 <DropdownMenuItem onClick={() => updateReportStatus(report.id, 'reviewed')}>
                                   <CheckCircle2 className="mr-2 h-4 w-4" />
@@ -306,19 +344,35 @@ export default function SignalementsPage() {
                                   Classer sans suite
                                 </DropdownMenuItem>
                               </>
+                            ) : (
+                              <DropdownMenuItem onClick={() => updateReportStatus(report.id, 'pending')}>
+                                <AlertTriangle className="mr-2 h-4 w-4" />
+                                Remettre en attente
+                              </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => {
-                                suspendAccount(report.reported.id, report.reported.email);
-                                updateReportStatus(report.id, 'actioned');
-                              }}
-                              disabled={report.reported?.account_status === 'suspended'}
-                            >
-                              <Ban className="mr-2 h-4 w-4" />
-                              Suspendre ce compte
-                            </DropdownMenuItem>
+                            {report.reported?.account_status === 'suspended' ? (
+                              <DropdownMenuItem
+                                className="text-emerald-600 focus:text-emerald-600"
+                                onClick={() => reactivateAccount(report.reported.id, report.reported.email)}
+                              >
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                Réactiver ce compte
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem 
+                                className="text-destructive focus:text-destructive"
+                                onClick={async () => {
+                                  const ok = await suspendAccount(report.reported.id, report.reported.email);
+                                  if (ok) {
+                                    updateReportStatus(report.id, 'actioned');
+                                  }
+                                }}
+                              >
+                                <Ban className="mr-2 h-4 w-4" />
+                                Suspendre ce compte
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

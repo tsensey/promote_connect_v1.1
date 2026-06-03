@@ -239,6 +239,32 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
           } catch { /* ignore */ }
         }
       )
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'posts' },
+        (payload: unknown) => {
+          const { new: newRec, old: oldRec } = payload as {
+            new: { id: string; likes_count?: number; comments_count?: number; shares_count?: number; reposts_count?: number };
+            old: { likes_count?: number; comments_count?: number; shares_count?: number; reposts_count?: number };
+          };
+          const countersChanged =
+            newRec.likes_count !== oldRec.likes_count ||
+            newRec.comments_count !== oldRec.comments_count ||
+            newRec.shares_count !== oldRec.shares_count ||
+            newRec.reposts_count !== oldRec.reposts_count;
+          if (!countersChanged) return;
+          setPosts((prev) =>
+            prev.map((p) =>
+              p.id === newRec.id ? {
+                ...p,
+                likes_count: newRec.likes_count ?? p.likes_count,
+                comments_count: newRec.comments_count ?? p.comments_count,
+                shares_count: newRec.shares_count ?? p.shares_count,
+                reposts_count: newRec.reposts_count ?? p.reposts_count,
+              } : p
+            )
+          );
+        }
+      )
       .subscribe();
 
     return () => { supabaseClient.removeChannel(channel); };
@@ -457,12 +483,10 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
         setPosts((prev) => [enriched, ...prev]);
 
         await supabaseClient.from('post_shares').insert({ post_id: originalPostId, user_id: myId, type: 'repost' });
-        const originalPost = posts.find((p) => p.id === originalPostId);
-        const newCount = (originalPost?.reposts_count || 0) + 1;
-        await supabaseClient.from('posts').update({ reposts_count: newCount }).eq('id', originalPostId);
+        await (supabaseClient as any).rpc('increment_post_counter', { p_post_id: originalPostId, p_column: 'reposts_count', p_amount: 1 });
         setPosts((prev) =>
           prev.map((p) =>
-            p.id === originalPostId ? { ...p, is_reposted: true, reposts_count: newCount } : p
+            p.id === originalPostId ? { ...p, is_reposted: true } : p
           )
         );
       }
@@ -524,7 +548,7 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
         await Promise.all([
           supabaseClient.from('post_likes').delete().eq('post_id', postId).eq('user_id', myId),
           (supabaseClient as any).from('post_reactions').delete().eq('post_id', postId).eq('user_id', myId),
-          supabaseClient.from('posts').update({ likes_count: Math.max(0, (post.likes_count || 0) - 1) }).eq('id', postId),
+          (supabaseClient as any).rpc('increment_post_counter', { p_post_id: postId, p_column: 'likes_count', p_amount: -1 }),
         ]);
       } else {
         await Promise.all([
@@ -536,7 +560,7 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
             { post_id: postId, user_id: myId },
             { onConflict: 'post_id,user_id' }
           ),
-          supabaseClient.from('posts').update({ likes_count: (post.likes_count || 0) + 1 }).eq('id', postId),
+          (supabaseClient as any).rpc('increment_post_counter', { p_post_id: postId, p_column: 'likes_count', p_amount: 1 }),
         ]);
       }
     } catch {
@@ -566,7 +590,7 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
     const shareData: PostShareInsert = { post_id: postId, user_id: myId, type: 'share' };
     const { error } = await supabaseClient.from('post_shares').insert(shareData);
     if (!error) {
-      await supabaseClient.from('posts').update({ shares_count: (post.shares_count ?? 0) + 1 }).eq('id', postId);
+      await (supabaseClient as any).rpc('increment_post_counter', { p_post_id: postId, p_column: 'shares_count', p_amount: 1 });
     } else {
       if (error.code === '23505') {
         setPosts((prev) =>
@@ -626,7 +650,7 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
       try {
         await Promise.all([
           (supabaseClient as any).from('post_reactions').delete().eq('post_id', postId).eq('user_id', myId),
-          supabaseClient.from('posts').update({ likes_count: Math.max(0, (post.likes_count || 0) - 1) }).eq('id', postId),
+          (supabaseClient as any).rpc('increment_post_counter', { p_post_id: postId, p_column: 'likes_count', p_amount: -1 }),
         ]);
       } catch {
         setPosts((prev) =>
@@ -647,7 +671,7 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
           { onConflict: 'post_id,user_id' }
         );
         if (!wasLiked) {
-          await supabaseClient.from('posts').update({ likes_count: (post.likes_count || 0) + 1 }).eq('id', postId);
+          await (supabaseClient as any).rpc('increment_post_counter', { p_post_id: postId, p_column: 'likes_count', p_amount: 1 });
         }
       } catch {
         setPosts((prev) =>
@@ -735,16 +759,13 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
 
       if (!error && data) {
         if (!parentCommentId) {
-          const currentPost = posts.find((p) => p.id === postId);
-          const newCount = (currentPost?.comments_count || 0) + 1;
-          await supabaseClient.from('posts').update({ comments_count: newCount }).eq('id', postId);
-          setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, comments_count: newCount } : p)));
+          await (supabaseClient as any).rpc('increment_post_counter', { p_post_id: postId, p_column: 'comments_count', p_amount: 1 });
         }
       }
 
       return { data: data as Comment | null, error };
     },
-    [posts]
+    []
   );
 
   return {

@@ -480,6 +480,13 @@ export function useMessages(conversationId: string) {
           toast.error('Quota journalier de messages atteint. Passez à PAID pour continuer.');
         } else if (result.error === 'total_quota_exceeded') {
           toast.error('Vous avez atteint votre quota total de messages. Passez à PAID pour continuer.');
+        } else if (result.error === 'account_inactive') {
+          toast.error('Votre compte est suspendu. Vous ne pouvez pas envoyer de messages.');
+        } else if (result.error === 'profile_not_found') {
+          toast.error('Profil introuvable. Veuillez vous reconnecter.');
+        } else if (result.error) {
+          console.error('Mobile send error:', result.error);
+          toast.error('Erreur lors de l\'envoi du message. Veuillez réessayer.');
         }
         return;
       }
@@ -501,10 +508,19 @@ export function useMessages(conversationId: string) {
         const errData = await res.json().catch(() => ({}));
         if (errData.showConversionModal) {
           window.dispatchEvent(new CustomEvent('show-conversion-modal'));
-        } else {
+        } else if (errData.error === 'quota_exceeded') {
           toast.error(errData.reason === 'total_quota_exceeded'
             ? 'Vous avez atteint votre quota total de messages. Passez à PAID pour continuer.'
             : 'Quota de messagerie atteint ou accès refusé.');
+        } else if (res.status === 401) {
+          toast.error('Session expirée. Veuillez vous reconnecter.');
+        } else if (res.status === 403) {
+          toast.error('Accès refusé. Vérifiez votre abonnement.');
+        } else if (res.status === 404) {
+          toast.error('Conversation introuvable.');
+        } else {
+          console.error('Send message error:', errData);
+          toast.error('Erreur lors de l\'envoi du message. Veuillez réessayer.');
         }
         return;
       }

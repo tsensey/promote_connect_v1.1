@@ -25,6 +25,7 @@ import {
   Star,
   FileText,
   Play,
+  Ban,
 } from 'lucide-react';
 
 // ── Icônes de marque SVG inline ──
@@ -80,6 +81,7 @@ export default function VitrineExposantPage() {
   const [exposant, setExposant] = useState<Exposant | null>(null);
   const [produits, setProduits] = useState<Produit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [suspended, setSuspended] = useState(false);
   const { t } = useTranslation();
   const perms = usePermissions();
   const [contacting, setContacting] = useState(false);
@@ -91,11 +93,18 @@ export default function VitrineExposantPage() {
       try {
         const { data: exp } = await supabaseClient
           .from('exposants')
-          .select('*')
+          .select('*, profile:profiles!exposants_profile_id_fkey(account_status)')
           .eq('id', exposantId)
           .single();
 
         if (exp) {
+          const profileStatus = (exp as any).profile?.account_status;
+          if (profileStatus === 'suspended' || profileStatus === 'blocked') {
+            if (!cancelled) setSuspended(true);
+            if (!cancelled) setLoading(false);
+            return;
+          }
+
           if (!cancelled) setExposant(exp);
           const { data: session } = await supabaseClient.auth.getSession();
           const viewerId = session?.session?.user?.id;
@@ -183,6 +192,22 @@ export default function VitrineExposantPage() {
         </div>
         <div className="surface-panel h-64 animate-pulse border-0" />
       </div>
+    );
+  }
+
+  if (suspended) {
+    return (
+      <Card className="surface-panel border-0 py-0">
+        <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
+          <Ban className="size-16 text-destructive/50" />
+          <div>
+            <h1 className="text-2xl font-heading text-foreground">Compte suspendu</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Ce compte a été suspendu et n&apos;est plus accessible.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
