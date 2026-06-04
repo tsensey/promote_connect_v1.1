@@ -24,13 +24,14 @@ vi.mock('@react-email/components', () => ({
   Button: ({ children }: any) => children,
   Column: ({ children }: any) => children,
   Row: ({ children }: any) => children,
+  Tailwind: ({ children }: any) => children,
 }));
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({
     auth: {
       getUser: vi.fn().mockResolvedValue({
-        data: { user: { id: 'profile-id-123' } },
+        data: { user: { id: 'profile-id-123', email: 'test@example.com' } },
         error: null,
       }),
     },
@@ -270,7 +271,7 @@ describe('DELETE /api/newsletter/subscribe (unsubscribe by email)', () => {
 
     const req = new Request('http://localhost:3000/api/newsletter/subscribe', {
       method: 'DELETE',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: 'Bearer test-token' },
       body: JSON.stringify({ email: 'test@example.com' }),
     });
 

@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowLeft,
@@ -26,32 +25,20 @@ import {
   Users,
 } from "lucide-react";
 
-import { createClient } from "@/lib/server";
-
 export const metadata: Metadata = {
   title: "Guide d'utilisation | PROMOTE-CONNECT",
   description:
     "Guide utilisateur complet, intuitif et professionnel pour maîtriser PROMOTE-CONNECT.",
 };
 
-export default async function GuidePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login?redirect=/guide");
-  }
-
-  const homeHref = user.user_metadata?.role === "admin" ? "/admin" : "/feed";
+export default function GuidePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border/70 bg-background/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-3 py-3 sm:px-6 lg:px-8">
           <Link
-            href={homeHref}
+            href="/feed"
             aria-label="Retour au tableau de bord"
             className="inline-flex size-10 shrink-0 items-center justify-center rounded-md border border-border bg-card text-foreground transition-colors hover:bg-muted"
           >

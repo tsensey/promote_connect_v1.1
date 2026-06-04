@@ -4,13 +4,47 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 
-const processedEvents = new Set<string>();
-const IDEMPOTENCY_TTL = 300_000;
-
-setInterval(() => processedEvents.clear(), IDEMPOTENCY_TTL);
+// Nettoyage des vieux événements au démarrage (non-bloquant)
+if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  (createAdminClient().rpc as any)('cleanup_old_webhook_events')
+    .catch(() => {});
+}
 
 function shouldDowngrade(status: string): boolean {
   return ['past_due', 'canceled', 'incomplete_expired', 'unpaid'].includes(status);
+}
+
+async function isEventProcessed(sb: ReturnType<typeof createAdminClient>, eventId: string): Promise<boolean> {
+  const { data } = await (sb.from('webhook_events' as never) as any)
+    .select('status')
+    .eq('event_id', eventId)
+    .maybeSingle();
+
+  if (!data) return false;
+  return data.status === 'completed';
+}
+
+async function markEventProcessing(sb: ReturnType<typeof createAdminClient>, eventId: string): Promise<boolean> {
+  const { error } = await (sb.from('webhook_events' as never) as any)
+    .insert({ event_id: eventId, source: 'stripe', status: 'processing' });
+
+  if (error) {
+    if (error.code === '23505') return false;
+    return false;
+  }
+  return true;
+}
+
+async function markEventCompleted(sb: ReturnType<typeof createAdminClient>, eventId: string): Promise<void> {
+  await (sb.from('webhook_events' as never) as any)
+    .update({ status: 'completed' })
+    .eq('event_id', eventId);
+}
+
+async function markEventFailed(sb: ReturnType<typeof createAdminClient>, eventId: string): Promise<void> {
+  await (sb.from('webhook_events' as never) as any)
+    .update({ status: 'failed' })
+    .eq('event_id', eventId);
 }
 
 export async function POST(request: Request) {
@@ -31,13 +65,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
-  if (processedEvents.has(event.id)) {
+  const sb = createAdminClient();
+
+  if (await isEventProcessed(sb, event.id)) {
     return NextResponse.json({ received: true, deduplicated: true });
   }
-  processedEvents.add(event.id);
+
+  if (!(await markEventProcessing(sb, event.id))) {
+    return NextResponse.json({ received: true, deduplicated: true });
+  }
 
   try {
-    const sb = createAdminClient();
 
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -171,9 +209,11 @@ export async function POST(request: Request) {
       }
     }
 
+    await markEventCompleted(sb, event.id);
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error('Stripe webhook error:', error);
+    await markEventFailed(sb, event.id).catch(() => {});
     return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 });
   }
 }

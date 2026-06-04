@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
 
   if (insertError) {
     console.error('Message insert error:', insertError);
-    return NextResponse.json({ error: 'insert_failed', details: insertError.message }, { status: 500 });
+    return NextResponse.json({ error: 'insert_failed', details: 'Failed to save message' }, { status: 500 });
   }
 
   if (!message) {
