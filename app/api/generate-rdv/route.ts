@@ -1,27 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { resend } from '@/lib/resend/client';
 import { buildRdvEmailHtml } from '@/lib/email-rdv';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database.types';
 
-type AdminClient = SupabaseClient<Database>;
-
-async function insertNotification(
-  supabase: AdminClient,
-  profileId: string,
-  senderId: string,
-  type: string,
-  data: Record<string, unknown>,
-) {
-  const { error } = await supabase.from('notifications').insert({
-    profile_id: profileId,
-    sender_id: senderId,
-    type,
-    data: data as any,
-  });
-  if (error) console.error('Erreur insertion notification:', error);
+async function getUserEmail(adminSupabase: ReturnType<typeof createAdminClient>, userId: string): Promise<string | null> {
+  try {
+    const { data: { user } } = await adminSupabase.auth.admin.getUserById(userId);
+    return user?.email ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -80,12 +68,6 @@ export async function POST(req: NextRequest) {
     const demandeurName = demandeurProfile.full_name ?? 'Un exposant';
     const destinataireName = destinataireProfile?.full_name ?? 'Contact';
 
-    // === Notification in-app au destinataire ===
-    await insertNotification(adminSupabase, destinataire_id, demandeur_id, 'rdv_request', {
-      rdv_id: rdvId, starts_at, ends_at, notes: notes || null, status: 'pending',
-    });
-
-    // === Emails ===
     const emailHtml = buildRdvEmailHtml({
       demandeurName,
       destinataireName,
@@ -95,41 +77,53 @@ export async function POST(req: NextRequest) {
       status: 'pending',
     });
 
-    try {
-      const r = await adminSupabase.auth.admin.getUserById(destinataire_id);
-      const email = r.data?.user?.email;
-      if (email) {
-        await resend.emails.send({
-          from: 'PROMOTE-CONNECT <rdv@promote-connect.com>',
-          to: [email],
-          subject: `Nouvelle demande de rendez-vous de ${demandeurName}`,
-          html: emailHtml,
-        });
-        console.log(`Email demande envoyé à ${email}`);
-      } else {
-        console.warn(`Aucun email pour destinataire ${destinataire_id}`);
+    const resendApiKey = process.env.RESEND_API_KEY || '';
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    const sent = { destinataire: false, demandeur: false };
+
+    if (resendApiKey) {
+      const destinataireEmail = await getUserEmail(adminSupabase, destinataire_id);
+      if (destinataireEmail) {
+        try {
+          const res = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${resendApiKey}` },
+            body: JSON.stringify({
+              from: fromEmail,
+              to: [destinataireEmail],
+              subject: `Nouvelle demande de rendez-vous de ${demandeurName}`,
+              html: emailHtml,
+            }),
+          });
+          sent.destinataire = res.ok;
+          if (!res.ok) console.error(`Resend error (demande): ${res.status} ${await res.text()}`);
+        } catch (err) {
+          console.error('Erreur email destinataire:', err);
+        }
       }
-    } catch (err) {
-      console.error('Erreur email destinaire:', err);
+
+      const demandeurEmail = await getUserEmail(adminSupabase, demandeur_id);
+      if (demandeurEmail) {
+        try {
+          const res = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${resendApiKey}` },
+            body: JSON.stringify({
+              from: fromEmail,
+              to: [demandeurEmail],
+              subject: `Votre demande de rendez-vous avec ${destinataireName}`,
+              html: emailHtml,
+            }),
+          });
+          sent.demandeur = res.ok;
+          if (!res.ok) console.error(`Resend error (confirmation): ${res.status} ${await res.text()}`);
+        } catch (err) {
+          console.error('Erreur email demandeur:', err);
+        }
+      }
     }
 
-    try {
-      const r = await adminSupabase.auth.admin.getUserById(demandeur_id);
-      const email = r.data?.user?.email;
-      if (email) {
-        await resend.emails.send({
-          from: 'PROMOTE-CONNECT <rdv@promote-connect.com>',
-          to: [email],
-          subject: `Votre demande de rendez-vous avec ${destinataireName}`,
-          html: emailHtml,
-        });
-        console.log(`Email confirmation envoyé à ${email}`);
-      }
-    } catch (err) {
-      console.error('Erreur email demandeur:', err);
-    }
-
-    return NextResponse.json({ id: rdvId, status: 'created' }, { status: 201 });
+    return NextResponse.json({ id: rdvId, status: 'created', email_sent: sent }, { status: 201 });
   } catch (err) {
     console.error('Erreur generate-rdv:', err);
     return NextResponse.json({ error: String(err) }, { status: 500 });

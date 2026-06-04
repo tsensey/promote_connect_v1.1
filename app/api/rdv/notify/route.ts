@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { resend } from '@/lib/resend/client';
 import { buildRdvEmailHtml } from '@/lib/email-rdv';
+
+async function getUserEmail(adminSupabase: ReturnType<typeof createAdminClient>, userId: string): Promise<string | null> {
+  try {
+    const { data: { user } } = await adminSupabase.auth.admin.getUserById(userId);
+    return user?.email ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,9 +39,6 @@ export async function POST(req: NextRequest) {
     const isConfirmed = rdv.status === 'confirmed';
     const demandeurName = rdv.demandeur?.full_name ?? 'Un participant';
     const destinataireName = rdv.destinataire?.full_name ?? 'Un participant';
-    const actorName = actor_id === rdv.demandeur_id ? demandeurName : destinataireName;
-
-    const notificationType = isConfirmed ? 'rdv_confirmed' : 'rdv_cancelled';
     const actionLabel = isConfirmed ? 'a confirmé' : 'a annulé';
 
     const emailHtml = buildRdvEmailHtml({
@@ -45,49 +50,45 @@ export async function POST(req: NextRequest) {
       status: rdv.status,
     });
 
-    // Envoyer notification + email aux DEUX participants
+    const resendApiKey = process.env.RESEND_API_KEY || '';
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+
     const participantIds = [rdv.demandeur_id, rdv.destinataire_id].filter(Boolean) as string[];
-    const participants = participantIds.map(id => ({
-      id,
-      name: id === rdv.demandeur_id ? demandeurName : destinataireName,
-    }));
+    const sent: Record<string, boolean> = {};
 
-    for (const p of participants) {
-      // Notification in-app
-      const { error: notifErr } = await adminSupabase.from('notifications').insert({
-        profile_id: p.id,
-        sender_id: actor_id,
-        type: notificationType,
-        data: { rdv_id: rdv.id, status: rdv.status, starts_at: rdv.starts_at, ends_at: rdv.ends_at } as any,
-      });
-      if (notifErr) console.error('Erreur insertion notification:', notifErr);
-
-      // Email
-      try {
-        const { data: { user } } = await adminSupabase.auth.admin.getUserById(p.id);
-        const email = user?.email;
+    if (resendApiKey) {
+      for (const pid of participantIds) {
+        const email = await getUserEmail(adminSupabase, pid);
         if (!email) {
-          console.warn(`Aucun email pour userId ${p.id}`);
+          console.warn(`Aucun email pour ${pid}`);
           continue;
         }
 
-        const subject = p.id === actor_id
-          ? `Vous avez ${actionLabel} le rendez-vous avec ${actor_id === rdv.demandeur_id ? destinataireName : demandeurName}`
-          : `${actorName} ${actionLabel} le rendez-vous avec vous`;
+        const otherName = pid === rdv.demandeur_id ? destinataireName : demandeurName;
+        const subject = pid === actor_id
+          ? `Vous avez ${actionLabel} le rendez-vous avec ${otherName}`
+          : `${otherName} ${actionLabel} le rendez-vous avec vous`;
 
-        await resend.emails.send({
-          from: 'PROMOTE-CONNECT <rdv@promote-connect.com>',
-          to: [email],
-          subject,
-          html: emailHtml,
-        });
-        console.log(`Email ${rdv.status} envoyé à ${email}`);
-      } catch (err) {
-        console.error(`Erreur email pour ${p.id}:`, err);
+        try {
+          const res = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${resendApiKey}` },
+            body: JSON.stringify({
+              from: fromEmail,
+              to: [email],
+              subject,
+              html: emailHtml,
+            }),
+          });
+          sent[pid] = res.ok;
+          if (!res.ok) console.error(`Resend error (notify): ${res.status} ${await res.text()}`);
+        } catch (err) {
+          console.error(`Erreur email pour ${pid}:`, err);
+        }
       }
     }
 
-    return NextResponse.json({ sent: true });
+    return NextResponse.json({ sent });
   } catch (err) {
     console.error('Erreur rdv/notify:', err);
     return NextResponse.json({ error: String(err) }, { status: 500 });

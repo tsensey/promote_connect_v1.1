@@ -115,7 +115,7 @@ function buildRdvEmailHtml(demandeurName: string, destinataireName: string, star
 </html>`;
 }
 
-async function sendEmail(resendApiKey: string, fromEmail: string, to: string, subject: string, html: string) {
+async function sendEmail(resendApiKey: string, fromEmail: string, to: string, subject: string, html: string): Promise<boolean> {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -127,8 +127,10 @@ async function sendEmail(resendApiKey: string, fromEmail: string, to: string, su
   if (!res.ok) {
     const text = await res.text();
     console.error(`Resend API error (${res.status}): ${text}`);
+    return false;
   } else {
     console.log(`Email envoyé à ${to}: ${subject}`);
+    return true;
   }
 }
 
@@ -205,27 +207,13 @@ serve(async (req) => {
 
     const rdvId = data?.id;
 
-    // === Notification in-app immédiate ===
-    try {
-      await supabase.from("notifications").insert({
-        profile_id: destinataire_id,
-        sender_id: demandeur_id,
-        type: "rdv_request",
-        data: {
-          rdv_id: rdvId,
-          starts_at,
-          ends_at,
-          notes: notes || null,
-          status: "pending",
-        },
-      });
-    } catch (err) {
-      console.error("Erreur insertion notification:", err);
-    }
+    // Notification in-app gérée par le trigger DB (migration 072)
 
     // === Emails non bloquants ===
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "PROMOTE-CONNECT <rdv@promote-connect.com>";
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "newsletter@promote-connect.com";
+
+    const sent = { destinataire: false, demandeur: false };
 
     if (resendApiKey) {
       try {
@@ -237,7 +225,7 @@ serve(async (req) => {
         const emailHtml = buildRdvEmailHtml(demandeurName, destinataireName, starts_at, ends_at, notes);
 
         if (destinataireUser?.email) {
-          await sendEmail(
+          sent.destinataire = await sendEmail(
             resendApiKey, fromEmail,
             destinataireUser.email,
             `Nouvelle demande de rendez-vous de ${demandeurName}`,
@@ -246,7 +234,7 @@ serve(async (req) => {
         }
 
         if (demandeurUser?.email) {
-          await sendEmail(
+          sent.demandeur = await sendEmail(
             resendApiKey, fromEmail,
             demandeurUser.email,
             `Votre demande de rendez-vous avec ${destinataireName}`,
@@ -260,7 +248,7 @@ serve(async (req) => {
       console.warn("RESEND_API_KEY not configured, skipping emails");
     }
 
-    return new Response(JSON.stringify({ id: rdvId, status: "created" }), {
+    return new Response(JSON.stringify({ id: rdvId, status: "created", email_sent: sent }), {
       status: 201,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
