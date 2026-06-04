@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { resend } from '@/lib/resend/client';
 import { buildRdvEmailHtml } from '@/lib/email-rdv';
-
-const FROM_EMAIL = 'PROMOTE-CONNECT <rdv@promote-connect.com>';
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,27 +28,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Aucun changement de statut à notifier' }, { status: 400 });
     }
 
-    const isDemandeur = rdv.demandeur_id === actor_id;
-    const targetUserId = isDemandeur ? rdv.destinataire_id : rdv.demandeur_id;
-    if (!targetUserId) {
-      return NextResponse.json({ error: 'Utilisateur cible introuvable' }, { status: 404 });
-    }
-
     const isConfirmed = rdv.status === 'confirmed';
-    const notificationType = isConfirmed ? 'rdv_confirmed' : 'rdv_cancelled';
-
-    // === Notification in-app ===
-    const { error: notifErr } = await adminSupabase.from('notifications').insert({
-      profile_id: targetUserId,
-      sender_id: actor_id,
-      type: notificationType,
-      data: { rdv_id: rdv.id, status: rdv.status, starts_at: rdv.starts_at, ends_at: rdv.ends_at } as any,
-    });
-    if (notifErr) console.error('Erreur insertion notification rdv/notify:', notifErr);
-
-    // === Email ===
     const demandeurName = rdv.demandeur?.full_name ?? 'Un participant';
     const destinataireName = rdv.destinataire?.full_name ?? 'Un participant';
+    const actorName = actor_id === rdv.demandeur_id ? demandeurName : destinataireName;
+
+    const notificationType = isConfirmed ? 'rdv_confirmed' : 'rdv_cancelled';
+    const actionLabel = isConfirmed ? 'a confirmé' : 'a annulé';
 
     const emailHtml = buildRdvEmailHtml({
       demandeurName,
@@ -60,36 +45,46 @@ export async function POST(req: NextRequest) {
       status: rdv.status,
     });
 
-    const subject = isConfirmed
-      ? `${destinataireName} a confirmé votre rendez-vous`
-      : `${destinataireName} a annulé le rendez-vous`;
+    // Envoyer notification + email aux DEUX participants
+    const participantIds = [rdv.demandeur_id, rdv.destinataire_id].filter(Boolean) as string[];
+    const participants = participantIds.map(id => ({
+      id,
+      name: id === rdv.demandeur_id ? demandeurName : destinataireName,
+    }));
 
-    try {
-      const { data: { user: targetUser } } = await adminSupabase.auth.admin.getUserById(targetUserId);
-      const email = targetUser?.email;
+    for (const p of participants) {
+      // Notification in-app
+      const { error: notifErr } = await adminSupabase.from('notifications').insert({
+        profile_id: p.id,
+        sender_id: actor_id,
+        type: notificationType,
+        data: { rdv_id: rdv.id, status: rdv.status, starts_at: rdv.starts_at, ends_at: rdv.ends_at } as any,
+      });
+      if (notifErr) console.error('Erreur insertion notification:', notifErr);
 
-      if (email) {
-        const apiKey = process.env.RESEND_API_KEY;
-        if (!apiKey) {
-          console.warn('RESEND_API_KEY not set');
-          return NextResponse.json({ sent: true, warning: 'no resend key' });
+      // Email
+      try {
+        const { data: { user } } = await adminSupabase.auth.admin.getUserById(p.id);
+        const email = user?.email;
+        if (!email) {
+          console.warn(`Aucun email pour userId ${p.id}`);
+          continue;
         }
-        const res = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-          body: JSON.stringify({ from: FROM_EMAIL, to: [email], subject, html: emailHtml }),
+
+        const subject = p.id === actor_id
+          ? `Vous avez ${actionLabel} le rendez-vous avec ${actor_id === rdv.demandeur_id ? destinataireName : demandeurName}`
+          : `${actorName} ${actionLabel} le rendez-vous avec vous`;
+
+        await resend.emails.send({
+          from: 'PROMOTE-CONNECT <rdv@promote-connect.com>',
+          to: [email],
+          subject,
+          html: emailHtml,
         });
-        if (!res.ok) {
-          const text = await res.text();
-          console.error(`Resend error (${res.status}): ${text}`);
-        } else {
-          console.log(`Email notify envoyé à ${email} pour RDV ${rdv_id}`);
-        }
-      } else {
-        console.warn(`Aucun email pour userId ${targetUserId}`);
+        console.log(`Email ${rdv.status} envoyé à ${email}`);
+      } catch (err) {
+        console.error(`Erreur email pour ${p.id}:`, err);
       }
-    } catch (err) {
-      console.error('Erreur envoi email rdv/notify:', err);
     }
 
     return NextResponse.json({ sent: true });

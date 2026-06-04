@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { resend } from '@/lib/resend/client';
 import { buildRdvEmailHtml } from '@/lib/email-rdv';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 
 type AdminClient = SupabaseClient<Database>;
-
-const FROM_EMAIL = 'PROMOTE-CONNECT <rdv@promote-connect.com>';
 
 async function insertNotification(
   supabase: AdminClient,
@@ -22,31 +21,7 @@ async function insertNotification(
     type,
     data: data as any,
   });
-  if (error) {
-    console.error('Erreur insertion notification:', error);
-  }
-}
-
-async function sendResendEmail(to: string, subject: string, html: string) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.warn('RESEND_API_KEY not set');
-    return;
-  }
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({ from: FROM_EMAIL, to: [to], subject, html }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    console.error(`Resend error (${res.status}): ${text}`);
-  } else {
-    console.log(`Email envoyé à ${to}: ${subject}`);
-  }
+  if (error) console.error('Erreur insertion notification:', error);
 }
 
 export async function POST(req: NextRequest) {
@@ -105,7 +80,7 @@ export async function POST(req: NextRequest) {
     const demandeurName = demandeurProfile.full_name ?? 'Un exposant';
     const destinataireName = destinataireProfile?.full_name ?? 'Contact';
 
-    // === Notification in-app ===
+    // === Notification in-app au destinataire ===
     await insertNotification(adminSupabase, destinataire_id, demandeur_id, 'rdv_request', {
       rdv_id: rdvId, starts_at, ends_at, notes: notes || null, status: 'pending',
     });
@@ -120,27 +95,38 @@ export async function POST(req: NextRequest) {
       status: 'pending',
     });
 
-    let destinataireEmail: string | undefined;
-    let demandeurEmail: string | undefined;
-
     try {
       const r = await adminSupabase.auth.admin.getUserById(destinataire_id);
-      destinataireEmail = r.data?.user?.email ?? undefined;
-    } catch (err) { console.error('Erreur email destinataire:', err); }
+      const email = r.data?.user?.email;
+      if (email) {
+        await resend.emails.send({
+          from: 'PROMOTE-CONNECT <rdv@promote-connect.com>',
+          to: [email],
+          subject: `Nouvelle demande de rendez-vous de ${demandeurName}`,
+          html: emailHtml,
+        });
+        console.log(`Email demande envoyé à ${email}`);
+      } else {
+        console.warn(`Aucun email pour destinataire ${destinataire_id}`);
+      }
+    } catch (err) {
+      console.error('Erreur email destinaire:', err);
+    }
 
     try {
       const r = await adminSupabase.auth.admin.getUserById(demandeur_id);
-      demandeurEmail = r.data?.user?.email ?? undefined;
-    } catch (err) { console.error('Erreur email demandeur:', err); }
-
-    if (destinataireEmail) {
-      await sendResendEmail(destinataireEmail, `Nouvelle demande de rendez-vous de ${demandeurName}`, emailHtml);
-    } else {
-      console.warn(`Aucun email pour destinataire ${destinataire_id}`);
-    }
-
-    if (demandeurEmail) {
-      await sendResendEmail(demandeurEmail, `Votre demande de rendez-vous avec ${destinataireName}`, emailHtml);
+      const email = r.data?.user?.email;
+      if (email) {
+        await resend.emails.send({
+          from: 'PROMOTE-CONNECT <rdv@promote-connect.com>',
+          to: [email],
+          subject: `Votre demande de rendez-vous avec ${destinataireName}`,
+          html: emailHtml,
+        });
+        console.log(`Email confirmation envoyé à ${email}`);
+      }
+    } catch (err) {
+      console.error('Erreur email demandeur:', err);
     }
 
     return NextResponse.json({ id: rdvId, status: 'created' }, { status: 201 });

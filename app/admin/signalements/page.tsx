@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/context';
 import { supabaseClient } from '@/lib/supabase/client';
+import type { Database } from '@/types/database.types';
 import {
   Flag,
   Loader2,
@@ -141,7 +142,7 @@ export default function SignalementsPage() {
 
   const updateReportStatus = async (reportId: string, newStatus: 'pending' | 'reviewed' | 'dismissed' | 'actioned') => {
     try {
-      const updateData: Record<string, unknown> = { status: newStatus };
+      const updateData: Database['public']['Tables']['reports']['Update'] = { status: newStatus };
       if (newStatus === 'pending') {
         updateData.reviewed_by = null;
         updateData.reviewed_at = null;
