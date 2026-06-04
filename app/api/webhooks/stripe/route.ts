@@ -4,12 +4,6 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 
-// Nettoyage des vieux événements au démarrage (non-bloquant)
-if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  (createAdminClient().rpc as any)('cleanup_old_webhook_events')
-    .catch(() => {});
-}
-
 function shouldDowngrade(status: string): boolean {
   return ['past_due', 'canceled', 'incomplete_expired', 'unpaid'].includes(status);
 }
