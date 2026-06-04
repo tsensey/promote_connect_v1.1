@@ -3,8 +3,6 @@
 import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
-import { Popover, PopoverContent } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
 
@@ -40,15 +38,14 @@ export const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(({
   const [search, setSearch] = useState('');
   const [exhibitors, setExhibitors] = useState<Exhibitor[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const anchorRef = useRef<HTMLInputElement | null>(null);
   const { t } = useTranslation();
 
   useImperativeHandle(ref, () => inputRef.current!);
 
   const setInputRef = useCallback((el: HTMLInputElement | null) => {
     inputRef.current = el;
-    anchorRef.current = el;
   }, []);
 
   // Search exhibitors when search string changes
@@ -114,11 +111,34 @@ export const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(({
       if (atIndex === 0 || textBeforeCursor[atIndex - 1] === ' ') {
         setSearch(query);
         setOpen(true);
+        setSelectedIndex(0);
       } else {
         setOpen(false);
       }
     } else {
       setOpen(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!open || exhibitors.length === 0) {
+      onKeyDown?.(e);
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(i => Math.min(i + 1, exhibitors.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(i => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      if (selectedIndex >= 0 && selectedIndex < exhibitors.length) {
+        e.preventDefault();
+        insertMention(exhibitors[selectedIndex]);
+      }
+    } else {
+      onKeyDown?.(e);
     }
   };
 
@@ -154,7 +174,7 @@ export const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(({
         type="text"
         value={value}
         onChange={handleInputChange}
-        onKeyDown={onKeyDown}
+        onKeyDown={handleKeyDown}
         placeholder={placeholder}
         autoFocus={autoFocus}
         className={cn(
@@ -162,44 +182,49 @@ export const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(({
           className
         )}
       />
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverContent
-          className="p-0 w-[280px] border-border/40"
-          align="start"
-          side="top"
-          sideOffset={4}
-          anchor={anchorRef}
-        >
-          <Command className="rounded-xl overflow-hidden">
-            <CommandList>
-              {loading && <div className="p-2 text-center text-xs text-muted-foreground">{t('common.loading')}</div>}
-              {!loading && exhibitors.length === 0 && <CommandEmpty>{t('common.no_results')}</CommandEmpty>}
-              <CommandGroup heading={t('chat.exposants')}>
-                {exhibitors.map((exposant) => (
-                  <CommandItem
-                    key={exposant.id}
-                    onSelect={() => insertMention(exposant)}
-                    className="flex items-center gap-2 p-2 cursor-pointer"
-                  >
-                    <Avatar className="size-6">
-                      <AvatarImage src={exposant.logo_url || undefined} />
-                      <AvatarFallback className="text-[8px] bg-primary/10 text-primary font-bold">
-                        {exposant.nom.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-semibold">{exposant.nom}</span>
-                      {exposant.id === authorExposantId && (
-                        <span className="text-[9px] text-primary font-medium">{t('feed.post.author')}</span>
-                      )}
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+      {open && (
+        <div className="absolute bottom-full left-0 right-0 mb-1 z-50">
+          <div className="w-full max-h-[200px] overflow-y-auto rounded-xl border border-border/40 bg-popover shadow-md p-1 space-y-0.5">
+            {loading && <div className="p-2 text-center text-xs text-muted-foreground">{t('common.loading')}</div>}
+            {!loading && exhibitors.length === 0 && (
+              <div className="p-2 text-center text-xs text-muted-foreground">{t('common.no_results')}</div>
+            )}
+            {!loading && exhibitors.length > 0 && (
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 px-2 py-1">
+                {t('chat.exposants')}
+              </div>
+            )}
+            {exhibitors.map((exposant, index) => (
+              <button
+                key={exposant.id}
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  insertMention(exposant);
+                }}
+                onMouseEnter={() => setSelectedIndex(index)}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-lg p-2 text-left text-sm transition-colors",
+                  index === selectedIndex ? "bg-accent" : "hover:bg-accent"
+                )}
+              >
+                <Avatar className="size-6 shrink-0">
+                  <AvatarImage src={exposant.logo_url || undefined} />
+                  <AvatarFallback className="text-[8px] bg-primary/10 text-primary font-bold">
+                    {exposant.nom.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-semibold truncate">{exposant.nom}</span>
+                  {exposant.id === authorExposantId && (
+                    <span className="text-[9px] text-primary font-medium">{t('feed.post.author')}</span>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 });

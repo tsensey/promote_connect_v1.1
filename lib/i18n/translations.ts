@@ -1311,6 +1311,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     'notifications.new_message_from': '{name} vous a envoyé un message',
     'notifications.mentioned_post': '{name} vous a mentionné dans une publication',
     'notifications.mentioned_comment': '{name} vous a mentionné dans un commentaire',
+    'notifications.rdv_request': '{name} vous a envoyé une demande de rendez-vous',
+    'notifications.rdv_request_other': 'Vous avez envoyé une demande de rendez-vous à {name}',
+    'notifications.rdv_confirmed': '{name} a confirmé votre rendez-vous',
+    'notifications.rdv_cancelled': '{name} a annulé le rendez-vous',
+    'notifications.rdv_reminder': 'Rappel : rendez-vous avec {name} dans {hours}h',
     'notifications.new_activity': '{name} a interagi avec vous',
     'notifications.view': 'Voir',
 
@@ -2799,6 +2804,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     'notifications.new_message_from': '{name} sent you a message',
     'notifications.mentioned_post': '{name} mentioned you in a post',
     'notifications.mentioned_comment': '{name} mentioned you in a comment',
+    'notifications.rdv_request': '{name} sent you a meeting request',
+    'notifications.rdv_request_other': 'You sent a meeting request to {name}',
+    'notifications.rdv_confirmed': '{name} confirmed your meeting',
+    'notifications.rdv_cancelled': '{name} cancelled the meeting',
+    'notifications.rdv_reminder': 'Reminder: meeting with {name} in {hours}h',
     'notifications.new_activity': '{name} interacted with you',
     'notifications.view': 'View',
 

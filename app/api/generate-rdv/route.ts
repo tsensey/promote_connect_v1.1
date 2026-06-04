@@ -1,6 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { buildRdvEmailHtml } from '@/lib/email-rdv';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
+
+type AdminClient = SupabaseClient<Database>;
+
+const FROM_EMAIL = 'PROMOTE-CONNECT <rdv@promote-connect.com>';
+
+async function insertNotification(
+  supabase: AdminClient,
+  profileId: string,
+  senderId: string,
+  type: string,
+  data: Record<string, unknown>,
+) {
+  const { error } = await supabase.from('notifications').insert({
+    profile_id: profileId,
+    sender_id: senderId,
+    type,
+    data: data as any,
+  });
+  if (error) {
+    console.error('Erreur insertion notification:', error);
+  }
+}
+
+async function sendResendEmail(to: string, subject: string, html: string) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn('RESEND_API_KEY not set');
+    return;
+  }
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({ from: FROM_EMAIL, to: [to], subject, html }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    console.error(`Resend error (${res.status}): ${text}`);
+  } else {
+    console.log(`Email envoyé à ${to}: ${subject}`);
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,11 +72,8 @@ export async function POST(req: NextRequest) {
       .eq('id', demandeur_id)
       .single();
 
-    if (demandeurError) {
-      return NextResponse.json(
-        { error: `Erreur profil: ${demandeurError.message}` },
-        { status: 500 }
-      );
+    if (demandeurError || !demandeurProfile) {
+      return NextResponse.json({ error: 'Erreur profil demandeur' }, { status: 500 });
     }
 
     const isPaid =
@@ -38,10 +82,7 @@ export async function POST(req: NextRequest) {
         new Date(demandeurProfile.subscription_ends_at) > new Date());
 
     if (!isPaid) {
-      return NextResponse.json(
-        { error: "L'abonnement PAID est requis pour créer un rendez-vous" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "L'abonnement PAID est requis" }, { status: 403 });
     }
 
     const { data: destinataireProfile } = await adminSupabase
@@ -50,58 +91,61 @@ export async function POST(req: NextRequest) {
       .eq('id', destinataire_id)
       .single();
 
-    const { data, error } = await authSupabase
+    const { data: rdv, error: rdvError } = await authSupabase
       .from('rendez_vous')
-      .insert({
-        demandeur_id,
-        destinataire_id,
-        starts_at,
-        ends_at,
-        notes: notes || null,
-        status: 'pending',
-      })
+      .insert({ demandeur_id, destinataire_id, starts_at, ends_at, notes: notes || null, status: 'pending' })
       .select('id')
       .single();
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (rdvError) {
+      return NextResponse.json({ error: rdvError.message }, { status: 500 });
     }
 
-    const resendApiKey = process.env.RESEND_API_KEY;
-    if (resendApiKey && demandeurProfile) {
-      const { data: { user: destinataireUser } } = await adminSupabase.auth.admin.getUserById(destinataire_id);
-      const destinataireEmail = destinataireUser?.email;
+    const rdvId = rdv?.id;
+    const demandeurName = demandeurProfile.full_name ?? 'Un exposant';
+    const destinataireName = destinataireProfile?.full_name ?? 'Contact';
 
-      if (destinataireEmail) {
-        try {
-          await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${resendApiKey}`,
-            },
-            body: JSON.stringify({
-              from: 'PROMOTE-CONNECT <rdv@promote-connect.com>',
-              to: [destinataireEmail],
-              subject: `Nouvelle demande de rendez-vous de ${demandeurProfile.full_name}`,
-              html: `
-                <p>Bonjour ${destinataireProfile?.full_name},</p>
-                <p>${demandeurProfile.full_name} vous a envoyé une demande de rendez-vous sur PROMOTE-CONNECT.</p>
-                <p>Début : ${new Date(starts_at).toLocaleString('fr-FR')}</p>
-                <p>Fin : ${new Date(ends_at).toLocaleString('fr-FR')}</p>
-                ${notes ? `<p>Note : ${notes}</p>` : ''}
-                <p>Connectez-vous pour répondre.</p>
-              `,
-            }),
-          });
-        } catch {
-          // Échec d'envoi d'email non critique
-        }
-      }
+    // === Notification in-app ===
+    await insertNotification(adminSupabase, destinataire_id, demandeur_id, 'rdv_request', {
+      rdv_id: rdvId, starts_at, ends_at, notes: notes || null, status: 'pending',
+    });
+
+    // === Emails ===
+    const emailHtml = buildRdvEmailHtml({
+      demandeurName,
+      destinataireName,
+      startsAt: starts_at,
+      endsAt: ends_at,
+      notes: notes ?? undefined,
+      status: 'pending',
+    });
+
+    let destinataireEmail: string | undefined;
+    let demandeurEmail: string | undefined;
+
+    try {
+      const r = await adminSupabase.auth.admin.getUserById(destinataire_id);
+      destinataireEmail = r.data?.user?.email ?? undefined;
+    } catch (err) { console.error('Erreur email destinataire:', err); }
+
+    try {
+      const r = await adminSupabase.auth.admin.getUserById(demandeur_id);
+      demandeurEmail = r.data?.user?.email ?? undefined;
+    } catch (err) { console.error('Erreur email demandeur:', err); }
+
+    if (destinataireEmail) {
+      await sendResendEmail(destinataireEmail, `Nouvelle demande de rendez-vous de ${demandeurName}`, emailHtml);
+    } else {
+      console.warn(`Aucun email pour destinataire ${destinataire_id}`);
     }
 
-    return NextResponse.json({ id: data?.id, status: 'created' }, { status: 201 });
+    if (demandeurEmail) {
+      await sendResendEmail(demandeurEmail, `Votre demande de rendez-vous avec ${destinataireName}`, emailHtml);
+    }
+
+    return NextResponse.json({ id: rdvId, status: 'created' }, { status: 201 });
   } catch (err) {
+    console.error('Erreur generate-rdv:', err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }

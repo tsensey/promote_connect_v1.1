@@ -124,8 +124,48 @@ export function NotificationStateProvider({ children }: { children: React.ReactN
 
     safeFetch();
 
+    const channel = supabaseClient
+      .channel('notifications-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications' },
+        (payload) => {
+          if (!mounted) return;
+          const newNotif = payload.new as Notification;
+          supabaseClient.auth.getSession().then(({ data: session }) => {
+            const myId = session?.session?.user?.id;
+            if (!myId || newNotif.profile_id !== myId) return;
+
+            if (newNotif.sender_id) {
+              supabaseClient
+                .from('profiles')
+                .select('full_name, avatar_url, company')
+                .eq('id', newNotif.sender_id)
+                .single()
+                .then(({ data: sender }) => {
+                  if (!mounted) return;
+                  setNotifications(prev => [{
+                    ...newNotif,
+                    sender: sender ?? undefined,
+                  } as Notification, ...prev]);
+                  if (!newNotif.is_read) {
+                    setUnreadNotificationsCount(prev => prev + 1);
+                  }
+                });
+            } else {
+              setNotifications(prev => [newNotif as Notification, ...prev]);
+              if (!newNotif.is_read) {
+                setUnreadNotificationsCount(prev => prev + 1);
+              }
+            }
+          });
+        }
+      )
+      .subscribe();
+
     return () => {
       mounted = false;
+      supabaseClient.removeChannel(channel);
     };
   }, []);
 

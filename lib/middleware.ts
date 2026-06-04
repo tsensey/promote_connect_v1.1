@@ -18,6 +18,32 @@ interface UserProfile {
   subscription_ends_at: string | null;
 }
 
+const PROFILE_CACHE_COOKIE = 'pc';
+const PROFILE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCachedProfile(request: NextRequest): { profile: UserProfile | null; userId: string | null } {
+  const raw = request.cookies.get(PROFILE_CACHE_COOKIE)?.value;
+  if (!raw) return { profile: null, userId: null };
+  try {
+    const parsed = JSON.parse(atob(raw));
+    if (Date.now() - parsed.ts > PROFILE_CACHE_TTL) return { profile: null, userId: null };
+    return { profile: parsed.data as UserProfile, userId: parsed.uid };
+  } catch {
+    return { profile: null, userId: null };
+  }
+}
+
+function setCachedProfile(response: NextResponse, userId: string, profile: UserProfile) {
+  const value = btoa(JSON.stringify({ data: profile, uid: userId, ts: Date.now() }));
+  response.cookies.set(PROFILE_CACHE_COOKIE, value, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 300,
+  });
+}
+
 async function getUserProfile(
   supabase: ReturnType<typeof createServerClient<Database>>,
   userId: string
@@ -92,7 +118,16 @@ export async function updateSession(request: NextRequest) {
 
   let profile: UserProfile | null = null
   if (needsProfileCheck) {
-    profile = await getUserProfile(supabase, user.id)
+    // Try cache first
+    const cached = getCachedProfile(request);
+    if (cached.userId === user.id && cached.profile) {
+      profile = cached.profile;
+    } else {
+      profile = await getUserProfile(supabase, user.id);
+      if (profile) {
+        setCachedProfile(response, user.id, profile);
+      }
+    }
   }
 
   // Fallback sur user_metadata si le profil n'a pas pu être chargé (ex: erreur RLS)

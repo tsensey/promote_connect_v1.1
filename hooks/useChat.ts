@@ -417,7 +417,7 @@ export function useMessages(conversationId: string) {
       if (onlineHeartbeatInterval) clearInterval(onlineHeartbeatInterval);
       // Marquer hors-ligne
       if (myIdAtInit) {
-        (supabaseClient.rpc as any)('set_user_offline', { p_user_id: myIdAtInit }).catch(() => {});
+        (supabaseClient.rpc as any)('set_user_offline', { p_user_id: myIdAtInit }).then(() => {}, () => {});
       }
     };
   }, [conversationId]);

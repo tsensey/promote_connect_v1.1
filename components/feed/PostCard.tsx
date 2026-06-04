@@ -105,7 +105,7 @@ function CommentItem({
   const { t, locale } = useTranslation();
   const [replyText, setReplyText] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [localReplies, setLocalReplies] = useState<Comment[]>([]);
+  const [localReplies, setLocalReplies] = useState<Comment[]>(() => []);
   const [showReply, setShowReply] = useState(false);
   const [mentionedProfiles, setMentionedProfiles] = useState<string[]>([]);
   const { user } = useAuth();
@@ -142,7 +142,10 @@ function CommentItem({
         }
       }
 
-      setLocalReplies((prev) => [...prev, { ...data, replies: [] }]);
+      setLocalReplies((prev) => {
+        if (prev.some(r => r.id === data.id)) return prev;
+        return [...prev, { ...data, replies: [] }];
+      });
       setReplyText('');
       setMentionedProfiles([]);
       setShowReply(false);
@@ -218,9 +221,11 @@ function CommentItem({
           </div>
         </div>
 
-        {localReplies.map((reply) => (
-          <CommentItem key={reply.id} comment={reply} depth={depth + 1} onAddComment={onAddComment} />
-        ))}
+        {[...(comment.replies || []), ...localReplies]
+          .filter((reply, index, self) => self.findIndex(r => r.id === reply.id) === index)
+          .map((reply) => (
+            <CommentItem key={reply.id} comment={reply} depth={depth + 1} onAddComment={onAddComment} />
+          ))}
       </div>
     </div>
   );
@@ -456,7 +461,10 @@ export const PostCard = memo(function PostCard({
           }
         }
 
-        setComments((prev) => [...prev, { ...data, replies: [] }]);
+        setComments((prev) => {
+          if (prev.some(c => c.id === data.id)) return prev;
+          return [...prev, { ...data, replies: [] }];
+        });
         setNewComment('');
         setMentionedProfiles([]);
       }

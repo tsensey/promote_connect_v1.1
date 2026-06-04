@@ -25,6 +25,7 @@ import { EvenementCard } from "@/components/agenda/EvenementCard";
 import { RdvCard } from "@/components/agenda/RdvCard";
 import { NewRdvDialog } from "@/components/agenda/NewRdvDialog";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useNotificationState } from "@/lib/notification-context";
 import { Crown } from "lucide-react";
 import { ConversionModal } from "@/components/shared/ConversionModal";
 
@@ -35,6 +36,7 @@ export default function AgendaPage() {
   const perms = usePermissions();
   const myUserId = user?.id;
   const { t, locale } = useTranslation();
+  const { refreshNotifications } = useNotificationState();
   const [showConversion, setShowConversion] = useState(false);
 
   const {
@@ -90,19 +92,19 @@ export default function AgendaPage() {
 
   const handleAccept = (id: string) => {
     updateRdvStatus(id, "confirmed")
-      .then(() => toast.success(t("agenda.rdv_accepted")))
+      .then(() => { toast.success(t("agenda.rdv_accepted")); refreshNotifications(); })
       .catch(() => toast.error(t("agenda.rdv_accept_error")));
   };
 
   const handleRefuse = (id: string) => {
     updateRdvStatus(id, "cancelled")
-      .then(() => toast.info(t("agenda.rdv_refused")))
+      .then(() => { toast.info(t("agenda.rdv_refused")); refreshNotifications(); })
       .catch(() => toast.error(t("agenda.rdv_refuse_error")));
   };
 
   const handleCancel = (id: string) => {
     updateRdvStatus(id, "cancelled")
-      .then(() => toast.info(t("agenda.rdv_cancelled_msg")))
+      .then(() => { toast.info(t("agenda.rdv_cancelled_msg")); refreshNotifications(); })
       .catch(() => toast.error(t("agenda.rdv_cancel_error")));
   };
 

@@ -154,6 +154,22 @@ export function useRendezVous() {
     [fetchRdvs]
   );
 
+  const notifyRdvStatus = useCallback(async (rdvId: string) => {
+    const { data: session } = await supabaseClient.auth.getSession();
+    const myId = session?.session?.user?.id;
+    if (!myId) return;
+
+    try {
+      await fetch('/api/rdv/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rdv_id: rdvId, actor_id: myId }),
+      });
+    } catch {
+      // Échec d'envoi d'email non critique
+    }
+  }, []);
+
   const updateRdvStatus = useCallback(
     async (rdvId: string, status: 'confirmed' | 'cancelled') => {
       setRdvs((prev) =>
@@ -173,8 +189,12 @@ export function useRendezVous() {
       }
 
       await fetchRdvs();
+
+      // Notification in-app gérée par trigger DB (migration 072)
+      // Envoi email non bloquant
+      notifyRdvStatus(rdvId);
     },
-    [fetchRdvs]
+    [fetchRdvs, notifyRdvStatus]
   );
 
   const cancelRdv = useCallback(
@@ -196,8 +216,12 @@ export function useRendezVous() {
       }
 
       await fetchRdvs();
+
+      // Notification in-app gérée par trigger DB (migration 072)
+      // Envoi email non bloquant
+      notifyRdvStatus(rdvId);
     },
-    [fetchRdvs]
+    [fetchRdvs, notifyRdvStatus]
   );
 
   return { rdvs, loading, error, createRdv, updateRdvStatus, cancelRdv };
