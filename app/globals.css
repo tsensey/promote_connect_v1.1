@@ -62,6 +62,11 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  --color-hero-bg: var(--hero-bg);
+  --color-hero-accent: var(--hero-accent);
+  --color-hero-foreground: var(--hero-foreground);
+  --color-hero-foreground-muted: var(--hero-foreground-muted);
+
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
@@ -152,6 +157,12 @@
   --shadow-2xl: 0px 4px 10px 0px hsl(0 0% 0% / 0.25);
   --tracking-normal: 0.01em;
   --spacing: 0.25rem;
+  --hero-bg: oklch(0.2940 0.1057 335.7500);
+  --hero-gradient-from: oklch(0.2940 0.1057 335.7500 / 0.85);
+  --hero-gradient-to: oklch(0.2940 0.1057 335.7500);
+  --hero-foreground: #ffffff;
+  --hero-foreground-muted: oklch(1 0 0 / 0.8);
+  --hero-accent: #fcd34d;
 }
 
 :root.dark {
@@ -205,6 +216,12 @@
   --shadow-lg: 0px 6px 15px 0px hsl(0 0% 0% / 0.40), 0px 4px 6px -1px hsl(0 0% 0% / 0.40);
   --shadow-xl: 0px 6px 15px 0px hsl(0 0% 0% / 0.40), 0px 8px 10px -1px hsl(0 0% 0% / 0.40);
   --shadow-2xl: 0px 6px 15px 0px hsl(0 0% 0% / 1.00);
+  --hero-bg: oklch(0.1300 0.0450 332.0000);
+  --hero-gradient-from: oklch(0.1300 0.0450 332.0000 / 0.9);
+  --hero-gradient-to: oklch(0.1300 0.0450 332.0000);
+  --hero-foreground: #ffffff;
+  --hero-foreground-muted: oklch(1 0 0 / 0.7);
+  --hero-accent: #fcd34d;
 }
 
 /* Prevent text selection on mobile */
@@ -374,11 +391,64 @@
     }
   }
 
+  .animate-scale-in {
+    animation: scaleIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+
+  .animate-pulse-subtle {
+    animation: pulseSubtle 4s ease-in-out infinite;
+  }
+
+  @keyframes pulseSubtle {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.7; }
+  }
+
+  .animate-gradient-shift {
+    background-size: 200% 200%;
+    animation: gradientShift 8s ease-in-out infinite;
+  }
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
   .glass-premium {
     @apply border border-white/10 bg-white/5 backdrop-blur-md;
   }
 
   .text-glow {
     text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  }
+
+  .hero-gradient {
+    background: linear-gradient(
+      135deg,
+      var(--hero-gradient-from),
+      color-mix(in oklab, var(--hero-bg), transparent 15%) 50%,
+      var(--hero-gradient-to)
+    );
   }
 }

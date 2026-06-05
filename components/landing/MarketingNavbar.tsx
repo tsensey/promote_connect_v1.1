@@ -32,21 +32,15 @@ export function MarketingNavbar() {
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
-          <div className="relative size-8 sm:size-10 overflow-hidden rounded-full p-1 transition-transform group-hover:scale-110">
+          <div className="relative h-8 sm:h-10 w-[90px] sm:w-[110px] overflow-hidden rounded-lg transition-transform group-hover:scale-110">
             <Image
-              src="/web-app-manifest-512x512.png"
-              alt="PROMOTE"
-              width={40}
-              height={40}
-              className="object-contain"
+              src="/logo_promopte_connect.webp"
+              alt="PROMOTE-CONNECT"
+              fill
+              className="object-contain rounded-lg"
+              sizes="110px"
             />
           </div>
-          <span className={cn(
-            "hidden sm:inline font-bold tracking-tight text-base sm:text-lg transition-colors",
-            !isScrolled && "text-white drop-shadow-sm"
-          )}>
-            PROMOTE-CONNECT
-          </span>
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
@@ -76,10 +70,12 @@ export function MarketingNavbar() {
           <ModeToggle />
           <LocaleToggle />
           <Link href="/login">
-            <Button 
-              variant={!isScrolled ? "secondary" : "default"} 
+            <Button
+              variant={isScrolled ? "default" : "outline"}
               size="sm"
-              className={cn(!isScrolled && "bg-white text-[#520a3f] hover:bg-white/90")}
+              className={cn(
+                !isScrolled && "border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:text-white"
+              )}
             >
               {t('landing.nav.login')}
             </Button>

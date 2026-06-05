@@ -1,5 +1,7 @@
 import { MarketingNavbar } from '@/components/landing/MarketingNavbar';
 import { HeroSection } from '@/components/landing/HeroSection';
+import { StatsSection } from '@/components/landing/StatsSection';
+import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
 import { FeaturesSection } from '@/components/landing/FeaturesSection';
 import { UsefulLinksSection } from '@/components/landing/UsefulLinksSection';
 import { CtaSection } from '@/components/landing/CtaSection';
@@ -22,7 +24,6 @@ export default async function LandingPage() {
       redirect('/feed');
     }
   } catch {
-    // Static export (Capacitor build): redirection gérée côté client
     return <NativeAuthGuard />;
   }
 
@@ -30,6 +31,8 @@ export default async function LandingPage() {
     <>
       <MarketingNavbar />
       <HeroSection />
+      <StatsSection />
+      <HowItWorksSection />
       <FeaturesSection />
       <UsefulLinksSection />
       <CtaSection />
