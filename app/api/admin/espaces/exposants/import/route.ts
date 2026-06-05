@@ -211,16 +211,59 @@ export async function POST(request: Request) {
     }, { status: 400 });
   }
 
-  const { error: insertError } = await supabase.from('exposants').insert(inserts);
+  // ─── Éviter les doublons ─────────────────────────────────────────────
+  const existingEmails = new Set<string>();
+  const existingNoms = new Set<string>();
+  const { data: existing } = await supabase
+    .from('exposants')
+    .select('email1, nom');
+
+  if (existing) {
+    for (const e of existing) {
+      if (e.email1) existingEmails.add(e.email1.toLowerCase().trim());
+      if (e.nom) existingNoms.add(e.nom.toLowerCase().trim());
+    }
+  }
+
+  const deduped: typeof inserts = [];
+  const duplicates: { nom: string; raison: string }[] = [];
+
+  for (const ins of inserts) {
+    const nomKey = ins.nom?.toLowerCase().trim();
+    const emailKey = ins.email1?.toLowerCase().trim();
+
+    if (emailKey && existingEmails.has(emailKey)) {
+      duplicates.push({ nom: ins.nom, raison: 'Email déjà existant' });
+      continue;
+    }
+    if (nomKey && existingNoms.has(nomKey) && !emailKey) {
+      duplicates.push({ nom: ins.nom, raison: 'Nom déjà existant (sans email)' });
+      continue;
+    }
+    deduped.push(ins);
+    if (nomKey) existingNoms.add(nomKey);
+    if (emailKey) existingEmails.add(emailKey);
+  }
+
+  if (deduped.length === 0) {
+    return NextResponse.json({
+      error: 'Tous les exposants du fichier existent déjà.',
+      duplicates: duplicates.length,
+    }, { status: 409 });
+  }
+
+  const { data: inserted, error: insertError } = await supabase
+    .from('exposants')
+    .insert(deduped)
+    .select('id, nom, email1, email2');
+
   if (insertError) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
-  const { data: inserted } = await supabase
-    .from('exposants')
-    .select('id, nom, email1, email2')
-    .order('created_at', { ascending: false })
-    .limit(inserts.length);
+  if (!inserted || inserted.length === 0) {
+    return NextResponse.json({ error: 'Aucun exposant inséré' }, { status: 500 });
+  }
 
   const withAccounts: { exposantId: string; nom: string; email1: string | null; email2: string | null }[] = [];
   const withoutEmail: string[] = [];
@@ -255,8 +298,10 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     success: true,
-    imported: inserts.length,
+    imported: deduped.length,
     total: records.length,
+    duplicates: duplicates.length,
+    duplicate_details: duplicates.length > 0 ? duplicates.slice(0, 50) : undefined,
     accounts_created: accountsCreated,
     without_email: withoutEmail.length,
     errors: accountErrors.length > 0 ? accountErrors.slice(0, 20) : undefined,

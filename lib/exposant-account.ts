@@ -1,4 +1,13 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import { Resend } from 'resend';
+import { render } from '@react-email/components';
+import CredentialsEmail from '@/emails/CredentialsEmail';
+
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
+
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
 
 export interface CreateAccountResult {
   account?: {
@@ -68,6 +77,18 @@ export async function createAccountForExposant(
     return { error: `Erreur liaison: ${linkError.message}` };
   }
 
+  if (!resend) {
+    console.error('RESEND_API_KEY not configured — skipping email');
+    return {
+      account: {
+        id: authData.user.id,
+        email: authEmail,
+        password,
+        recipients: [],
+      },
+    };
+  }
+
   const recipients: { email: string; sent: boolean; error?: string }[] = [];
   const targets = [email1, email2].filter(Boolean) as string[];
   const seen = new Set<string>();
@@ -76,10 +97,6 @@ export async function createAccountForExposant(
     if (seen.has(recipientEmail)) continue;
     seen.add(recipientEmail);
     try {
-      const { Resend } = await import('resend');
-      const resend = new Resend(process.env.RESEND_API_KEY || '');
-      const { render } = await import('@react-email/components');
-      const { default: CredentialsEmail } = await import('@/emails/CredentialsEmail');
       const emailHtml = await render(
         CredentialsEmail({
           fullName,
@@ -91,14 +108,20 @@ export async function createAccountForExposant(
           stand: exposant.stand,
         })
       );
-      await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+      const { error: sendError } = await resend.emails.send({
+        from: FROM_EMAIL,
         to: [recipientEmail],
         subject: 'Vos identifiants PROMOTE-CONNECT',
         html: emailHtml,
       });
-      recipients.push({ email: recipientEmail, sent: true });
+      if (sendError) {
+        console.error(`Resend send error to ${recipientEmail}:`, sendError);
+        recipients.push({ email: recipientEmail, sent: false, error: sendError.message });
+      } else {
+        recipients.push({ email: recipientEmail, sent: true });
+      }
     } catch (e) {
+      console.error(`Resend exception for ${recipientEmail}:`, e);
       recipients.push({ email: recipientEmail, sent: false, error: String(e) });
     }
   }
