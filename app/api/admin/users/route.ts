@@ -405,6 +405,7 @@ export async function DELETE(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('id');
+  const deleteExposant = searchParams.get('deleteExposant') !== 'false';
 
   if (!userId) {
     return NextResponse.json({ error: 'User ID required' }, { status: 400 });
@@ -452,12 +453,15 @@ export async function DELETE(request: Request) {
     .eq('profile_id', userId)
     .maybeSingle();
 
-  if (exposantData?.id) {
-    await supabaseAdmin.from('produits').delete().eq('exposant_id', exposantData.id);
+  if (deleteExposant) {
+    if (exposantData?.id) {
+      await supabaseAdmin.from('produits').delete().eq('exposant_id', exposantData.id);
+    }
+    await supabaseAdmin.from('exposants').delete().eq('profile_id', userId);
+  } else {
+    // Dissocier l'exposant sans le supprimer
+    await supabaseAdmin.from('exposants').update({ profile_id: null }).eq('profile_id', userId);
   }
-
-  await supabaseAdmin.from('exposant_views').delete().eq('viewer_id', userId);
-  await supabaseAdmin.from('exposants').delete().eq('profile_id', userId);
 
   await supabaseAdmin.from('post_comments').delete().eq('author_id', userId);
   await supabaseAdmin.from('post_likes').delete().eq('user_id', userId);

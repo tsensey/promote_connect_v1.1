@@ -205,6 +205,7 @@ export default function AdminUsersPage() {
   });
 
   const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
+  const [deleteExposant, setDeleteExposant] = useState(true);
   const [showRoleDialog, setShowRoleDialog] = useState<UserRow | null>(null);
   const [newRole, setNewRole] = useState('');
   const [newSubscriptionTier, setNewSubscriptionTier] = useState('free_trial');
@@ -475,7 +476,7 @@ export default function AdminUsersPage() {
     setActionLoading(userId);
 
     try {
-      const response = await fetch(`/api/admin/users?id=${userId}`, {
+      const response = await fetch(`/api/admin/users?id=${userId}&deleteExposant=${deleteExposant}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -749,7 +750,7 @@ export default function AdminUsersPage() {
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                              onClick={() => setShowDeleteDialog(user.id)}
+                              onClick={() => { setShowDeleteDialog(user.id); setDeleteExposant(true); }}
                               className="text-destructive"
                             >
                               <Trash2 className="mr-2 size-4" />
@@ -1082,7 +1083,7 @@ export default function AdminUsersPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!showDeleteDialog} onOpenChange={(open) => !open && setShowDeleteDialog(null)}>
+      <Dialog open={!!showDeleteDialog} onOpenChange={(open) => { if (!open) { setShowDeleteDialog(null); setDeleteExposant(true); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t('admin.users.delete_title')}</DialogTitle>
@@ -1090,24 +1091,53 @@ export default function AdminUsersPage() {
               {t('admin.users.delete_desc')}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" className="rounded-xl" onClick={() => setShowDeleteDialog(null)}>
-              {t('common.cancel')}
-            </Button>
-            <Button
-              variant="destructive"
-              className="rounded-xl"
-              disabled={actionLoading === showDeleteDialog}
-              onClick={() => showDeleteDialog && handleDelete(showDeleteDialog)}
-            >
-              {actionLoading === showDeleteDialog ? (
-                <Loader2 className="mr-2 size-4 animate-spin" />
-              ) : (
-                <Trash2 className="mr-2 size-4" />
-              )}
-              {t('admin.users.delete_permanent')}
-            </Button>
-          </DialogFooter>
+          {(() => {
+            const user = users.find((u) => u.id === showDeleteDialog);
+            const hasExposant = !!user?.exposant_id;
+            return (
+              <div className="space-y-4">
+                {hasExposant && (
+                  <label className="flex items-start gap-3 rounded-lg border p-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={deleteExposant}
+                      onChange={(e) => setDeleteExposant(e.target.checked)}
+                      className="mt-0.5 size-4"
+                    />
+                    <div className="text-sm">
+                      <span className="font-medium">Supprimer aussi le profil exposant</span>
+                      <p className="mt-0.5 text-muted-foreground">
+                        L&apos;exposant &laquo;&nbsp;{user?.full_name || user?.email}&nbsp;&raquo; et ses produits seront définitivement supprimés.
+                      </p>
+                    </div>
+                  </label>
+                )}
+                {!hasExposant && (
+                  <p className="text-sm text-muted-foreground">
+                    Aucun exposant lié à cet utilisateur.
+                  </p>
+                )}
+                <DialogFooter>
+                  <Button variant="outline" className="rounded-xl" onClick={() => { setShowDeleteDialog(null); setDeleteExposant(true); }}>
+                    {t('common.cancel')}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="rounded-xl"
+                    disabled={actionLoading === showDeleteDialog}
+                    onClick={() => showDeleteDialog && handleDelete(showDeleteDialog)}
+                  >
+                    {actionLoading === showDeleteDialog ? (
+                      <Loader2 className="mr-2 size-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="mr-2 size-4" />
+                    )}
+                    {t('admin.users.delete_permanent')}
+                  </Button>
+                </DialogFooter>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
