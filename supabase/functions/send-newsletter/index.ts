@@ -169,28 +169,32 @@ function buildEmailHtml({
   unsubscribeUrl: string;
   year: number;
 }): string {
-  return `
-<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="fr">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>${titre}</title></head>
-<body style="margin:0;padding:32px 16px;background:#f6f8fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;color:#172554">
-<div style="max-width:680px;margin:0 auto;background:#ffffff;border-radius:28px;overflow:hidden;box-shadow:0 30px 80px rgba(15,23,42,0.12)">
-  <div style="padding:36px;background:#4A072B;color:#ffffff">
-    <p style="margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;opacity:0.78">PROMOTE-CONNECT</p>
-    <h1 style="margin:0;font-size:30px;line-height:1.2;font-weight:700">${titre}</h1>
+<body style="margin:0;padding:32px 16px;background:#f6f8fb;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a">
+<div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);border:1px solid #e2e8f0">
+  <div style="background:#4A072B;padding:32px">
+    <img src="${getAppUrl()}/pro_connect_fr.webp" width="180" height="auto" alt="PROMOTE-CONNECT" style="display:block;border:0;margin-bottom:16px" />
+    <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;line-height:1.3">${titre}</h1>
   </div>
   <div style="padding:32px">
     ${paragraphs.map((p) => `<p style="margin:0 0 16px;line-height:1.7;color:#475569;font-size:15px">${p}</p>`).join('')}
     <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0" />
-    <p style="margin:0;font-size:13px;line-height:1.7;color:#64748b">Vous recevez cette newsletter car vous êtes inscrit à PROMOTE-CONNECT.</p>
+    <p style="margin:0 0 16px;font-size:13px;line-height:1.7;color:#64748b">Vous recevez cette newsletter car vous êtes inscrit à PROMOTE-CONNECT.</p>
+    ${unsubscribeUrl ? `<p style="margin:0;font-size:13px"><a href="${unsubscribeUrl}" style="color:#4A072B;text-decoration:underline;font-weight:500">Se désinscrire de la newsletter</a></p>` : ''}
   </div>
-  <div style="padding:20px 32px;background:#f8fafc;text-align:center">
-    <p style="margin:0 0 8px;font-size:12px"><a href="${unsubscribeUrl}" style="color:#4A072B;text-decoration:underline;font-weight:500">Se désinscrire de la newsletter</a></p>
-    <p style="margin:4px 0 0;font-size:11px;color:#94a3b8">PROMOTE-CONNECT — Plateforme de networking professionnel</p>
-    <p style="margin:4px 0 0;font-size:11px;color:#94a3b8">&copy; ${year} PROMOTE. Tous droits réservés.</p>
+  <div style="background:#f8fafc;padding:20px 32px;text-align:center;border-top:1px solid #e2e8f0">
+    <p style="margin:0;font-size:12px;color:#94a3b8">PROMOTE-CONNECT — Plateforme de networking professionnel</p>
+    <p style="margin:4px 0 0;font-size:12px;color:#94a3b8">&copy; ${year} PROMOTE. Tous droits réservés.</p>
+    <p style="margin:4px 0 0;font-size:12px;color:#94a3b8">Conçu par <a href="https://bbit-it.com" style="color:#94a3b8;text-decoration:underline">BBIT Sarl</a></p>
   </div>
 </div>
 </body>
 </html>`;
+
+  function getAppUrl(): string {
+    return appUrl;
+  }
 }

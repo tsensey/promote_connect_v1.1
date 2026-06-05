@@ -86,7 +86,7 @@ export default function ConfigurationPage() {
     
     const { error } = await supabaseClient
       .from('platform_config')
-      .update({ value: value.toString() })
+      .update({ value: Number(value) })
       .eq('key', key);
       
     if (error) setError(error.message);
