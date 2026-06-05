@@ -64,7 +64,7 @@ export default function EmailLayout({
                 {title}
               </Text>
               <Img
-                src={`${baseUrl}/pro_connect_fr.webp`}
+                src={`${baseUrl}/logo_large.png`}
                 width="220"
                 height="44"
                 alt="PROMOTE-CONNECT"

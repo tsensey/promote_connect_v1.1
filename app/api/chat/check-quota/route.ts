@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/server';
 import { checkMessageQuota } from '@/lib/subscription';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { quotaErrorResponse } from '@/lib/quota-messages';
 
 export async function POST(request: NextRequest) {
   // Rate limiting — max 60 vérifications/minute par IP
@@ -63,14 +64,12 @@ export async function POST(request: NextRequest) {
   const result = await checkMessageQuota(user.id, conversationId);
 
   if (!result.allowed) {
-    // CdC §2.2 : "bloquer l'envoi et afficher un message contextuel invitant à souscrire"
+    const reason = (result.reason as 'daily_quota_exceeded' | 'total_quota_exceeded' | 'account_inactive' | 'account_suspended' | 'account_blocked' | 'profile_not_found') ?? 'daily_quota_exceeded';
     return NextResponse.json(
       {
         allowed: false,
-        reason: result.reason,
         remaining: result.remaining ?? 0,
-        // Le frontend utilisera ce flag pour afficher ConversionModal
-        showConversionModal: result.reason === 'daily_quota_exceeded',
+        ...quotaErrorResponse(reason),
       },
       { status: 200 }
     );

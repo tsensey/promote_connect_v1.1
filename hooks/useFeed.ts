@@ -4,6 +4,7 @@ import { supabaseClient } from '@/lib/supabase/client';
 import { compressImages, compressImage } from '@/lib/compress-image';
 import { isNativePlatform } from '@/lib/capacitor';
 import { mobileFetchFeed, mobileCreatePost } from '@/lib/mobile-fallback';
+import { getQuotaMessage, dispatchConversionModal } from '@/lib/quota-messages';
 import type { Database } from '@/types/database.types';
 
 type PostRow = Database['public']['Tables']['posts']['Row'];
@@ -344,7 +345,8 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
       if (isNativePlatform()) {
         const result = await mobileCreatePost(content, myId, { type, category, imageUrls });
         if (result.error === 'post_quota_exceeded') {
-          return { error: new Error('Quota de publications atteint pour le mode Free Trial.') };
+          dispatchConversionModal();
+          return { error: new Error(getQuotaMessage('post_quota_exceeded').description) };
         }
         if (result.error) return { error: new Error(result.error) };
         if (result.data) {
@@ -375,7 +377,8 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
       }
 
       if (responseBody.allowed === false) {
-        return { error: new Error('Quota de publications atteint pour le mode Free Trial.') };
+        dispatchConversionModal();
+        return { error: new Error(getQuotaMessage('post_quota_exceeded').description) };
       }
 
       const newPost = responseBody.data;

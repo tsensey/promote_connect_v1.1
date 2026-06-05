@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/server';
 import { checkPostQuota } from '@/lib/subscription';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { quotaErrorResponse } from '@/lib/quota-messages';
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
@@ -39,10 +40,11 @@ export async function POST(request: NextRequest) {
   if (!quotaResult.allowed) {
     return NextResponse.json({
       allowed: false,
-      reason: 'post_quota_exceeded',
-      currentCount: quotaResult.currentCount,
-      limit: quotaResult.limit,
-    }, { status: 200 });
+      ...quotaErrorResponse('post_quota_exceeded', {
+        currentCount: quotaResult.currentCount,
+        limit: quotaResult.limit,
+      }),
+    }, { status: 403 });
   }
 
   const { data: newPost, error: insertError } = await supabase

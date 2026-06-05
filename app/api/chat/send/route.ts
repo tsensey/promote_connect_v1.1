@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/server';
 import { checkMessageQuota, incrementMessageCount } from '@/lib/subscription';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { quotaErrorResponse } from '@/lib/quota-messages';
 import type { Json } from '@/types/database.types';
 
 export async function POST(request: NextRequest) {
@@ -54,12 +55,9 @@ export async function POST(request: NextRequest) {
 
   const quotaResult = await checkMessageQuota(user.id, body.conversationId);
   if (!quotaResult.allowed) {
+    const reason = (quotaResult.reason as 'daily_quota_exceeded' | 'total_quota_exceeded' | 'account_inactive' | 'account_suspended' | 'account_blocked' | 'profile_not_found') ?? 'daily_quota_exceeded';
     return NextResponse.json(
-      {
-        error: 'quota_exceeded',
-        reason: quotaResult.reason,
-        showConversionModal: quotaResult.reason === 'daily_quota_exceeded',
-      },
+      quotaErrorResponse(reason),
       { status: 403 }
     );
   }

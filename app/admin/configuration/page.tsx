@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Save } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
+import { useAuth } from '@/lib/auth/context';
 
 interface PlatformConfig {
   key: string;
@@ -17,6 +18,8 @@ interface PlatformConfig {
 
 export default function ConfigurationPage() {
   const { t } = useTranslation();
+  const { session } = useAuth();
+  const token = session?.access_token;
   const [configs, setConfigs] = useState<PlatformConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -48,7 +51,9 @@ export default function ConfigurationPage() {
 
   useEffect(() => {
     async function loadConfig() {
-      const res = await fetch('/api/admin/config');
+      const res = await fetch('/api/admin/config', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (!res.ok) {
         setError('Erreur lors du chargement de la configuration');
         setLoading(false);
@@ -85,7 +90,10 @@ export default function ConfigurationPage() {
 
     const res = await fetch('/api/admin/config', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify({ key, value: Number(value) }),
     });
 
@@ -102,7 +110,10 @@ export default function ConfigurationPage() {
 
     const res = await fetch('/api/admin/config', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify({ key: 'conversion_message', value: conversionMessage }),
     });
 
