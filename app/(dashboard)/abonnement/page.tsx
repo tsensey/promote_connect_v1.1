@@ -499,6 +499,7 @@ export default function AbonnementPage() {
                 </CardContent>
               </Card>
             )}
+            
 
             <Card className="border-border/50 flex-1">
               <CardContent className="p-6 flex flex-col h-full gap-5">
