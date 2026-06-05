@@ -26,6 +26,8 @@ const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || 'Admin@2026!secure';
 const ADMIN_NAME = 'Administrateur PROMOTE';
 
 const CLEAN_TABLES = [
+  'audit_logs',
+  'notifications',
   'support_messages',
   'messages',
   'rendez_vous',
@@ -34,7 +36,7 @@ const CLEAN_TABLES = [
   'newsletter_subscriptions',
   'newsletter_editions',
   'support_tickets',
-  'subscriptions',
+  // 'subscriptions', -- table does not exist
   'exposants',
   'evenements',
   'profiles',
@@ -67,11 +69,31 @@ async function cleanupDatabase() {
   }
 }
 
+async function createAuthUserDirect(email, password, userMetadata) {
+  const response = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': supabaseServiceKey,
+      'Authorization': `Bearer ${supabaseServiceKey}`,
+    },
+    body: JSON.stringify({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: userMetadata,
+    }),
+  });
+  const body = await response.json();
+  if (!response.ok) {
+    throw new Error(`Auth API error (${response.status}): ${body.msg || body.message || JSON.stringify(body)}`);
+  }
+  return body;
+}
+
 async function ensureAdmin() {
-  const existingUser = await (async () => {
-    const users = await listAllUsers();
-    return users.find((u) => u.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) || null;
-  })();
+  const users = await listAllUsers();
+  const existingUser = users.find((u) => u.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) || null;
 
   let userId;
 
@@ -84,14 +106,12 @@ async function ensureAdmin() {
     });
     if (error) throw error;
   } else {
-    const { data, error } = await supabase.auth.admin.createUser({
-      email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
-      email_confirm: true,
-      user_metadata: { full_name: ADMIN_NAME, role: 'admin' },
-    });
-    if (error) throw error;
-    userId = data.user.id;
+    const authUser = await createAuthUserDirect(
+      ADMIN_EMAIL,
+      ADMIN_PASSWORD,
+      { full_name: ADMIN_NAME, role: 'admin' }
+    );
+    userId = authUser.id;
   }
 
   const { error } = await supabase.from('profiles').upsert({
@@ -100,6 +120,7 @@ async function ensureAdmin() {
     company: 'PROMOTE-CONNECT',
     role: 'admin',
     country: 'Cameroun',
+    subscription_tier: 'paid',
     subscription_status: 'active',
     subscription_ends_at: null,
   });
@@ -118,12 +139,13 @@ async function seed() {
   }
 
   console.log('\nCreating admin account...');
-  await ensureAdmin();
+  const admin = await ensureAdmin();
 
   console.log('');
   console.log('Admin credentials:');
-  console.log(`  Email:    ${ADMIN_EMAIL}`);
+  console.log(`  Email:    ${admin.email}`);
   console.log(`  Password: ${ADMIN_PASSWORD}`);
+  console.log(`  User ID:  ${admin.id}`);
   console.log('========================================');
 }
 

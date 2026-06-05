@@ -477,7 +477,17 @@ export async function DELETE(request: Request) {
 
   await supabaseAdmin.from('user_preferences').delete().eq('profile_id', userId);
 
-  await supabaseAdmin.from('profiles').delete().eq('id', userId);
+  await supabaseAdmin.from('audit_logs').delete().eq('actor_id', userId);
+  await supabaseAdmin.from('reports').delete().or(`reporter_id.eq.${userId},reported_id.eq.${userId},reviewed_by.eq.${userId}`);
+  await supabaseAdmin.from('user_follows').delete().or(`follower_id.eq.${userId},following_id.eq.${userId}`);
+  await supabaseAdmin.from('online_users' as any).delete().eq('user_id', userId);
+  await supabaseAdmin.from('platform_config' as any).delete().eq('updated_by', userId);
+
+  const { error: profileDeleteError } = await supabaseAdmin.from('profiles').delete().eq('id', userId);
+
+  if (profileDeleteError) {
+    return NextResponse.json({ error: `Erreur suppression profile: ${profileDeleteError.message}` }, { status: 500 });
+  }
 
   const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
