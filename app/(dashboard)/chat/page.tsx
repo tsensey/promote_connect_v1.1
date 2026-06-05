@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useQuotaStatus } from '@/hooks/useQuotaStatus';
 import { Crown } from 'lucide-react';
 
 // ─── Panneau liste des conversations ──────────────────────────────────────────
@@ -575,6 +576,7 @@ export default function ChatPage() {
   const { setActiveConversationId } = useNotificationState();
   const initialConv = searchParams.get('conv');
   const perms = usePermissions();
+  const quota = useQuotaStatus();
 
   // Produit pré-attaché depuis la vitrine (?product=<base64json>)
   const productParam = searchParams.get('product');
@@ -648,9 +650,9 @@ export default function ChatPage() {
           <div className="flex items-center gap-2 border-t border-border/50 px-4 py-2.5">
             <div className="flex-1 min-w-0">
               <p className="text-[11px] text-muted-foreground">
-                {perms.hasReachedLimit
+                {quota.messages.current >= quota.messages.limit
                   ? 'Quota quotidien atteint'
-                  : `${perms.dailyLimit} messages/jour`}
+                  : `${quota.messages.limit} messages/jour`}
               </p>
             </div>
             <Crown className="size-3.5 shrink-0 text-amber-500" />
