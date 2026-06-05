@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "212273529465",
+    "project_id": "proconnect-5235f",
+    "storage_bucket": "proconnect-5235f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:212273529465:android:99457cf7c49c271deb8aa8",
+        "android_client_info": {
+          "package_name": "com.promoteconnect.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4C6oavSyxTbLzjMh_yv4U3il23GVnWsE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
