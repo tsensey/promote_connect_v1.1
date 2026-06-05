@@ -1,9 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Bell, ChevronDown, Menu } from 'lucide-react';
+import { ChevronDown, Menu } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { NotificationDropdown } from '@/components/layout/NotificationDropdown';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,14 +44,7 @@ export function AdminTopbar({
         <div className="flex items-center gap-1.5">
           <LocaleToggle />
           <ModeToggle />
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="relative rounded-full text-muted-foreground hover:text-foreground"
-          >
-            <Bell className="size-4" />
-            <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-amber-500 ring-1 ring-background" />
-          </Button>
+          <NotificationDropdown />
 
           <DropdownMenu>
             <DropdownMenuTrigger render={<Button variant="ghost" className="h-auto rounded-full px-2 py-1" />}>

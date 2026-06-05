@@ -228,7 +228,7 @@ export default function AnnuairePage() {
                   setSearch(e.target.value);
                   setPage(0);
                 }}
-                className="h-11 rounded-xl border-border/70 bg-muted/30 pl-11-none focus:bg-background"
+                className="h-11 rounded-xl border-border/70 bg-muted/30 pl-11 focus:bg-background"
               />
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -371,7 +371,7 @@ export default function AnnuairePage() {
           </div>
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 opacity-20 select-none pointer-events-none p-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Card key={i} className="overflow-hidden border-border/50">
+              <Card key={i} className="overflow-hidden border-border/50 py-0">
                 <div className="h-28 w-full bg-muted" />
                 <CardContent className="space-y-3 p-5">
                   <div className="flex items-center gap-3">
@@ -390,7 +390,7 @@ export default function AnnuairePage() {
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i} className="overflow-hidden border-border/50">
+            <Card key={i} className="overflow-hidden border-border/50 py-0">
               <div className="h-28 w-full animate-pulse bg-muted" />
               <CardContent className="space-y-3 p-5">
                 <div className="flex items-center gap-3">

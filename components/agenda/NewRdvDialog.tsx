@@ -74,10 +74,31 @@ export function NewRdvDialog({ open, onOpenChange, onCreate }: NewRdvDialogProps
       return;
     }
 
+    const selectedDate = new Date(`${date}T${timeStart}`);
+    const selectedEnd = new Date(`${date}T${timeEnd}`);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const currentYear = today.getFullYear();
+
+    if (selectedDate < today) {
+      toast.error(t("agenda.rdv_form_past"));
+      return;
+    }
+
+    if (selectedDate.getFullYear() > currentYear) {
+      toast.error(t("agenda.rdv_form_beyond_year"));
+      return;
+    }
+
+    if (selectedEnd <= selectedDate) {
+      toast.error(t("agenda.rdv_form_end_before_start"));
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const startsAt = new Date(`${date}T${timeStart}`).toISOString();
-      const endsAt = new Date(`${date}T${timeEnd}`).toISOString();
+      const startsAt = selectedDate.toISOString();
+      const endsAt = selectedEnd.toISOString();
       await onCreate(destinataireId, startsAt, endsAt, notes || undefined);
       toast.success(t("agenda.rdv_form_sent"));
       onOpenChange(false);
@@ -143,6 +164,8 @@ export function NewRdvDialog({ open, onOpenChange, onCreate }: NewRdvDialogProps
             <Input
               type="date"
               value={date}
+              min={new Date().toISOString().split("T")[0]}
+              max={`${new Date().getFullYear()}-12-31`}
               onChange={(e) => setDate(e.target.value)}
               className="rounded-xl"
             />

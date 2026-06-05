@@ -47,6 +47,7 @@ export function usePermissions(): UserPermissions & {
       id: user?.id,
       role: profile.role,
       subscription_tier: (profile as Record<string, unknown>).subscription_tier as string | null ?? 'free_trial',
+      subscription_ends_at: (profile as Record<string, unknown>).subscription_ends_at as string | null ?? null,
       account_status: (profile as Record<string, unknown>).account_status as string | null ?? 'active',
       is_active: profile.is_active,
     };

@@ -63,9 +63,9 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
   if (loading || !user) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex items-center gap-3">
-          <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center" suppressHydrationWarning>
+        <div className="flex items-center gap-3" suppressHydrationWarning>
+          <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" suppressHydrationWarning />
         </div>
       </div>
     );
@@ -138,8 +138,8 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
         <main className="flex-1 min-h-0 overflow-y-auto px-2 pt-2 sm:px-6 xl:px-8 xl:pb-8" style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
           <Suspense fallback={
-            <div className="flex min-h-[60vh] items-center justify-center">
-              <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <div className="flex min-h-[60vh] items-center justify-center" suppressHydrationWarning>
+              <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" suppressHydrationWarning />
             </div>
           }>
             {children}

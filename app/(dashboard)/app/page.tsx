@@ -268,7 +268,7 @@ export default function DashboardHome() {
             </p>
           </div>
           <CardContent className="relative -mt-6 space-y-5 p-6">
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
               <MetricCard
                 icon={Users}
                 label={profile.role === "exposant" ? t('dashboard.home.quick_network') : t('dashboard.home.quick_exposants')}
@@ -295,7 +295,7 @@ export default function DashboardHome() {
               />
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 xl:grid-cols-3">
               {getQuickActions(profile.role || "visiteur", t).map((action) => (
                 <Link
                   key={action.href}

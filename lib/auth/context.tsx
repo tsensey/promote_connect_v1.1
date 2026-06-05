@@ -121,6 +121,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Real-time subscription pour détecter suspension/blocage immédiatement
+  useEffect(() => {
+    if (!user) return;
+
+    let subMounted = true;
+
+    const channel = supabaseClient
+      .channel(`profile-status-${user.id}`)
+      .on('postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`,
+        },
+        (payload: unknown) => {
+          if (!subMounted) return;
+          const { new: newProfile } = payload as { new: Record<string, unknown> };
+          const accountStatus = newProfile.account_status as string | null;
+          const isActive = newProfile.is_active as boolean | null;
+
+          if (accountStatus === 'suspended' || accountStatus === 'blocked' || isActive === false) {
+            supabaseClient.auth.signOut().catch(console.error);
+          } else {
+            setProfile(newProfile as unknown as AppProfile);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subMounted = false;
+      supabaseClient.removeChannel(channel);
+    };
+  }, [user?.id]);
+
   const refreshProfile = useCallback(async () => {
     if (!user) {
       setProfile(null);

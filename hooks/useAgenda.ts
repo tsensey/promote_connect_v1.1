@@ -197,32 +197,5 @@ export function useRendezVous() {
     [fetchRdvs, notifyRdvStatus]
   );
 
-  const cancelRdv = useCallback(
-    async (rdvId: string) => {
-      setRdvs((prev) =>
-        prev.map((rdv) => (rdv.id === rdvId ? { ...rdv, status: 'cancelled' } : rdv))
-      );
-
-      const { error } = await supabaseClient
-        .from('rendez_vous')
-        .update({ status: 'cancelled' })
-        .eq('id', rdvId);
-
-      if (error) {
-        setRdvs((prev) =>
-          prev.map((rdv) => (rdv.id === rdvId ? { ...rdv, status: rdv.status } : rdv))
-        );
-        throw error;
-      }
-
-      await fetchRdvs();
-
-      // Notification in-app gérée par trigger DB (migration 072)
-      // Envoi email non bloquant
-      notifyRdvStatus(rdvId);
-    },
-    [fetchRdvs, notifyRdvStatus]
-  );
-
-  return { rdvs, loading, error, createRdv, updateRdvStatus, cancelRdv };
+  return { rdvs, loading, error, createRdv, updateRdvStatus };
 }

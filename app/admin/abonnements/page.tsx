@@ -131,7 +131,7 @@ export default function AdminAbonnementsPage() {
 
       setUsers(formatted);
     } catch {
-      toast.error('Erreur lors du chargement des abonnements');
+      toast.error(t('admin.abonnements.toast_load_error'));
     } finally {
       setLoading(false);
     }
@@ -169,10 +169,10 @@ export default function AdminAbonnementsPage() {
 
       if (error) throw error;
 
-      toast.success('Niveau d\'abonnement mis à jour');
+      toast.success(t('admin.abonnements.toast_tier_updated'));
       await fetchUsers();
     } catch (e) {
-      toast.error('Erreur lors de la mise à jour de l\'abonnement');
+      toast.error(t('admin.abonnements.toast_update_error'));
     } finally {
       setActionLoading(null);
     }
@@ -197,11 +197,11 @@ export default function AdminAbonnementsPage() {
 
       if (error) throw error;
 
-      toast.success('Date d\'expiration mise à jour');
+      toast.success(t('admin.abonnements.toast_date_updated'));
       setShowDateDialog(null);
       await fetchUsers();
     } catch {
-      toast.error('Erreur lors de la mise à jour de la date');
+      toast.error(t('admin.abonnements.toast_date_error'));
     } finally {
       setActionLoading(null);
     }
@@ -296,11 +296,11 @@ export default function AdminAbonnementsPage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-600/80">
-            Abonnements v1.1
+            {t('admin.abonnements.title')} v1.1
           </p>
-          <h1 className="text-4xl text-foreground">Gestion des accès</h1>
+          <h1 className="text-4xl text-foreground">{t('admin.abonnements.title')}</h1>
           <p className="max-w-3xl text-base leading-7 text-muted-foreground">
-            Gérez les tiers d'abonnements, les suspensions et le sponsoring des entreprises.
+            {t('admin.abonnements.desc')}
           </p>
         </div>
       </div>
@@ -308,7 +308,7 @@ export default function AdminAbonnementsPage() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Entreprises</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('admin.abonnements.card_total')}</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -317,7 +317,7 @@ export default function AdminAbonnementsPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Abonnés PAID</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('admin.abonnements.card_paid')}</CardTitle>
             <Crown className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
@@ -326,7 +326,7 @@ export default function AdminAbonnementsPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Essais Gratuits</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('admin.abonnements.card_free')}</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -335,7 +335,7 @@ export default function AdminAbonnementsPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Comptes Actifs</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('admin.abonnements.card_active')}</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
@@ -344,7 +344,7 @@ export default function AdminAbonnementsPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Suspendus/Bloqués</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('admin.abonnements.card_suspended')}</CardTitle>
             <Ban className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
@@ -361,7 +361,7 @@ export default function AdminAbonnementsPage() {
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Rechercher une entreprise..."
+                placeholder={t('admin.abonnements.search')}
                 className="pl-10"
               />
             </div>
@@ -373,7 +373,7 @@ export default function AdminAbonnementsPage() {
                   className="rounded-full"
                   onClick={() => setTierFilter(tier)}
                 >
-                  {tier === 'all' ? 'Tous les Tiers' : tier === 'paid' ? 'PAID' : 'Free Trial'}
+                  {tier === 'all' ? t('admin.abonnements.all_tiers') : tier === 'paid' ? t('admin.abonnements.badge_paid') : t('admin.abonnements.badge_free')}
                 </Button>
               ))}
             </div>
@@ -385,7 +385,7 @@ export default function AdminAbonnementsPage() {
                   className="rounded-full"
                   onClick={() => setStatusFilter(status)}
                 >
-                  {status === 'all' ? 'Tous statuts' : status}
+                  {status === 'all' ? t('admin.abonnements.all_statuses') : status}
                 </Button>
               ))}
             </div>
@@ -404,18 +404,18 @@ export default function AdminAbonnementsPage() {
           ) : filteredUsers.length === 0 ? (
             <div className="surface-subtle py-12 text-center">
               <Shield className="mx-auto mb-3 size-10 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Aucun résultat</p>
+              <p className="text-sm text-muted-foreground">{t('admin.abonnements.no_results')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto p-1">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Entreprise</TableHead>
-                  <TableHead>Tier</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Dates</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('admin.abonnements.col_company')}</TableHead>
+                  <TableHead>{t('admin.abonnements.col_tier')}</TableHead>
+                  <TableHead>{t('admin.abonnements.col_status')}</TableHead>
+                  <TableHead>{t('admin.abonnements.col_dates')}</TableHead>
+                  <TableHead className="text-right">{t('admin.abonnements.col_actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -450,36 +450,36 @@ export default function AdminAbonnementsPage() {
                             : 'text-muted-foreground'
                         }`}
                       >
-                        {user.subscription_tier === 'paid' ? 'PAID' : 'Free Trial'}
+                        {user.subscription_tier === 'paid' ? t('admin.abonnements.badge_paid') : t('admin.abonnements.badge_free')}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       {user.account_status === 'active' ? (
                           <Badge variant="default" className="rounded-full bg-emerald-500/15 text-emerald-700">
                             <CheckCircle2 className="mr-1 size-3" />
-                            Actif
+                            {t('admin.abonnements.badge_active')}
                           </Badge>
                         ) : user.account_status === 'suspended' ? (
                           <Badge variant="destructive" className="rounded-full bg-orange-500/15 text-orange-700 border-orange-200">
                             <Ban className="mr-1 size-3" />
-                            Suspendu
+                            {t('admin.abonnements.badge_suspended')}
                           </Badge>
                         ) : (
                           <Badge variant="destructive" className="rounded-full">
                             <Ban className="mr-1 size-3" />
-                            Bloqué
+                            {t('admin.abonnements.badge_blocked')}
                         </Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {user.subscription_tier === 'paid' ? (
                         <div>
-                          Expire le: <br/>
+                          {t('admin.abonnements.label_expires')} <br/>
                           {user.subscription_ends_at ? new Date(user.subscription_ends_at).toLocaleDateString() : 'N/A'}
                         </div>
                       ) : (
                         <div>
-                          Essai termine le: <br/>
+                          {t('admin.abonnements.label_trial_ends')} <br/>
                           {user.trial_ends_at ? new Date(user.trial_ends_at).toLocaleDateString() : 'N/A'}
                         </div>
                       )}

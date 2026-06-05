@@ -1,8 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Clock, MapPin, User } from "lucide-react";
+import { Clock, MapPin, User, Mic, Wrench, Handshake, Star, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 import { getEventTypeConfig, formatDate, parseSpeakers } from "@/lib/agenda/utils";
@@ -11,11 +12,21 @@ import type { Database } from "@/types/database.types";
 
 type Evenement = Database["public"]["Tables"]["evenements"]["Row"];
 
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  Mic, Wrench, Handshake, Star, MessageSquare,
+};
+
+function RenderEventIcon({ iconName, className = "mr-1 size-3.5" }: { iconName: string; className?: string }) {
+  const Icon = ICON_MAP[iconName];
+  return Icon ? <Icon className={className} /> : null;
+}
+
 interface EvenementCardProps {
   evenement: Evenement;
 }
 
 export function EvenementCard({ evenement: evt }: EvenementCardProps) {
+  const router = useRouter();
   const { t, locale } = useTranslation();
   const typeConfig = evt.type ? getEventTypeConfig(evt.type, t) : null;
   const date = formatDate(evt.starts_at, locale);
@@ -27,9 +38,10 @@ export function EvenementCard({ evenement: evt }: EvenementCardProps) {
 
   return (
     <Card
+      onClick={() => router.push(`/agenda/${evt.id}`)}
       className={cn(
-        "overflow-hidden border-border/50 transition-all duration-200",
-        "hover:hover:-translate-y-0.5",
+        "cursor-pointer overflow-hidden border-border/50 transition-all duration-200",
+        "hover:-translate-y-0.5 hover:shadow-md",
       )}
     >
       <CardContent className="p-0">
@@ -65,7 +77,7 @@ export function EvenementCard({ evenement: evt }: EvenementCardProps) {
                       variant="outline"
                       className="rounded-full border-border/60 text-[10px] font-medium"
                     >
-                      <span className="mr-1">{typeConfig.icon}</span>
+                      <RenderEventIcon iconName={typeConfig.icon} />
                       {typeConfig.label}
                     </Badge>
                   )}

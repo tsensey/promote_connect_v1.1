@@ -10,6 +10,7 @@ import {
   Plus,
   Search,
   Users,
+  Mic, Wrench, Handshake, Star, MessageSquare,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,15 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useNotificationState } from "@/lib/notification-context";
 import { Crown } from "lucide-react";
 import { ConversionModal } from "@/components/shared/ConversionModal";
+
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  Mic, Wrench, Handshake, Star, MessageSquare,
+};
+
+function RenderEventIcon({ iconName, className = "size-3.5" }: { iconName: string; className?: string }) {
+  const Icon = ICON_MAP[iconName];
+  return Icon ? <Icon className={className} /> : null;
+}
 
 export default function AgendaPage() {
   const { evenements, loading: eventsLoading } = useEvenements();
@@ -204,14 +214,14 @@ export default function AgendaPage() {
 
         {/* ─── Programme ─── */}
         <TabsContent value="programme" className="mt-6 space-y-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder={t("agenda.search")}
                 value={eventSearch}
                 onChange={(e) => setEventSearch(e.target.value)}
-                className="h-11 rounded-xl border-border/70 bg-muted/30 pl-11-none focus:bg-background"
+                className="h-11 rounded-xl border-border/70 bg-muted/30 pl-11 focus:bg-background"
               />
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -229,7 +239,7 @@ export default function AgendaPage() {
                         : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
                     )}
                   >
-                    {config && <span>{config.icon}</span>}
+                    {config && <RenderEventIcon iconName={config.icon} />}
                     {type === "all" ? t("common.all") : config?.label}
                     <Badge
                       variant={isActive ? "secondary" : "outline"}

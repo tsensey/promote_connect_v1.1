@@ -223,7 +223,7 @@ export default function VitrinePage() {
                 placeholder={t('vitrine.search')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-11 rounded-xl border-border/70 bg-muted/30 pl-11-none focus:bg-background"
+                className="h-11 rounded-xl border-border/70 bg-muted/30 pl-11 focus:bg-background"
               />
             </div>
             <div className="flex items-center gap-2 shrink-0">

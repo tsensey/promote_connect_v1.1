@@ -28,6 +28,8 @@ interface NotificationContextValue {
   refreshNotifications: () => Promise<void>;
   markAsRead: (notificationId: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
+  dismissNotification: (notificationId: string) => void;
+  clearNotifications: () => void;
 }
 
 const notificationContext = createContext<NotificationContextValue | undefined>(undefined);
@@ -109,9 +111,24 @@ export function NotificationStateProvider({ children }: { children: React.ReactN
       .eq('is_read', false);
     
     if (!error) {
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setNotifications([]);
       setUnreadNotificationsCount(0);
     }
+  };
+
+  const dismissNotification = (notificationId: string) => {
+    setNotifications(prev => {
+      const removed = prev.find(n => n.id === notificationId);
+      if (removed && !removed.is_read) {
+        setUnreadNotificationsCount(c => Math.max(0, c - 1));
+      }
+      return prev.filter(n => n.id !== notificationId);
+    });
+  };
+
+  const clearNotifications = () => {
+    setNotifications([]);
+    setUnreadNotificationsCount(0);
   };
 
   useEffect(() => {
@@ -144,16 +161,21 @@ export function NotificationStateProvider({ children }: { children: React.ReactN
                 .single()
                 .then(({ data: sender }) => {
                   if (!mounted) return;
-                  setNotifications(prev => [{
-                    ...newNotif,
-                    sender: sender ?? undefined,
-                  } as Notification, ...prev]);
+                  setNotifications(prev =>
+                    prev.some(n => n.id === newNotif.id)
+                      ? prev
+                      : [{ ...newNotif, sender: sender ?? undefined } as Notification, ...prev]
+                  );
                   if (!newNotif.is_read) {
                     setUnreadNotificationsCount(prev => prev + 1);
                   }
                 });
             } else {
-              setNotifications(prev => [newNotif as Notification, ...prev]);
+              setNotifications(prev =>
+                prev.some(n => n.id === newNotif.id)
+                  ? prev
+                  : [newNotif as Notification, ...prev]
+              );
               if (!newNotif.is_read) {
                 setUnreadNotificationsCount(prev => prev + 1);
               }
@@ -179,7 +201,9 @@ export function NotificationStateProvider({ children }: { children: React.ReactN
       refreshUnreadCount: fetchUnreadCount,
       refreshNotifications: fetchNotifications,
       markAsRead,
-      markAllAsRead
+      markAllAsRead,
+      dismissNotification,
+      clearNotifications
     }}>
       {children}
     </notificationContext.Provider>

@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as Record<string, unknown>;
     content = String(body.content ?? '').trim();
-    if (!content) throw new Error('missing content');
+    if (!content && !body.imageUrls && !body.repostOfId) throw new Error('missing content');
     if (body.type) type = String(body.type);
     if (body.category) category = String(body.category);
     if (body.imageUrls) imageUrls = body.imageUrls as string[];

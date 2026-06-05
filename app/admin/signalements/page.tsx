@@ -45,6 +45,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { AdminPagination } from '@/components/shared/AdminPagination';
+import { useTranslation } from '@/lib/i18n';
 
 
 interface ReportRow {
@@ -58,6 +59,7 @@ interface ReportRow {
 }
 
 export default function SignalementsPage() {
+  const { t } = useTranslation();
   const { user, profile, loading: authLoading } = useAuth();
   const router = useRouter();
   const [reports, setReports] = useState<ReportRow[]>([]);
@@ -121,7 +123,7 @@ export default function SignalementsPage() {
       }
     } catch (err: any) {
       console.error('Error loading reports:', err);
-      toast.error('Erreur', { description: 'Impossible de charger les signalements.' });
+      toast.error(t('common.error'), { description: t('admin.signalements.toast_load_error') });
     } finally {
       setLoading(false);
     }
@@ -159,11 +161,11 @@ export default function SignalementsPage() {
 
       if (error) throw error;
       
-      toast.success('Statut mis à jour', { description: `Signalement marqué comme ${newStatus === 'pending' ? 'en attente' : newStatus}` });
+      toast.success(t('admin.signalements.toast_status_updated'));
       loadReports();
     } catch (err: any) {
       console.error('Update error:', err);
-      toast.error('Erreur', { description: "Impossible de mettre à jour le signalement." });
+      toast.error(t('common.error'), { description: t('admin.signalements.toast_update_error') });
     }
   };
 
@@ -180,12 +182,12 @@ export default function SignalementsPage() {
         
       if (error) throw error;
 
-      toast.success('Compte suspendu', { description: `Le compte ${email} a été suspendu.` });
+      toast.success(t('admin.signalements.toast_account_suspended'));
       loadReports();
       return true;
     } catch (err: any) {
       console.error('Suspension error:', err);
-      toast.error('Erreur', { description: "Impossible de suspendre le compte." });
+      toast.error(t('common.error'), { description: t('admin.signalements.toast_suspend_error') });
       return false;
     }
   };
@@ -204,11 +206,11 @@ export default function SignalementsPage() {
         
       if (error) throw error;
 
-      toast.success('Compte réactivé', { description: `Le compte ${email} a été réactivé.` });
+      toast.success(t('admin.signalements.toast_account_reactivated'));
       loadReports();
     } catch (err: any) {
       console.error('Reactivation error:', err);
-      toast.error('Erreur', { description: "Impossible de réactiver le compte." });
+      toast.error(t('common.error'), { description: t('admin.signalements.toast_reactivate_error') });
     }
   };
 
@@ -227,9 +229,9 @@ export default function SignalementsPage() {
           <Flag className="size-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Modération des Signalements</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('admin.signalements.title')}</h1>
           <p className="text-muted-foreground">
-            Gérez les signalements (spam, harcèlement) et modérez les comptes signalés.
+            {t('admin.signalements.desc')}
           </p>
         </div>
       </div>
@@ -241,7 +243,7 @@ export default function SignalementsPage() {
               <div className="relative flex-1 sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Rechercher par nom..."
+                  placeholder={t('admin.signalements.search')}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-9"
@@ -249,19 +251,19 @@ export default function SignalementsPage() {
               </div>
               <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val || 'all')}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Tous les statuts" />
+                  <SelectValue placeholder={t('admin.signalements.all_statuses')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous les statuts</SelectItem>
-                  <SelectItem value="pending">En attente</SelectItem>
-                  <SelectItem value="reviewed">Examiné</SelectItem>
-                  <SelectItem value="actioned">Action prise</SelectItem>
-                  <SelectItem value="dismissed">Classé sans suite</SelectItem>
+                  <SelectItem value="all">{t('admin.signalements.all_statuses')}</SelectItem>
+                  <SelectItem value="pending">{t('admin.signalements.pending')}</SelectItem>
+                  <SelectItem value="reviewed">{t('admin.signalements.reviewed')}</SelectItem>
+                  <SelectItem value="actioned">{t('admin.signalements.actioned')}</SelectItem>
+                  <SelectItem value="dismissed">{t('admin.signalements.dismissed')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <Button variant="outline" onClick={loadReports} disabled={loading}>
-              Actualiser
+              {t('admin.signalements.refresh')}
             </Button>
           </div>
         </CardHeader>
@@ -270,13 +272,13 @@ export default function SignalementsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Signalé par</TableHead>
-                  <TableHead>Compte signalé</TableHead>
-                  <TableHead>Raison / Détails</TableHead>
-                  <TableHead>Statut du compte</TableHead>
-                  <TableHead>Statut du signalement</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('admin.signalements.col_date')}</TableHead>
+                  <TableHead>{t('admin.signalements.col_reported_by')}</TableHead>
+                  <TableHead>{t('admin.signalements.col_reported_account')}</TableHead>
+                  <TableHead>{t('admin.signalements.col_reason')}</TableHead>
+                  <TableHead>{t('admin.signalements.col_account_status')}</TableHead>
+                  <TableHead>{t('admin.signalements.col_report_status')}</TableHead>
+                  <TableHead className="text-right">{t('admin.abonnements.col_actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -289,7 +291,7 @@ export default function SignalementsPage() {
                 ) : reports.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                      Aucun signalement trouvé.
+                      {t('admin.signalements.no_results')}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -299,11 +301,11 @@ export default function SignalementsPage() {
                         {format(new Date(report.created_at), 'dd MMM yyyy HH:mm', { locale: fr })}
                       </TableCell>
                       <TableCell>
-                        <div className="font-medium">{report.reporter?.full_name || 'Inconnu'}</div>
+                        <div className="font-medium">{report.reporter?.full_name || t('admin.signalements.unknown')}</div>
                         <div className="text-xs text-muted-foreground">{report.reporter?.email}</div>
                       </TableCell>
                       <TableCell>
-                        <div className="font-medium text-destructive">{report.reported?.full_name || 'Inconnu'}</div>
+                        <div className="font-medium text-destructive">{report.reported?.full_name || t('admin.signalements.unknown')}</div>
                         <div className="text-xs text-muted-foreground">{report.reported?.email}</div>
                       </TableCell>
                       <TableCell className="max-w-[200px]">
@@ -330,7 +332,7 @@ export default function SignalementsPage() {
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8" />}>
-                              <span className="sr-only">Actions</span>
+                              <span className="sr-only">{t('admin.abonnements.col_actions')}</span>
                               <MoreVertical className="h-4 w-4" />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="rounded-xl w-full" >
@@ -338,17 +340,17 @@ export default function SignalementsPage() {
                               <>
                                 <DropdownMenuItem onClick={() => updateReportStatus(report.id, 'reviewed')}>
                                   <CheckCircle2 className="mr-2 h-4 w-4" />
-                                  Marquer comme examiné
+                                  {t('admin.signalements.mark_reviewed')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => updateReportStatus(report.id, 'dismissed')}>
                                   <Trash2 className="mr-2 h-4 w-4" />
-                                  Classer sans suite
+                                  {t('admin.signalements.mark_dismissed')}
                                 </DropdownMenuItem>
                               </>
                             ) : (
                               <DropdownMenuItem onClick={() => updateReportStatus(report.id, 'pending')}>
                                 <AlertTriangle className="mr-2 h-4 w-4" />
-                                Remettre en attente
+                                {t('admin.signalements.mark_pending')}
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
@@ -358,7 +360,7 @@ export default function SignalementsPage() {
                                 onClick={() => reactivateAccount(report.reported.id, report.reported.email)}
                               >
                                 <CheckCircle2 className="mr-2 h-4 w-4" />
-                                Réactiver ce compte
+                                {t('admin.signalements.reactivate')}
                               </DropdownMenuItem>
                             ) : (
                               <DropdownMenuItem 
@@ -371,7 +373,7 @@ export default function SignalementsPage() {
                                 }}
                               >
                                 <Ban className="mr-2 h-4 w-4" />
-                                Suspendre ce compte
+                                {t('admin.signalements.suspend')}
                               </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>

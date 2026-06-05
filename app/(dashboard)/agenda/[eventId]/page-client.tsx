@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   Users,
   Loader2,
+  Mic, Wrench, Handshake, Star, MessageSquare,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,15 @@ import type { Speaker } from "@/lib/agenda/utils";
 import type { Database } from "@/types/database.types";
 
 type Evenement = Database["public"]["Tables"]["evenements"]["Row"];
+
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  Mic, Wrench, Handshake, Star, MessageSquare,
+};
+
+function RenderEventIcon({ iconName, className = "size-4" }: { iconName: string; className?: string }) {
+  const Icon = ICON_MAP[iconName];
+  return Icon ? <Icon className={className} /> : null;
+}
 
 export default function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -65,7 +75,7 @@ export default function EventDetailPage() {
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="size-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Chargement...</p>
+          <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
         </div>
       </div>
     );
@@ -75,10 +85,10 @@ export default function EventDetailPage() {
     return (
       <div className="mx-auto max-w-2xl py-16 text-center">
         <CalendarDays className="mx-auto mb-4 size-12 text-muted-foreground/40" />
-        <h2 className="text-xl font-semibold">Événement introuvable</h2>
-        <p className="mt-2 text-sm text-muted-foreground">{error || "Cet événement n'existe pas ou a été supprimé."}</p>
+        <h2 className="text-xl font-semibold">{t("agenda.event_not_found")}</h2>
+        <p className="mt-2 text-sm text-muted-foreground">{error || t("agenda.event_not_found_desc")}</p>
         <Button onClick={() => router.push("/agenda")} className="mt-6 rounded-xl">
-          <ArrowLeft className="mr-2 size-4" /> Retour à l&apos;agenda
+          <ArrowLeft className="mr-2 size-4" /> {t("agenda.back_to_agenda")}
         </Button>
       </div>
     );
@@ -132,7 +142,7 @@ export default function EventDetailPage() {
                     variant="outline"
                     className="rounded-full border-border/60 text-xs font-medium"
                   >
-                    <span className="mr-1">{typeConfig.icon}</span>
+                    <RenderEventIcon iconName={typeConfig.icon} className="mr-1 size-4" />
                     {typeConfig.label}
                   </Badge>
                 )}
@@ -161,11 +171,11 @@ export default function EventDetailPage() {
         <div className="lg:col-span-2">
           <Card className="border-border/50">
             <CardHeader>
-              <CardTitle className="text-lg">Description</CardTitle>
+              <CardTitle className="text-lg">{t("agenda.event_description")}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm leading-relaxed text-muted-foreground/80">
-                {event.description || "Aucune description disponible."}
+                {event.description || t("agenda.no_description")}
               </p>
             </CardContent>
           </Card>
@@ -178,13 +188,13 @@ export default function EventDetailPage() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                 <MapPin className="size-4 text-muted-foreground" />
-                Lieu
+                {t("agenda.event_location")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1 pt-0 text-sm text-muted-foreground">
               {event.pavillon && <p>{t("annuaire.pavillon", { pavillon: event.pavillon })}</p>}
-              {event.salle && <p>Salle : {event.salle}</p>}
-              {!event.pavillon && <p>Non communiqué</p>}
+              {event.salle && <p>{t("agenda.room_label")} {event.salle}</p>}
+              {!event.pavillon && <p>{t("agenda.not_communicated")}</p>}
             </CardContent>
           </Card>
 
@@ -193,12 +203,12 @@ export default function EventDetailPage() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                 <Clock className="size-4 text-muted-foreground" />
-                Horaires
+                {t("agenda.event_schedule")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1 pt-0 text-sm text-muted-foreground">
-              <p>Début : {date.timeStart}</p>
-              <p>Fin : {endTime}</p>
+              <p>{t("agenda.event_start")} {date.timeStart}</p>
+              <p>{t("agenda.event_end")} {endTime}</p>
             </CardContent>
           </Card>
 
@@ -209,7 +219,7 @@ export default function EventDetailPage() {
               onClick={() => router.push("/agenda")}
             >
               <Users className="mr-2 size-4" />
-              Demander un RDV
+              {t("agenda.request_meeting")}
             </Button>
           )}
         </div>
@@ -221,7 +231,7 @@ export default function EventDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <User className="size-5 text-muted-foreground" />
-              Intervenants ({speakers.length})
+              {t("agenda.speakers_count", { count: speakers.length })}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -233,11 +243,11 @@ export default function EventDetailPage() {
                 >
                   <Avatar className="size-10 border-2 border-border/30">
                     <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
-                      {s.name.charAt(0)}
+                      {s?.name?.charAt(0) || '?'}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-foreground">{s.name}</p>
+                    <p className="truncate text-sm font-semibold text-foreground">{s?.name || t("agenda.speaker_default")}</p>
                     {s.title && (
                       <p className="truncate text-xs text-muted-foreground/70">{s.title}</p>
                     )}

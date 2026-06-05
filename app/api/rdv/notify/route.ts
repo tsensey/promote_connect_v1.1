@@ -11,6 +11,25 @@ async function getUserEmail(adminSupabase: ReturnType<typeof createAdminClient>,
   }
 }
 
+async function sendFcmNotification(token: string, title: string, body: string, url: string) {
+  const fcmServerKey = process.env.FCM_SERVER_KEY;
+  if (!fcmServerKey) return false;
+  try {
+    const res = await fetch('https://fcm.googleapis.com/fcm/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `key=${fcmServerKey}` },
+      body: JSON.stringify({
+        to: token,
+        notification: { title, body, icon: '/icons/icon-192x192.png' },
+        data: { url, click_action: 'FLUTTER_NOTIFICATION_CLICK' },
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -84,6 +103,27 @@ export async function POST(req: NextRequest) {
           if (!res.ok) console.error(`Resend error (notify): ${res.status} ${await res.text()}`);
         } catch (err) {
           console.error(`Erreur email pour ${pid}:`, err);
+        }
+      }
+    }
+
+    const agendaUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://promote-connect.pro'}/agenda`;
+    const fcmServerKey = process.env.FCM_SERVER_KEY;
+    if (fcmServerKey) {
+      const { data: fcmTokens } = await adminSupabase
+        .from('profiles')
+        .select('id, fcm_token')
+        .in('id', participantIds)
+        .not('fcm_token', 'is', null);
+      if (fcmTokens) {
+        for (const p of fcmTokens) {
+          if (!p.fcm_token) continue;
+          const otherName = p.id === rdv.demandeur_id ? destinataireName : demandeurName;
+          const title = isConfirmed ? 'RDV confirmé' : 'RDV annulé';
+          const body = p.id === actor_id
+            ? `Vous avez ${actionLabel} le rendez-vous avec ${otherName}`
+            : `${otherName} ${actionLabel} le rendez-vous avec vous`;
+          await sendFcmNotification(p.fcm_token, title, body, agendaUrl).catch(() => {});
         }
       }
     }

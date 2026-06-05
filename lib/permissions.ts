@@ -18,6 +18,7 @@ export interface PermissionUser {
   id?: string;
   role: UserRole | string | null;
   subscription_tier?: SubscriptionTier | string | null;
+  subscription_ends_at?: string | null;
   account_status?: AccountStatus | string | null;
   is_active?: boolean | null;
 }
@@ -28,7 +29,9 @@ export interface PermissionUser {
 
 function isPaid(user: PermissionUser): boolean {
   if (user.role === 'admin') return true;
-  return user.subscription_tier === 'paid';
+  if (user.subscription_tier !== 'paid') return false;
+  if (user.subscription_ends_at && new Date(user.subscription_ends_at) <= new Date()) return false;
+  return true;
 }
 
 function isActive(user: PermissionUser): boolean {

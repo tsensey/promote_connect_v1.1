@@ -8,7 +8,7 @@ export function MarketingFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-border/50 bg-muted/30">
+    <footer suppressHydrationWarning className="border-t border-border/50 bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid gap-10 md:grid-cols-3">
           <div>

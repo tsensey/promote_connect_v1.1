@@ -78,7 +78,13 @@ export default function AdminProgrammePage() {
   };
 
   const handleEdit = (evt: Evenement) => {
-    const speakers = Array.isArray(evt.speakers) ? evt.speakers.join(", ") : "";
+    let speakers = "";
+    if (Array.isArray(evt.speakers)) {
+      speakers = evt.speakers
+        .map((s: unknown) => (typeof s === "object" && s !== null ? (s as Record<string, unknown>).name ?? String(s) : String(s)))
+        .filter(Boolean)
+        .join(", ");
+    }
     setFormData({
       titre: evt.titre || "",
       description: evt.description || "",
@@ -107,6 +113,7 @@ export default function AdminProgrammePage() {
             .split(",")
             .map((s) => s.trim())
             .filter(Boolean)
+            .map((name) => ({ name }))
         : [],
       starts_at: new Date(formData.starts_at).toISOString(),
       ends_at: new Date(formData.ends_at).toISOString(),

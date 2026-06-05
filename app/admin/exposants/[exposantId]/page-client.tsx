@@ -610,7 +610,7 @@ export default function AdminExposantVitrinePage() {
                   <Input
                     value={showcaseForm.website}
                     onChange={e => setShowcaseForm(f => ({ ...f, website: e.target.value }))}
-                    placeholder="https://entreprise.com"
+                    placeholder={t('exposant.vitrine.website_placeholder')}
                   />
                 </Field>
               </div>
@@ -656,7 +656,7 @@ export default function AdminExposantVitrinePage() {
                     <option value="">{t('admin.exposants.form_none')}</option>
                     {espaces.map(espace => (
                       <option key={espace.id} value={espace.id}>
-                        {espace.type === 'pavillon' ? 'Pavillon' : 'Espace'} {espace.code} — {espace.nom}
+                        {espace.type === 'pavillon' ? t('admin.exposants.form_type_pavillon') : t('admin.exposants.form_type_espace')} {espace.code} — {espace.nom}
                       </option>
                     ))}
                   </select>
@@ -724,7 +724,7 @@ export default function AdminExposantVitrinePage() {
 
               <SectionTitle>{t('exposant.vitrine.media')}</SectionTitle>
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label={t('exposant.vitrine.video_url')} hint="Ex : https://www.youtube.com/embed/VIDEO_ID">
+                <Field label={t('exposant.vitrine.video_url')} hint={t('exposant.vitrine.video_url_hint')}>
                   <Input
                     value={showcaseForm.video_url}
                     onChange={e => setShowcaseForm(f => ({ ...f, video_url: e.target.value }))}
@@ -761,11 +761,11 @@ export default function AdminExposantVitrinePage() {
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
               <div className="grid gap-6 md:grid-cols-2">
-                <Field label="Logo">
+                <Field label={t('exposant.vitrine.logo_label')}>
                   <div className="flex items-center gap-4">
                     {showcaseForm.logo_url && (
                       <div className="relative size-16 overflow-hidden rounded-xl border border-border/50 shrink-0 bg-white">
-                        <Image src={getValidImageUrl(showcaseForm.logo_url)} alt="Logo" fill sizes="64px" className="object-contain" />
+                        <Image src={getValidImageUrl(showcaseForm.logo_url)} alt={t('exposant.vitrine.logo_label')} fill sizes="64px" className="object-contain" />
                       </div>
                     )}
                     <div className="relative flex-1">
@@ -782,11 +782,11 @@ export default function AdminExposantVitrinePage() {
                   </div>
                 </Field>
 
-                <Field label="Cover">
+                <Field label={t('exposant.vitrine.cover_label')}>
                   <div className="flex items-center gap-4">
                     {showcaseForm.cover_url && (
                       <div className="relative h-24 w-full max-w-[200px] overflow-hidden rounded-xl border border-border/50 shrink-0 bg-muted">
-                        <Image src={getValidImageUrl(showcaseForm.cover_url)} alt="Cover" fill sizes="200px" className="object-cover" />
+                        <Image src={getValidImageUrl(showcaseForm.cover_url)} alt={t('exposant.vitrine.cover_label')} fill sizes="200px" className="object-cover" />
                       </div>
                     )}
                     <div className="relative flex-1">

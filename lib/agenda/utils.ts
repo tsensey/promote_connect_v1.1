@@ -30,11 +30,11 @@ export function getEventTypeConfig(
   t: (key: string) => string,
 ): { label: string; gradient: string; icon: string } | null {
   const configs: Record<string, { labelKey: string; gradient: string; icon: string }> = {
-    conference: { labelKey: "agenda.event_conference", gradient: "from-blue-500/20 to-blue-500/5", icon: "🎤" },
-    atelier: { labelKey: "agenda.event_atelier", gradient: "from-emerald-500/20 to-emerald-500/5", icon: "🔧" },
-    networking: { labelKey: "agenda.event_networking", gradient: "from-violet-500/20 to-violet-500/5", icon: "🤝" },
-    keynote: { labelKey: "agenda.event_keynote", gradient: "from-amber-500/20 to-amber-500/5", icon: "⭐" },
-    panel: { labelKey: "agenda.event_panel", gradient: "from-rose-500/20 to-rose-500/5", icon: "💬" },
+    conference: { labelKey: "agenda.event_conference", gradient: "from-blue-500/20 to-blue-500/5", icon: "Mic" },
+    atelier: { labelKey: "agenda.event_atelier", gradient: "from-emerald-500/20 to-emerald-500/5", icon: "Wrench" },
+    networking: { labelKey: "agenda.event_networking", gradient: "from-violet-500/20 to-violet-500/5", icon: "Handshake" },
+    keynote: { labelKey: "agenda.event_keynote", gradient: "from-amber-500/20 to-amber-500/5", icon: "Star" },
+    panel: { labelKey: "agenda.event_panel", gradient: "from-rose-500/20 to-rose-500/5", icon: "MessageSquare" },
   };
   if (!type || !configs[type]) return null;
   const cfg = configs[type];

@@ -85,8 +85,8 @@ export function AdminSidebar({
         { label: t('layout.admin.sidebar.dashboard'), href: '/admin', icon: BarChart3 },
         { label: t('layout.admin.sidebar.users'), href: '/admin/users', icon: UserPlus, badge: 'Core' },
         { label: t('layout.admin.sidebar.exposants'), href: '/admin/exposants', icon: Users },
-        { label: t('Abonnements'), href: '/admin/abonnements', icon: CreditCard, badge: 'v1.1' },
-        { label: t('Configuration'), href: '/admin/configuration', icon: Settings, badge: 'v1.1' },
+        { label: t('layout.admin.sidebar.subscriptions'), href: '/admin/abonnements', icon: CreditCard, badge: '' },
+        { label: t('layout.admin.sidebar.settings'), href: '/admin/configuration', icon: Settings, badge: '' },
         { label: t('layout.admin.sidebar.espaces'), href: '/admin/espaces', icon: Layers },
         { label: t('layout.admin.sidebar.programme'), href: '/admin/programme', icon: CalendarDays },
         { label: t('layout.admin.sidebar.logs'), href: '/admin/logs', icon: History },
@@ -95,7 +95,7 @@ export function AdminSidebar({
     {
       title: t('layout.admin.sidebar.operationnel'),
       items: [
-        { label: t('Signalements'), href: '/admin/signalements', icon: Flag, badge: 'v1.1' },
+        { label: t('layout.admin.sidebar.reports'), href: '/admin/signalements', icon: Flag, badge: '' },
         { label: t('layout.admin.sidebar.newsletter'), href: '/admin/newsletter', icon: Megaphone },
         { label: t('layout.admin.sidebar.tickets'), href: '/admin/tickets', icon: Ticket },
       ],

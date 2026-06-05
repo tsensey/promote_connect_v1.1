@@ -31,8 +31,11 @@ export function NotificationDropdown() {
     markAsRead,
     markAllAsRead,
     refreshNotifications,
+    dismissNotification,
+    clearNotifications,
   } = useNotificationState();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const isAdmin = profile?.role === 'admin' || user?.user_metadata?.role === 'admin';
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const handleNotificationClick = async (n: Notification) => {
@@ -45,7 +48,7 @@ export function NotificationDropdown() {
     } else if (n.data?.conversation_id) {
       router.push(`/chat?conv=${n.data.conversation_id}`);
     } else if (n.data?.ticket_id) {
-      router.push(`/support/${n.data.ticket_id}`);
+      router.push(isAdmin ? `/admin/tickets/${n.data.ticket_id}` : `/support/${n.data.ticket_id}`);
     } else if (n.type?.startsWith('rdv_')) {
       router.push('/agenda');
     }
@@ -59,8 +62,7 @@ export function NotificationDropdown() {
         .update({ status })
         .eq('id', rdvId);
 
-      await markAsRead(notificationId);
-      await refreshNotifications();
+      dismissNotification(notificationId);
 
       // Notification in-app gérée par trigger DB (migration 072)
       // Envoi email non bloquant

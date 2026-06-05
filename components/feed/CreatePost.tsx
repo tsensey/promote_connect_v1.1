@@ -153,7 +153,7 @@ export function CreatePost({
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!content.trim() || submitting || isOverLimit) return;
+      if (submitting || isOverLimit || (!content.trim() && imageFiles.length === 0)) return;
 
       setSubmitting(true);
       try {
@@ -422,7 +422,7 @@ export function CreatePost({
                   <Button
                     type="submit"
                     size="sm"
-                    disabled={!content.trim() || submitting || isOverLimit}
+                    disabled={submitting || isOverLimit || (!content.trim() && imageFiles.length === 0)}
                     className={cn(
                       "rounded-full gap-1.5 font-semibold transition-all",
                     )}

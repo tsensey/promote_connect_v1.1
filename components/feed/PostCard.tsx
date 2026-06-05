@@ -1150,7 +1150,7 @@ export const PostCard = memo(function PostCard({
                 <Button
                   size="sm"
                   onClick={submitRepost}
-                  disabled={repostSubmitting || (!repostText.trim())}
+                  disabled={repostSubmitting}
                   className="rounded-full gap-1.5"
                 >
                   {repostSubmitting ? (

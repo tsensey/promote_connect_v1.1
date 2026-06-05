@@ -12,6 +12,25 @@ async function getUserEmail(adminSupabase: ReturnType<typeof createAdminClient>,
   }
 }
 
+async function sendFcmNotification(token: string, title: string, body: string, url: string) {
+  const fcmServerKey = process.env.FCM_SERVER_KEY;
+  if (!fcmServerKey) return false;
+  try {
+    const res = await fetch('https://fcm.googleapis.com/fcm/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `key=${fcmServerKey}` },
+      body: JSON.stringify({
+        to: token,
+        notification: { title, body, icon: '/icons/icon-192x192.png' },
+        data: { url, click_action: 'FLUTTER_NOTIFICATION_CLICK' },
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -19,6 +38,28 @@ export async function POST(req: NextRequest) {
 
     if (!demandeur_id || !destinataire_id || !starts_at || !ends_at) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    const startDate = new Date(starts_at);
+    const endDate = new Date(ends_at);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const currentYear = today.getFullYear();
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return NextResponse.json({ error: 'Format de date invalide' }, { status: 400 });
+    }
+
+    if (startDate < today) {
+      return NextResponse.json({ error: 'La date du RDV ne peut pas être dans le passé' }, { status: 400 });
+    }
+
+    if (startDate.getFullYear() > currentYear) {
+      return NextResponse.json({ error: 'Le RDV ne peut pas dépasser l\'année courante' }, { status: 400 });
+    }
+
+    if (endDate <= startDate) {
+      return NextResponse.json({ error: 'La date de fin doit être après la date de début' }, { status: 400 });
     }
 
     const authSupabase = await createClient();
@@ -53,6 +94,19 @@ export async function POST(req: NextRequest) {
       .select('full_name')
       .eq('id', destinataire_id)
       .single();
+
+    const { count: collisionCount } = await adminSupabase
+      .from('rendez_vous')
+      .select('id', { count: 'exact', head: true })
+      .or(`demandeur_id.eq.${demandeur_id},destinataire_id.eq.${demandeur_id}`)
+      .or(`demandeur_id.eq.${destinataire_id},destinataire_id.eq.${destinataire_id}`)
+      .neq('status', 'cancelled')
+      .lt('starts_at', ends_at)
+      .gt('ends_at', starts_at);
+
+    if (collisionCount && collisionCount > 0) {
+      return NextResponse.json({ error: 'Créneau déjà occupé' }, { status: 409 });
+    }
 
     const { data: rdv, error: rdvError } = await authSupabase
       .from('rendez_vous')
@@ -119,6 +173,31 @@ export async function POST(req: NextRequest) {
           if (!res.ok) console.error(`Resend error (confirmation): ${res.status} ${await res.text()}`);
         } catch (err) {
           console.error('Erreur email demandeur:', err);
+        }
+      }
+    }
+
+    const fcmServerKey = process.env.FCM_SERVER_KEY;
+    if (fcmServerKey) {
+      const { data: fcmTokens } = await adminSupabase
+        .from('profiles')
+        .select('id, fcm_token, full_name')
+        .in('id', [demandeur_id, destinataire_id])
+        .not('fcm_token', 'is', null);
+
+      if (fcmTokens) {
+        const agendaUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://promote-connect.pro'}/agenda`;
+        for (const p of fcmTokens) {
+          if (!p.fcm_token) continue;
+          const isDestinataire = p.id === destinataire_id;
+          await sendFcmNotification(
+            p.fcm_token,
+            isDestinataire ? 'Nouvelle demande de RDV' : 'Demande de RDV envoyée',
+            isDestinataire
+              ? `${demandeurName} vous a envoyé une demande de rendez-vous`
+              : `Votre demande de rendez-vous avec ${destinataireName} a bien été envoyée`,
+            agendaUrl,
+          );
         }
       }
     }
