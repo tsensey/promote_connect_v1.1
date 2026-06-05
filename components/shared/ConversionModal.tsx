@@ -19,7 +19,7 @@ export function ConversionModal({ open, onOpenChange }: ConversionModalProps) {
   useEffect(() => {
     if (open && !content) {
       const loadContent = async () => {
-        const { data, error } = await supabaseClient.from('platform_config').select('value').eq('key', 'conversion_message').single();
+        const { data, error } = await supabaseClient.from('platform_config').select('value').eq('key', 'conversion_message').maybeSingle();
         
         const defaults: ConversionMessage = {
           title: 'Débloquez l\'accès complet à PROMOTE-CONNECT',

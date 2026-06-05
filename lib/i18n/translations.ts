@@ -685,6 +685,13 @@ export const translations: Record<Locale, Record<string, string>> = {
     'newsletter.daily': 'Quotidienne',
     'newsletter.weekly': 'Hebdomadaire',
     'newsletter.monthly': 'Mensuelle',
+    'newsletter.restricted_title': 'Accès réservé',
+    'newsletter.restricted_desc': 'La newsletter PROMOTE est réservée aux entreprises avec un abonnement actif.',
+    'newsletter.unlock_access': 'Débloquer l\'accès',
+    'newsletter.unsubscribe': 'Se désabonner',
+    'newsletter.unsubscribe_success': 'Désabonnement réussi',
+    'newsletter.unsubscribe_error': 'Erreur lors du désabonnement',
+    'newsletter.sectors_label': 'Secteurs',
 
     // ─── Admin Newsletter (extended) ─────────────────────────
     'admin.newsletter.preview': 'Aperçu',
@@ -2324,6 +2331,13 @@ export const translations: Record<Locale, Record<string, string>> = {
     'newsletter.daily': 'Daily',
     'newsletter.weekly': 'Weekly',
     'newsletter.monthly': 'Monthly',
+    'newsletter.restricted_title': 'Restricted access',
+    'newsletter.restricted_desc': 'The PROMOTE newsletter is reserved for companies with an active subscription.',
+    'newsletter.unlock_access': 'Unlock access',
+    'newsletter.unsubscribe': 'Unsubscribe',
+    'newsletter.unsubscribe_success': 'Unsubscribed successfully',
+    'newsletter.unsubscribe_error': 'Error while unsubscribing',
+    'newsletter.sectors_label': 'Sectors',
 
     // ─── Admin Newsletter (extended) ─────────────────────────
     'admin.newsletter.preview': 'Preview',

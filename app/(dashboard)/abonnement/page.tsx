@@ -452,7 +452,7 @@ export default function AbonnementPage() {
                   <h3 className="font-semibold text-lg mb-1">
                     {t('abonnement.subscribe_title') || 'Souscription'}
                   </h3>
-                  <div className="text-3xl font-bold tracking-tight text-primary">
+                  <div className="text-2xl font-bold tracking-tight text-primary">
                     {msg.priceDisplay}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -494,7 +494,7 @@ export default function AbonnementPage() {
                          <CheckCircle2 className="size-4" /> Demande envoyée
                       </span>
                     ) : (
-                      <span className="flex items-center gap-2">
+                      <span className="flex items-center gap-2 truncate">
                         {t('abonnement.request_upgrade') || 'Demander mon passage en Premium'} <Crown className="size-4" />
                       </span>
                     )}
@@ -517,7 +517,7 @@ export default function AbonnementPage() {
                     </a>
                   ) : (
                     <a href={`mailto:${msg.email}`} className="block w-full">
-                      <Button variant="outline" className="w-full rounded-xl" size="lg">
+                      <Button variant="outline" className="w-full rounded-xl truncate" size="lg">
                         {msg.ctaLabel}
                       </Button>
                     </a>

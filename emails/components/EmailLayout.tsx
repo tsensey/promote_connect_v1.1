@@ -59,7 +59,7 @@ export default function EmailLayout({
       <Tailwind config={tailwindConfig}>
         <Body className="bg-background m-0 px-4 py-8 font-sans text-foreground">
           <Container className="mx-auto max-w-[600px] bg-white rounded-3xl overflow-hidden shadow-xl border border-border">
-            <Section className="flex justify-between items-center bg-brand p-8 text-white w-full">
+            <Section width={'100%'} className="flex justify-between items-center bg-brand p-8 text-white w-full">
               <Text className="m-0 text-2xl font-bold leading-tight">
                 {title}
               </Text>

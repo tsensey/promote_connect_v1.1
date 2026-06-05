@@ -177,14 +177,14 @@ export default function NewsletterPage() {
 
         if (!res.ok) {
           const errorData = await res.json();
-          throw new Error(errorData.error || "Erreur lors du désabonnement");
+          throw new Error(errorData.error || t("newsletter.unsubscribe_error"));
         }
       }
 
       setSubscriptionStatus(null);
-      toast.success("Désabonnement réussi");
+      toast.success(t("newsletter.unsubscribe_success"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur lors du désabonnement");
+      toast.error(err instanceof Error ? err.message : t("newsletter.unsubscribe_error"));
     } finally {
       setLoading(false);
     }
@@ -195,12 +195,12 @@ export default function NewsletterPage() {
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/60 backdrop-blur-md">
         <div className="max-w-md text-center p-8 bg-background/95 rounded-2xl border border-border">
           <LockKeyhole className="size-12 text-primary mx-auto mb-4" />
-          <h3 className="text-xl font-bold mb-2">{t('newsletter.restricted_title') || 'Accès réservé'}</h3>
+          <h3 className="text-xl font-bold mb-2">{t('newsletter.restricted_title')}</h3>
           <p className="text-muted-foreground mb-6">
-            {t('newsletter.restricted_desc') || "La newsletter PROMOTE est réservée aux entreprises avec un abonnement actif."}
+            {t('newsletter.restricted_desc')}
           </p>
           <Button onClick={() => setShowConversion(true)} className="w-full rounded-xl" size="lg">
-            {t('newsletter.unlock_access') || "Débloquer l'accès"}
+            {t('newsletter.unlock_access')}
           </Button>
         </div>
       </div>
@@ -266,7 +266,7 @@ export default function NewsletterPage() {
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Settings2 className="size-4" />
                     <span>
-                      Secteurs :{" "}
+                      {t("newsletter.sectors_label")} :{" "}
                       <span className="font-medium text-foreground">
                         {subscriptionStatus.sectors.join(", ")}
                       </span>
@@ -284,7 +284,7 @@ export default function NewsletterPage() {
                 {loading ? (
                   <Loader2 className="mr-2 size-4 animate-spin" />
                 ) : null}
-                Se désabonner
+                {t("newsletter.unsubscribe")}
               </Button>
             </div>
           </div>

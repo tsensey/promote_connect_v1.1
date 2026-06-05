@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/server';
-import { checkMessageQuota } from '@/lib/subscription';
+import { checkMessageQuota, incrementMessageCount } from '@/lib/subscription';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import type { Json } from '@/types/database.types';
 
@@ -86,6 +86,16 @@ export async function POST(request: NextRequest) {
 
   if (!message) {
     return NextResponse.json({ error: 'insert_failed', details: 'No message returned' }, { status: 500 });
+  }
+
+  // Incrémenter le compteur UNIQUEMENT après insert réussi
+  if (quotaResult.remaining !== undefined) {
+    incrementMessageCount(
+      user.id,
+      quotaResult.currentCount!,
+      quotaResult.isSameDay!,
+      quotaResult.lastExchangeReset ?? null
+    ).catch((err) => console.error('Failed to increment message count:', err));
   }
 
   await supabase

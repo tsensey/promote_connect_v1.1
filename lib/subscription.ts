@@ -238,11 +238,20 @@ export function getTrialDaysRemaining(trialEndsAt: string | null): number | null
  * Doit être appelé côté serveur (API route) — jamais côté client
  *
  * Retourne { allowed: true } ou { allowed: false, reason: string }
+ * N'incrémente PAS le compteur — appeler incrementMessageCount() après insert réussi
  */
 export async function checkMessageQuota(
   senderId: string,
   conversationId: string
-): Promise<{ allowed: boolean; reason?: string; remaining?: number }> {
+): Promise<{
+  allowed: boolean;
+  reason?: string;
+  remaining?: number;
+  dailyLimit?: number;
+  currentCount?: number;
+  isSameDay?: boolean;
+  lastExchangeReset?: string | null;
+}> {
   const supabase = await createClient();
 
   // 1. Vérifier le tier de l'expéditeur
@@ -334,20 +343,36 @@ export async function checkMessageQuota(
     };
   }
 
-  // 5. Incrémenter le compteur en DB
+  return {
+    allowed: true,
+    remaining: dailyLimit - currentCount,
+    dailyLimit,
+    currentCount,
+    isSameDay,
+    lastExchangeReset: senderProfile.last_exchange_reset,
+  };
+}
+
+/**
+ * Incrémente le compteur daily_exchange_count après envoi réussi d'un message
+ * Doit être appelée UNIQUEMENT après confirmation de l'insertion dans messages
+ */
+export async function incrementMessageCount(
+  senderId: string,
+  currentCount: number,
+  isSameDay: boolean,
+  lastExchangeReset: string | null
+): Promise<void> {
+  const supabase = await createClient();
   const newCount = currentCount + 1;
+  const now = new Date();
   await supabase
     .from('profiles')
     .update({
       daily_exchange_count: newCount,
-      last_exchange_reset: isSameDay ? senderProfile.last_exchange_reset : now.toISOString(),
+      last_exchange_reset: isSameDay ? lastExchangeReset : now.toISOString(),
     })
     .eq('id', senderId);
-
-  return {
-    allowed: true,
-    remaining: dailyLimit - newCount,
-  };
 }
 
 /**

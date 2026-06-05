@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabaseClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -49,22 +48,22 @@ export default function ConfigurationPage() {
 
   useEffect(() => {
     async function loadConfig() {
-      const { data, error } = await supabaseClient
-        .from('platform_config')
-        .select('*');
-
-      if (error) {
-        setError(error.message);
+      const res = await fetch('/api/admin/config');
+      if (!res.ok) {
+        setError('Erreur lors du chargement de la configuration');
         setLoading(false);
         return;
       }
 
-      setConfigs(data as unknown as PlatformConfig[] || []);
+      const json = await res.json();
+      const items: PlatformConfig[] = json.data ?? [];
+
+      setConfigs(items);
 
       const newQuotas = { ...quotas };
       let newConvMsg = { ...conversionMessage };
 
-      data?.forEach((item) => {
+      items.forEach((item) => {
         if (item.key === 'conversion_message') {
           newConvMsg = { ...newConvMsg, ...(item.value as Record<string, string>) };
         } else if (item.key in newQuotas) {
@@ -83,26 +82,34 @@ export default function ConfigurationPage() {
   const handleSaveQuota = async (key: string, value: number) => {
     setSaving(key);
     setError(null);
-    
-    const { error } = await supabaseClient
-      .from('platform_config')
-      .update({ value: Number(value) })
-      .eq('key', key);
-      
-    if (error) setError(error.message);
+
+    const res = await fetch('/api/admin/config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, value: Number(value) }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      setError(err.error || 'Erreur lors de la sauvegarde');
+    }
     setSaving(null);
   };
 
   const handleSaveConversionMessage = async () => {
     setSaving('conversion_message');
     setError(null);
-    
-    const { error } = await supabaseClient
-      .from('platform_config')
-      .update({ value: conversionMessage })
-      .eq('key', 'conversion_message');
-      
-    if (error) setError(error.message);
+
+    const res = await fetch('/api/admin/config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'conversion_message', value: conversionMessage }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      setError(err.error || 'Erreur lors de la sauvegarde');
+    }
     setSaving(null);
   };
 
