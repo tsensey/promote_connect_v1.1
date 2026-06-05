@@ -125,12 +125,24 @@ SUPABASE_SERVICE_ROLE_KEY=<SERVICE_ROLE_KEY_GENEREE_PRECEDEMMENT>
 
 NEXT_PUBLIC_APP_URL=https://promote-connect.pro
 
-# Stripe, Resend, FCM (production keys)
+# Stripe
 STRIPE_SECRET_KEY=sk_live_...
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Resend
 RESEND_API_KEY=re_...
 RESEND_FROM_EMAIL=newsletter@promote-connect.pro
+
+# Firebase / FCM (push notifications)
+# Obtenez ces valeurs depuis Firebase Console > Project Settings > General > Web Apps
+NEXT_PUBLIC_FIREBASE_API_KEY=<Firebase Web API Key>
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=<project-id>.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=<project-id>
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=<sender-id>
+NEXT_PUBLIC_FIREBASE_APP_ID=<firebase-app-id>
+# Server Key depuis Firebase Console > Cloud Messaging > Cloud Messaging API (Legacy)
+FCM_SERVER_KEY=<FCM Server Key>
 ```
 
 ### 3.3. Build et Lancement avec PM2
@@ -254,6 +266,15 @@ Dans `/etc/nginx/sites-available/promote-connect` :
 server {
     server_name promote-connect.pro;
 
+    # CSP : autoriser Firebase/FCM pour les notifications push
+    add_header Content-Security-Policy "
+        default-src 'self';
+        connect-src 'self' https://fcm.googleapis.com https://*.firebaseio.com wss://api.promote-connect.pro;
+        worker-src 'self' blob:;
+        img-src 'self' data: blob: https:;
+        script-src 'self' https://www.gstatic.com 'unsafe-inline';
+    ";
+
     location / {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
@@ -313,3 +334,36 @@ sudo certbot --nginx -d promote-connect.pro -d api.promote-connect.pro -d n8n.pr
 - [ ] Le webhook Stripe est configuré pour pointer sur `https://promote-connect.pro/api/webhooks/stripe`.
 - [ ] n8n tourne sur `https://n8n.promote-connect.pro` et les workflows (newsletter, etc.) sont actifs.
 - [ ] Le déploiement automatique s'exécute avec succès lors d'un push sur `main`.
+- [ ] Les notifications push FCM fonctionnent : le token est enregistré dans `profiles.fcm_token` et les webhooks FCM répondent 200.
+- [ ] Vérifier que `firebase-messaging-sw.js` est servi correctement (accessible sur `https://promote-connect.pro/firebase-messaging-sw.js`).
+
+---
+
+## 9. Configuration FCM (Firebase Cloud Messaging)
+
+Les notifications push reposent sur Firebase Cloud Messaging. Voici les fichiers impliqués et leur rôle :
+
+### 9.1. Variables d'environnement requises
+Voir la section 3.2. Les variables `NEXT_PUBLIC_FIREBASE_*` et `FCM_SERVER_KEY` doivent être renseignées.
+
+### 9.2. Client Firebase SDK (Navigateur)
+Le token FCM est récupéré côté client via `lib/firebase-client.ts` et stocké dans `profiles.fcm_token` (colonne ajoutée par la migration `044_add_fcm_token.sql`).
+
+### 9.3. Service Worker (`public/firebase-messaging-sw.js`)
+Ce fichier est chargé automatiquement par Firebase SDK pour gérer les messages push en arrière-plan. Il utilise l'API Firebase compat (`firebase-app-compat.js` et `firebase-messaging-compat.js`) chargée depuis le CDN `www.gstatic.com`.
+
+### 9.4. Envoi des notifications (Serveur)
+Deux mécanismes :
+
+| Mécanisme | Emplacement | Usage |
+|-----------|------------|-------|
+| API Route Next.js | `app/api/webhooks/fcm/route.ts` | Envoi direct via l'API HTTP Legacy FCM (`POST https://fcm.googleapis.com/fcm/send`) |
+| Edge Function Supabase | `supabase/functions/send-push-notification/` | Envoi depuis une Edge Function Deno |
+
+L'API Legacy FCM est utilisée avec le header `Authorization: key=<FCM_SERVER_KEY>`.
+
+### 9.5. Points d'attention
+- **CSP** : Les URLs `https://fcm.googleapis.com` et `https://www.gstatic.com` doivent être autorisées dans `connect-src` et `script-src` (voir section 7).
+- **Permissions navigateur** : L'utilisateur doit accepter la demande de notification (déclenchée dans `PwaRegister.tsx`).
+- **FCM Legacy vs HTTP v1** : Le projet utilise l'API Legacy. Google recommande de migrer vers HTTP v1 API avec OAuth2. Cette migration est planifiée en Phase 3.
+- **Firebase App Check** : Peut être activé sur Firebase Console pour renforcer la sécurité côté client.
