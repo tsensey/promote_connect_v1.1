@@ -46,7 +46,7 @@ async function getPlatformConfigValue(key: string): Promise<unknown> {
     .from('platform_config')
     .select('value')
     .eq('key', key)
-    .single();
+    .maybeSingle();
 
   if (error || !data) return null;
   return data.value;
@@ -318,28 +318,29 @@ export async function checkMessageQuota(
     };
   }
 
-  // 4. Vérifier le quota journalier (surcharge individuelle possible, CdC §1.3)
+  // 4. Vérifier le quota journalier via comptage réel (comme la RLS)
+  //    On utilise la même logique que get_user_message_count() côté PostgreSQL
+  //    pour garantir la cohérence avec l'insertion réelle. CdC §1.3
   const dailyLimit = senderProfile.quota_override_messages ?? quotaConfig.dailyMessageLimit;
 
-  const now = new Date();
-  const lastReset = senderProfile.last_exchange_reset
-    ? new Date(senderProfile.last_exchange_reset)
-    : null;
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
 
-  // Vérifier si le compteur doit être réinitialisé (nouveau jour)
-  const isSameDay = lastReset
-    ? lastReset.getFullYear() === now.getFullYear() &&
-      lastReset.getMonth() === now.getMonth() &&
-      lastReset.getDate() === now.getDate()
-    : false;
+  const { count: dailyCount } = await supabase
+    .from('messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('sender_id', senderId)
+    .gte('created_at', todayStart.toISOString());
 
-  const currentCount = isSameDay ? (senderProfile.daily_exchange_count ?? 0) : 0;
+  const currentCount = dailyCount ?? 0;
 
   if (currentCount >= dailyLimit) {
     return {
       allowed: false,
       reason: 'daily_quota_exceeded',
       remaining: 0,
+      dailyLimit,
+      currentCount,
     };
   }
 
@@ -348,7 +349,7 @@ export async function checkMessageQuota(
     remaining: dailyLimit - currentCount,
     dailyLimit,
     currentCount,
-    isSameDay,
+    isSameDay: true,
     lastExchangeReset: senderProfile.last_exchange_reset,
   };
 }

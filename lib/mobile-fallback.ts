@@ -6,7 +6,7 @@ async function getPlatformConfigValue(key: string, defaultValue: number): Promis
     .from('platform_config')
     .select('value')
     .eq('key', key)
-    .single();
+    .maybeSingle();
   if (data?.value !== undefined && data.value !== null) {
     const val = Number(data.value);
     return isNaN(val) ? defaultValue : val;

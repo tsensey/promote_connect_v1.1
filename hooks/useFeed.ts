@@ -371,9 +371,22 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
         body: JSON.stringify({ content, type, category, imageUrls }),
       });
 
-      const responseBody = await res.json();
+      let responseBody: Record<string, unknown> = {};
+      try {
+        responseBody = await res.json();
+      } catch {
+        // réponse non-JSON
+      }
+
       if (!res.ok) {
-        return { error: new Error(responseBody.error || 'Erreur lors de la création') };
+        const message = (responseBody.message as string)
+          || (responseBody.title as string)
+          || (responseBody.error as string)
+          || 'Erreur lors de la création';
+        if (responseBody.showConversion || responseBody.reason === 'post_quota_exceeded') {
+          dispatchConversionModal();
+        }
+        return { error: new Error(message) };
       }
 
       if (responseBody.allowed === false) {
@@ -381,7 +394,7 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
         return { error: new Error(getQuotaMessage('post_quota_exceeded').description) };
       }
 
-      const newPost = responseBody.data;
+      const newPost = responseBody.data as { id: string } | undefined;
       if (newPost) {
         const { data: fullPost } = await supabaseClient
           .from('posts')

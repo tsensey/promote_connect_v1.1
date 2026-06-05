@@ -98,7 +98,16 @@ export default function AbonnementPage() {
         if (data) {
           const configMap = Object.fromEntries(data.map((row) => [row.key, row.value]));
           if (configMap['conversion_message']) {
-            setConversionMsg(configMap['conversion_message'] as unknown as ConversionMessage);
+            const val = configMap['conversion_message'] as Record<string, unknown>;
+            setConversionMsg({
+              title: String(val.title ?? ''),
+              body: String(val.body ?? ''),
+              priceDisplay: String(val.price_display ?? val.priceDisplay ?? '100 000 F CFA / an'),
+              phone: String(val.phone ?? ''),
+              email: String(val.email ?? ''),
+              ctaUrl: val.cta_url ? String(val.cta_url) : (val.ctaUrl as string | null) ?? null,
+              ctaLabel: String(val.cta_label ?? val.ctaLabel ?? "Contacter l'équipe PROMOTE"),
+            });
           }
         }
       });

@@ -254,7 +254,7 @@ export default function ManageVitrinePage() {
         .from("platform_config")
         .select("value")
         .eq("key", "max_vitrine_offers_free_trial")
-        .single();
+        .maybeSingle();
       
       if (config && config.value) {
         setMaxVitrineOffers(Number(config.value));
@@ -454,9 +454,22 @@ export default function ManageVitrinePage() {
           }),
         });
 
-        const responseBody = await res.json();
+        let responseBody: Record<string, unknown> = {};
+        try {
+          responseBody = await res.json();
+        } catch {
+          // réponse non-JSON
+        }
+
         if (!res.ok) {
-          throw new Error(responseBody.error || 'Erreur lors de la création');
+          if (responseBody.showConversion || responseBody.reason === 'vitrine_quota_exceeded') {
+            setShowConversionModal(true);
+          }
+          const message = (responseBody.message as string)
+            || (responseBody.title as string)
+            || (responseBody.error as string)
+            || 'Erreur lors de la création';
+          throw new Error(message);
         }
 
         if (responseBody.allowed === false) {

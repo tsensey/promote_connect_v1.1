@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       .from('platform_config')
       .select('value')
       .eq('key', 'daily_message_limit')
-      .single();
+      .maybeSingle();
 
     const dailyLimit = (profileQuota as unknown as Record<string, unknown>)?.quota_override_messages as number
       ?? Number((configData as unknown as Record<string, unknown>)?.value ?? 10);

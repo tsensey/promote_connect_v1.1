@@ -508,18 +508,37 @@ export function useMessages(conversationId: string) {
       });
 
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        if (errData.showConversion) {
+        let errData: Record<string, unknown> = {};
+        try {
+          errData = await res.json();
+        } catch {
+          // réponse non-JSON (ex: page 500 HTML)
+        }
+
+        const reason = errData.reason as string | undefined;
+        const rlsBlocked = errData.rlsBlocked as boolean | undefined;
+
+        if (errData.showConversion || errData.showConversionModal) {
           dispatchConversionModal();
-          toast.error(errData.title || 'Action non disponible');
-        } else if (errData.reason && getQuotaMessage(errData.reason)) {
-          toast.error(getQuotaMessage(errData.reason).description);
+          toast.error((errData.title as string) || 'Action non disponible');
+        } else if (rlsBlocked) {
+          dispatchConversionModal();
+          toast.error((errData.details as string) || 'Quota de messagerie atteint');
+        } else if (reason && getQuotaMessage(reason as any)) {
+          toast.error(getQuotaMessage(reason as any).description);
+        } else if (res.status === 403) {
+          toast.error(errData.message as string || 'Action non autorisée. Vérifiez votre abonnement.');
         } else if (res.status === 401) {
           toast.error('Session expirée. Veuillez vous reconnecter.');
         } else if (res.status === 404) {
           toast.error('Conversation introuvable.');
+        } else if (res.status === 429) {
+          toast.error('Trop de requêtes. Veuillez patienter.');
+        } else if (res.status === 500) {
+          console.error('Send message error (500):', errData, 'status:', res.status);
+          toast.error('Erreur serveur. Veuillez réessayer ou contacter le support.');
         } else {
-          console.error('Send message error:', errData);
+          console.error('Send message error:', errData, 'status:', res.status);
           toast.error('Erreur lors de l\'envoi du message. Veuillez réessayer.');
         }
         return;

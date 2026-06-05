@@ -79,11 +79,16 @@ export async function POST(request: NextRequest) {
 
   if (insertError) {
     console.error('Message insert error:', insertError);
-    return NextResponse.json({ error: 'insert_failed', details: 'Failed to save message' }, { status: 500 });
+    const isRls = insertError.message?.includes('row-level security');
+    return NextResponse.json({
+      error: 'insert_failed',
+      details: isRls ? 'Quota de messagerie atteint ou session expirée' : insertError.message,
+      rlsBlocked: isRls,
+    }, { status: 500 });
   }
 
   if (!message) {
-    return NextResponse.json({ error: 'insert_failed', details: 'No message returned' }, { status: 500 });
+    return NextResponse.json({ error: 'insert_failed', details: 'Aucun message retourné' }, { status: 500 });
   }
 
   // Incrémenter le compteur UNIQUEMENT après insert réussi
