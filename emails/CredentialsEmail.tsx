@@ -36,8 +36,8 @@ export default function CredentialsEmail({
         Bienvenue, {fullName}
       </Text>
       <Text className="m-0 mb-6 text-[15px] leading-relaxed text-muted">
-        {`Votre compte a été créé par l'administrateur PROMOTE-CONNECT.
-                Vous pouvez dès maintenant accéder à la plateforme.`}
+        Votre compte a été créé par l'administrateur PROMOTE-CONNECT.
+        Vous pouvez dès maintenant accéder à la plateforme.
       </Text>
 
       <Section className="mb-6 rounded-xl bg-background p-6 border border-border">
@@ -121,18 +121,94 @@ export default function CredentialsEmail({
         </Button>
       </Section>
 
+      {role === "exposant" && (
+        <Section className="mb-6 rounded-xl bg-amber-50 p-6 border border-amber-200">
+          <Text className="m-0 mb-3 text-[16px] font-bold text-foreground">
+            Complétez votre vitrine exposant
+          </Text>
+          <Text className="m-0 mb-4 text-[14px] leading-relaxed text-muted">
+            Votre profil exposant a été créé avec les informations
+            de base. Pour maximiser vos opportunités d&apos;affaires,
+            nous vous invitons à compléter votre vitrine :
+          </Text>
+          <ul className="m-0 mb-4 pl-4 text-[14px] leading-relaxed text-muted">
+            <li>Ajoutez vos produits et services</li>
+            <li>Téléchargez le logo de votre entreprise</li>
+            <li>Mettez à jour votre description et vos coordonnées</li>
+            <li>Présentez vos offres commerciales</li>
+          </ul>
+          <Button
+            href={`${baseUrl}/exposant/ma-vitrine`}
+            className="inline-block rounded-lg bg-amber-600 px-5 py-3 text-[14px] font-medium text-white no-underline"
+          >
+            Compléter ma vitrine
+          </Button>
+        </Section>
+      )}
+
+      <Section className="mb-6 rounded-xl bg-[#f0f9ff] p-6 border border-[#bae6fd]">
+        <Text className="m-0 mb-3 text-[16px] font-bold text-foreground">
+          Liens utiles
+        </Text>
+        <table className="w-full text-[14px]">
+          <tbody>
+            <tr>
+              <td className="py-1.5 align-top">
+                <a href={`${baseUrl}/app`} className="text-brand no-underline font-medium">
+                  Tableau de bord
+                </a>
+              </td>
+              <td className="py-1.5 text-muted pl-4">
+                Vue d&apos;ensemble de votre activité
+              </td>
+            </tr>
+            <tr>
+              <td className="py-1.5 align-top">
+                <a href={`${baseUrl}/annuaire`} className="text-brand no-underline font-medium">
+                  Annuaire des exposants
+                </a>
+              </td>
+              <td className="py-1.5 text-muted pl-4">
+                Explorez tous les participants
+              </td>
+            </tr>
+            <tr>
+              <td className="py-1.5 align-top">
+                <a href={`${baseUrl}/chat`} className="text-brand no-underline font-medium">
+                  Messagerie
+                </a>
+              </td>
+              <td className="py-1.5 text-muted pl-4">
+                Échangez avec les exposants et visiteurs
+              </td>
+            </tr>
+            <tr>
+              <td className="py-1.5 align-top">
+                <a href={`${baseUrl}/agenda`} className="text-brand no-underline font-medium">
+                  Programme & Rendez-vous
+                </a>
+              </td>
+              <td className="py-1.5 text-muted pl-4">
+                Consultez le programme et gérez vos RDV
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </Section>
+
       <Section className="mb-6 rounded-xl bg-[#f8fafc] p-6 border border-[#e2e8f0]">
         <Text className="m-0 mb-3 text-[16px] font-bold text-foreground">
-          Guide de démarrage / Quick Start Guide
+          Guide de démarrage
         </Text>
         <Text className="m-0 mb-4 text-[14px] leading-relaxed text-muted">
-          {`Découvrez comment utiliser la plateforme PROMOTE-CONNECT pour maximiser vos opportunités d'affaires. / Discover how to use the PROMOTE-CONNECT platform to maximize your business opportunities.`}
+          Découvrez comment utiliser la plateforme PROMOTE-CONNECT
+          pour maximiser vos opportunités d&apos;affaires.
         </Text>
         <Button
           href={`${baseUrl}/guide`}
           className="inline-block rounded-lg bg-slate-800 px-5 py-3 text-[14px] font-medium text-white no-underline"
         >
-          Consulter le guide / View the guide
+          Consulter le guide
         </Button>
       </Section>
 
