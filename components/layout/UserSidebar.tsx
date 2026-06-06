@@ -169,7 +169,7 @@ export function UserSidebar({
         )}>
           <div className="relative size-8 shrink-0 overflow-hidden rounded-lg-primary/20 bg-primary/5">
             <Image
-              src="/logo_transparent.png"
+              src="/logo_transparent.webp"
               alt="Logo"
               fill
               sizes="32px"

@@ -36,7 +36,7 @@ export default function AuthLayout({
           {/* World Map Dots Background */}
           <div className="absolute inset-0 z-0">
             <Image
-              src="/world-map-dots.jpg"
+              src="/world-map-dots.webp"
               alt="World Map Dots"
               fill
               sizes="(max-width: 768px) 0vw, 50vw"
@@ -50,7 +50,7 @@ export default function AuthLayout({
               <div className="inline-flex w-fit items-center gap-3 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
                 <div className="relative size-8 overflow-hidden rounded-lg p-1">
                   <Image
-                    src="/logo_transparent.png"
+                    src="/logo_transparent.webp"
                     alt="PROMOTE"
                     fill
                     sizes="32px"

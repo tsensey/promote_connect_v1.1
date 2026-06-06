@@ -19,7 +19,9 @@
     "cap:build": "node scripts/build-capacitor.mjs",
     "cap:sync": "npx cap sync",
     "cap:open": "npx cap open android",
-    "cap:add:ios": "npx cap add ios"
+    "cap:add:ios": "npx cap add ios",
+    "optimize-images": "node scripts/optimize-images.mjs"
+
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

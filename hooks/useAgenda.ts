@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useCallback } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
 import { isNativePlatform } from '@/lib/capacitor';
 import type { Database } from '@/types/database.types';
@@ -11,93 +12,94 @@ export interface EnrichedRdv extends RendezVous {
   other_user: Profile | null;
 }
 
-export function useEvenements() {
-  const [evenements, setEvenements] = useState<Evenement[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+// ─── Fetchers ──────────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    const fetchEvenements = async () => {
-      try {
-        const { data, error } = await supabaseClient
-          .from('evenements')
-          .select('*')
-          .order('starts_at', { ascending: true });
-        if (error) throw error;
-        setEvenements(data || []);
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Unknown error'));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEvenements();
-  }, []);
-
-  return { evenements, loading, error };
+async function fetchEvenements(): Promise<Evenement[]> {
+  const { data, error } = await supabaseClient
+    .from('evenements')
+    .select('*')
+    .order('starts_at', { ascending: true });
+  if (error) throw error;
+  return data || [];
 }
 
-export function useRendezVous() {
-  const [rdvs, setRdvs] = useState<EnrichedRdv[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+async function fetchRendezVous(): Promise<EnrichedRdv[]> {
+  const { data: session } = await supabaseClient.auth.getSession();
+  const myId = session?.session?.user?.id;
+  if (!myId) return [];
 
-  const fetchRdvs = useCallback(async () => {
-    try {
-      const { data: session } = await supabaseClient.auth.getSession();
-      const myId = session?.session?.user?.id;
-      if (!myId) return;
+  const { data, error } = await supabaseClient
+    .from('rendez_vous')
+    .select('*')
+    .or(`demandeur_id.eq.${myId},destinataire_id.eq.${myId}`)
+    .order('starts_at', { ascending: true });
 
-      const { data, error } = await supabaseClient
-        .from('rendez_vous')
-        .select('*')
-        .or(`demandeur_id.eq.${myId},destinataire_id.eq.${myId}`)
-        .order('starts_at', { ascending: true });
+  if (error) throw error;
 
-      if (error) throw error;
+  const rawRdvs = data || [];
+  const otherUserIds = rawRdvs
+    .map((rdv) => (rdv.demandeur_id === myId ? rdv.destinataire_id : rdv.demandeur_id))
+    .filter(Boolean) as string[];
 
-      const rawRdvs = data || [];
-      const otherUserIds = rawRdvs.map((rdv) =>
-        rdv.demandeur_id === myId ? rdv.destinataire_id : rdv.demandeur_id
-      ).filter(Boolean) as string[];
-
-      const profileMap = new Map<string, Profile>();
-      if (otherUserIds.length > 0) {
-        const { data: profiles } = await supabaseClient
-          .from('profiles')
-          .select('*')
-          .in('id', otherUserIds);
-        for (const p of profiles ?? []) {
-          profileMap.set(p.id, p);
-        }
-      }
-
-      const enriched: EnrichedRdv[] = rawRdvs.map((rdv) => ({
-        ...rdv,
-        other_user: rdv.demandeur_id === myId
-          ? profileMap.get(rdv.destinataire_id ?? '') ?? null
-          : profileMap.get(rdv.demandeur_id ?? '') ?? null,
-      }));
-
-      setRdvs(enriched);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-    } finally {
-      setLoading(false);
+  const profileMap = new Map<string, Profile>();
+  if (otherUserIds.length > 0) {
+    const { data: profiles } = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .in('id', otherUserIds);
+    for (const p of profiles ?? []) {
+      profileMap.set(p.id, p);
     }
-  }, []);
+  }
 
+  return rawRdvs.map((rdv) => ({
+    ...rdv,
+    other_user:
+      rdv.demandeur_id === myId
+        ? profileMap.get(rdv.destinataire_id ?? '') ?? null
+        : profileMap.get(rdv.demandeur_id ?? '') ?? null,
+  }));
+}
+
+// ─── Hook événements ────────────────────────────────────────────────────────
+
+export function useEvenements() {
+  const { data: evenements = [], isLoading: loading, error } = useQuery({
+    queryKey: ['evenements'],
+    queryFn: fetchEvenements,
+    staleTime: 5 * 60 * 1000,    // 5 minutes — le programme change rarement
+    gcTime: 30 * 60 * 1000,
+  });
+
+  return {
+    evenements,
+    loading,
+    error: error as Error | null,
+  };
+}
+
+// ─── Hook rendez-vous ────────────────────────────────────────────────────────
+
+export function useRendezVous() {
+  const queryClient = useQueryClient();
+
+  const { data: rdvs = [], isLoading: loading, error } = useQuery({
+    queryKey: ['rendez_vous'],
+    queryFn: fetchRendezVous,
+    staleTime: 60 * 1000,    // 1 minute — les RDV changent plus souvent
+    gcTime: 10 * 60 * 1000,
+  });
+
+  // Realtime : invalidation du cache au lieu de re-fetch direct
   useEffect(() => {
-    fetchRdvs();
-
     const channel = supabaseClient
       .channel('rdv-changes')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'rendez_vous' },
         () => {
-          fetchRdvs();
+          // Invalide le cache React Query → re-fetch automatique
+          queryClient.invalidateQueries({ queryKey: ['rendez_vous'] });
         }
       )
       .subscribe();
@@ -105,7 +107,11 @@ export function useRendezVous() {
     return () => {
       supabaseClient.removeChannel(channel);
     };
-  }, [fetchRdvs]);
+  }, [queryClient]);
+
+  const fetchRdvs = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['rendez_vous'] });
+  }, [queryClient]);
 
   const createRdv = useCallback(
     async (destinataireId: string, startsAt: string, endsAt: string, notes?: string) => {
@@ -148,10 +154,11 @@ export function useRendezVous() {
         data = await res.json();
       }
 
-      await fetchRdvs();
+      // Invalider le cache pour forcer un re-fetch
+      await queryClient.invalidateQueries({ queryKey: ['rendez_vous'] });
       return data;
     },
-    [fetchRdvs]
+    [queryClient]
   );
 
   const notifyRdvStatus = useCallback(async (rdvId: string) => {
@@ -172,8 +179,9 @@ export function useRendezVous() {
 
   const updateRdvStatus = useCallback(
     async (rdvId: string, status: 'confirmed' | 'cancelled') => {
-      setRdvs((prev) =>
-        prev.map((rdv) => (rdv.id === rdvId ? { ...rdv, status } : rdv))
+      // Optimistic update
+      queryClient.setQueryData(['rendez_vous'], (prev: EnrichedRdv[] | undefined) =>
+        (prev || []).map((rdv) => (rdv.id === rdvId ? { ...rdv, status } : rdv))
       );
 
       const { error } = await supabaseClient
@@ -182,20 +190,17 @@ export function useRendezVous() {
         .eq('id', rdvId);
 
       if (error) {
-        setRdvs((prev) =>
-          prev.map((rdv) => (rdv.id === rdvId ? { ...rdv, status: rdv.status } : rdv))
-        );
+        // Rollback en cas d'erreur
+        queryClient.invalidateQueries({ queryKey: ['rendez_vous'] });
         throw error;
       }
-
-      await fetchRdvs();
 
       // Notification in-app gérée par trigger DB (migration 072)
       // Envoi email non bloquant
       notifyRdvStatus(rdvId);
     },
-    [fetchRdvs, notifyRdvStatus]
+    [queryClient, notifyRdvStatus]
   );
 
-  return { rdvs, loading, error, createRdv, updateRdvStatus };
+  return { rdvs, loading, error: error as Error | null, createRdv, updateRdvStatus, fetchRdvs };
 }

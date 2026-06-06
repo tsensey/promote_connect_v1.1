@@ -14,7 +14,7 @@ export function HeroSection() {
       {/* Background World Map */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/world-map-dots.jpg"
+          src="/world-map-dots.webp"
           alt=""
           fill
           className="object-cover opacity-40 mix-blend-screen animate-pulse-subtle"
@@ -85,7 +85,7 @@ export function HeroSection() {
             <div className="relative w-[320px] xl:w-[360px]">
               <div className="relative aspect-[9/19] rounded-[40px] border-4 border-white/20 bg-black shadow-2xl shadow-black/40 overflow-hidden">
                 <Image
-                  src="/mobile_app_display.png"
+                  src="/mobile_app_display.webp"
                   alt="PROMOTE-CONNECT App"
                   fill
                   className="object-cover"

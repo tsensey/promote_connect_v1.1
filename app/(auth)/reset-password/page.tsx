@@ -97,7 +97,7 @@ function ResetPasswordContent() {
       <div className="space-y-8 animate-reveal">
         <div className="flex justify-center mb-2">
           <Image
-            src="/logo_transparent.png"
+            src="/logo_transparent.webp"
             alt="PROMOTE-CONNECT Logo"
             width={120}
             height={40}

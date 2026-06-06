@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
 import { Suspense } from 'react';
+import { Manrope } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import { AuthProvider } from '@/lib/auth/context';
 import { I18nProvider } from '@/lib/i18n';
@@ -17,7 +18,16 @@ import { AnimatedSplashScreen } from '@/components/shared/AnimatedSplashScreen';
 import PlausibleAnalytics from '@/components/shared/PlausibleAnalytics';
 import { cn } from '@/lib/utils';
 import './globals.css';
-// Removed next/font/google to bypass build-time fetch errors
+
+// Police servie localement au build time — plus de requête réseau bloquante
+const manrope = Manrope({
+  subsets: ['latin'],
+  variable: '--font-manrope',
+  display: 'swap',
+  weight: ['200', '300', '400', '500', '600', '700', '800'],
+  preload: true,
+  fallback: ['system-ui', 'sans-serif'],
+});
 
 export const viewport: Viewport = {
   themeColor: { media: '(prefers-color-scheme: dark)', color: '#0f0f0f' },
@@ -61,15 +71,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang={initialLocale}
+      className={manrope.variable}
       suppressHydrationWarning
       data-scroll-behavior="smooth"
     >
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap" rel="stylesheet" />
-      </head>
-      <body suppressHydrationWarning className="min-h-screen bg-background text-foreground">
+      <body suppressHydrationWarning className={cn('min-h-screen bg-background text-foreground', manrope.variable)}>
         {/* <AnimatedSplashScreen /> */}
         <ThemeProvider
           attribute="class"

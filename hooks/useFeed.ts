@@ -83,77 +83,24 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
           return;
         }
 
+        // La route API retourne les posts déjà enrichis (is_liked, is_shared, is_saved, etc.)
+        // Plus besoin de faire 5 requêtes Supabase supplémentaires côté client
         const response = await fetch(`/api/feed/sorted?mode=${mode}&page=${currentPage}&limit=${limit}`);
         if (!response.ok) {
           throw new Error('Failed to fetch posts');
         }
         const { data } = await response.json();
 
-        const newPosts = data || [];
-        newPosts.forEach((p: PostWithAuthor) => seenPostIds.current.add(p.id));
+        const newPosts: Post[] = data || [];
+        newPosts.forEach((p) => seenPostIds.current.add(p.id));
 
-        const postIds = newPosts.map((p: PostWithAuthor) => p.id);
-        const repostOfIds = ((data || []) as any[]).filter((p: any) => p.repost_of_id).map((p: any) => p.repost_of_id);
-        const authorIds = [...new Set((data || []).map((p: PostWithAuthor) => p.author_id))] as string[];
-
-
-        const [likesResult, sharesResult, savesResult, reactionsResult, followsResult] = await Promise.all([
-          supabaseClient.from('post_likes').select('post_id').in('post_id', postIds).eq('user_id', myId),
-          supabaseClient.from('post_shares').select('post_id, type').in('post_id', postIds).eq('user_id', myId),
-          supabaseClient.from('post_saves').select('post_id').in('post_id', postIds).eq('user_id', myId),
-          supabaseClient.from('post_reactions').select('post_id, type').in('post_id', postIds).eq('user_id', myId),
-          supabaseClient.from('user_follows').select('following_id').in('following_id', authorIds).eq('follower_id', myId),
-        ]);
-
-        let repostOfMap = new Map<string, PostWithAuthor>();
-        if (repostOfIds.length > 0) {
-          const { data: repostData } = await supabaseClient
-            .from('posts')
-            .select(`
-              *,
-              author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url, is_featured))
-            `)
-            .in('id', repostOfIds);
-          if (repostData) {
-            repostOfMap = new Map(repostData.map((r) => [r.id, r as unknown as PostWithAuthor]));
-          }
-        }
-
-        const likedPostIds = new Set((likesResult.data || []).map((l: { post_id: string }) => l.post_id));
-        const sharedPostIds = new Set(
-          (sharesResult.data || []).filter((s: { type: string }) => s.type === 'share').map((s: { post_id: string }) => s.post_id)
-        );
-        const repostedPostIds = new Set(
-          (sharesResult.data || []).filter((s: { type: string }) => s.type === 'repost').map((s: { post_id: string }) => s.post_id)
-        );
-        const savedPostIds = new Set((savesResult.data || []).map((s: { post_id: string }) => s.post_id));
-        const reactionMap = new Map((reactionsResult.data || []).map((r: { post_id: string; type: string }) => [r.post_id, r.type]));
-        const followingSet = new Set((followsResult.data || []).map((f: { following_id: string }) => f.following_id));
-
-        const enriched: Post[] = (data || []).map((post: PostWithAuthor & { repost_of_id?: string | null }) => ({
-          ...post,
-          is_liked: likedPostIds.has(post.id) || reactionMap.has(post.id),
-          is_shared: sharedPostIds.has(post.id),
-          is_reposted: repostedPostIds.has(post.id),
-          is_saved: savedPostIds.has(post.id),
-          reaction_type: reactionMap.get(post.id) || null,
-          author: {
-            ...post.author,
-            is_following: followingSet.has(post.author_id),
-          },
-          repost_of: post.repost_of_id ? (repostOfMap.get(post.repost_of_id) ?? null) : undefined,
-        }));
-
-        // Sort client side is no longer needed since it's done by the API.
-        // We just maintain the order from the API.
-        
         if (reset) {
-          setPosts(enriched);
+          setPosts(newPosts);
         } else {
           setPosts((prev) => {
             const existingIds = new Set(prev.map(p => p.id));
-            const distinctEnriched = enriched.filter(p => !existingIds.has(p.id));
-            return [...prev, ...distinctEnriched];
+            const distinct = newPosts.filter(p => !existingIds.has(p.id));
+            return [...prev, ...distinct];
           });
         }
 
@@ -169,6 +116,7 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
     },
     [limit, mode]
   );
+
 
 
   useEffect(() => {

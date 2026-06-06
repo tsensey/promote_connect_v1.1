@@ -46,6 +46,70 @@ const POST_SELECT = `
   )
 ` as const;
 
+// ─── Enrichissement côté serveur ────────────────────────────────────────────
+// Évite 5 requêtes Supabase supplémentaires côté client (likes, shares, saves, reactions, follows)
+async function enrichPosts(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  posts: any[],
+  myId: string,
+): Promise<any[]> {
+  if (posts.length === 0) return posts;
+
+  const postIds = posts.map((p) => p.id);
+  const authorIds = [...new Set(posts.map((p) => p.author_id))] as string[];
+
+  // Fetch repost_of data si nécessaire
+  const repostOfIds = posts.filter((p) => p.repost_of_id).map((p) => p.repost_of_id as string);
+
+  // Toutes les requêtes d'enrichissement en parallèle — 1 aller-retour serveur
+  const [
+    likesRes,
+    sharesRes,
+    savesRes,
+    reactionsRes,
+    followsRes,
+    repostDataRes,
+  ] = await Promise.all([
+    supabase.from('post_likes').select('post_id').in('post_id', postIds).eq('user_id', myId),
+    supabase.from('post_shares').select('post_id, type').in('post_id', postIds).eq('user_id', myId),
+    (supabase as any).from('post_saves').select('post_id').in('post_id', postIds).eq('user_id', myId),
+    (supabase as any).from('post_reactions').select('post_id, type').in('post_id', postIds).eq('user_id', myId),
+    supabase.from('user_follows').select('following_id').in('following_id', authorIds).eq('follower_id', myId),
+    repostOfIds.length > 0
+      ? supabase
+          .from('posts')
+          .select(`*, author:profiles!posts_author_id_fkey(id, full_name, company, avatar_url, role, exposants!exposants_profile_id_fkey(id, nom, logo_url, is_featured))`)
+          .in('id', repostOfIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const likedIds = new Set((likesRes.data || []).map((l: any) => l.post_id));
+  const sharedIds = new Set(
+    (sharesRes.data || []).filter((s: any) => s.type === 'share').map((s: any) => s.post_id)
+  );
+  const repostedIds = new Set(
+    (sharesRes.data || []).filter((s: any) => s.type === 'repost').map((s: any) => s.post_id)
+  );
+  const savedIds = new Set((savesRes.data || []).map((s: any) => s.post_id));
+  const reactionMap = new Map((reactionsRes.data || []).map((r: any) => [r.post_id, r.type]));
+  const followingSet = new Set((followsRes.data || []).map((f: any) => f.following_id));
+  const repostOfMap = new Map((repostDataRes.data || []).map((r: any) => [r.id, r]));
+
+  return posts.map((post) => ({
+    ...post,
+    is_liked: likedIds.has(post.id) || reactionMap.has(post.id),
+    is_shared: sharedIds.has(post.id),
+    is_reposted: repostedIds.has(post.id),
+    is_saved: savedIds.has(post.id),
+    reaction_type: reactionMap.get(post.id) || null,
+    author: {
+      ...post.author,
+      is_following: followingSet.has(post.author_id),
+    },
+    repost_of: post.repost_of_id ? (repostOfMap.get(post.repost_of_id) ?? null) : undefined,
+  }));
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const mode = searchParams.get('mode') || 'recent';
@@ -68,17 +132,12 @@ export async function GET(request: Request) {
   const blockedIds = Array.from(new Set((blocks || []).map(b => b.blocker_id === myId ? b.blocked_id : b.blocker_id)));
 
   const feedConfig = await getFeedConfigCached(supabase);
-  const baseFilter = blockedIds.length > 0 ? `author_id.not.in.(${blockedIds.join(',')})` : undefined;
 
   if (mode === 'recent') {
     const sponsoredTop = feedConfig.sponsoredTopCount;
-    const normalLimit = limit;
-    const sponsoredOffset = Math.max(0, sponsoredTop - page * sponsoredTop);
-    const sponsoredSkip = page * sponsoredTop > sponsoredTop ? (page * sponsoredTop - sponsoredTop) : 0;
-    const normalOffset = page * limit;
 
     let sponsored: any[] = [];
-    if (sponsoredOffset > 0 && page === 0) {
+    if (page === 0) {
       const { data: sp } = await supabase
         .from('posts')
         .select(POST_SELECT)
@@ -110,7 +169,10 @@ export async function GET(request: Request) {
     const normal = (posts || []).filter((p: any) => p.author !== null);
     const combined = [...sponsored, ...normal].slice(0, limit);
 
-    return NextResponse.json({ data: combined });
+    // Enrichissement côté serveur — plus besoin de 5 requêtes côté client
+    const enriched = await enrichPosts(supabase, combined, myId);
+
+    return NextResponse.json({ data: enriched });
   }
 
   // Discover mode
@@ -144,7 +206,8 @@ export async function GET(request: Request) {
       .map((id) => (posts || []).find((p: any) => p.id === id))
       .filter(Boolean);
 
-    return NextResponse.json({ data: ordered });
+    const enriched = await enrichPosts(supabase, ordered, myId);
+    return NextResponse.json({ data: enriched });
   }
 
   const { data: allPosts, error } = await supabase
@@ -189,7 +252,8 @@ export async function GET(request: Request) {
     .map((id) => (posts || []).find((p: any) => p.id === id))
     .filter(Boolean);
 
-  return NextResponse.json({ data: ordered });
+  const enriched = await enrichPosts(supabase, ordered, myId);
+  return NextResponse.json({ data: enriched });
 }
 
 function cyrb128(str: string) {

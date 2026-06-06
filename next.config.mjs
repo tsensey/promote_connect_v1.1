@@ -54,9 +54,14 @@ const isCapacitorBuild = process.env.CAPACITOR_BUILD === 'true';
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  compress: true, // Active la compression GZIP/Brotli
   ...(isCapacitorBuild ? { output: 'export', distDir: 'out', typescript: { ignoreBuildErrors: true } } : {}),
   transpilePackages: ['@base-ui/react'],
   poweredByHeader: false,
+  // Supprimer console.log en production (sauf console.error/warn)
+  compiler: {
+    removeConsole: isProduction ? { exclude: ['error', 'warn'] } : false,
+  },
   images: {
     unoptimized: isCapacitorBuild,
     remotePatterns: [
@@ -73,6 +78,27 @@ const nextConfig = {
         headers: [
           { key: 'Service-Worker-Allowed', value: '/' },
           { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
+        ],
+      },
+      // Assets Next.js immutables (hash dans le nom) — cache 1 an
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      // Images publiques — cache 7 jours avec revalidation
+      {
+        source: '/:path*.{png,jpg,jpeg,gif,webp,svg,ico}',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=604800, stale-while-revalidate=86400' },
+        ],
+      },
+      // Polices — cache 1 an
+      {
+        source: '/:path*.{woff,woff2,ttf,otf}',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
     ];

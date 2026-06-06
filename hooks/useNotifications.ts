@@ -22,10 +22,9 @@ export function useNotifications() {
     if (!user) return;
     myIdRef.current = user.id;
 
-    // ─── Messages entrants ──────────────────────────────────────────────
-    // Les messages entrants sont désormais gérés via la table notifications et le trigger trg_notify_on_new_message
-
     // ─── Nouvelles publications ─────────────────────────────────────────
+    // On ne fetch plus le profil de l'auteur — on utilise le générique
+    // (les posts n'ont pas les infos auteur dans le payload Realtime)
     const postChannel = supabaseClient
       .channel('notifications-posts')
       .on(
@@ -35,34 +34,22 @@ export function useNotifications() {
           schema: 'public',
           table: 'posts',
         },
-        async (payload) => {
+        (payload) => {
           const post = payload.new as Post;
           const myId = myIdRef.current;
-          if (!myId) return;
-          if (post.author_id === myId) return;
+          if (!myId || post.author_id === myId) return;
 
-          const { data: author } = await supabaseClient
-            .from('profiles')
-            .select('full_name, company')
-            .eq('id', post.author_id)
-            .single();
-
-          const authorName = author?.full_name && author?.company
-            ? `${author.full_name} (${author.company})`
-            : author?.full_name || author?.company || t('notifications.someone');
-          const preview = post.content.length > 80
+          const preview = post.content?.length > 80
             ? post.content.slice(0, 80) + '…'
-            : post.content;
+            : post.content || '';
 
-          playMessageSound(); // Pip sonore pour les posts aussi
-          
+          playMessageSound();
+
           toast(t('notifications.new_post'), {
-            description: `${authorName} : ${preview}`,
+            description: preview,
             action: {
               label: t('notifications.view'),
-              onClick: () => {
-                window.location.href = `/feed#${post.id}`;
-              },
+              onClick: () => { window.location.href = `/feed#${post.id}`; },
             },
             duration: 4000,
           });
@@ -70,7 +57,9 @@ export function useNotifications() {
       )
       .subscribe();
 
-    // ─── Notifications Générales (Likes, Commentaires, Mentions) ────────
+    // ─── Notifications Générales (Likes, Commentaires, Mentions, Messages) ─
+    // Les triggers DB enrichissent le champ `data` avec sender_name
+    // → plus besoin de fetcher le profil côté client
     const notificationChannel = supabaseClient
       .channel('realtime-notifications-general')
       .on(
@@ -81,20 +70,13 @@ export function useNotifications() {
           table: 'notifications',
           filter: `profile_id=eq.${user.id}`,
         },
-        async (payload) => {
+        (payload) => {
           const n = payload.new as any;
-          
-          const { data: sender } = await supabaseClient
-            .from('profiles')
-            .select('full_name, company')
-            .eq('id', n.sender_id)
-            .single();
 
-          const senderName = sender?.full_name && sender?.company
-            ? `${sender.full_name} (${sender.company})`
-            : sender?.full_name || sender?.company || t('notifications.someone');
+          // Utiliser sender_name depuis le champ data si dispo, sinon générique
+          const senderName = n.data?.sender_name || t('notifications.someone');
+
           let message = '';
-          
           switch (n.type) {
             case 'like': message = t('notifications.liked_post', { name: senderName }); break;
             case 'comment': message = t('notifications.commented_post', { name: senderName }); break;
@@ -102,16 +84,16 @@ export function useNotifications() {
             case 'mention_comment': message = t('notifications.mentioned_comment', { name: senderName }); break;
             case 'new_ticket': message = t('notifications.new_ticket', { name: senderName, subject: n.data?.subject || '' }); break;
             case 'ticket_reply': message = t('notifications.ticket_reply', { name: senderName }); break;
-            case 'new_message': 
-              if (n.data?.conversation_id === activeConversationId) return; // Skip toast if in conversation
-              message = t('notifications.new_message_from', { name: senderName }); 
-              refreshUnreadCount(); // update unread messages counter
+            case 'new_message':
+              if (n.data?.conversation_id === activeConversationId) return;
+              message = t('notifications.new_message_from', { name: senderName });
+              refreshUnreadCount();
               break;
             default: message = t('notifications.new_activity', { name: senderName });
           }
 
           playMessageSound();
-          refreshNotifications(); // Immédiat !
+          refreshNotifications();
 
           toast(t('notifications.title'), {
             description: message,
@@ -141,3 +123,4 @@ export function useNotifications() {
     };
   }, [user, activeConversationId, refreshUnreadCount, refreshNotifications]);
 }
+

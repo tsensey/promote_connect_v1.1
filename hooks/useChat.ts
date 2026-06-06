@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { supabaseClient } from '@/lib/supabase/client';
 import { uploadChatFile } from '@/lib/chat/storage';
@@ -45,7 +45,10 @@ export function useContacts() {
         .from('profiles')
         .select('id, full_name, company, avatar_url, role')
         .neq('id', myId ?? '')
-        .in('role', ['exposant', 'visiteur']);
+        .in('role', ['exposant', 'visiteur'])
+        .order('full_name', { ascending: true })
+        .limit(100);
+
 
       if (blockedIds.length > 0) {
         query = query.not('id', 'in', `(${blockedIds.join(',')})`);
@@ -93,6 +96,8 @@ export function useConversations() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [myUserId, setMyUserId] = useState<string | null>(null);
+  // Ref pour accéder à myUserId dans les closures Realtime sans re-créer le channel
+  const myUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -102,7 +107,10 @@ export function useConversations() {
         const { data: session } = await supabaseClient.auth.getSession();
         const myId = session?.session?.user?.id;
         if (!myId) return;
-        if (mounted) setMyUserId(myId);
+        if (mounted) {
+          setMyUserId(myId);
+          myUserIdRef.current = myId;
+        }
 
         // Récupérer les blocages complets
         const { data: blocks } = await supabaseClient
@@ -216,9 +224,63 @@ export function useConversations() {
 
     const channel = supabaseClient
       .channel('conversations-changes')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations' }, () => { fetchConversations(); })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations' }, () => { fetchConversations(); })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => { fetchConversations(); })
+      // Nouvelle conversation → fetch ciblé (rare)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations' }, () => {
+        fetchConversations();
+      })
+      // Mise à jour d'une conversation (ex: last_message_at) → chirurgical
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations' }, (payload) => {
+        const updated = payload.new as { id: string; last_message_at: string | null };
+        setConversations((prev) =>
+          prev
+            .map((c) =>
+              c.id === updated.id
+                ? { ...c, last_message_at: updated.last_message_at }
+                : c,
+            )
+            // Re-trier par last_message_at desc
+            .sort((a, b) => {
+              const ta = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+              const tb = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+              return tb - ta;
+            }),
+        );
+      })
+      // Nouveau message → mise à jour chirurgicale du preview + compteur non lu
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+        const msg = payload.new as {
+          id: string;
+          conversation_id: string;
+          sender_id: string;
+          content: string | null;
+          attachment_type: string | null;
+          product_attachment: unknown;
+        };
+        const myId = myUserIdRef.current;
+
+        let preview = msg.content || '';
+        if (!preview && msg.attachment_type === 'image') preview = '📷 Photo';
+        else if (!preview && msg.attachment_type === 'document') preview = '📄 Document';
+        else if (msg.product_attachment) preview = `🏷️ Produit`;
+
+        setConversations((prev) =>
+          prev
+            .map((c) =>
+              c.id === msg.conversation_id
+                ? {
+                  ...c,
+                  last_message_content: preview,
+                  unread_count: msg.sender_id !== myId ? (c.unread_count || 0) + 1 : c.unread_count,
+                }
+                : c,
+            )
+            .sort((a, b) => {
+              const ta = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+              const tb = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+              return tb - ta;
+            }),
+        );
+      })
       .subscribe();
 
     return () => {
@@ -418,7 +480,7 @@ export function useMessages(conversationId: string) {
       if (onlineHeartbeatInterval) clearInterval(onlineHeartbeatInterval);
       // Marquer hors-ligne
       if (myIdAtInit) {
-        (supabaseClient.rpc as any)('set_user_offline', { p_user_id: myIdAtInit }).then(() => {}, () => {});
+        (supabaseClient.rpc as any)('set_user_offline', { p_user_id: myIdAtInit }).then(() => { }, () => { });
       }
     };
   }, [conversationId]);
