@@ -98,7 +98,5 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd /var/www/promote-connect
-            git pull origin main
-            npm ci
-            npm run build
-            pm2 restart promote-connect
+            chmod +x scripts/deploy.sh
+            ./scripts/deploy.sh
