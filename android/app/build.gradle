@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
     namespace "com.promoteconnect.app"
@@ -7,8 +8,8 @@ android {
         applicationId "com.promoteconnect.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 7
-        versionName "1.3.3"
+        versionCode 8
+        versionName "1.3.4"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -27,7 +28,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
     }
@@ -64,7 +65,8 @@ dependencies {
     implementation("com.google.firebase:firebase-crashlytics")
     
     // Required by Firebase Sessions (used by Crashlytics/Analytics in recent BOM versions)
-    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("androidx.datastore:datastore:1.1.1")
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 }
 
 apply from: 'capacitor.build.gradle'
@@ -75,6 +77,7 @@ try {
         apply plugin: 'com.google.gms.google-services'
         apply plugin: 'com.google.firebase.crashlytics'
         apply plugin: 'com.android.application'
+        apply plugin: 'org.jetbrains.kotlin.android'
     }
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
