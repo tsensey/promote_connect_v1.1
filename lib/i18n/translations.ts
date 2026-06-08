@@ -439,6 +439,10 @@ export const translations: Record<Locale, Record<string, string>> = {
     'chat.user_blocked_desc': 'Vous avez bloqué cette personne. Elle ne peut plus vous contacter.',
     'chat.user_blocked_unknown': 'Cet utilisateur est bloqué',
     'chat.blocked_contact_error': 'Vous ne pouvez pas contacter un utilisateur que vous avez bloqué',
+    'chat.message_deleted': 'Ce message a été supprimé',
+    'chat.delete_confirm_title': 'Supprimer le message ?',
+    'chat.delete_confirm_desc': 'Cette action est irréversible. Le message sera effacé de la conversation.',
+    'chat.delete_confirm_action': 'Supprimer',
 
     // ─── Agenda ──────────────────────────────────────────────
     'agenda.title': 'Agenda interactif',
@@ -2231,6 +2235,10 @@ export const translations: Record<Locale, Record<string, string>> = {
     'chat.user_blocked_desc': 'You have blocked this person. They can no longer contact you.',
     'chat.user_blocked_unknown': 'This user is blocked',
     'chat.blocked_contact_error': 'You cannot contact a user you have blocked',
+    'chat.message_deleted': 'This message was deleted',
+    'chat.delete_confirm_title': 'Delete message?',
+    'chat.delete_confirm_desc': 'This action cannot be undone. The message will be removed from the conversation.',
+    'chat.delete_confirm_action': 'Delete',
 
     // ─── Agenda ──────────────────────────────────────────────
     'agenda.title': 'Interactive Agenda',

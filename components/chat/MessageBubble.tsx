@@ -3,17 +3,29 @@
 import Image from 'next/image';
 import { memo, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Check, CheckCheck, Reply, FileText, ExternalLink, X, Loader2 } from 'lucide-react';
+import { Check, CheckCheck, Reply, FileText, ExternalLink, X, Loader2, Trash2, Ban } from 'lucide-react';
 import type { EnrichedMessage, ProductAttachment } from '@/hooks/useChat';
 import { cn, getValidImageUrl } from '@/lib/utils';
 import { sanitizeHTML, sanitizeText } from '@/lib/sanitize';
 import { useTranslation } from '@/lib/i18n';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface MessageBubbleProps {
   message: EnrichedMessage;
   isMine: boolean;
   showAvatar: boolean;
   onReply: (message: EnrichedMessage) => void;
+  onDelete?: (messageId: string) => void;
 }
 
 function formatTime(dateStr: string | null, locale: string) {
@@ -179,15 +191,24 @@ function ImageAttachment({ url }: { url: string }) {
 }
 
 // ─── MessageBubble ────────────────────────────────────────────────────────────
-export const MessageBubble = memo(function MessageBubble({ message, isMine, showAvatar, onReply }: MessageBubbleProps) {
+export const MessageBubble = memo(function MessageBubble({ message, isMine, showAvatar, onReply, onDelete }: MessageBubbleProps) {
   const { t, locale } = useTranslation();
-  const [hovered, setHovered] = useState(false);
+
+  if (message.is_deleted) {
+    return (
+      <div className={cn('flex gap-2 items-end mb-2', isMine ? 'flex-row-reverse' : 'flex-row')}>
+        <div className="size-7 shrink-0" />
+        <div className={cn('rounded-2xl px-4 py-2.5 text-sm italic bg-muted/50 text-muted-foreground flex items-center gap-2', isMine ? 'rounded-br-md' : 'rounded-bl-md ring-1 ring-border/30')}>
+          <Ban className="size-4 opacity-50" />
+          {t('chat.message_deleted') || 'Ce message a été supprimé'}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
       className={cn('group flex gap-2 items-end', isMine ? 'flex-row-reverse' : 'flex-row')}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
     >
       {/* Avatar */}
       {showAvatar && !isMine ? (
@@ -204,19 +225,51 @@ export const MessageBubble = memo(function MessageBubble({ message, isMine, show
         <div className="size-7 shrink-0" />
       )}
 
-      {/* Bouton Répondre (hover) */}
-      <button
-        onClick={() => onReply(message)}
+      {/* Boutons d'action (hover) */}
+      <div
         className={cn(
-          'flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-all',
-          'hover:bg-muted hover:text-foreground',
-          hovered ? 'opacity-100' : 'opacity-0',
-          isMine ? 'order-first' : 'order-last'
+          'flex items-center gap-1 transition-all',
+          'opacity-100 lg:opacity-0 lg:group-hover:opacity-100',
+          isMine ? 'order-first flex-row-reverse' : 'order-last flex-row'
         )}
-        title={t('chat.reply')}
       >
-        <Reply className="size-3.5" />
-      </button>
+        <button
+          onClick={() => onReply(message)}
+          className="flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+          title={t('chat.reply') || 'Répondre'}
+        >
+          <Reply className="size-3.5" />
+        </button>
+        {isMine && onDelete && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                className="flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/20 hover:text-destructive"
+                title={t('chat.delete_confirm_action') || 'Supprimer'}
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t('chat.delete_confirm_title') || 'Supprimer le message ?'}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t('chat.delete_confirm_desc') || 'Cette action est irréversible. Le message sera effacé de la conversation.'}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t('common.cancel') || 'Annuler'}</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => onDelete(message.id)}
+                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                >
+                  {t('chat.delete_confirm_action') || 'Supprimer'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
 
       {/* Bulle */}
       <div

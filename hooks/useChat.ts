@@ -301,6 +301,9 @@ export function useMessages(conversationId: string) {
   const [otherExposant, setOtherExposant] = useState<{ nom: string; logo_url: string | null } | null>(null);
   const [typingUser, setTypingUser] = useState<string | null>(null);
   const [otherUserOnline, setOtherUserOnline] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const PAGE_SIZE = 50;
 
   useEffect(() => {
     let mounted = true;
@@ -356,7 +359,8 @@ export function useMessages(conversationId: string) {
               )
             `)
             .eq('conversation_id', conversationId)
-            .order('created_at', { ascending: true });
+            .order('created_at', { ascending: false })
+            .limit(PAGE_SIZE);
 
           if (enrichedError) throw enrichedError;
           fetchedMessages = (enrichedData || []) as unknown as EnrichedMessage[];
@@ -365,7 +369,8 @@ export function useMessages(conversationId: string) {
             .from('messages')
             .select('*, author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role)')
             .eq('conversation_id', conversationId)
-            .order('created_at', { ascending: true });
+            .order('created_at', { ascending: false })
+            .limit(PAGE_SIZE);
 
           if (basicError) throw basicError;
           fetchedMessages = ((basicData || []) as unknown as EnrichedMessage[]).map((m) => ({
@@ -373,6 +378,10 @@ export function useMessages(conversationId: string) {
             reply_to: null,
           }));
         }
+
+        if (fetchedMessages.length < PAGE_SIZE) setHasMore(false);
+        fetchedMessages.reverse(); // Mettre dans l'ordre chronologique
+
 
         if (mounted) setMessages(fetchedMessages);
         if (!mounted) return;
@@ -397,7 +406,14 @@ export function useMessages(conversationId: string) {
                 .single();
               if (basic) fullMsg = { ...(basic as unknown as EnrichedMessage), reply_to: null };
             }
-            if (fullMsg) setMessages((prev) => [...prev, fullMsg!]);
+            if (fullMsg) {
+              setMessages((prev) => {
+                if (prev.some((m) => m.id === fullMsg!.id)) return prev;
+                // Supprimer le message optimiste s'il existe
+                const filtered = prev.filter(m => !(m.id.startsWith('temp-') && m.content === fullMsg!.content));
+                return [...filtered, fullMsg!];
+              });
+            }
           })
           .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (payload) => {
             setMessages((prev) =>
@@ -485,6 +501,58 @@ export function useMessages(conversationId: string) {
     };
   }, [conversationId]);
 
+  const loadMore = useCallback(async () => {
+    if (!hasMore || loadingMore || messages.length === 0) return;
+    setLoadingMore(true);
+    try {
+      const oldestMessageDate = messages[0].created_at;
+      const { data, error } = await supabaseClient
+        .from('messages')
+        .select(`
+          *,
+          author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role),
+          reply_to:reply_to_id(
+            id, content, attachment_type,
+            author:profiles!messages_sender_id_fkey(id, full_name, avatar_url, role)
+          )
+        `)
+        .eq('conversation_id', conversationId)
+        .lt('created_at', oldestMessageDate)
+        .order('created_at', { ascending: false })
+        .limit(PAGE_SIZE);
+
+      if (error) throw error;
+      
+      const olderMessages = (data || []) as unknown as EnrichedMessage[];
+      if (olderMessages.length < PAGE_SIZE) setHasMore(false);
+      olderMessages.reverse();
+      
+      setMessages((prev) => [...olderMessages, ...prev]);
+    } catch (err) {
+      console.error('Failed to load more messages', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [conversationId, hasMore, loadingMore, messages]);
+
+  const deleteMessage = useCallback(async (messageId: string) => {
+    // Optimistic UI pour la suppression
+    setMessages(prev => prev.map(m => m.id === messageId ? { ...m, is_deleted: true, content: 'Ce message a été supprimé', attachment_url: null, product_attachment: null } : m));
+    
+    try {
+      const res = await fetch('/api/chat/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageId }),
+      });
+      if (!res.ok) throw new Error('Delete failed');
+    } catch (err) {
+      console.error(err);
+      toast.error('Erreur lors de la suppression du message');
+      // On pourrait revert l'optimistic UI ici si nécessaire
+    }
+  }, []);
+
   const markAsRead = useCallback(async () => {
     const { data: session } = await supabaseClient.auth.getSession();
     const myId = session?.session?.user?.id;
@@ -556,6 +624,32 @@ export function useMessages(conversationId: string) {
         return;
       }
 
+      // ─── OPTIMISTIC UI ───
+      const tempId = `temp-${Date.now()}`;
+      const optimisticMsg: EnrichedMessage = {
+        id: tempId,
+        conversation_id: conversationId,
+        sender_id: myUserId!,
+        content: content.trim(),
+        attachment_url: attachmentUrl,
+        attachment_type: attachmentType,
+        product_attachment: productAttachment as any,
+        reply_to_id: replyToId ?? null,
+        created_at: new Date().toISOString(),
+        is_read: false,
+        is_deleted: false,
+        status: 'sending' as any,
+        author: {
+          id: myUserId!,
+          full_name: 'Vous',
+          avatar_url: null,
+          role: 'exposant', // placeholder
+        },
+        reply_to: null,
+      };
+      
+      setMessages(prev => [...prev, optimisticMsg]);
+
       const res = await fetch('/api/chat/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -570,6 +664,8 @@ export function useMessages(conversationId: string) {
       });
 
       if (!res.ok) {
+        // Enlever le message optimiste en cas d'erreur
+        setMessages(prev => prev.filter(m => m.id !== tempId));
         let errData: Record<string, unknown> = {};
         try {
           errData = await res.json();
@@ -624,7 +720,11 @@ export function useMessages(conversationId: string) {
     messages,
     loading,
     error,
+    hasMore,
+    loadingMore,
+    loadMore,
     sendMessage,
+    deleteMessage,
     markAsRead,
     myUserId,
     otherUser,

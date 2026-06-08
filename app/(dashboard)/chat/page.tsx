@@ -29,6 +29,7 @@ import {
 import { useBlockedUsers } from '@/hooks/useBlockedUsers';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useQuotaStatus } from '@/hooks/useQuotaStatus';
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { Crown } from 'lucide-react';
 
 // ─── Panneau liste des conversations ──────────────────────────────────────────
@@ -293,7 +294,7 @@ function MessageThread({
 }) {
   const { t } = useTranslation();
   const {
-    messages, loading, sendMessage, markAsRead, myUserId,
+    messages, loading, hasMore, loadingMore, loadMore, sendMessage, deleteMessage, markAsRead, myUserId,
     otherUser, otherExposant, typingUser, sendTypingEvent, otherUserOnline,
   } = useMessages(conversationId);
   const { refreshUnreadCount } = useNotificationState();
@@ -306,7 +307,17 @@ function MessageThread({
   const [productContext, setProductContext] = useState<ProductAttachment | null>(initialProduct ?? null);
   const [blocking, setBlocking] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { ref: loadMoreRef } = useIntersectionObserver({
+    threshold: 0.1,
+    onChange: (isIntersecting) => {
+      if (isIntersecting && hasMore && !loadingMore) {
+        loadMore();
+      }
+    },
+  });
 
   const otherUserId = otherUser?.id;
   const isCurrentlyBlocked = otherUserId ? isBlocked(otherUserId) : false;
@@ -456,7 +467,7 @@ function MessageThread({
       </div>
 
       {/* Zone de messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4" ref={scrollContainerRef}>
         {isCurrentlyBlocked ? (
           <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
             <div className="flex size-16 items-center justify-center rounded-2xl bg-destructive/10">
@@ -492,6 +503,15 @@ function MessageThread({
           </div>
         ) : (
           <div className="space-y-1">
+            {hasMore && (
+              <div ref={loadMoreRef} className="py-2 flex justify-center">
+                {loadingMore ? (
+                  <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                ) : (
+                  <div className="h-4" /> // Diviseur invisible pour déclencher l'intersection
+                )}
+              </div>
+            )}
             {messages.map((msg, i) => {
               const prev = messages[i - 1];
               const showDateSeparator = !prev || !isSameDay(prev.created_at ?? '', msg.created_at ?? '');
@@ -507,6 +527,7 @@ function MessageThread({
                     isMine={msg.sender_id === myUserId}
                     showAvatar={showAvatar}
                     onReply={setReplyTo}
+                    onDelete={deleteMessage}
                   />
                 </div>
               );
