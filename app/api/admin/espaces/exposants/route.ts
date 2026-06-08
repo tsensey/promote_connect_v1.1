@@ -206,6 +206,20 @@ export async function DELETE(request: Request) {
   }
 
   const supabase = createAdminClient();
+
+  const { data: exposantData } = await supabase
+    .from('exposants')
+    .select('profile_id')
+    .eq('id', id)
+    .single();
+
+  if (exposantData?.profile_id) {
+    return NextResponse.json(
+      { error: 'Un profil exposant lié à un compte ne peut être supprimé' },
+      { status: 400 }
+    );
+  }
+
   const { error } = await supabase.from('exposants').delete().eq('id', id);
 
   if (error) {

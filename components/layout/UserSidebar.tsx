@@ -104,6 +104,12 @@ export function UserSidebar({
       ],
     },
     {
+      title: t('layout.sidebar.business'),
+      items: [
+        { label: t('layout.sidebar.catalogue'), href: '/vitrine', icon: BriefcaseBusiness },
+      ],
+    },
+    {
       title: t('layout.sidebar.compte'),
       items: [
         { label: t('layout.sidebar.newsletter'), href: '/newsletter', icon: Mail },

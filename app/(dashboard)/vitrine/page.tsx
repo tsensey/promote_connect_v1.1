@@ -31,6 +31,7 @@ import { cn, getValidImageUrl } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
 import Image from 'next/image';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useAuth } from '@/lib/auth/context';
 
 type Produit = Database['public']['Tables']['produits']['Row'];
 type Exposant = Database['public']['Tables']['exposants']['Row'];
@@ -62,6 +63,7 @@ export default function VitrinePage() {
   const { t } = useTranslation();
   const router = useRouter();
   const perms = usePermissions();
+  const { profile } = useAuth();
   const [produits, setProduits] = useState<ProduitWithExposant[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -573,24 +575,26 @@ export default function VitrinePage() {
       )}
 
       {/* CTA */}
-      <Card className="border-border/50 py-0">
-        <CardContent className="flex flex-col items-center gap-4 p-6 text-center sm:flex-row sm:justify-between sm:text-left">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">
-              {t('vitrine.you_are_exposant')}
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {t('vitrine.you_are_exposant_desc')}
-            </p>
-          </div>
-          <Link href="/exposant/ma-vitrine">
-            <Button className="shrink-0 rounded-xl gap-1.5">
-              {t('vitrine.manage_vitrine')}
-              <ArrowRight className="size-4" />
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
+      {profile?.role === 'exposant' && (
+        <Card className="border-border/50 py-0">
+          <CardContent className="flex flex-col items-center gap-4 p-6 text-center sm:flex-row sm:justify-between sm:text-left">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">
+                {t('vitrine.you_are_exposant')}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t('vitrine.you_are_exposant_desc')}
+              </p>
+            </div>
+            <Link href="/exposant/ma-vitrine">
+              <Button className="shrink-0 rounded-xl gap-1.5">
+                {t('vitrine.manage_vitrine')}
+                <ArrowRight className="size-4" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

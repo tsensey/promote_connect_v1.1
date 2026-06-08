@@ -146,8 +146,16 @@ export default function AdminExposantsPage() {
     if (!confirm(t('admin.exposants.delete_confirm'))) return;
 
     try {
-      const { error } = await supabaseClient.from('exposants').delete().eq('id', id);
-      if (error) { toast.error(error.message); return; }
+      const response = await fetch(`/api/admin/espaces/exposants?id=${id}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        toast.error(data.error || 'Erreur lors de la suppression');
+        return;
+      }
+      toast.success(t('admin.exposants.deleted') || 'Exposant supprimé avec succès');
       await fetchData();
     } catch {
       toast.error(t('admin.exposants.toast_network_error'));
@@ -311,9 +319,26 @@ export default function AdminExposantsPage() {
                           >
                             <ExternalLink className="size-4" />
                           </Link>
-                          <Button variant="ghost" size="sm" onClick={() => handleDelete(exp.id)} className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10">
-                            <Trash2 className="size-4" />
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="inline-block">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => handleDelete(exp.id)} 
+                                  disabled={!!exp.profile_id}
+                                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                                >
+                                  <Trash2 className="size-4" />
+                                </Button>
+                              </div>
+                            </TooltipTrigger>
+                            {exp.profile_id && (
+                              <TooltipContent>
+                                <p>Impossible de supprimer un exposant lié à un compte.</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
                         </div>
                       </TableCell>
                     </TableRow>
