@@ -62,6 +62,9 @@ dependencies {
 
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-crashlytics")
+    
+    // Required by Firebase Sessions (used by Crashlytics/Analytics in recent BOM versions)
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
 }
 
 apply from: 'capacitor.build.gradle'
