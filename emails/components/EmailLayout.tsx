@@ -101,7 +101,7 @@ export default function EmailLayout({
                   href="https://bbit-it.com"
                   className="text-slate-400 underline"
                 >
-                  BBIT SASL
+                  BBIT Sarl
                 </Link>{" "}
                 Partenaire Technique Promote {year}.
               </Text>
