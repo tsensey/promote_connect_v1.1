@@ -20,6 +20,16 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Table,
   TableBody,
   TableCell,
@@ -62,6 +72,8 @@ export default function AdminExposantsPage() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState<{ imported: number; total: number; accounts_created?: number; without_email?: number } | null>(null);
+  const [exposantToDelete, setExposantToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     nom: '', description: '', secteur: '', espace_id: '', pavillon: '', stand: '', pays: '', website: '',
@@ -142,17 +154,20 @@ export default function AdminExposantsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(t('admin.exposants.delete_confirm'))) return;
+  const handleDelete = async () => {
+    if (!exposantToDelete) return;
+    setIsDeleting(true);
 
     try {
-      const response = await fetch(`/api/admin/espaces/exposants?id=${id}`, {
+      const response = await fetch(`/api/admin/espaces/exposants?id=${exposantToDelete}`, {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const data = await response.json();
       if (!response.ok) {
         toast.error(data.error || 'Erreur lors de la suppression');
+        setIsDeleting(false);
+        setExposantToDelete(null);
         return;
       }
       toast.success(t('admin.exposants.deleted') || 'Exposant supprimé avec succès');
@@ -160,6 +175,8 @@ export default function AdminExposantsPage() {
     } catch {
       toast.error(t('admin.exposants.toast_network_error'));
     }
+    setIsDeleting(false);
+    setExposantToDelete(null);
   };
 
   const handleImport = async () => {
@@ -325,7 +342,7 @@ export default function AdminExposantsPage() {
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 
-                                  onClick={() => handleDelete(exp.id)} 
+                                  onClick={() => setExposantToDelete(exp.id)} 
                                   disabled={!!exp.profile_id}
                                   className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 disabled:opacity-50"
                                 >
@@ -552,6 +569,27 @@ export default function AdminExposantsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!exposantToDelete} onOpenChange={(open) => !open && setExposantToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer cet exposant ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => { e.preventDefault(); handleDelete(); }}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? <Loader2 className="size-4 animate-spin" /> : 'Supprimer'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
