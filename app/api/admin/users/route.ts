@@ -476,7 +476,11 @@ export async function DELETE(request: Request) {
   await supabaseAdmin.from('subscriptions' as any).delete().eq('profile_id', userId);
   await supabaseAdmin.from('newsletter_subscriptions').delete().eq('profile_id', userId);
 
-  await supabaseAdmin.from('support_messages' as any).delete().eq('sender_id', userId);
+  const { data: userTickets } = await supabaseAdmin.from('support_tickets').select('id').eq('profile_id', userId);
+  if (userTickets && userTickets.length > 0) {
+    const ticketIds = userTickets.map((t: any) => t.id);
+    await supabaseAdmin.from('support_messages' as any).delete().in('ticket_id', ticketIds);
+  }
   await supabaseAdmin.from('support_tickets').delete().eq('profile_id', userId);
 
   await supabaseAdmin.from('user_preferences').delete().eq('profile_id', userId);

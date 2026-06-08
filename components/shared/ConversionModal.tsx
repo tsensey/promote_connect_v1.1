@@ -71,7 +71,7 @@ export function ConversionModal({ open, onOpenChange }: ConversionModalProps) {
             </DialogHeader>
             <div className="flex flex-col gap-4 py-4">
               <div className="rounded-lg bg-slate-50 p-4 text-center">
-                <span className="text-sm text-slate-500">Tarif de l'abonnement</span>
+                <span className="text-sm text-slate-500">Tarif exceptionnel de l'abonnement</span>
                 <p className="text-xl font-bold text-slate-900 mt-1">{content.priceDisplay}</p>
               </div>
 

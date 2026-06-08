@@ -28,7 +28,7 @@ import {
 import { useTranslation } from "@/lib/i18n";
 
 export default function GuidePage() {
-  const { t } = useTranslation();
+  const { t, locale, setLocale } = useTranslation();
 
   const guideNav = [
     { label: t("guide.nav.depart"), href: "#depart" },
@@ -223,20 +223,30 @@ export default function GuidePage() {
             </p>
           </div>
 
-          <nav
-            aria-label={t("guide.nav.aria")}
-            className="hidden min-w-0 items-center gap-1 lg:flex"
-          >
-            {guideNav.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                {item.label}
-              </a>
-            ))}
-          </nav>
+          <div className="flex items-center gap-2">
+            <nav
+              aria-label={t("guide.nav.aria")}
+              className="hidden min-w-0 items-center gap-1 lg:flex"
+            >
+              {guideNav.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+
+            <button
+              onClick={() => setLocale(locale === "fr" ? "en" : "fr")}
+              className="inline-flex h-9 items-center justify-center rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+              aria-label={locale === "fr" ? "Switch to English" : "Passer en Français"}
+            >
+              {locale === "fr" ? "EN" : "FR"}
+            </button>
+          </div>
         </div>
 
         <nav

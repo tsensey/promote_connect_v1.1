@@ -289,17 +289,25 @@ export async function checkMessageQuota(
     }
   }
 
-  // 2. Pour les free trial — vérifier la logique asymétrique (CdC §2.1)
+  // 2. Pour les free trial — vérifier si l'autre participant est PAID (CdC §2.1)
   const { data: conversation } = await supabase
     .from('conversations')
-    .select('initiated_by, initiated_by_tier')
+    .select('participant_a, participant_b')
     .eq('id', conversationId)
     .single();
 
-  // Si la conversation a été initiée par un PAID → le free trial répond librement
-  // (Mais le free trial ne bénéficie pas de l'illimité s'il est lui-même l'initiateur de cette conversation et qu'il a été rétrogradé)
-  if (conversation?.initiated_by_tier === 'paid' && conversation?.initiated_by !== senderId) {
-    return { allowed: true };
+  const otherParticipantId = conversation?.participant_a === senderId ? conversation?.participant_b : conversation?.participant_a;
+  
+  if (otherParticipantId) {
+    const { data: otherProfile } = await supabase
+      .from('profiles')
+      .select('subscription_tier')
+      .eq('id', otherParticipantId)
+      .single();
+      
+    if (otherProfile?.subscription_tier === 'paid') {
+      return { allowed: true };
+    }
   }
 
   // 3. Vérifier le quota total depuis platform_config (CdC §1.2)

@@ -14,6 +14,7 @@ import {
 interface EmailLayoutProps {
   preview: string;
   title: string;
+  subtitle?: string;
   children: React.ReactNode;
   unsubscribeUrl?: string;
   year?: number;
@@ -46,6 +47,7 @@ const tailwindConfig = {
 export default function EmailLayout({
   preview,
   title,
+  subtitle,
   children,
   year = new Date().getFullYear(),
 }: EmailLayoutProps) {
@@ -60,9 +62,16 @@ export default function EmailLayout({
         <Body className="bg-background m-0 px-4 py-8 font-sans text-foreground">
           <Container className="mx-auto max-w-[600px] bg-white rounded-3xl overflow-hidden shadow-xl border border-border">
             <Section width={'100%'} className="flex justify-between items-center bg-brand p-8 text-white w-full">
-              <Text className="m-0 text-2xl font-bold leading-tight">
-                {title}
-              </Text>
+              <div>
+                <Text className="m-0 text-2xl font-bold leading-tight">
+                  {title}
+                </Text>
+                {subtitle && (
+                  <Text className="m-0 mt-2 text-sm font-medium opacity-90">
+                    {subtitle}
+                  </Text>
+                )}
+              </div>
               <Img
                 src={`${baseUrl}/logo_large.png`}
                 width="220"

@@ -330,6 +330,7 @@ export const PostCard = memo(function PostCard({
             .single();
 
           if (data) {
+            if (data.parent_id) return;
             const comment = { ...(data as unknown as Comment), replies: [] };
             setComments((prev) => {
               if (prev.some((c) => c.id === comment.id)) return prev;

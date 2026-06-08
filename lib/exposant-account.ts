@@ -91,11 +91,9 @@ export async function createAccountForExposant(
 
   const recipients: { email: string; sent: boolean; error?: string }[] = [];
   const targets = [email1, email2].filter(Boolean) as string[];
-  const seen = new Set<string>();
+  const uniqueTargets = Array.from(new Set(targets));
 
-  for (const recipientEmail of targets) {
-    if (seen.has(recipientEmail)) continue;
-    seen.add(recipientEmail);
+  if (uniqueTargets.length > 0) {
     try {
       const emailHtml = await render(
         CredentialsEmail({
@@ -110,19 +108,20 @@ export async function createAccountForExposant(
       );
       const { error: sendError } = await resend.emails.send({
         from: FROM_EMAIL,
-        to: [recipientEmail],
+        to: uniqueTargets,
         subject: 'Vos identifiants PROMOTE-CONNECT',
         html: emailHtml,
       });
+      
       if (sendError) {
-        console.error(`Resend send error to ${recipientEmail}:`, sendError);
-        recipients.push({ email: recipientEmail, sent: false, error: sendError.message });
+        console.error(`Resend send error:`, sendError);
+        uniqueTargets.forEach(email => recipients.push({ email, sent: false, error: sendError.message }));
       } else {
-        recipients.push({ email: recipientEmail, sent: true });
+        uniqueTargets.forEach(email => recipients.push({ email, sent: true }));
       }
     } catch (e) {
-      console.error(`Resend exception for ${recipientEmail}:`, e);
-      recipients.push({ email: recipientEmail, sent: false, error: String(e) });
+      console.error(`Resend exception:`, e);
+      uniqueTargets.forEach(email => recipients.push({ email, sent: false, error: String(e) }));
     }
   }
 
