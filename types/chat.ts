@@ -24,7 +24,7 @@ export interface EnrichedConversation extends Conversation {
 export interface EnrichedMessage extends Message {
   author: Pick<Profile, 'id' | 'full_name' | 'avatar_url' | 'role'> | null;
   reply_to: Pick<EnrichedMessage, 'id' | 'content' | 'author' | 'attachment_type'> | null;
-  is_deleted?: boolean | null;
+  is_deleted: boolean | null;
   status?: 'sending' | 'sent' | 'delivered' | 'read' | null;
 }
 

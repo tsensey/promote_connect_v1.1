@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -26,9 +27,13 @@ import {
   Users,
 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
+import { LocaleToggle } from "@/components/ui/locale-toggle";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { cn } from "@/lib/utils";
 
 export default function GuidePage() {
-  const { t, locale, setLocale } = useTranslation();
+  const { t, locale } = useTranslation();
+  const [activeSection, setActiveSection] = useState("");
 
   const guideNav = [
     { label: t("guide.nav.depart"), href: "#depart" },
@@ -38,6 +43,23 @@ export default function GuidePage() {
     { label: t("guide.nav.roles"), href: "#roles" },
     { label: t("guide.nav.faq"), href: "#faq" },
   ];
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = ["depart", "demarrage", "parcours", "modules", "roles", "faq"];
+      let current = "";
+      for (const section of sections) {
+        const element = document.getElementById(section);
+        if (element && element.getBoundingClientRect().top <= 200) {
+          current = section;
+        }
+      }
+      if (current) setActiveSection(current);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const heroStats = [
     { value: t("guide.hero.stat_1.value"), label: t("guide.hero.stat_1.label"), icon: Clock3 },
@@ -200,6 +222,7 @@ export default function GuidePage() {
     { question: t("guide.faq.q.3"), answer: t("guide.faq.a.3") },
     { question: t("guide.faq.q.4"), answer: t("guide.faq.a.4") },
     { question: t("guide.faq.q.5"), answer: t("guide.faq.a.5") },
+    { question: t("guide.faq.q.6"), answer: t("guide.faq.a.6") },
   ];
 
   return (
@@ -228,24 +251,26 @@ export default function GuidePage() {
               aria-label={t("guide.nav.aria")}
               className="hidden min-w-0 items-center gap-1 lg:flex"
             >
-              {guideNav.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  {item.label}
-                </a>
-              ))}
+              {guideNav.map((item) => {
+                const isActive = activeSection === item.href.replace('#', '');
+                return (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "rounded-md px-3 py-2 text-sm transition-colors",
+                      isActive 
+                        ? "bg-primary/10 text-primary font-bold" 
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground font-medium"
+                    )}
+                  >
+                    {item.label}
+                  </a>
+                );
+              })}
             </nav>
 
-            <button
-              onClick={() => setLocale(locale === "fr" ? "en" : "fr")}
-              className="inline-flex h-9 items-center justify-center rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-              aria-label={locale === "fr" ? "Switch to English" : "Passer en Français"}
-            >
-              {locale === "fr" ? "EN" : "FR"}
-            </button>
+            <LocaleToggle />
           </div>
         </div>
 
@@ -253,15 +278,23 @@ export default function GuidePage() {
           aria-label={t("guide.nav.aria_mobile")}
           className="flex gap-1 overflow-x-auto border-t border-border/60 px-3 py-2 lg:hidden"
         >
-          {guideNav.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className="inline-flex min-h-9 shrink-0 items-center rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              {item.label}
-            </a>
-          ))}
+          {guideNav.map((item) => {
+            const isActive = activeSection === item.href.replace('#', '');
+            return (
+              <a
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "inline-flex min-h-9 shrink-0 items-center rounded-md px-3 text-sm transition-colors",
+                  isActive 
+                    ? "bg-primary/10 text-primary font-bold" 
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground font-medium"
+                )}
+              >
+                {item.label}
+              </a>
+            );
+          })}
         </nav>
       </header>
 
@@ -273,16 +306,24 @@ export default function GuidePage() {
                 {t("guide.sidebar.sommaire")}
               </p>
               <div className="mt-3 space-y-1">
-                {guideNav.map((item) => (
-                  <a
-                    key={item.href}
-                    href={item.href}
-                    className="flex items-center justify-between rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  >
-                    {item.label}
-                    <ChevronRight className="size-4" />
-                  </a>
-                ))}
+                {guideNav.map((item) => {
+                  const isActive = activeSection === item.href.replace('#', '');
+                  return (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors",
+                        isActive 
+                          ? "bg-primary/10 text-primary font-bold" 
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}
+                    >
+                      {item.label}
+                      <ChevronRight className="size-4" />
+                    </a>
+                  );
+                })}
               </div>
             </div>
 
@@ -345,7 +386,7 @@ export default function GuidePage() {
                   <Link
                     key={action.title}
                     href={action.href}
-                    className="group rounded-md border border-border bg-card p-4 transition-colors hover:border-primary/30 hover:bg-muted/50"
+                    className="group rounded-md border border-border bg-card p-4 transition-all hover:-translate-y-1 hover:shadow-lg hover:border-primary/30"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
@@ -405,7 +446,7 @@ export default function GuidePage() {
                 const tone = toneStyles[workflow.tone];
 
                 return (
-                  <article key={workflow.title} className="surface-card p-5">
+                  <article key={workflow.title} className="surface-card p-5 transition-all hover:-translate-y-1 hover:shadow-lg">
                     <div className="flex items-center justify-between gap-3">
                       <div className={`flex size-11 items-center justify-center rounded-md ${tone.icon}`}>
                         <workflow.icon className="size-5" />
@@ -447,7 +488,7 @@ export default function GuidePage() {
                 const tone = toneStyles[module.tone];
 
                 return (
-                  <article key={module.title} className="surface-panel p-5">
+                  <article key={module.title} className="surface-panel p-5 transition-all hover:-translate-y-1 hover:shadow-lg">
                     <div className="flex items-start gap-4">
                       <div className={`flex size-11 shrink-0 items-center justify-center rounded-md ${tone.icon}`}>
                         <module.icon className="size-5" />
@@ -502,7 +543,7 @@ export default function GuidePage() {
 
             <div className="grid gap-4 lg:grid-cols-3">
               {roleGuides.map((role) => (
-                <article key={role.title} className="surface-card p-5">
+                <article key={role.title} className="surface-card p-5 transition-all hover:-translate-y-1 hover:shadow-lg">
                   <div className="flex size-11 items-center justify-center rounded-md bg-primary/10 text-primary">
                     <role.icon className="size-5" />
                   </div>
@@ -541,17 +582,21 @@ export default function GuidePage() {
               description={t("guide.faq.description")}
             />
 
-            <div className="surface-panel divide-y divide-border/60 overflow-hidden">
-              {faqs.map((faq) => (
-                <article key={faq.question} className="p-5 sm:p-6">
-                  <h3 className="text-base font-heading text-foreground">
-                    {faq.question}
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    {faq.answer}
-                  </p>
-                </article>
-              ))}
+            <div className="surface-panel overflow-hidden p-2 sm:p-4">
+              <Accordion className="w-full">
+                {faqs.map((faq, idx) => (
+                  <AccordionItem key={idx} value={`faq-${idx}`}>
+                    <AccordionTrigger className="text-base font-heading px-4">
+                      {faq.question}
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      <p className="text-sm leading-6 text-muted-foreground">
+                        {faq.answer}
+                      </p>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             </div>
           </section>
         </div>

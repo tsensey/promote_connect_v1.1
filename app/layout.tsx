@@ -71,7 +71,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang={initialLocale}
-      className={manrope.variable}
+      className={cn(manrope.variable, "scroll-smooth")}
       suppressHydrationWarning
       data-scroll-behavior="smooth"
     >
