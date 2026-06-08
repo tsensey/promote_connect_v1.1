@@ -337,18 +337,16 @@ export default function AdminExposantsPage() {
                             <ExternalLink className="size-4" />
                           </Link>
                           <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="inline-block">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  onClick={() => setExposantToDelete(exp.id)} 
-                                  disabled={!!exp.profile_id}
-                                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 disabled:opacity-50"
-                                >
-                                  <Trash2 className="size-4" />
-                                </Button>
-                              </div>
+                            <TooltipTrigger render={<div className="inline-block" />}>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => setExposantToDelete(exp.id)} 
+                                disabled={!!exp.profile_id}
+                                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
                             </TooltipTrigger>
                             {exp.profile_id && (
                               <TooltipContent>

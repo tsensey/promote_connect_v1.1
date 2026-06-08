@@ -310,14 +310,15 @@ function MessageThread({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { ref: loadMoreRef } = useIntersectionObserver({
+  const { ref: loadMoreRef, isVisible } = useIntersectionObserver({
     threshold: 0.1,
-    onChange: (isIntersecting) => {
-      if (isIntersecting && hasMore && !loadingMore) {
-        loadMore();
-      }
-    },
   });
+
+  useEffect(() => {
+    if (isVisible && hasMore && !loadingMore) {
+      loadMore();
+    }
+  }, [isVisible, hasMore, loadingMore, loadMore]);
 
   const otherUserId = otherUser?.id;
   const isCurrentlyBlocked = otherUserId ? isBlocked(otherUserId) : false;

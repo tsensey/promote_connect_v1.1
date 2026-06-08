@@ -242,13 +242,15 @@ export const MessageBubble = memo(function MessageBubble({ message, isMine, show
         </button>
         {isMine && onDelete && (
           <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <button
-                className="flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/20 hover:text-destructive"
-                title={t('chat.delete_confirm_action') || 'Supprimer'}
-              >
-                <Trash2 className="size-3.5" />
-              </button>
+            <AlertDialogTrigger 
+              render={
+                <button
+                  className="flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/20 hover:text-destructive"
+                  title={t('chat.delete_confirm_action') || 'Supprimer'}
+                />
+              }
+            >
+              <Trash2 className="size-3.5" />
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>

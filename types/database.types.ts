@@ -392,6 +392,7 @@ export type Database = {
           conversation_id: string | null
           created_at: string | null
           id: string
+          is_deleted: boolean | null
           is_read: boolean | null
           product_attachment: Json | null
           reply_to_id: string | null
@@ -404,6 +405,7 @@ export type Database = {
           conversation_id?: string | null
           created_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           is_read?: boolean | null
           product_attachment?: Json | null
           reply_to_id?: string | null
@@ -416,6 +418,7 @@ export type Database = {
           conversation_id?: string | null
           created_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           is_read?: boolean | null
           product_attachment?: Json | null
           reply_to_id?: string | null
