@@ -57,6 +57,5 @@
     <!-- Android 13+ : Firebase Analytics ajoute automatiquement AD_ID via le manifest merge.
          Si l'app n'utilise pas l'Advertising ID, on le supprime pour éviter le refus Google Play.
          Si vous utilisez l'Advertising ID, retirez tools:node="remove". -->
-    <uses-permission android:name="com.google.android.gms.permission.AD_ID"
-        tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 </manifest>
