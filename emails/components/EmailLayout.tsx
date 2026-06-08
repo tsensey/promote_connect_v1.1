@@ -25,7 +25,7 @@ const tailwindConfig = {
   theme: {
     extend: {
       colors: {
-        brand: "#4A072B",
+        brand: "#460f40",
         background: "#f6f8fb",
         foreground: "#0f172a",
         muted: "#475569",
