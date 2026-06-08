@@ -10,11 +10,12 @@ import {
   Text,
   Tailwind,
 } from "@react-email/components";
+import React from "react";
 
 interface EmailLayoutProps {
   preview: string;
-  title: string;
-  subtitle?: string;
+  title: React.ReactNode;
+  subtitle?: React.ReactNode;
   children: React.ReactNode;
   unsubscribeUrl?: string;
   year?: number;
@@ -49,7 +50,7 @@ export default function EmailLayout({
   title,
   subtitle,
   children,
-  year = new Date().getFullYear(),
+  year = 2026,
 }: EmailLayoutProps) {
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL || "https://promote-connect.pro";
@@ -60,42 +61,49 @@ export default function EmailLayout({
       <Preview>{preview}</Preview>
       <Tailwind config={tailwindConfig}>
         <Body className="bg-background m-0 px-4 py-8 font-sans text-foreground">
-          <Container className="mx-auto max-w-[600px] bg-white rounded-3xl overflow-hidden shadow-xl border border-border">
-            <Section width={'100%'} className="flex justify-between items-center bg-brand p-8 text-white w-full">
-              <div>
-                <Text className="m-0 text-2xl font-bold leading-tight">
-                  {title}
-                </Text>
-                {subtitle && (
-                  <Text className="m-0 mt-2 text-sm font-medium opacity-90">
-                    {subtitle}
-                  </Text>
-                )}
-              </div>
-              <Img
-                src={`${baseUrl}/logo_large.png`}
-                width="220"
-                height="44"
-                alt="PROMOTE-CONNECT"
-                className="mb-4 inline-block object-contain"
-              />
+          <Container className="mx-auto max-w-[600px] bg-white rounded-[12px] overflow-hidden border border-border">
+            <Section width={'100%'} className="bg-brand p-6 w-full">
+              <table width="100%" cellPadding="0" cellSpacing="0" border={0}>
+                <tr>
+                  <td align="left" valign="middle">
+                    <Text className="m-0 text-xl font-bold leading-tight text-white">
+                      {title}
+                    </Text>
+                    {subtitle && (
+                      <Text className="m-0 mt-1 text-sm text-white">
+                        {subtitle}
+                      </Text>
+                    )}
+                  </td>
+                  <td align="right" valign="middle">
+                    <Img
+                      src={`${baseUrl}/logo_large.png`}
+                      width="180"
+                      height="36"
+                      alt="PROMOTE"
+                      className="inline-block object-contain"
+                    />
+                  </td>
+                </tr>
+              </table>
             </Section>
-            <Section className="p-8">{children}</Section>
-            <Section className="bg-background px-8 py-5 text-center border-t border-border">
-              <Text className="m-0 text-xs text-slate-400">
-                PROMOTE-CONNECT — Plateforme de networking professionnel
+            <Section className="px-8 pt-8 pb-6">{children}</Section>
+            <Section className="bg-[#f8fafc] px-8 py-6 text-center border-t border-border">
+              <Text className="m-0 text-[11px] uppercase tracking-wider text-slate-500">
+                SALON INTERNATIONAL PROMOTE YAOUNDE
               </Text>
-              <Text className="m-0 mt-1 text-xs text-slate-400">
-                {year} PROMOTE. Tous droits réservés.
+              <Text className="m-0 mt-2 text-[11px] text-slate-400">
+                Cet email est généré automatiquement. Merci de ne pas y répondre.
               </Text>
-              <Text className="m-0 mt-1 text-xs text-slate-400">
-                Conçu par{" "}
+              <Text className="m-0 mt-2 text-[11px] text-slate-400">
+                Avec{" "}
                 <Link
                   href="https://bbit-it.com"
                   className="text-slate-400 underline"
                 >
-                  BBIT Sarl
-                </Link>
+                  BBIT SASL
+                </Link>{" "}
+                Partenaire Technique Promote {year}.
               </Text>
             </Section>
           </Container>

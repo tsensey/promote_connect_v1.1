@@ -2,14 +2,18 @@ import {
   Hr,
   Text,
   Section,
+  Container,
 } from '@react-email/components';
+import React from 'react';
 import EmailLayout from './components/EmailLayout';
 
 interface RdvConfirmationEmailProps {
   demandeurName: string;
   destinataireName: string;
+  destinataireCompany?: string;
   startsAt: string;
   endsAt: string;
+  lieu?: string;
   notes?: string;
   status: 'pending' | 'confirmed' | 'cancelled';
 }
@@ -21,75 +25,131 @@ function formatDate(iso: string) {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
+  });
+}
+
+function formatTime(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString('fr-FR', {
     hour: '2-digit',
     minute: '2-digit',
   });
 }
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-  pending: { label: 'Nouvelle demande de rendez-vous', color: '#f59e0b' },
-  confirmed: { label: 'Rendez-vous confirmé', color: '#22c55e' },
-  cancelled: { label: 'Rendez-vous annulé', color: '#ef4444' },
-};
+function getDurationMinutes(start: string, end: string) {
+  const diff = new Date(end).getTime() - new Date(start).getTime();
+  return Math.round(diff / 60000);
+}
+
+const Highlight = ({ children }: { children: React.ReactNode }) => (
+  <span className="bg-[#fef08a] text-black px-1.5 py-0.5 font-medium">{children}</span>
+);
 
 export default function RdvConfirmationEmail({
   demandeurName,
   destinataireName,
+  destinataireCompany = 'PROMOTE',
   startsAt,
   endsAt,
+  lieu = 'Salon PROMOTE',
   notes,
   status,
 }: RdvConfirmationEmailProps) {
-  const cfg = statusConfig[status] || statusConfig.pending;
+  
+  const isConfirmed = status === 'confirmed';
+  
+  const title = (
+    <>
+      <span className="bg-[#fef08a] text-black px-1 mr-1">RDV</span> PROMOTE 2026
+    </>
+  );
+
+  const subtitle = (
+    <>
+      <span className="bg-[#fef08a] text-black px-1 mr-1">Rendez-vous</span> {
+        status === 'confirmed' ? 'confirmé' : status === 'cancelled' ? 'annulé' : 'en attente'
+      }
+    </>
+  );
 
   return (
     <EmailLayout
-      preview={cfg.label}
-      title={cfg.label}
+      preview={`Rendez-vous ${status === 'confirmed' ? 'confirmé' : status === 'cancelled' ? 'annulé' : 'en attente'}`}
+      title={title}
+      subtitle={subtitle}
     >
-      <Section className="mb-6 flex items-center gap-2 text-sm font-semibold text-muted">
-        <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: cfg.color }} />
-        {cfg.label}
+      <Text className="m-0 mb-4 text-[15px] text-foreground">
+        Bonjour <strong>{demandeurName}</strong>,
+      </Text>
+      
+      <Text className="m-0 mb-6 text-[15px] leading-relaxed text-slate-600">
+        Un <Highlight>rendez-vous</Highlight> a été planifié entre vous et l'exposant <strong>{destinataireName}</strong> de la société <strong>{destinataireCompany}</strong>.
+      </Text>
+
+      <Section className="mb-6 w-full rounded-xl border border-border bg-white overflow-hidden">
+        <table width="100%" cellPadding="0" cellSpacing="0" border={0}>
+          <tr>
+            <td className="w-[120px] border-b border-border p-4 align-top">
+              <Text className="m-0 text-xs font-semibold text-brand uppercase tracking-wide">DATE</Text>
+            </td>
+            <td className="border-b border-border p-4 align-top">
+              <Text className="m-0 text-[14px] font-medium text-foreground">
+                {formatDate(startsAt)}
+              </Text>
+            </td>
+          </tr>
+          <tr>
+            <td className="w-[120px] border-b border-border p-4 align-top">
+              <Text className="m-0 text-xs font-semibold text-brand uppercase tracking-wide">HEURE</Text>
+            </td>
+            <td className="border-b border-border p-4 align-top">
+              <Text className="m-0 text-[14px] font-medium text-foreground">
+                {formatTime(startsAt)} <span className="text-slate-400 text-sm font-normal">({getDurationMinutes(startsAt, endsAt)} min)</span>
+              </Text>
+            </td>
+          </tr>
+          <tr>
+            <td className="w-[120px] border-b border-border p-4 align-top">
+              <Text className="m-0 text-xs font-semibold text-brand uppercase tracking-wide">AVEC</Text>
+            </td>
+            <td className="border-b border-border p-4 align-top">
+              <Text className="m-0 text-[14px] font-medium text-foreground">{destinataireName}</Text>
+              <Text className="m-0 mt-1 text-[13px] text-slate-500">{destinataireCompany}</Text>
+            </td>
+          </tr>
+          <tr>
+            <td className="w-[120px] border-b border-border p-4 align-top">
+              <Text className="m-0 text-xs font-semibold text-brand uppercase tracking-wide">LIEU</Text>
+            </td>
+            <td className="border-b border-border p-4 align-top">
+              <Text className="m-0 text-[14px] font-medium text-foreground">{lieu}</Text>
+            </td>
+          </tr>
+          {notes && (
+            <tr>
+              <td className="w-[120px] p-4 align-top">
+                <Text className="m-0 text-xs font-semibold text-brand uppercase tracking-wide">NOTES</Text>
+              </td>
+              <td className="p-4 align-top">
+                <Text className="m-0 text-[14px] text-foreground leading-relaxed">
+                  {notes}
+                </Text>
+              </td>
+            </tr>
+          )}
+          {!notes && (
+             <tr>
+               <td colSpan={2} className="p-0 border-0 h-0"></td>
+             </tr>
+          )}
+        </table>
       </Section>
 
-      <Section className="mb-5 rounded-xl border border-border bg-background p-5">
-        <DetailRow label="De" value={demandeurName} />
-        <DetailRow label="À" value={destinataireName} />
-        <DetailRow label="Début" value={formatDate(startsAt)} />
-        <DetailRow label="Fin" value={formatDate(endsAt)} />
-      </Section>
-
-      {notes && (
-        <Section className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <Text className="m-0 mb-1 text-xs font-bold uppercase text-amber-900">
-            Note :
-          </Text>
-          <Text className="m-0 text-sm leading-relaxed text-amber-800">
-            {notes}
-          </Text>
-        </Section>
-      )}
-
-      <Hr className="my-6 border-t border-border" />
-
-      {status === 'pending' && (
-        <Text className="m-0 text-sm leading-relaxed text-slate-500">
-          Connectez-vous à PROMOTE-CONNECT pour confirmer ou refuser cette demande.
+      <Section className="rounded-[8px] bg-slate-50 p-4 text-center">
+        <Text className="m-0 text-[13px] text-slate-600">
+          Vous recevrez un rappel la veille et 30 minutes avant le <Highlight>rendez-vous</Highlight>.
         </Text>
-      )}
+      </Section>
     </EmailLayout>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="mb-3 last:mb-0">
-      <Text className="m-0 mb-0.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
-        {label}
-      </Text>
-      <Text className="m-0 text-[15px] font-semibold text-foreground">
-        {value}
-      </Text>
-    </div>
   );
 }
