@@ -9,6 +9,15 @@ const resend = process.env.RESEND_API_KEY
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
 
+function cleanEmails(raw: string | null): string[] {
+  if (!raw) return [];
+  // Sépare par virgule, point-virgule ou espace, et garde les emails valides
+  return raw
+    .split(/[,;\s]+/)
+    .map(e => e.trim().toLowerCase())
+    .filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+}
+
 export interface CreateAccountResult {
   account?: {
     id: string;
@@ -25,8 +34,13 @@ export async function createAccountForExposant(
   email2: string | null
 ): Promise<CreateAccountResult> {
   const supabase = createAdminClient();
-  const authEmail = email1 || email2;
-  if (!authEmail) return { account: null };
+  
+  const validEmails1 = cleanEmails(email1);
+  const validEmails2 = cleanEmails(email2);
+  const allEmails = Array.from(new Set([...validEmails1, ...validEmails2]));
+  const authEmail = allEmails[0]; // On prend le premier email valide comme identifiant principal
+
+  if (!authEmail) return { error: 'Aucun email valide pour la création du compte' };
 
   const { data: exposant } = await supabase
     .from('exposants')
@@ -90,10 +104,8 @@ export async function createAccountForExposant(
   }
 
   const recipients: { email: string; sent: boolean; error?: string }[] = [];
-  const targets = [email1, email2].filter(Boolean) as string[];
-  const uniqueTargets = Array.from(new Set(targets));
 
-  if (uniqueTargets.length > 0) {
+  if (allEmails.length > 0) {
     try {
       const emailHtml = await render(
         CredentialsEmail({
@@ -108,20 +120,24 @@ export async function createAccountForExposant(
       );
       const { error: sendError } = await resend.emails.send({
         from: FROM_EMAIL,
-        to: uniqueTargets,
+        to: allEmails,
         subject: 'Vos identifiants PROMOTE-CONNECT',
         html: emailHtml,
       });
       
       if (sendError) {
         console.error(`Resend send error:`, sendError);
-        uniqueTargets.forEach(email => recipients.push({ email, sent: false, error: sendError.message }));
+        // ROLLBACK: On supprime le compte pour pouvoir réessayer plus tard
+        await supabase.auth.admin.deleteUser(authData.user.id);
+        return { error: `[email_failed] Erreur Resend: ${sendError.message}` };
       } else {
-        uniqueTargets.forEach(email => recipients.push({ email, sent: true }));
+        allEmails.forEach(email => recipients.push({ email, sent: true }));
       }
     } catch (e) {
       console.error(`Resend exception:`, e);
-      uniqueTargets.forEach(email => recipients.push({ email, sent: false, error: String(e) }));
+      // ROLLBACK
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      return { error: `[email_failed] Exception Resend: ${String(e)}` };
     }
   }
 

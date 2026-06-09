@@ -42,35 +42,37 @@ export async function POST(request: Request) {
     });
   }
 
-  const accountResults = await Promise.allSettled(
-    exposants.map(async (e) => {
-      const result = await createAccountForExposant(e.id, e.email1, e.email2);
-      if (result.error) {
-        // En cas d'erreur, on marque comme failed
-        await supabase
-          .from('exposants')
-          .update({ account_status: 'failed' })
-          .eq('id', e.id);
-        return { exposantId: e.id, status: 'failed', error: result.error };
-      } else {
-        // Succès
-        await supabase
-          .from('exposants')
-          .update({ account_status: 'created' })
-          .eq('id', e.id);
-        return { exposantId: e.id, status: 'created' };
-      }
-    })
-  );
+  const accountResults: { exposantId: string, status: 'created' | 'failed', error?: string }[] = [];
+
+  for (const e of exposants) {
+    const result = await createAccountForExposant(e.id, e.email1, e.email2);
+    if (result.error) {
+      // En cas d'erreur (ex: email invalide, rate limit), on marque comme failed
+      await supabase
+        .from('exposants')
+        .update({ account_status: 'failed' })
+        .eq('id', e.id);
+      accountResults.push({ exposantId: e.id, status: 'failed', error: result.error });
+    } else {
+      // Succès
+      await supabase
+        .from('exposants')
+        .update({ account_status: 'created' })
+        .eq('id', e.id);
+      accountResults.push({ exposantId: e.id, status: 'created' });
+    }
+    
+    // Délai de 250ms pour respecter le rate-limit de Resend (max 10 requêtes / seconde, ou 2 r/s en Free)
+    await new Promise(resolve => setTimeout(resolve, 250));
+  }
 
   const processed = accountResults.length;
   let successCount = 0;
   let failedCount = 0;
 
   for (const r of accountResults) {
-    if (r.status === 'fulfilled') {
-      if (r.value.status === 'created') successCount++;
-      else failedCount++;
+    if (r.status === 'created') {
+      successCount++;
     } else {
       failedCount++;
     }
