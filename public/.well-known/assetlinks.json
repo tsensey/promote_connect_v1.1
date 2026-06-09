@@ -1,11 +1,15 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.promoteconnect.app",
       "sha256_cert_fingerprints": [
-        "3D:D4:6F:10:2E:97:34:53:C8:A0:FE:7C:7F:0E:9D:BD:34:84:AD:97:E2:BB:B0:EE:49:93:FB:F7:E8:F2:6F:32"
+        "3D:D4:6F:10:2E:97:34:53:C8:A0:FE:7C:7F:0E:9D:BD:34:84:AD:97:E2:BB:B0:EE:49:93:FB:F7:E8:F2:6F:32",
+        "F4:FC:6D:8C:A9:BC:6C:89:E6:79:EA:D7:8D:DE:63:BF:73:EC:88:8D:DD:B2:0F:0A:4D:C5:C3:01:74:4B:33:28"
       ]
     }
   }

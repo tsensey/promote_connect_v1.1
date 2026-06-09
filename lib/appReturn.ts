@@ -24,7 +24,7 @@ interface ExternalRouteResolution {
   authCode: string | null;
 }
 
-const DEFAULT_WEB_APP_URL = "https://promoteconnect.bbit-it.com";
+const DEFAULT_WEB_APP_URL = "https://promote-connect.pro";
 export const NATIVE_APP_SCHEME = "com.promoteconnect.app://";
 
 function trimTrailingSlash(value: string): string {
