@@ -64,6 +64,7 @@ export default function AdminEspacesPage() {
   const [saving, setSaving] = useState(false);
   const ITEMS_PER_PAGE = 10;
   const [form, setForm] = useState(defaultForm);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
