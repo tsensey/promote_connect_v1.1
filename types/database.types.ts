@@ -277,6 +277,7 @@ export type Database = {
       }
       exposants: {
         Row: {
+          account_status: string | null
           annee_creation: string | null
           brochure_url: string | null
           chiffre_affaires: string | null
@@ -308,6 +309,7 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          account_status?: string | null
           annee_creation?: string | null
           brochure_url?: string | null
           chiffre_affaires?: string | null
@@ -339,6 +341,7 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          account_status?: string | null
           annee_creation?: string | null
           brochure_url?: string | null
           chiffre_affaires?: string | null

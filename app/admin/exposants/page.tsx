@@ -71,7 +71,9 @@ export default function AdminExposantsPage() {
   const [showImport, setShowImport] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importLoading, setImportLoading] = useState(false);
-  const [importResult, setImportResult] = useState<{ imported: number; total: number; accounts_created?: number; without_email?: number } | null>(null);
+  const [importResult, setImportResult] = useState<{ imported: number; total: number; accounts_pending?: number; without_email?: number } | null>(null);
+  const [batchProgress, setBatchProgress] = useState<{ processed: number; total: number; success: number; failed: number } | null>(null);
+  const [isProcessingBatch, setIsProcessingBatch] = useState(false);
   const [exposantToDelete, setExposantToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -102,6 +104,48 @@ export default function AdminExposantsPage() {
   }, []);
 
   useEffect(() => { void fetchData(); }, [fetchData]);
+
+  const processBatch = async (retryFailed = false) => {
+    setIsProcessingBatch(true);
+    try {
+      const response = await fetch('/api/admin/espaces/exposants/process-batch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ retry_failed: retryFailed }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        toast.error(data.error || 'Erreur lors du traitement par lot');
+        setIsProcessingBatch(false);
+        return;
+      }
+
+      setBatchProgress(prev => {
+        const current = prev || { processed: 0, total: data.remaining + data.processed, success: 0, failed: 0 };
+        return {
+          processed: current.processed + data.processed,
+          total: current.total, // keep initial total
+          success: current.success + data.success_count,
+          failed: current.failed + data.failed_count,
+        };
+      });
+
+      if (data.remaining > 0) {
+        // Continue processing
+        setTimeout(() => processBatch(retryFailed), 500);
+      } else {
+        toast.success('Création des comptes terminée');
+        setIsProcessingBatch(false);
+        await fetchData();
+      }
+    } catch {
+      toast.error('Erreur réseau lors du traitement par lot');
+      setIsProcessingBatch(false);
+    }
+  };
 
   const resetForm = () => {
     setFormData({ nom: '', description: '', secteur: '', espace_id: '', pavillon: '', stand: '', pays: '', website: '', email1: '', email2: '', is_featured: false });
@@ -229,9 +273,15 @@ export default function AdminExposantsPage() {
         return;
       }
 
-      setImportResult({ imported: payload.imported, total: payload.total, accounts_created: payload.accounts_created, without_email: payload.without_email });
+      setImportResult({ imported: payload.imported, total: payload.total, accounts_pending: payload.accounts_pending, without_email: payload.without_email });
       toast.success(t('admin.exposants.import_success', { count: payload.imported }));
-      await fetchData();
+      
+      if (payload.accounts_pending > 0) {
+        setBatchProgress({ processed: 0, total: payload.accounts_pending, success: 0, failed: 0 });
+        processBatch(false);
+      } else {
+        await fetchData();
+      }
     } catch {
       toast.error(t('admin.exposants.import_error'));
     } finally {
@@ -256,6 +306,9 @@ export default function AdminExposantsPage() {
 
   const selectedEspace = espaces.find((e) => e.id === formData.espace_id);
 
+  const pendingAccountsCount = exposants.filter(e => e.account_status === 'pending').length;
+  const failedAccountsCount = exposants.filter(e => e.account_status === 'failed').length;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -268,10 +321,26 @@ export default function AdminExposantsPage() {
             {t('admin.exposants.desc')} {t('admin.exposants.desc_hint')}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {selectedIds.length > 0 && (
             <Button variant="destructive" onClick={() => setShowBulkDeleteConfirm(true)} className="rounded-xl">
               <Trash2 className="mr-2 size-4" /> Supprimer ({selectedIds.length})
+            </Button>
+          )}
+          {(pendingAccountsCount > 0 || failedAccountsCount > 0) && (
+            <Button 
+              variant="secondary" 
+              onClick={() => {
+                setBatchProgress({ processed: 0, total: pendingAccountsCount + failedAccountsCount, success: 0, failed: 0 });
+                setShowImport(true); // Reopen modal to show progress
+                setImportResult({ imported: 0, total: 0, accounts_pending: pendingAccountsCount + failedAccountsCount });
+                processBatch(true); // retryFailed = true
+              }} 
+              disabled={isProcessingBatch}
+              className="rounded-xl bg-amber-500/10 text-amber-700 hover:bg-amber-500/20"
+            >
+              <Key className="mr-2 size-4" /> 
+              {isProcessingBatch ? 'Traitement en cours...' : `Reprendre la création (${pendingAccountsCount + failedAccountsCount} restants)`}
             </Button>
           )}
           <Button variant="outline" onClick={() => { setShowImport(true); resetImport(); }} className="rounded-xl">
@@ -458,11 +527,28 @@ export default function AdminExposantsPage() {
                     {t('admin.exposants.import_skipped', { count: importResult.total - importResult.imported })}
                   </p>
                 )}
-                {importResult.accounts_created !== undefined && (
+                {importResult.accounts_pending !== undefined && (
                   <>
                     <div className="mt-4 border-t border-emerald-500/20 pt-4">
-                      <p className="text-sm font-medium text-emerald-700">{t('admin.exposants.accounts_created')}</p>
-                      <p className="text-lg font-bold text-emerald-700">{importResult.accounts_created}</p>
+                      {batchProgress ? (
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium text-emerald-700">Création des comptes en cours...</p>
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-emerald-500/20">
+                            <div 
+                              className="h-full bg-emerald-600 transition-all duration-300" 
+                              style={{ width: `${Math.min(100, Math.round((batchProgress.processed / batchProgress.total) * 100))}%` }} 
+                            />
+                          </div>
+                          <p className="text-xs font-medium text-emerald-700">
+                            {batchProgress.processed} / {batchProgress.total} traités ({batchProgress.success} créés, {batchProgress.failed} échoués)
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-sm font-medium text-emerald-700">Comptes en attente de création</p>
+                          <p className="text-lg font-bold text-emerald-700">{importResult.accounts_pending}</p>
+                        </>
+                      )}
                     </div>
                     {importResult.without_email && importResult.without_email > 0 ? (
                       <p className="mt-2 text-xs text-muted-foreground">
@@ -473,8 +559,9 @@ export default function AdminExposantsPage() {
                 )}
               </div>
               <DialogFooter>
-                <Button onClick={() => { setShowImport(false); setTimeout(resetImport, 200); }} className="rounded-xl">
-                  {t('common.close')}
+                <Button onClick={() => { setShowImport(false); setTimeout(resetImport, 200); }} disabled={isProcessingBatch} className="rounded-xl">
+                  {isProcessingBatch ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+                  {isProcessingBatch ? 'Traitement...' : t('common.close')}
                 </Button>
               </DialogFooter>
             </div>

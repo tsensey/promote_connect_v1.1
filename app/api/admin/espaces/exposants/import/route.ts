@@ -108,6 +108,7 @@ function buildInsert(row: FlatExposant, pavillonToEspace: Map<string, { id: stri
     logo_url,
     espace_id: espace_id || null,
     is_featured: false,
+    account_status: (row.mail1?.trim() || row.mail2?.trim()) ? 'pending' : 'none',
   };
   return result;
 }
@@ -265,36 +266,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Aucun exposant inséré' }, { status: 500 });
   }
 
-  const withAccounts: { exposantId: string; nom: string; email1: string | null; email2: string | null }[] = [];
-  const withoutEmail: string[] = [];
-
-  for (const exp of inserted || []) {
-    if (exp.email1 || exp.email2) {
-      withAccounts.push({ exposantId: exp.id, nom: exp.nom, email1: exp.email1, email2: exp.email2 });
-    } else {
-      withoutEmail.push(exp.nom);
-    }
-  }
-
-  const accountResults: { exposantId: string; nom: string; account: object | null; error?: string }[] = [];
-
-  for (let i = 0; i < withAccounts.length; i += BATCH_SIZE) {
-    const batch = withAccounts.slice(i, i + BATCH_SIZE);
-    const batchResults = await Promise.allSettled(
-      batch.map((e) => createAccountForExposant(e.exposantId, e.email1, e.email2))
-    );
-    for (let j = 0; j < batch.length; j++) {
-      const r = batchResults[j];
-      if (r.status === 'fulfilled') {
-        accountResults.push({ exposantId: batch[j].exposantId, nom: batch[j].nom, account: r.value.account ?? null, error: r.value.error });
-      } else {
-        accountResults.push({ exposantId: batch[j].exposantId, nom: batch[j].nom, account: null, error: r.reason?.toString() });
-      }
-    }
-  }
-
-  const accountsCreated = accountResults.filter((r) => r.account !== null).length;
-  const accountErrors = accountResults.filter((r) => r.error);
+  const pendingCount = inserted.filter(e => e.email1 || e.email2).length;
 
   return NextResponse.json({
     success: true,
@@ -302,8 +274,7 @@ export async function POST(request: Request) {
     total: records.length,
     duplicates: duplicates.length,
     duplicate_details: duplicates.length > 0 ? duplicates.slice(0, 50) : undefined,
-    accounts_created: accountsCreated,
-    without_email: withoutEmail.length,
-    errors: accountErrors.length > 0 ? accountErrors.slice(0, 20) : undefined,
+    accounts_pending: pendingCount,
+    without_email: inserted.length - pendingCount,
   });
 }
