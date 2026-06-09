@@ -200,27 +200,33 @@ export async function DELETE(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
+  const idsParam = searchParams.get('ids');
 
-  if (!id) {
-    return NextResponse.json({ error: 'id requis' }, { status: 400 });
+  let idsToDelete: string[] = [];
+  if (id) idsToDelete.push(id);
+  if (idsParam) idsToDelete.push(...idsParam.split(','));
+
+  if (idsToDelete.length === 0) {
+    return NextResponse.json({ error: 'id(s) requis' }, { status: 400 });
   }
 
   const supabase = createAdminClient();
 
   const { data: exposantData } = await supabase
     .from('exposants')
-    .select('profile_id')
-    .eq('id', id)
-    .single();
+    .select('id, profile_id')
+    .in('id', idsToDelete);
 
-  if (exposantData?.profile_id) {
+  const hasLinkedProfile = exposantData?.some((exp: any) => exp.profile_id);
+
+  if (hasLinkedProfile) {
     return NextResponse.json(
-      { error: 'Un profil exposant lié à un compte ne peut être supprimé' },
+      { error: 'Un ou plusieurs profils exposants liés à un compte ne peuvent être supprimés' },
       { status: 400 }
     );
   }
 
-  const { error } = await supabase.from('exposants').delete().eq('id', id);
+  const { error } = await supabase.from('exposants').delete().in('id', idsToDelete);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

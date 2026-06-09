@@ -405,13 +405,18 @@ export async function DELETE(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('id');
+  const userIdsParam = searchParams.get('ids');
   const deleteExposant = searchParams.get('deleteExposant') !== 'false';
 
-  if (!userId) {
-    return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+  let userIds: string[] = [];
+  if (userId) userIds.push(userId);
+  if (userIdsParam) userIds.push(...userIdsParam.split(','));
+
+  if (userIds.length === 0) {
+    return NextResponse.json({ error: 'User ID(s) required' }, { status: 400 });
   }
 
-  if (userId === auth.user!.id) {
+  if (userIds.includes(auth.user!.id)) {
     return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 });
   }
 
@@ -420,7 +425,7 @@ export async function DELETE(request: Request) {
   const { error: notifError } = await supabaseAdmin
     .from('notifications')
     .delete()
-    .eq('profile_id', userId);
+    .in('profile_id', userIds);
 
   if (notifError) {
     return NextResponse.json({ error: notifError.message }, { status: 500 });
@@ -429,89 +434,91 @@ export async function DELETE(request: Request) {
   const { error: chatMsgError } = await supabaseAdmin
     .from('messages')
     .delete()
-    .eq('sender_id', userId);
+    .in('sender_id', userIds);
 
   if (chatMsgError) {
     return NextResponse.json({ error: chatMsgError.message }, { status: 500 });
   }
 
-  const { data: conversations } = await supabaseAdmin
-    .from('conversations')
-    .select('id')
-    .or(`participant_a.eq.${userId},participant_b.eq.${userId}`);
+  let allConvoIds: string[] = [];
+  for (const uid of userIds) {
+    const { data: conversations } = await supabaseAdmin
+      .from('conversations')
+      .select('id')
+      .or(`participant_a.eq.${uid},participant_b.eq.${uid}`);
+    if (conversations) allConvoIds.push(...conversations.map(c => c.id));
+  }
 
-  if (conversations && conversations.length > 0) {
-    const convoIds = conversations.map((c) => c.id);
-
-    await supabaseAdmin.from('messages').delete().in('conversation_id', convoIds);
-    await supabaseAdmin.from('conversations').delete().in('id', convoIds);
+  if (allConvoIds.length > 0) {
+    await supabaseAdmin.from('messages').delete().in('conversation_id', allConvoIds);
+    await supabaseAdmin.from('conversations').delete().in('id', allConvoIds);
   }
 
   const { data: exposantData } = await supabaseAdmin
     .from('exposants')
     .select('id')
-    .eq('profile_id', userId)
-    .maybeSingle();
+    .in('profile_id', userIds);
 
   if (deleteExposant) {
-    if (exposantData?.id) {
-      await supabaseAdmin.from('produits').delete().eq('exposant_id', exposantData.id);
+    if (exposantData && exposantData.length > 0) {
+      const expIds = exposantData.map((e: any) => e.id);
+      await supabaseAdmin.from('produits').delete().in('exposant_id', expIds);
     }
-    await supabaseAdmin.from('exposants').delete().eq('profile_id', userId);
+    await supabaseAdmin.from('exposants').delete().in('profile_id', userIds);
   } else {
-    // Dissocier l'exposant sans le supprimer
-    await supabaseAdmin.from('exposants').update({ profile_id: null }).eq('profile_id', userId);
+    await supabaseAdmin.from('exposants').update({ profile_id: null }).in('profile_id', userIds);
   }
 
-  await supabaseAdmin.from('post_comments').delete().eq('author_id', userId);
-  await supabaseAdmin.from('post_likes').delete().eq('user_id', userId);
-  await supabaseAdmin.from('post_shares').delete().eq('user_id', userId);
-  await supabaseAdmin.from('post_reactions').delete().eq('user_id', userId);
-  await supabaseAdmin.from('post_saves').delete().eq('user_id', userId);
-  await supabaseAdmin.from('posts').delete().eq('author_id', userId);
+  await supabaseAdmin.from('post_comments').delete().in('author_id', userIds);
+  await supabaseAdmin.from('post_likes').delete().in('user_id', userIds);
+  await supabaseAdmin.from('post_shares').delete().in('user_id', userIds);
+  await supabaseAdmin.from('post_reactions').delete().in('user_id', userIds);
+  await supabaseAdmin.from('post_saves').delete().in('user_id', userIds);
+  await supabaseAdmin.from('posts').delete().in('author_id', userIds);
 
-  await supabaseAdmin.from('rendez_vous').delete().or(`demandeur_id.eq.${userId},destinataire_id.eq.${userId}`);
-  
-  await supabaseAdmin.from('blocked_users').delete().or(`blocker_id.eq.${userId},blocked_id.eq.${userId}`);
-  await supabaseAdmin.from('subscriptions' as any).delete().eq('profile_id', userId);
-  await supabaseAdmin.from('newsletter_subscriptions').delete().eq('profile_id', userId);
+  for(const uid of userIds) {
+    await supabaseAdmin.from('rendez_vous').delete().or(`demandeur_id.eq.${uid},destinataire_id.eq.${uid}`);
+    await supabaseAdmin.from('blocked_users').delete().or(`blocker_id.eq.${uid},blocked_id.eq.${uid}`);
+    await supabaseAdmin.from('reports').delete().or(`reporter_id.eq.${uid},reported_id.eq.${uid},reviewed_by.eq.${uid}`);
+    await supabaseAdmin.from('user_follows').delete().or(`follower_id.eq.${uid},following_id.eq.${uid}`);
+  }
 
-  const { data: userTickets } = await supabaseAdmin.from('support_tickets').select('id').eq('profile_id', userId);
+  await supabaseAdmin.from('subscriptions' as any).delete().in('profile_id', userIds);
+  await supabaseAdmin.from('newsletter_subscriptions').delete().in('profile_id', userIds);
+
+  const { data: userTickets } = await supabaseAdmin.from('support_tickets').select('id').in('profile_id', userIds);
   if (userTickets && userTickets.length > 0) {
     const ticketIds = userTickets.map((t: any) => t.id);
     await supabaseAdmin.from('support_messages' as any).delete().in('ticket_id', ticketIds);
   }
-  await supabaseAdmin.from('support_tickets').delete().eq('profile_id', userId);
+  await supabaseAdmin.from('support_tickets').delete().in('profile_id', userIds);
 
-  await supabaseAdmin.from('user_preferences').delete().eq('profile_id', userId);
+  await supabaseAdmin.from('user_preferences').delete().in('profile_id', userIds);
 
-  await supabaseAdmin.from('audit_logs').delete().eq('actor_id', userId);
-  await supabaseAdmin.from('reports').delete().or(`reporter_id.eq.${userId},reported_id.eq.${userId},reviewed_by.eq.${userId}`);
-  await supabaseAdmin.from('user_follows').delete().or(`follower_id.eq.${userId},following_id.eq.${userId}`);
-  await supabaseAdmin.from('online_users' as any).delete().eq('user_id', userId);
-  await supabaseAdmin.from('platform_config' as any).delete().eq('updated_by', userId);
+  await supabaseAdmin.from('audit_logs').delete().in('actor_id', userIds);
+  await supabaseAdmin.from('online_users' as any).delete().in('user_id', userIds);
+  await supabaseAdmin.from('platform_config' as any).delete().in('updated_by', userIds);
 
-  const { error: profileDeleteError } = await supabaseAdmin.from('profiles').delete().eq('id', userId);
+  const { error: profileDeleteError } = await supabaseAdmin.from('profiles').delete().in('id', userIds);
 
   if (profileDeleteError) {
     return NextResponse.json({ error: `Erreur suppression profile: ${profileDeleteError.message}` }, { status: 500 });
   }
 
-  const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-
-  if (deleteError) {
-    return NextResponse.json({ error: deleteError.message }, { status: 500 });
+  for (const uid of userIds) {
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(uid);
+    if (!deleteError) {
+      await supabaseAdmin.from('audit_logs').insert({
+        actor_id: auth.user!.id,
+        actor_email: auth.user!.email,
+        actor_role: 'admin',
+        action: 'delete_profiles',
+        entity_type: 'profiles',
+        entity_id: uid,
+        metadata: { deleted_user_id: uid }
+      });
+    }
   }
-
-  await supabaseAdmin.from('audit_logs').insert({
-    actor_id: auth.user!.id,
-    actor_email: auth.user!.email,
-    actor_role: 'admin',
-    action: 'delete_profiles',
-    entity_type: 'profiles',
-    entity_id: userId,
-    metadata: { deleted_user_id: userId }
-  });
 
   return NextResponse.json({ success: true });
 }

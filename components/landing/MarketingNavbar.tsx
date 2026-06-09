@@ -22,11 +22,11 @@ export function MarketingNavbar() {
   }, []);
 
   return (
-    <header 
+    <header
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-        isScrolled 
-          ? "border-b border-border/50 bg-background py-0" 
+        isScrolled
+          ? "border-b border-border/50 bg-background py-0"
           : "bg-transparent border-transparent py-2"
       )}
     >
@@ -54,7 +54,7 @@ export function MarketingNavbar() {
             {t('landing.nav.features')}
           </a>
           <a
-            href="https://salon-promote.org"
+            href="Voici le bon lien du site de PROMOTE: https://salonpromote.org/"
             target="_blank"
             rel="noopener noreferrer"
             className={cn(

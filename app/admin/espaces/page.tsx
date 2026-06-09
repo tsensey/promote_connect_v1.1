@@ -23,6 +23,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -61,9 +62,12 @@ export default function AdminEspacesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
   const [form, setForm] = useState(defaultForm);
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
   const fetchEspaces = useCallback(async () => {
     setLoading(true);
@@ -191,6 +195,30 @@ export default function AdminEspacesPage() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setBulkDeleteLoading(true);
+    try {
+      const { error } = await supabaseClient
+        .from('espaces')
+        .delete()
+        .in('id', selectedIds);
+      
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success(t('admin.espaces.deleted'));
+        setSelectedIds([]);
+        setShowBulkDeleteConfirm(false);
+        await fetchEspaces();
+      }
+    } catch {
+      toast.error(t('admin.espaces.toast_network'));
+    } finally {
+      setBulkDeleteLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -203,10 +231,17 @@ export default function AdminEspacesPage() {
             {t('admin.espaces.desc')}
           </p>
         </div>
-        <Button onClick={openCreate} className="rounded-xl">
-          <Plus className="mr-2 size-4" />
-          {t('admin.espaces.add')}
-        </Button>
+        <div className="flex gap-2">
+          {selectedIds.length > 0 && (
+            <Button variant="destructive" onClick={() => setShowBulkDeleteConfirm(true)} className="rounded-xl">
+              <Trash2 className="mr-2 size-4" /> Supprimer ({selectedIds.length})
+            </Button>
+          )}
+          <Button onClick={openCreate} className="rounded-xl">
+            <Plus className="mr-2 size-4" />
+            {t('admin.espaces.add')}
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -274,6 +309,21 @@ export default function AdminEspacesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox 
+                      checked={paginated.length > 0 && paginated.every(e => selectedIds.includes(e.id))}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          const newIds = new Set(selectedIds);
+                          paginated.forEach(e => newIds.add(e.id));
+                          setSelectedIds(Array.from(newIds));
+                        } else {
+                          const newIds = selectedIds.filter(id => !paginated.some(e => e.id === id));
+                          setSelectedIds(newIds);
+                        }
+                      }}
+                    />
+                  </TableHead>
                   <TableHead className="w-16">{t('admin.espaces.col_code')}</TableHead>
                   <TableHead>{t('admin.espaces.col_name')}</TableHead>
                   <TableHead>{t('admin.espaces.col_type')}</TableHead>
@@ -284,6 +334,18 @@ export default function AdminEspacesPage() {
               <TableBody>
                 {paginated.map((espace) => (
                   <TableRow key={espace.id}>
+                    <TableCell>
+                      <Checkbox 
+                        checked={selectedIds.includes(espace.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedIds([...selectedIds, espace.id]);
+                          } else {
+                            setSelectedIds(selectedIds.filter(id => id !== espace.id));
+                          }
+                        }}
+                      />
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant="outline"
@@ -435,6 +497,35 @@ export default function AdminEspacesPage() {
               ) : (
                 t('admin.espaces.form_create')
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showBulkDeleteConfirm} onOpenChange={setShowBulkDeleteConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer les {selectedIds.length} espaces/pavillons sélectionnés ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-xl" onClick={() => setShowBulkDeleteConfirm(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              className="rounded-xl"
+              disabled={bulkDeleteLoading}
+              onClick={handleBulkDelete}
+            >
+              {bulkDeleteLoading ? (
+                <Loader2 className="mr-2 size-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 size-4" />
+              )}
+              {t('admin.espaces.delete_permanent')}
             </Button>
           </DialogFooter>
         </DialogContent>

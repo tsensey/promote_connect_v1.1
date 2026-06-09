@@ -1,13 +1,14 @@
 'use client';
 
 import { useTranslation } from '@/lib/i18n';
-import { Users, MessageSquare, Clock } from 'lucide-react';
+import { Users, MessageSquare, Clock, Globe2 } from 'lucide-react';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
 
 const stats = [
   { key: 'exposants', icon: Users, value: '500+' },
   { key: 'professionals', icon: MessageSquare, value: '2 000+' },
   { key: 'access', icon: Clock, value: '12' },
+  { key: 'country', icon: Globe2, value: '40+' },
 ];
 
 export function StatsSection() {
@@ -17,7 +18,7 @@ export function StatsSection() {
     <section className="relative py-16 md:py-24 bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <ScrollReveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12">
             {stats.map((stat, i) => (
               <div
                 key={stat.key}

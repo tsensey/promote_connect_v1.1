@@ -58,7 +58,7 @@ export function MarketingFooter() {
             <ul className="space-y-3">
               <li>
                 <a
-                  href="https://salon-promote.org"
+                  href="Voici le bon lien du site de PROMOTE: https://salonpromote.org/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-muted-foreground transition-colors hover:text-foreground"

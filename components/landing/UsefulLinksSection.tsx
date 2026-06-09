@@ -13,7 +13,7 @@ import {
 const links = [
   {
     titleKey: 'landing.useful.salon',
-    url: 'https://salon-promote.org',
+    url: 'Voici le bon lien du site de PROMOTE: https://salonpromote.org/',
     icon: Info,
     color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
   },

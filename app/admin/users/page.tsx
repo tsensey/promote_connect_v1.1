@@ -23,6 +23,7 @@ import {
 import { useAuth } from '@/lib/auth/context';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -212,6 +213,9 @@ export default function AdminUsersPage() {
   const [newSubscriptionEndDate, setNewSubscriptionEndDate] = useState('');
   const [showPasswordDialog, setShowPasswordDialog] = useState<UserRow | null>(null);
   const [passwordResult, setPasswordResult] = useState<{ new_password: string; email_sent: boolean } | null>(null);
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
   const token = session?.access_token || null;
 
@@ -498,6 +502,35 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function handleBulkDelete() {
+    if (!token || selectedIds.length === 0) return;
+
+    setActionLoading('bulk');
+
+    try {
+      const response = await fetch(`/api/admin/users?ids=${selectedIds.join(',')}&deleteExposant=${deleteExposant}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        toast.error(payload.error || 'Erreur lors de la suppression en masse');
+        return;
+      }
+
+      toast.success('Utilisateurs supprimés avec succès');
+      setSelectedIds([]);
+      setShowBulkDeleteConfirm(false);
+      await fetchUsers();
+    } catch {
+      toast.error('Erreur réseau lors de la suppression en masse');
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
   async function copyInvite() {
     if (!lastInvite) return;
 
@@ -518,10 +551,17 @@ export default function AdminUsersPage() {
             {t('admin.users.subtitle')}
           </p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)} className="rounded-xl">
-          <UserPlus className="mr-2 size-4" />
-          {t('admin.users.create_btn')}
-        </Button>
+        <div className="flex gap-2">
+          {selectedIds.length > 0 && (
+            <Button variant="destructive" onClick={() => setShowBulkDeleteConfirm(true)} className="rounded-xl">
+              <Trash2 className="mr-2 size-4" /> Supprimer ({selectedIds.length})
+            </Button>
+          )}
+          <Button onClick={() => setShowCreateDialog(true)} className="rounded-xl">
+            <UserPlus className="mr-2 size-4" />
+            {t('admin.users.create_btn')}
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
@@ -619,6 +659,21 @@ export default function AdminUsersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox 
+                        checked={paginatedUsers.length > 0 && paginatedUsers.every(u => selectedIds.includes(u.id))}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            const newIds = new Set(selectedIds);
+                            paginatedUsers.forEach(u => newIds.add(u.id));
+                            setSelectedIds(Array.from(newIds));
+                          } else {
+                            const newIds = selectedIds.filter(id => !paginatedUsers.some(u => u.id === id));
+                            setSelectedIds(newIds);
+                          }
+                        }}
+                      />
+                    </TableHead>
                     <TableHead>{t('admin.users.col_user')}</TableHead>
                     <TableHead>{t('admin.users.col_role')}</TableHead>
                     <TableHead>Accès</TableHead>
@@ -631,6 +686,18 @@ export default function AdminUsersPage() {
                 <TableBody>
                   {paginatedUsers.map((user) => (
                     <TableRow key={user.id}>
+                      <TableCell>
+                        <Checkbox 
+                          checked={selectedIds.includes(user.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedIds([...selectedIds, user.id]);
+                            } else {
+                              setSelectedIds(selectedIds.filter(id => id !== user.id));
+                            }
+                          }}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="size-10 border border-border/70">
@@ -1138,6 +1205,51 @@ export default function AdminUsersPage() {
               </div>
             );
           })()}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showBulkDeleteConfirm} onOpenChange={setShowBulkDeleteConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression en masse</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer les {selectedIds.length} utilisateurs sélectionnés ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <label className="flex items-start gap-3 rounded-lg border p-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={deleteExposant}
+                onChange={(e) => setDeleteExposant(e.target.checked)}
+                className="mt-0.5 size-4"
+              />
+              <div className="text-sm">
+                <span className="font-medium">Supprimer aussi les profils exposants liés</span>
+                <p className="mt-0.5 text-muted-foreground">
+                  Si cochée, les vitrines et produits des exposants sélectionnés seront également supprimés.
+                </p>
+              </div>
+            </label>
+            <DialogFooter>
+              <Button variant="outline" className="rounded-xl" onClick={() => setShowBulkDeleteConfirm(false)}>
+                {t('common.cancel')}
+              </Button>
+              <Button
+                variant="destructive"
+                className="rounded-xl"
+                disabled={actionLoading === 'bulk'}
+                onClick={() => handleBulkDelete()}
+              >
+                {actionLoading === 'bulk' ? (
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-2 size-4" />
+                )}
+                {t('admin.users.delete_permanent')}
+              </Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -56,6 +57,10 @@ export default function AdminProgrammePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
   const [formData, setFormData] = useState<ProgrammeFormData>(INITIAL_FORM);
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
   const fetchEvenements = useCallback(async () => {
     setLoading(true);
@@ -145,6 +150,18 @@ export default function AdminProgrammePage() {
     fetchEvenements();
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setBulkDeleteLoading(true);
+    const { error } = await supabaseClient.from("evenements").delete().in("id", selectedIds);
+    setBulkDeleteLoading(false);
+    if (!error) {
+      setSelectedIds([]);
+      setShowBulkDeleteConfirm(false);
+      fetchEvenements();
+    }
+  };
+
   const filtered = evenements.filter((evt) =>
     evt.titre.toLowerCase().includes(search.toLowerCase()),
   );
@@ -168,9 +185,16 @@ export default function AdminProgrammePage() {
             {t("admin.programme.desc")}
           </p>
         </div>
-        <Button onClick={openNewForm} className="rounded-xl">
-          <Plus className="mr-2 size-4" /> {t("admin.programme.add")}
-        </Button>
+        <div className="flex gap-2">
+          {selectedIds.length > 0 && (
+            <Button variant="destructive" onClick={() => setShowBulkDeleteConfirm(true)} className="rounded-xl">
+              <Trash2 className="mr-2 size-4" /> Supprimer ({selectedIds.length})
+            </Button>
+          )}
+          <Button onClick={openNewForm} className="rounded-xl">
+            <Plus className="mr-2 size-4" /> {t("admin.programme.add")}
+          </Button>
+        </div>
       </div>
 
       <div className="surface-panel">
@@ -190,6 +214,21 @@ export default function AdminProgrammePage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox 
+                    checked={paginated.length > 0 && paginated.every(evt => selectedIds.includes(evt.id))}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        const newIds = new Set(selectedIds);
+                        paginated.forEach(evt => newIds.add(evt.id));
+                        setSelectedIds(Array.from(newIds));
+                      } else {
+                        const newIds = selectedIds.filter(id => !paginated.some(evt => evt.id === id));
+                        setSelectedIds(newIds);
+                      }
+                    }}
+                  />
+                </TableHead>
                 <TableHead>{t("admin.programme.col_event")}</TableHead>
                 <TableHead>{t("admin.programme.col_type")}</TableHead>
                 <TableHead>{t("admin.programme.col_location")}</TableHead>
@@ -201,6 +240,9 @@ export default function AdminProgrammePage() {
               {loading ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <TableRow key={i}>
+                    <TableCell>
+                      <div className="h-5 w-5 animate-pulse rounded bg-muted" />
+                    </TableCell>
                     <TableCell>
                       <div className="h-5 w-48 animate-pulse rounded bg-muted" />
                     </TableCell>
@@ -221,6 +263,18 @@ export default function AdminProgrammePage() {
               ) : paginated.length > 0 ? (
                 paginated.map((evt) => (
                   <TableRow key={evt.id} className="group">
+                    <TableCell>
+                      <Checkbox 
+                        checked={selectedIds.includes(evt.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedIds([...selectedIds, evt.id]);
+                          } else {
+                            setSelectedIds(selectedIds.filter(id => id !== evt.id));
+                          }
+                        }}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div>
                         <div className="font-medium text-foreground">{evt.titre}</div>
@@ -323,6 +377,30 @@ export default function AdminProgrammePage() {
         loading={formLoading}
         editingId={editingId}
       />
+
+      {showBulkDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl bg-background p-6 shadow-lg border border-border">
+            <h2 className="text-lg font-semibold text-foreground">Confirmer la suppression</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Êtes-vous sûr de vouloir supprimer les {selectedIds.length} événements sélectionnés ? Cette action est irréversible.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button variant="outline" className="rounded-xl" onClick={() => setShowBulkDeleteConfirm(false)}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                variant="destructive"
+                className="rounded-xl"
+                disabled={bulkDeleteLoading}
+                onClick={handleBulkDelete}
+              >
+                {bulkDeleteLoading ? "Suppression..." : "Supprimer définitivement"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

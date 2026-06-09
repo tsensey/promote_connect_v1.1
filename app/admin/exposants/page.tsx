@@ -74,6 +74,8 @@ export default function AdminExposantsPage() {
   const [importResult, setImportResult] = useState<{ imported: number; total: number; accounts_created?: number; without_email?: number } | null>(null);
   const [exposantToDelete, setExposantToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     nom: '', description: '', secteur: '', espace_id: '', pavillon: '', stand: '', pays: '', website: '',
@@ -179,6 +181,32 @@ export default function AdminExposantsPage() {
     setExposantToDelete(null);
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch(`/api/admin/espaces/exposants?ids=${selectedIds.join(',')}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        toast.error(data.error || 'Erreur lors de la suppression en masse');
+        setIsDeleting(false);
+        setShowBulkDeleteConfirm(false);
+        return;
+      }
+      toast.success('Exposants supprimés avec succès');
+      setSelectedIds([]);
+      setShowBulkDeleteConfirm(false);
+      await fetchData();
+    } catch {
+      toast.error(t('admin.exposants.toast_network_error'));
+    }
+    setIsDeleting(false);
+  };
+
   const handleImport = async () => {
     if (!importFile) return;
     setImportLoading(true);
@@ -241,6 +269,11 @@ export default function AdminExposantsPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          {selectedIds.length > 0 && (
+            <Button variant="destructive" onClick={() => setShowBulkDeleteConfirm(true)} className="rounded-xl">
+              <Trash2 className="mr-2 size-4" /> Supprimer ({selectedIds.length})
+            </Button>
+          )}
           <Button variant="outline" onClick={() => { setShowImport(true); resetImport(); }} className="rounded-xl">
             <Upload className="mr-2 size-4" /> {t('admin.exposants.import')}
           </Button>
@@ -267,6 +300,23 @@ export default function AdminExposantsPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox 
+                    checked={paginated.length > 0 && paginated.every(exp => selectedIds.includes(exp.id))}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        const newIds = new Set(selectedIds);
+                        paginated.forEach(exp => {
+                          if (!exp.profile_id) newIds.add(exp.id); // Only allow selecting those not linked to accounts if needed, but wait, bulk delete will fail if any are linked.
+                        });
+                        setSelectedIds(Array.from(newIds));
+                      } else {
+                        const newIds = selectedIds.filter(id => !paginated.some(exp => exp.id === id));
+                        setSelectedIds(newIds);
+                      }
+                    }}
+                  />
+                </TableHead>
                 <TableHead>{t('admin.exposants.col_exposant')}</TableHead>
                 <TableHead>{t('admin.exposants.col_sector')}</TableHead>
                 <TableHead>{t('admin.exposants.col_espace')}</TableHead>
@@ -292,7 +342,19 @@ export default function AdminExposantsPage() {
                   const espace = espaces.find((e) => e.id === exp.espace_id);
                   return (
                     <TableRow key={exp.id}>
-
+                      <TableCell>
+                        <Checkbox 
+                          checked={selectedIds.includes(exp.id)}
+                          disabled={!!exp.profile_id}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedIds([...selectedIds, exp.id]);
+                            } else {
+                              setSelectedIds(selectedIds.filter(id => id !== exp.id));
+                            }
+                          }}
+                        />
+                      </TableCell>
                       <TableCell className='max-w-[400px] truncate'>
 
                         <Tooltip>
@@ -361,7 +423,7 @@ export default function AdminExposantsPage() {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
                     <Users className="mx-auto mb-3 size-10 text-muted-foreground" />
                     {t('admin.exposants.no_results')}
                   </TableCell>
@@ -580,6 +642,27 @@ export default function AdminExposantsPage() {
             <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
             <AlertDialogAction 
               onClick={(e) => { e.preventDefault(); handleDelete(); }}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? <Loader2 className="size-4 animate-spin" /> : 'Supprimer'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showBulkDeleteConfirm} onOpenChange={setShowBulkDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression en masse</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer les {selectedIds.length} exposants sélectionnés ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => { e.preventDefault(); handleBulkDelete(); }}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
