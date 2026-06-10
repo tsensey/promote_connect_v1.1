@@ -1,3 +1,5 @@
+
+
 const isProduction = process.env.NODE_ENV === 'production';
 
 const scriptSrc = [
@@ -92,7 +94,7 @@ const nextConfig = {
         source: '/:path*.{png,jpg,jpeg,gif,webp,svg,ico}',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=604800, stale-while-revalidate=86400' },
-        ],
+            ],
       },
       // Polices — cache 1 an
       {

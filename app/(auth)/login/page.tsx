@@ -18,11 +18,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Image from 'next/image';
 import { useTranslation } from '@/lib/i18n';
+import { useAnalytics } from '@/lib/analytics/plausible';
 
 function LoginPageContent() {
   const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { trackEvent } = useAnalytics();
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -42,6 +44,10 @@ function LoginPageContent() {
 
     try {
       await signIn(email, password);
+      trackEvent('login_success');
+      
+      // Log connection in audit_logs (Supabase)
+      await supabaseClient.rpc('log_login_event' as any);
 
       const redirect = searchParams.get('redirect');
       if (redirect) {
@@ -77,11 +83,9 @@ function LoginPageContent() {
       const redirectPath = role === 'admin' ? '/admin' : '/feed';
       router.replace(redirectPath);
     } catch (loginError) {
-      setError(
-        loginError instanceof Error
-          ? loginError.message
-          : t('auth.login.error'),
-      );
+      const errorMessage = loginError instanceof Error ? loginError.message : String(loginError);
+      trackEvent('login_error', { error: errorMessage });
+      setError(errorMessage || t('auth.login.error'));
     } finally {
       setLoading(false);
     }

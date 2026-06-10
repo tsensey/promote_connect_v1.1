@@ -21,7 +21,6 @@
     "cap:open": "npx cap open android",
     "cap:add:ios": "npx cap add ios",
     "optimize-images": "node scripts/optimize-images.mjs"
-
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -50,6 +49,7 @@
     "input-otp": "^1.4.2",
     "lucide-react": "^1.16.0",
     "next": "^16.2.6",
+    "next-plausible": "^4.0.0",
     "next-themes": "^0.4.6",
     "postgres": "^3.4.9",
     "react": "^19.2.6",
