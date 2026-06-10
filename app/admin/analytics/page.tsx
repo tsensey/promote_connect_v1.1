@@ -10,15 +10,13 @@ import { Switch } from '@/components/ui/switch';
 import { Activity, ShieldAlert, Users, MessageSquare, Calendar as CalendarIcon, Filter, MousePointerClick, RefreshCcw } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
 import { 
-  BarChart, 
-  Bar, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   PieChart,
   Pie,
   Cell,
@@ -220,109 +218,107 @@ export default function AnalyticsDashboardPage() {
             </Button>
           </div>
         </div>
-      </div>
-
-      {loading ? (
+      </div>      {loading ? (
         <div className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-4">
-            {[...Array(4)].map((_, i) => (
-              <Card key={i} className="animate-pulse py-0">
-                <CardContent className="h-24 bg-muted" />
-              </Card>
-            ))}
+          <Card className="animate-pulse py-0 mb-4 h-[400px]">
+            <CardContent className="h-full bg-muted" />
+          </Card>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card className="animate-pulse py-0 h-[300px]">
+              <CardContent className="h-full bg-muted" />
+            </Card>
+            <Card className="animate-pulse py-0 h-[300px]">
+              <CardContent className="h-full bg-muted" />
+            </Card>
           </div>
-          <div className="h-80 animate-pulse rounded-xl bg-muted" />
         </div>
       ) : (
-        <>
-          {/* KPIs */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="surface-panel border-0 py-0">
-              <CardContent className="flex items-center justify-between p-6">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">{t('admin.analytics.unique_users')}</p>
-                  <p className="text-3xl font-bold">{totals.uniqueUsers}</p>
-                </div>
-                <div className="flex size-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
-                  <Users className="size-6" />
-                </div>
-              </CardContent>
-            </Card>
+        <div className="space-y-4 animate-in fade-in duration-500">
+          
+          {/* Main Chart Card (KPIs + AreaChart Plausible Style) */}
+          <Card className="surface-panel border-0 py-0 mb-4 overflow-hidden">
+            <div className="p-6 pb-2">
+              <div className="flex flex-wrap gap-y-6">
+                {[
+                  { label: t('admin.analytics.unique_users'), value: totals.uniqueUsers },
+                  { label: t('admin.analytics.logins'), value: totals.logins },
+                  { label: t('admin.analytics.messages'), value: totals.messages },
+                  { label: t('admin.analytics.rdvs'), value: totals.rdvs },
+                  { label: t('admin.analytics.alerts'), value: totals.rateLimits },
+                ].map((stat, i) => (
+                  <div key={i} className="w-1/2 md:w-1/5 space-y-1 px-4 first:pl-0 md:border-l border-border/30 md:first:border-l-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{stat.label}</p>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-2xl font-semibold">{stat.value}</p>
+                      {stat.value > 0 && <span className="text-xs font-semibold text-emerald-500">↗ 100%</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="h-[300px] w-full mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorLogins" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={COLORS[0]} stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor={COLORS[0]} stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis 
+                    dataKey="date" 
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fontSize: 12 }}
+                    stroke="currentColor"
+                    className="text-muted-foreground"
+                    minTickGap={30}
+                  />
+                  <Tooltip 
+                    cursor={{ stroke: 'currentColor', strokeWidth: 1, strokeDasharray: '4 4', fill: 'transparent' }}
+                    contentStyle={{ borderRadius: '8px', border: 'none', backgroundColor: 'hsl(var(--card))', color: 'hsl(var(--foreground))' }}
+                  />
+                  <Area type="monotone" dataKey="logins" name={t('admin.analytics.logins')} stroke={COLORS[0]} strokeWidth={2} fillOpacity={1} fill="url(#colorLogins)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
 
-            <Card className="surface-panel border-0 py-0">
-              <CardContent className="flex items-center justify-between p-6">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">{t('admin.analytics.messages')}</p>
-                  <p className="text-3xl font-bold">{totals.messages}</p>
-                </div>
-                <div className="flex size-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
-                  <MessageSquare className="size-6" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="surface-panel border-0 py-0">
-              <CardContent className="flex items-center justify-between p-6">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">{t('admin.analytics.rdvs')}</p>
-                  <p className="text-3xl font-bold">{totals.rdvs}</p>
-                </div>
-                <div className="flex size-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
-                  <CalendarIcon className="size-6" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="surface-panel border-0 py-0">
-              <CardContent className="flex items-center justify-between p-6">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">{t('admin.analytics.alerts')}</p>
-                  <p className="text-3xl font-bold">{totals.rateLimits}</p>
-                </div>
-                <div className="flex size-12 items-center justify-center rounded-xl bg-red-500/10 text-red-500">
-                  <ShieldAlert className="size-6" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Charts Row 1 */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card className="surface-panel md:col-span-2 border-0">
-              <CardHeader>
-                <CardTitle>{t('admin.analytics.global_activity')}</CardTitle>
-                <CardDescription>{t('admin.analytics.global_activity_desc')}</CardDescription>
-              </CardHeader>
-              <CardContent className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                    <XAxis 
-                      dataKey="date" 
-                      tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
-                      tickFormatter={(val) => val.split('-').slice(1).join('/')}
-                    />
-                    <YAxis tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} />
-                    <Tooltip 
-                      contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--background)', color: 'var(--foreground)' }}
-                      labelStyle={{ color: 'var(--muted-foreground)', marginBottom: '4px' }}
-                    />
-                    <Legend />
-                    <Bar dataKey="logins" name={t('admin.analytics.logins')} stackId="a" fill={COLORS[0]} />
-                    <Bar dataKey="signups" name={t('admin.analytics.signups')} stackId="a" fill={COLORS[1]} />
-                    <Bar dataKey="messages" name={t('admin.analytics.messages')} stackId="a" fill={COLORS[3]} />
-                    <Bar dataKey="rdvs" name={t('admin.analytics.rdvs')} stackId="a" fill={COLORS[2]} radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
+          {/* Bottom Widgets (Plausible Style) */}
+          <div className="grid gap-4 md:grid-cols-2">
+            
+            {/* Widget 1: Actions Réparties (Liste avec barres) */}
             <Card className="surface-panel border-0">
-              <CardHeader>
-                <CardTitle>{t('admin.analytics.distribution')}</CardTitle>
-                <CardDescription>{t('admin.analytics.distribution_desc')}</CardDescription>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <span>Top Actions</span>
+                  <span>Volume</span>
+                </div>
               </CardHeader>
-              <CardContent className="h-80">
+              <CardContent className="space-y-3 pt-2">
+                {pieData.sort((a, b) => b.value - a.value).map((item, i) => {
+                  const max = pieData.length > 0 ? Math.max(...pieData.map(d => d.value)) : 1;
+                  const pct = Math.round((item.value / max) * 100);
+                  return (
+                    <div key={i} className="relative flex items-center justify-between group overflow-hidden rounded-md">
+                      <div className="absolute inset-y-0 left-0 bg-primary/10" style={{ width: `${pct}%` }} />
+                      <span className="relative z-10 text-sm font-medium pl-3 py-2">{item.name}</span>
+                      <span className="relative z-10 text-sm font-medium pr-3 py-2">{item.value}</span>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+
+            {/* Widget 2: Distribution Graphique Miniature */}
+            <Card className="surface-panel border-0">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <span>Distribution</span>
+                </div>
+              </CardHeader>
+              <CardContent className="h-[250px] pt-4">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -331,52 +327,25 @@ export default function AnalyticsDashboardPage() {
                       cy="50%"
                       innerRadius={60}
                       outerRadius={80}
-                      paddingAngle={5}
+                      paddingAngle={2}
                       dataKey="value"
+                      stroke="none"
                     >
                       {pieData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip 
-                      contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--background)', color: 'var(--foreground)' }}
-                      itemStyle={{ color: 'var(--foreground)' }}
+                      contentStyle={{ borderRadius: '8px', border: 'none', backgroundColor: 'hsl(var(--card))', color: 'hsl(var(--foreground))' }}
                     />
-                    <Legend />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
+
           </div>
-
-          {/* Charts Row 2 */}
-          <Card className="surface-panel border-0">
-            <CardHeader>
-              <CardTitle>{t('admin.analytics.security')}</CardTitle>
-              <CardDescription>{t('admin.analytics.security_desc')}</CardDescription>
-            </CardHeader>
-            <CardContent className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
-                    tickFormatter={(val) => val.split('-').slice(1).join('/')}
-                  />
-                  <YAxis tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--background)', color: 'var(--foreground)' }}
-                    labelStyle={{ color: 'var(--muted-foreground)', marginBottom: '4px' }}
-                  />
-                  <Legend />
-                  <Line type="monotone" dataKey="rateLimits" name={t('admin.analytics.blocked_requests')} stroke="#ef4444" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-        </>
+        </div>
       )}
     </div>
   );
