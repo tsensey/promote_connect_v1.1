@@ -17,6 +17,7 @@ import { CapacitorInitializer } from '@/components/shared/CapacitorInitializer';
 import { AnimatedSplashScreen } from '@/components/shared/AnimatedSplashScreen';
 import PlausibleAnalytics from '@/components/shared/PlausibleAnalytics';
 import { InstallTracker } from '@/components/shared/InstallTracker';
+import { WebVitals } from '@/components/shared/WebVitals';
 import { cn } from '@/lib/utils';
 import './globals.css';
 
@@ -99,6 +100,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                       <CapacitorInitializer />
                       <InstallTracker />
                       <PlausibleAnalytics />
+                      <WebVitals />
                     </NotificationProvider>
                   </NotificationStateProvider>
                 </I18nProvider>

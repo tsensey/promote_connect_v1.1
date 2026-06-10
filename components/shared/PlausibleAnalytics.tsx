@@ -1,17 +1,19 @@
 import Script from 'next/script';
 
-const PLAUSIBLE_URL = process.env.NEXT_PUBLIC_PLAUSIBLE_URL || 'https://plausible.io';
-const PLAUSIBLE_DOMAIN = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
-
 export default function PlausibleAnalytics() {
-  if (!PLAUSIBLE_DOMAIN) return null;
-
   return (
-    <Script
-      defer
-      data-domain={PLAUSIBLE_DOMAIN}
-      src={`${PLAUSIBLE_URL}/js/script.js`}
-      strategy="afterInteractive"
-    />
+    <>
+      <Script
+        async
+        src="https://plausible.io/js/pa-T4HKsQfTXlP34x0rrRAqC.js"
+        strategy="afterInteractive"
+      />
+      <Script id="plausible-init" strategy="afterInteractive">
+        {`
+          window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+          plausible.init()
+        `}
+      </Script>
+    </>
   );
 }

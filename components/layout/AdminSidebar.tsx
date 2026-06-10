@@ -17,6 +17,7 @@ import {
   Settings,
   CreditCard,
   Flag,
+  Activity,
   type LucideIcon,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -83,6 +84,7 @@ export function AdminSidebar({
       title: t('layout.admin.sidebar.pilotage'),
       items: [
         { label: t('layout.admin.sidebar.dashboard'), href: '/admin', icon: BarChart3 },
+        { label: 'Analytics', href: '/admin/analytics', icon: Activity, badge: 'New' },
         { label: t('layout.admin.sidebar.users'), href: '/admin/users', icon: UserPlus, badge: 'Core' },
         { label: t('layout.admin.sidebar.exposants'), href: '/admin/exposants', icon: Users },
         { label: t('layout.admin.sidebar.subscriptions'), href: '/admin/abonnements', icon: CreditCard, badge: '' },

@@ -19,6 +19,19 @@ export async function rateLimit(
     }
 
     const result = data as any;
+
+    if (result.allowed === false) {
+      await supabase.from('audit_logs').insert({
+        actor_id: null as any,
+        action: 'rate_limit_exceeded',
+        entity_type: 'system',
+        entity_id: key,
+        metadata: { maxRequests, windowMs, remaining: result.remaining },
+        actor_role: 'system',
+        ip_address: key,
+      } as any);
+    }
+
     return {
       allowed: result.allowed,
       remaining: result.remaining,

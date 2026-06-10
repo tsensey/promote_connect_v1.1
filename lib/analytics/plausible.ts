@@ -10,6 +10,7 @@ export type AppEvents = {
   click_contact_exposant: { exposant_id: string };
   click_agenda_add: { event_id: string };
   click_rdv_request: { destinataire_id: string };
+  web_vitals: { metric: string; value: number; rating: string };
 };
 
 export const useAnalytics = () => {
