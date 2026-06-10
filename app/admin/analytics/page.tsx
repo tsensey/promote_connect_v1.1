@@ -34,7 +34,7 @@ interface LogStats {
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
-const ACTIONS_TO_TRACK = ['log_login_event', 'rate_limit_exceeded', 'create_profiles', 'create_messages', 'create_rendez_vous'];
+const ACTIONS_TO_TRACK = ['user_login', 'rate_limit_exceeded', 'create_profiles', 'create_messages', 'create_rendez_vous'];
 
 export default function AnalyticsDashboardPage() {
   const { t } = useTranslation();
@@ -90,7 +90,7 @@ export default function AnalyticsDashboardPage() {
         if (!acc[dateStr]) {
           acc[dateStr] = { date: dateStr, logins: 0, rateLimits: 0, signups: 0, messages: 0, rdvs: 0 };
         }
-        if (log.action === 'log_login_event') acc[dateStr].logins += 1;
+        if (log.action === 'user_login') acc[dateStr].logins += 1;
         if (log.action === 'rate_limit_exceeded') acc[dateStr].rateLimits += 1;
         if (log.action === 'create_profiles') acc[dateStr].signups += 1;
         if (log.action === 'create_messages') acc[dateStr].messages += 1;
@@ -102,7 +102,7 @@ export default function AnalyticsDashboardPage() {
       setData(sortedData);
 
       // Totals
-      const tLogins = logs.filter(l => l.action === 'log_login_event').length;
+      const tLogins = logs.filter(l => l.action === 'user_login').length;
       const tRateLimits = logs.filter(l => l.action === 'rate_limit_exceeded').length;
       const tSignups = logs.filter(l => l.action === 'create_profiles').length;
       const tMessages = logs.filter(l => l.action === 'create_messages').length;
