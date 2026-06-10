@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Activity, ShieldAlert, Users, MessageSquare, Calendar as CalendarIcon, Filter, MousePointerClick } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Activity, ShieldAlert, Users, MessageSquare, Calendar as CalendarIcon, Filter, MousePointerClick, RefreshCcw } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
 import { 
   BarChart, 
@@ -46,6 +47,7 @@ export default function AnalyticsDashboardPage() {
   const [datePreset, setDatePreset] = useState('30d');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
+  const [isRealtime, setIsRealtime] = useState(false);
 
   const [totals, setTotals] = useState({
     logins: 0,
@@ -57,8 +59,8 @@ export default function AnalyticsDashboardPage() {
     totalEvents: 0
   });
 
-  const fetchAnalytics = async () => {
-    setLoading(true);
+  const fetchAnalytics = async (silent = false) => {
+    if (!silent) setLoading(true);
     let startDate = new Date();
     let endDate = new Date();
 
@@ -127,13 +129,34 @@ export default function AnalyticsDashboardPage() {
         { name: t('admin.analytics.alerts'), value: tRateLimits },
       ].filter(item => item.value > 0));
     }
-    setLoading(false);
+    if (!silent) setLoading(false);
   };
 
   useEffect(() => {
     fetchAnalytics();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [datePreset]); // trigger when preset changes, custom is handled via button
+
+  useEffect(() => {
+    if (!isRealtime) return;
+
+    const channel = supabaseClient.channel('analytics_realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'audit_logs' },
+        (payload) => {
+          if (ACTIONS_TO_TRACK.includes(payload.new.action)) {
+            fetchAnalytics(true);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRealtime, datePreset, customStart, customEnd]);
 
   const handleCustomFilter = () => {
     if (customStart && customEnd) {
@@ -188,6 +211,14 @@ export default function AnalyticsDashboardPage() {
               <Button onClick={handleCustomFilter} size="sm">{t('admin.analytics.filter')}</Button>
             </div>
           )}
+
+          <div className="flex items-center gap-2 ml-auto lg:ml-4">
+            <Switch checked={isRealtime} onCheckedChange={setIsRealtime} id="realtime-mode" />
+            <label htmlFor="realtime-mode" className="text-sm font-medium cursor-pointer">Temps réel</label>
+            <Button variant="outline" size="icon" onClick={() => fetchAnalytics()} className="ml-2" title="Rafraîchir">
+              <RefreshCcw className="size-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
