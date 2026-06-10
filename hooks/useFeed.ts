@@ -228,6 +228,10 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
     fetchPosts(false);
   }, [hasMore, loading, fetchPosts]);
 
+  const refreshFeed = useCallback(async () => {
+    await fetchPosts(true);
+  }, [fetchPosts]);
+
   const uploadImage = useCallback(async (files: File[]): Promise<string[]> => {
     const { data: session } = await supabaseClient.auth.getSession();
     const userId = session?.session?.user?.id;
@@ -758,5 +762,6 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
     myUserId,
     mode,
     setMode,
+    refreshFeed,
   };
 }

@@ -65,11 +65,44 @@ export default function FeedPage() {
     myUserId,
     mode,
     setMode,
+    refreshFeed,
   } = useFeed();
 
   const [randomProducts, setRandomProducts] = useState<Product[]>([]);
   const [contactingProd, setContactingProd] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const startY = useRef(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (window.scrollY <= 0) {
+      startY.current = e.touches[0].clientY;
+    } else {
+      startY.current = 0;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (startY.current === 0) return;
+    const y = e.touches[0].clientY;
+    const dy = y - startY.current;
+    if (dy > 0 && window.scrollY <= 0) {
+      setPullDistance(Math.min(dy * 0.4, 80));
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (startY.current === 0) return;
+    if (pullDistance >= 60) {
+      setIsRefreshing(true);
+      await refreshFeed();
+      setIsRefreshing(false);
+    }
+    setPullDistance(0);
+    startY.current = 0;
+  };
 
   useEffect(() => {
     async function loadRandomProducts() {
@@ -259,7 +292,19 @@ export default function FeedPage() {
           </div>
         </div>
 
-        <div className="col-span-12 space-y-4 lg:col-span-6">
+        <div 
+          className="col-span-12 space-y-4 lg:col-span-6"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div 
+            className="flex justify-center items-center overflow-hidden transition-all duration-200"
+            style={{ height: isRefreshing ? 60 : pullDistance, opacity: (isRefreshing ? 1 : pullDistance / 60) }}
+          >
+            <Loader2 className={`size-6 text-primary ${isRefreshing ? 'animate-spin' : ''}`} style={{ transform: `rotate(${pullDistance * 3}deg)` }} />
+          </div>
+
           {perms.canPublishPost && (
             <CreatePost onSubmit={createPost} onUpload={uploadImage} />
           )}
