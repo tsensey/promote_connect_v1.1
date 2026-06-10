@@ -120,11 +120,11 @@ export default function AnalyticsDashboardPage() {
 
       // Pie Chart Data
       setPieData([
-        { name: 'Connexions', value: tLogins },
-        { name: 'Inscriptions', value: tSignups },
-        { name: 'Messages', value: tMessages },
-        { name: 'RDVs', value: tRdvs },
-        { name: 'Alertes', value: tRateLimits },
+        { name: t('admin.analytics.logins'), value: tLogins },
+        { name: t('admin.analytics.signups'), value: tSignups },
+        { name: t('admin.analytics.messages'), value: tMessages },
+        { name: t('admin.analytics.rdvs'), value: tRdvs },
+        { name: t('admin.analytics.alerts'), value: tRateLimits },
       ].filter(item => item.value > 0));
     }
     setLoading(false);
@@ -147,11 +147,11 @@ export default function AnalyticsDashboardPage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-600/80">
-            Monitoring
+            {t('admin.analytics.monitoring')}
           </p>
-          <h1 className="text-4xl text-foreground">Tableau de Bord Analytique</h1>
+          <h1 className="text-4xl text-foreground">{t('admin.analytics.title')}</h1>
           <p className="max-w-3xl text-base leading-7 text-muted-foreground">
-            Aperçu de l'activité du trafic de la plateforme, de l'engagement global et de la sécurité.
+            {t('admin.analytics.desc')}
           </p>
         </div>
 
@@ -159,14 +159,14 @@ export default function AnalyticsDashboardPage() {
           <Select value={datePreset} onValueChange={(val) => { if (val) setDatePreset(val); }}>
             <SelectTrigger className="w-[180px]">
               <Filter className="mr-2 size-4" />
-              <SelectValue placeholder="Période" />
+              <SelectValue placeholder={t('admin.analytics.period')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="today">Aujourd'hui</SelectItem>
-              <SelectItem value="7d">7 derniers jours</SelectItem>
-              <SelectItem value="30d">30 derniers jours</SelectItem>
-              <SelectItem value="all">Tout le temps</SelectItem>
-              <SelectItem value="custom">Personnalisé</SelectItem>
+              <SelectItem value="today">{t('admin.analytics.today')}</SelectItem>
+              <SelectItem value="7d">{t('admin.analytics.7d')}</SelectItem>
+              <SelectItem value="30d">{t('admin.analytics.30d')}</SelectItem>
+              <SelectItem value="all">{t('admin.analytics.all')}</SelectItem>
+              <SelectItem value="custom">{t('admin.analytics.custom')}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -185,7 +185,7 @@ export default function AnalyticsDashboardPage() {
                 onChange={e => setCustomEnd(e.target.value)} 
                 className="w-auto"
               />
-              <Button onClick={handleCustomFilter} size="sm">Filtrer</Button>
+              <Button onClick={handleCustomFilter} size="sm">{t('admin.analytics.filter')}</Button>
             </div>
           )}
         </div>
@@ -195,7 +195,7 @@ export default function AnalyticsDashboardPage() {
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-4">
             {[...Array(4)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
+              <Card key={i} className="animate-pulse py-0">
                 <CardContent className="h-24 bg-muted" />
               </Card>
             ))}
@@ -206,10 +206,10 @@ export default function AnalyticsDashboardPage() {
         <>
           {/* KPIs */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="surface-panel border-0">
+            <Card className="surface-panel border-0 py-0">
               <CardContent className="flex items-center justify-between p-6">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Utilisateurs uniques</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('admin.analytics.unique_users')}</p>
                   <p className="text-3xl font-bold">{totals.uniqueUsers}</p>
                 </div>
                 <div className="flex size-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
@@ -218,10 +218,10 @@ export default function AnalyticsDashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="surface-panel border-0">
+            <Card className="surface-panel border-0 py-0">
               <CardContent className="flex items-center justify-between p-6">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Messages échangés</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('admin.analytics.messages')}</p>
                   <p className="text-3xl font-bold">{totals.messages}</p>
                 </div>
                 <div className="flex size-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
@@ -230,10 +230,10 @@ export default function AnalyticsDashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="surface-panel border-0">
+            <Card className="surface-panel border-0 py-0">
               <CardContent className="flex items-center justify-between p-6">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Demandes de RDV</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('admin.analytics.rdvs')}</p>
                   <p className="text-3xl font-bold">{totals.rdvs}</p>
                 </div>
                 <div className="flex size-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
@@ -242,10 +242,10 @@ export default function AnalyticsDashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="surface-panel border-0">
+            <Card className="surface-panel border-0 py-0">
               <CardContent className="flex items-center justify-between p-6">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Alertes Sécurité</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('admin.analytics.alerts')}</p>
                   <p className="text-3xl font-bold">{totals.rateLimits}</p>
                 </div>
                 <div className="flex size-12 items-center justify-center rounded-xl bg-red-500/10 text-red-500">
@@ -257,10 +257,10 @@ export default function AnalyticsDashboardPage() {
 
           {/* Charts Row 1 */}
           <div className="grid gap-4 md:grid-cols-3">
-            <Card className="surface-panel md:col-span-2 border-0">
+            <Card className="surface-panel md:col-span-2 border-0 py-0">
               <CardHeader>
-                <CardTitle>Activité Globale de la plateforme</CardTitle>
-                <CardDescription>Comparaison des interactions (Connexions, Inscriptions, Messages, RDV)</CardDescription>
+                <CardTitle>{t('admin.analytics.global_activity')}</CardTitle>
+                <CardDescription>{t('admin.analytics.global_activity_desc')}</CardDescription>
               </CardHeader>
               <CardContent className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
@@ -277,19 +277,19 @@ export default function AnalyticsDashboardPage() {
                       labelStyle={{ color: 'var(--muted-foreground)', marginBottom: '4px' }}
                     />
                     <Legend />
-                    <Bar dataKey="logins" name="Connexions" stackId="a" fill={COLORS[0]} />
-                    <Bar dataKey="signups" name="Inscriptions" stackId="a" fill={COLORS[1]} />
-                    <Bar dataKey="messages" name="Messages" stackId="a" fill={COLORS[3]} />
-                    <Bar dataKey="rdvs" name="RDVs" stackId="a" fill={COLORS[2]} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="logins" name={t('admin.analytics.logins')} stackId="a" fill={COLORS[0]} />
+                    <Bar dataKey="signups" name={t('admin.analytics.signups')} stackId="a" fill={COLORS[1]} />
+                    <Bar dataKey="messages" name={t('admin.analytics.messages')} stackId="a" fill={COLORS[3]} />
+                    <Bar dataKey="rdvs" name={t('admin.analytics.rdvs')} stackId="a" fill={COLORS[2]} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
 
-            <Card className="surface-panel border-0">
+            <Card className="surface-panel border-0 py-0">
               <CardHeader>
-                <CardTitle>Répartition</CardTitle>
-                <CardDescription>Volume des événements</CardDescription>
+                <CardTitle>{t('admin.analytics.distribution')}</CardTitle>
+                <CardDescription>{t('admin.analytics.distribution_desc')}</CardDescription>
               </CardHeader>
               <CardContent className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
@@ -319,10 +319,10 @@ export default function AnalyticsDashboardPage() {
           </div>
 
           {/* Charts Row 2 */}
-          <Card className="surface-panel border-0">
+          <Card className="surface-panel border-0 py-0">
             <CardHeader>
-              <CardTitle>Surveillance des Abus et Attaques (Rate Limit)</CardTitle>
-              <CardDescription>Évolution des requêtes bloquées par le système</CardDescription>
+              <CardTitle>{t('admin.analytics.security')}</CardTitle>
+              <CardDescription>{t('admin.analytics.security_desc')}</CardDescription>
             </CardHeader>
             <CardContent className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -339,7 +339,7 @@ export default function AnalyticsDashboardPage() {
                     labelStyle={{ color: 'var(--muted-foreground)', marginBottom: '4px' }}
                   />
                   <Legend />
-                  <Line type="monotone" dataKey="rateLimits" name="Requêtes bloquées" stroke="#ef4444" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="rateLimits" name={t('admin.analytics.blocked_requests')} stroke="#ef4444" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
