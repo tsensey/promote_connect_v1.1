@@ -62,7 +62,8 @@ export async function POST(request: Request) {
       accountResults.push({ exposantId: e.id, status: 'created' });
     }
     
-    // Délai de 250ms pour respecter le rate-limit de Resend (max 10 requêtes / seconde, ou 2 r/s en Free)
+    // Délai de 250ms pour garantir qu'on ne dépasse pas le rate-limit de Resend (strictement 5 requêtes / seconde)
+    // 250ms + le temps d'exécution de la boucle = moins de 4 requêtes / sec
     await new Promise(resolve => setTimeout(resolve, 250));
   }
 

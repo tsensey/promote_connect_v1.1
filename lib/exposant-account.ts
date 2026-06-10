@@ -118,14 +118,32 @@ export async function createAccountForExposant(
           stand: exposant.stand,
         })
       );
-      const { error: sendError } = await resend.emails.send({
-        from: FROM_EMAIL,
-        to: allEmails,
-        subject: 'Vos identifiants PROMOTE-CONNECT',
-        html: emailHtml,
-      });
+      let sendError: any = null;
+      let sendSuccess = false;
+      const MAX_RETRIES = 3;
+
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        const result = await resend.emails.send({
+          from: FROM_EMAIL,
+          to: allEmails,
+          subject: 'Vos identifiants PROMOTE-CONNECT',
+          html: emailHtml,
+        });
+
+        if (result.error) {
+          sendError = result.error;
+          // Si l'erreur est liée au Rate Limit (ex: 429) ou temporaire, on patiente et on réessaie
+          if (attempt < MAX_RETRIES) {
+            console.warn(`[email_retry] Tentative ${attempt} échouée pour ${authEmail}. Nouvelle tentative dans ${attempt * 1000}ms...`);
+            await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+          }
+        } else {
+          sendSuccess = true;
+          break; // Succès, on sort de la boucle de retry
+        }
+      }
       
-      if (sendError) {
+      if (!sendSuccess && sendError) {
         console.error(`Resend send error:`, sendError);
         // ROLLBACK: On supprime le compte pour pouvoir réessayer plus tard
         await supabase.auth.admin.deleteUser(authData.user.id);

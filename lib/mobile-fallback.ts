@@ -209,7 +209,7 @@ export async function mobileCheckQuota(userId: string) {
   return { allowed: true };
 }
 
-export async function mobileFetchFeed(mode: string, page: number, limit: number, myId: string) {
+export async function mobileFetchFeed(mode: string, page: number, limit: number, myId: string, seed?: string) {
   const { data: blocks } = await supabaseClient
     .from('blocked_users')
     .select('blocker_id, blocked_id')
@@ -255,10 +255,30 @@ export async function mobileFetchFeed(mode: string, page: number, limit: number,
   }
 
   if (mode === 'discover') {
+    const usedSeed = seed || Math.floor(Date.now() / (30 * 60 * 1000)).toString();
+    function cyrb128(str: string) {
+      let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
+      for (let i = 0, k; i < str.length; i++) {
+        k = str.charCodeAt(i);
+        h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+        h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+        h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+        h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+      }
+      h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+      h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+      h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+      h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+      return [(h1^h2^h3^h4)>>>0, (h2^h1)>>>0, (h3^h1)>>>0, (h4^h1)>>>0];
+    }
+    
     validPosts.sort((a: any, b: any) => {
-      const aSponsored = (a as any).author.subscription_tier === 'paid' && (a as any).author.exposants?.[0]?.is_featured;
-      const bSponsored = (b as any).author.subscription_tier === 'paid' && (b as any).author.exposants?.[0]?.is_featured;
-      return (bSponsored ? 1 : 0) - (aSponsored ? 1 : 0);
+      const aSp = (a as any).author.subscription_tier === 'paid' && (a as any).author.exposants?.[0]?.is_featured;
+      const bSp = (b as any).author.subscription_tier === 'paid' && (b as any).author.exposants?.[0]?.is_featured;
+      const aR = cyrb128(a.id + usedSeed)[0] / 4294967296;
+      const bR = cyrb128(b.id + usedSeed)[0] / 4294967296;
+      const sponsoredWeightRatio = 3;
+      return (bR * (bSp ? sponsoredWeightRatio : 1)) - (aR * (aSp ? sponsoredWeightRatio : 1));
     });
 
     const startIndex = page * limit;

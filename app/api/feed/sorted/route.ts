@@ -115,6 +115,7 @@ export async function GET(request: Request) {
   const mode = searchParams.get('mode') || 'recent';
   const page = parseInt(searchParams.get('page') || '0', 10);
   const limit = parseInt(searchParams.get('limit') || '20', 10);
+  const clientSeed = searchParams.get('seed');
 
   const supabase = await createClient();
   const { data: session } = await supabase.auth.getSession();
@@ -177,8 +178,18 @@ export async function GET(request: Request) {
 
   // Discover mode
   const intervalMs = feedConfig.discoverRefreshIntervalMinutes * 60 * 1000;
-  const seed = Math.floor(Date.now() / intervalMs);
+  const seed = clientSeed || Math.floor(Date.now() / intervalMs).toString();
   const cacheKey = `${seed}-${myId}`;
+
+  // Nettoyage du cache pour éviter les fuites de mémoire avec les seeds générés côté client
+  if (discoverCache.size > 500) {
+    const now = Date.now();
+    for (const [k, v] of discoverCache.entries()) {
+      if (now - v.ts > intervalMs) {
+        discoverCache.delete(k);
+      }
+    }
+  }
 
   const cached = discoverCache.get(cacheKey);
   const shuffledIds = (cached && Date.now() - cached.ts < intervalMs)

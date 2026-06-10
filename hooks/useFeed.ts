@@ -45,6 +45,7 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const pageRef = useRef(0);
   const [mode, setMode] = useState<'recent' | 'discover'>(initialMode);
+  const [feedSeed, setFeedSeed] = useState<string>('');
   const seenPostIds = useRef<Set<string>>(new Set());
 
   const fetchPosts = useCallback(
@@ -55,16 +56,19 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
         if (!myId) return;
         setMyUserId(myId);
 
+        let currentSeed = feedSeed;
         if (reset) {
           seenPostIds.current.clear();
           pageRef.current = 0;
+          currentSeed = Math.random().toString(36).substring(2, 15);
+          setFeedSeed(currentSeed);
         }
 
         const currentPage = reset ? 0 : pageRef.current;
         
         // Fetch posts from API
         if (isNativePlatform()) {
-          const posts = await mobileFetchFeed(mode, currentPage, limit, myId);
+          const posts = await mobileFetchFeed(mode, currentPage, limit, myId, currentSeed);
           if (reset) {
             seenPostIds.current.clear();
             posts.forEach((p: any) => seenPostIds.current.add(p.id));
@@ -85,7 +89,7 @@ export function useFeed(limit = 20, initialMode: 'recent' | 'discover' = 'discov
 
         // La route API retourne les posts déjà enrichis (is_liked, is_shared, is_saved, etc.)
         // Plus besoin de faire 5 requêtes Supabase supplémentaires côté client
-        const response = await fetch(`/api/feed/sorted?mode=${mode}&page=${currentPage}&limit=${limit}`);
+        const response = await fetch(`/api/feed/sorted?mode=${mode}&page=${currentPage}&limit=${limit}&seed=${currentSeed}`);
         if (!response.ok) {
           throw new Error('Failed to fetch posts');
         }
