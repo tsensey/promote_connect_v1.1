@@ -47,10 +47,16 @@ export async function POST(request: Request) {
   for (const e of exposants) {
     const result = await createAccountForExposant(e.id, e.email1, e.email2);
     if (result.error) {
-      // En cas d'erreur (ex: email invalide, rate limit), on marque comme failed
+      // Catégorisation des erreurs pour éviter les boucles infinies de retry
+      let newStatus = 'failed';
+      if (result.error.includes('[no_email]')) newStatus = 'no_email';
+      else if (result.error.includes('[auth_failed]')) newStatus = 'auth_failed';
+      else if (result.error.includes('[email_failed]')) newStatus = retryFailed ? 'failed_permanent' : 'failed';
+      else newStatus = retryFailed ? 'failed_permanent' : 'failed';
+
       await supabase
         .from('exposants')
-        .update({ account_status: 'failed' })
+        .update({ account_status: newStatus })
         .eq('id', e.id);
       accountResults.push({ exposantId: e.id, status: 'failed', error: result.error });
     } else {

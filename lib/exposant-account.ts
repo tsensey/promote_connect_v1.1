@@ -40,7 +40,7 @@ export async function createAccountForExposant(
   const allEmails = Array.from(new Set([...validEmails1, ...validEmails2]));
   const authEmail = allEmails[0]; // On prend le premier email valide comme identifiant principal
 
-  if (!authEmail) return { error: 'Aucun email valide pour la création du compte' };
+  if (!authEmail) return { error: '[no_email] Aucun email valide pour la création du compte' };
 
   const { data: exposant } = await supabase
     .from('exposants')
@@ -48,7 +48,7 @@ export async function createAccountForExposant(
     .eq('id', exposantId)
     .single();
 
-  if (!exposant) return { error: 'Exposant introuvable' };
+  if (!exposant) return { error: '[no_exposant] Exposant introuvable' };
 
   const password = crypto.randomUUID().slice(0, 12).replace(/-/g, '') + 'Ab1!';
   const fullName = exposant.nom;
@@ -64,7 +64,7 @@ export async function createAccountForExposant(
   });
 
   if (authError || !authData.user) {
-    return { error: authError?.message || 'Erreur création auth' };
+    return { error: `[auth_failed] ${authError?.message || 'Erreur création auth'}` };
   }
 
   const { error: profileError } = await supabase.from('profiles').upsert({
@@ -78,7 +78,7 @@ export async function createAccountForExposant(
 
   if (profileError) {
     await supabase.auth.admin.deleteUser(authData.user.id);
-    return { error: `Erreur création profil: ${profileError.message}` };
+    return { error: `[profile_failed] Erreur création profil: ${profileError.message}` };
   }
 
   const { error: linkError } = await supabase
@@ -88,7 +88,7 @@ export async function createAccountForExposant(
 
   if (linkError) {
     await supabase.auth.admin.deleteUser(authData.user.id);
-    return { error: `Erreur liaison: ${linkError.message}` };
+    return { error: `[link_failed] Erreur liaison: ${linkError.message}` };
   }
 
   if (!resend) {
