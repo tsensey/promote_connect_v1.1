@@ -257,7 +257,7 @@ export default function AnalyticsDashboardPage() {
 
           {/* Charts Row 1 */}
           <div className="grid gap-4 md:grid-cols-3">
-            <Card className="surface-panel md:col-span-2 border-0 py-0">
+            <Card className="surface-panel md:col-span-2 border-0">
               <CardHeader>
                 <CardTitle>{t('admin.analytics.global_activity')}</CardTitle>
                 <CardDescription>{t('admin.analytics.global_activity_desc')}</CardDescription>
@@ -286,7 +286,7 @@ export default function AnalyticsDashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="surface-panel border-0 py-0">
+            <Card className="surface-panel border-0">
               <CardHeader>
                 <CardTitle>{t('admin.analytics.distribution')}</CardTitle>
                 <CardDescription>{t('admin.analytics.distribution_desc')}</CardDescription>
@@ -319,7 +319,7 @@ export default function AnalyticsDashboardPage() {
           </div>
 
           {/* Charts Row 2 */}
-          <Card className="surface-panel border-0 py-0">
+          <Card className="surface-panel border-0">
             <CardHeader>
               <CardTitle>{t('admin.analytics.security')}</CardTitle>
               <CardDescription>{t('admin.analytics.security_desc')}</CardDescription>
