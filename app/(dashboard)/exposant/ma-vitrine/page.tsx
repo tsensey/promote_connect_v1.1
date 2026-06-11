@@ -558,7 +558,7 @@ export default function ManageVitrinePage() {
   }
 
   return (
-    <div className="space-y-6 pb-8 max-w-6xl mx-auto">
+    <div className="space-y-6 pb-28 lg:pb-8 max-w-6xl mx-auto">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         {exposant && (
           <Link href={`/annuaire/${exposant.id}`}>
@@ -965,7 +965,7 @@ export default function ManageVitrinePage() {
               <Button
                 onClick={saveShowcase}
                 disabled={savingShowcase}
-                className="rounded-full px-8 h-12 text-base font-semibold"
+                className="w-full sm:w-auto rounded-full px-8 h-12 text-base font-semibold"
                 size="lg"
               >
                 {savingShowcase ? (
@@ -1079,7 +1079,7 @@ export default function ManageVitrinePage() {
                   <Button
                     onClick={saveProduct}
                     disabled={savingProduct || !exposant}
-                    className="rounded-xl"
+                    className="w-full sm:w-auto rounded-xl"
                   >
                     {savingProduct ? (
                       <>
@@ -1096,7 +1096,7 @@ export default function ManageVitrinePage() {
                   {productForm.id && (
                     <Button
                       variant="outline"
-                      className="rounded-xl"
+                      className="w-full sm:w-auto rounded-xl"
                       onClick={() => setProductForm(emptyProductForm)}
                     >
                       {t('common.cancel')}
@@ -1264,7 +1264,7 @@ export default function ManageVitrinePage() {
               <Button
                 onClick={saveShowcase}
                 disabled={savingShowcase}
-                className="rounded-xl"
+                className="w-full sm:w-auto rounded-xl"
               >
                 {savingShowcase ? (
                   <>

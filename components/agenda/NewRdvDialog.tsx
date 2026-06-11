@@ -111,13 +111,13 @@ export function NewRdvDialog({ open, onOpenChange, onCreate }: NewRdvDialogProps
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-xl">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md rounded-xl flex flex-col gap-0 p-0 max-h-[90dvh] overflow-hidden">
+        <DialogHeader className="p-4 pb-2">
           <DialogTitle className="text-xl font-semibold">{t("agenda.rdv_form_title")}</DialogTitle>
           <DialogDescription>{t("agenda.rdv_form_desc")}</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 px-4 py-2 w-full overflow-y-auto">
           <div className="space-y-2">
             <Label className="text-xs font-medium">{t("agenda.rdv_form_contact")}</Label>
             <Input
@@ -199,16 +199,16 @@ export function NewRdvDialog({ open, onOpenChange, onCreate }: NewRdvDialogProps
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="rounded-xl"
+              className="rounded-xl resize-none"
             />
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">
+        <DialogFooter className="gap-2 p-4 pt-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl w-full sm:w-auto">
             {t("common.cancel")}
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting} className="rounded-xl gap-1.5">
+          <Button onClick={handleSubmit} disabled={submitting} className="rounded-xl gap-1.5 w-full sm:w-auto">
             {submitting ? (
               <>
                 <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />

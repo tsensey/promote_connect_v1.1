@@ -96,11 +96,11 @@ function ProfileTab() {
 
   return (
     <div className="space-y-6">
-      <Card className="overflow-hidden border-border/50 transition-hover:pt-0">
+      <Card className="overflow-hidden border-border/50 transition-hover:pt-0 pt-0">
         <div className="h-1.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+            <div className="hidden md:flex size-10 items-center justify-center rounded-xl bg-primary/10">
               <User className="size-5 text-primary" />
             </div>
             <div>
@@ -147,8 +147,8 @@ function ProfileTab() {
           </div>
         </CardContent>
       </Card>
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={!hasChanges || saving} className="min-w-[140px]">
+      <div className="flex sm:justify-end">
+        <Button onClick={handleSave} disabled={!hasChanges || saving} className="w-full sm:w-auto sm:min-w-[140px]">
           {saving ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
           {saving ? t('common.saving') : t('common.save')}
         </Button>
@@ -181,7 +181,7 @@ function NotificationsTab() {
   };
 
   return (
-    <Card className="overflow-hidden border-border/50 transition-hover:pt-0">
+    <Card className="overflow-hidden border-border/50 transition-hover:pt-0 pt-0">
       <div className="h-1.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
       <CardHeader>
         <div className="flex items-center gap-3">
@@ -238,7 +238,7 @@ function LanguageTab() {
   };
 
   return (
-    <Card className="overflow-hidden border-border/50 transition-hover:pt-0">
+    <Card className="overflow-hidden border-border/50 transition-hover:pt-0 pt-0">
       <div className="h-1.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
       <CardHeader>
         <div className="flex items-center gap-3">
@@ -302,7 +302,7 @@ function AccountTab() {
 
   return (
     <div className="space-y-6">
-      <Card className="overflow-hidden border-border/50 transition-hover:pt-0">
+      <Card className="overflow-hidden border-border/50 transition-hover:pt-0 pt-0">
         <div className="h-1.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -346,7 +346,7 @@ function AccountTab() {
               <p className="text-xs text-muted-foreground">{t('account.sign_out.confirm')}</p>
             </div>
           </div>
-          <Button variant="destructive" size="sm" onClick={handleSignOut} className="shrink-0">
+          <Button variant="destructive" size="sm" onClick={handleSignOut} className="shrink-0 w-full sm:w-auto">
             <LogOut className="mr-2 size-4" />
             {t('account.sign_out')}
           </Button>
@@ -408,7 +408,7 @@ function BlockedTab() {
     : blockedUsers;
 
   return (
-    <Card className="overflow-hidden border-border/50">
+    <Card className="overflow-hidden border-border/50 pt-0">
       <div className="h-1.5 bg-gradient-to-r from-destructive/60 via-destructive to-destructive/60" />
       <CardHeader>
         <div className="flex items-center gap-3">
@@ -505,7 +505,7 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 pb-10">
+    <div className="mx-auto max-w-6xl space-y-8 pb-28 lg:pb-10">
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-border/50 p-6 sm:p-8">
         <div className="absolute -right-20 -top-20 size-64 rounded-full bg-primary/5 blur-3xl" />
         <div className="absolute -bottom-10 -left-10 size-48 rounded-full bg-primary/5 blur-3xl" />
