@@ -297,7 +297,7 @@ export default function AnalyticsDashboardPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3 pt-2">
-                {pieData.sort((a, b) => b.value - a.value).map((item, i) => {
+                {[...pieData].sort((a, b) => b.value - a.value).map((item, i) => {
                   const max = pieData.length > 0 ? Math.max(...pieData.map(d => d.value)) : 1;
                   const pct = Math.round((item.value / max) * 100);
                   return (
