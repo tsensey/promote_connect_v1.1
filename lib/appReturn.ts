@@ -117,15 +117,9 @@ function buildInternalRoute(pathname: string, params: URLSearchParams): string {
   const segments = pathname.split("/").filter(Boolean);
   const topLevel = segments[0] ?? "";
 
-  let internalPath = "/";
+  let internalPath = pathname || "/";
   if (topLevel === "auth") {
     internalPath = "/auth";
-  } else if (topLevel === "subscription") {
-    internalPath = "/app/subscription";
-  } else if (topLevel === "marketplace" && segments[1] === "order" && segments[2]) {
-    internalPath = `/app/marketplace/order/${segments[2]}`;
-  } else if (topLevel === "marketplace") {
-    internalPath = "/app/marketplace";
   }
 
   const routeParams = new URLSearchParams(params);
@@ -141,17 +135,24 @@ function buildInternalRoute(pathname: string, params: URLSearchParams): string {
   ].forEach((key) => routeParams.delete(key));
 
   const query = routeParams.toString();
-  return query ? `${internalPath}?${query}` : internalPath;
+  if (!query) return internalPath;
+  return internalPath.includes("?") ? `${internalPath}&${query}` : `${internalPath}?${query}`;
 }
 
 function resolveExternalRoute(url: string): ExternalRouteResolution | null {
   try {
     const parsedUrl = new URL(url);
     const params = getUrlParamsFromString(url);
-    const pathSegments = [
-      parsedUrl.hostname,
-      ...parsedUrl.pathname.split("/").filter(Boolean),
-    ].filter(Boolean);
+    
+    let pathSegments: string[];
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      pathSegments = [
+        parsedUrl.hostname,
+        ...parsedUrl.pathname.split("/").filter(Boolean),
+      ].filter(Boolean);
+    } else {
+      pathSegments = parsedUrl.pathname.split("/").filter(Boolean);
+    }
 
     const pathname = `/${pathSegments.join("/")}`;
     return {
