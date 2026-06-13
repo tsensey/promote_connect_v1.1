@@ -16,6 +16,13 @@ export function NativeAuthGuard() {
         return;
       }
 
+      // Si le path n'est pas la racine (ex: fallback SPA vers index.html pour une route dynamique),
+      // ne pas rediriger afin de laisser le router client Next.js hydrater et gérer la route.
+      const path = window.location.pathname;
+      if (path !== '/' && path !== '/index.html' && path !== '') {
+        return;
+      }
+
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session) {
         router.replace('/login');

@@ -174,7 +174,7 @@ export default function EventDetailPage() {
               <CardTitle className="text-lg">{t("agenda.event_description")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm leading-relaxed text-muted-foreground/80">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground/80">
                 {event.description || t("agenda.no_description")}
               </p>
             </CardContent>
