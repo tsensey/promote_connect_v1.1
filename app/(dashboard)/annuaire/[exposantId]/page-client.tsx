@@ -440,7 +440,7 @@ export default function ExposantDetailPage() {
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
             {exposant.description && (
-              <p className="w-full text-base leading-relaxed text-muted-foreground sm:w-auto">
+              <p className="w-full text-base leading-relaxed text-muted-foreground sm:w-auto whitespace-pre-wrap">
                 {exposant.description}
               </p>
             )}
@@ -732,7 +732,7 @@ export default function ExposantDetailPage() {
                               </p>
                             )}
                             {prod.description && (
-                              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground whitespace-pre-wrap">
                                 {prod.description}
                               </p>
                             )}

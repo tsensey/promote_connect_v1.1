@@ -81,7 +81,7 @@ export default function AnnuairePage() {
   const [contactingId, setContactingId] = useState<string | null>(null);
   const [showConversion, setShowConversion] = useState(false);
   const { loadBlockedUsers, isBlocked } = useBlockedUsers();
-  const pageSize = 20;
+  const pageSize = 18;
 
   useEffect(() => {
     loadBlockedUsers();
