@@ -24,7 +24,7 @@ export function useContacts() {
   const [loading, setLoading] = useState(false);
   const [myUserId, setMyUserId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (roleFilter?: 'exposant' | 'visiteur', searchKeyword?: string) => {
     setLoading(true);
     try {
       const { data: session } = await supabaseClient.auth.getSession();
@@ -45,10 +45,18 @@ export function useContacts() {
         .from('profiles')
         .select('id, full_name, company, avatar_url, role')
         .neq('id', myId ?? '')
-        .in('role', ['exposant', 'visiteur'])
         .order('full_name', { ascending: true })
         .limit(100);
 
+      if (roleFilter) {
+        query = query.eq('role', roleFilter);
+      } else {
+        query = query.in('role', ['exposant', 'visiteur']);
+      }
+
+      if (searchKeyword && searchKeyword.trim().length > 0) {
+        query = query.or(`full_name.ilike.%${searchKeyword.trim()}%,company.ilike.%${searchKeyword.trim()}%`);
+      }
 
       if (blockedIds.length > 0) {
         query = query.not('id', 'in', `(${blockedIds.join(',')})`);

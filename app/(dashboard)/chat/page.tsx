@@ -49,10 +49,19 @@ function ConversationList({
   const [creating, setCreating] = useState<string | null>(null);
   const [contactTab, setContactTab] = useState<'exposant' | 'visiteur'>('exposant');
 
-  // Charger les contacts quand on ouvre le panneau
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
   useEffect(() => {
-    if (showNew && contacts.length === 0) loadContacts();
-  }, [showNew, contacts.length, loadContacts]);
+    const timer = setTimeout(() => setDebouncedSearch(contactSearch), 300);
+    return () => clearTimeout(timer);
+  }, [contactSearch]);
+
+  // Charger les contacts quand on ouvre le panneau ou change d'onglet/recherche
+  useEffect(() => {
+    if (showNew) {
+      loadContacts(contactTab, debouncedSearch);
+    }
+  }, [showNew, contactTab, debouncedSearch, loadContacts]);
 
   const handleStartConversation = async (profileId: string) => {
     setCreating(profileId);
