@@ -207,6 +207,8 @@ export default function AdminUsersPage() {
 
   const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
   const [deleteExposant, setDeleteExposant] = useState(true);
+  const [showLinkDialog, setShowLinkDialog] = useState<UserRow | null>(null);
+  const [selectedExposantId, setSelectedExposantId] = useState('');
   const [showRoleDialog, setShowRoleDialog] = useState<UserRow | null>(null);
   const [newRole, setNewRole] = useState('');
   const [newSubscriptionTier, setNewSubscriptionTier] = useState('free_trial');
@@ -286,6 +288,18 @@ export default function AdminUsersPage() {
 
     return () => window.clearTimeout(timer);
   }, [fetchUsers]);
+
+  useEffect(() => {
+    if (!showLinkDialog || !token) return;
+    fetch('/api/admin/espaces/exposants?unlinked=true', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.exposants) setUnlinkedExposants(data.exposants);
+      })
+      .catch(() => { });
+  }, [showLinkDialog, token]);
 
   useEffect(() => {
     if (!showCreateDialog || !token) return;
@@ -501,6 +515,39 @@ export default function AdminUsersPage() {
       setActionLoading(null);
     }
   }
+
+  const handleLinkExposant = useCallback(async () => {
+    if (!token || !showLinkDialog || !selectedExposantId) return;
+    setActionLoading(showLinkDialog.id);
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          id: showLinkDialog.id,
+          exposant_id: selectedExposantId,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || t('admin.users.role_error'));
+      }
+
+      toast.success("Utilisateur lié à l'exposant avec succès.");
+      setShowLinkDialog(null);
+      setSelectedExposantId('');
+      await fetchUsers();
+    } catch (error) {
+      console.error('Link exposant error:', error);
+      toast.error(error instanceof Error ? error.message : t('admin.users.role_error'));
+    } finally {
+      setActionLoading(null);
+    }
+  }, [token, showLinkDialog, selectedExposantId, fetchUsers, t]);
 
   async function handleBulkDelete() {
     if (!token || selectedIds.length === 0) return;
@@ -802,6 +849,21 @@ export default function AdminUsersPage() {
                               )}
                               {t('admin.users.reset_menu')}
                             </DropdownMenuItem>
+                            {user.role === 'exposant' && (
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setShowLinkDialog(user);
+                                }}
+                                disabled={actionLoading === user.id}
+                              >
+                                {actionLoading === user.id ? (
+                                  <Loader2 className="mr-2 size-4 animate-spin" />
+                                ) : (
+                                  <Building2 className="mr-2 size-4" />
+                                )}
+                                Lier à un exposant
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={() => handleToggleSuspend(user.id, user.is_active)}
                               disabled={actionLoading === user.id}
@@ -1398,6 +1460,67 @@ export default function AdminUsersPage() {
                 <UserCheck className="mr-2 size-4" />
               )}
               {t('admin.users.role_confirm_btn')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!showLinkDialog} onOpenChange={(open) => { if (!open) { setShowLinkDialog(null); setSelectedExposantId(''); setExposantSearch(''); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Lier à un exposant</DialogTitle>
+            <DialogDescription>
+              {showLinkDialog ? `Lier l'utilisateur ${showLinkDialog.full_name} à un profil exposant existant.` : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>{t('admin.users.form_link_exposant')}</Label>
+              <Input
+                placeholder={t('admin.users.form_link_exposant_placeholder')}
+                value={exposantSearch}
+                onChange={(e) => setExposantSearch(e.target.value)}
+              />
+              <div className="max-h-48 overflow-y-auto rounded-xl border border-border">
+                {unlinkedExposants
+                  .filter((e) => e.nom.toLowerCase().includes(exposantSearch.toLowerCase()))
+                  .map((exp) => (
+                    <button
+                      key={exp.id}
+                      type="button"
+                      onClick={() => setSelectedExposantId(exp.id)}
+                      className={`w-full px-3 py-2 text-left text-sm transition-colors hover:bg-muted ${selectedExposantId === exp.id ? 'bg-primary/10 font-medium text-primary' : ''
+                        }`}
+                    >
+                      <span>{exp.nom}</span>
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {[exp.secteur, exp.stand].filter(Boolean).join(' · ') || ''}
+                      </span>
+                    </button>
+                  ))}
+                {unlinkedExposants.filter((e) => e.nom.toLowerCase().includes(exposantSearch.toLowerCase())).length === 0 && (
+                  <p className="px-3 py-4 text-center text-xs text-muted-foreground">
+                    {t('admin.users.form_link_exposant_no_results')}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-xl" onClick={() => { setShowLinkDialog(null); setSelectedExposantId(''); setExposantSearch(''); }}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              className="rounded-xl"
+              disabled={actionLoading === showLinkDialog?.id || !showLinkDialog || !selectedExposantId}
+              onClick={handleLinkExposant}
+            >
+              {actionLoading === showLinkDialog?.id ? (
+                <Loader2 className="mr-2 size-4 animate-spin" />
+              ) : (
+                <UserCheck className="mr-2 size-4" />
+              )}
+              Confirmer
             </Button>
           </DialogFooter>
         </DialogContent>

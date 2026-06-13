@@ -288,6 +288,7 @@ export async function PATCH(request: Request) {
   const subscription_tier = body.subscription_tier as string | undefined;
   const suspension_reason = body.suspension_reason as string | undefined;
   const subscription_ends_at = body.subscription_ends_at as string | undefined;
+  const exposant_id = body.exposant_id as string | null | undefined;
 
   if (!id) {
     return NextResponse.json({ error: 'User ID requis' }, { status: 400 });
@@ -362,24 +363,49 @@ export async function PATCH(request: Request) {
     await supabaseAdmin.auth.admin.updateUserById(id, { user_metadata: newMetaData });
   }
 
-  // Auto-create exposant record if role changed to exposant
-  if (role === 'exposant') {
-    const { data: existingExposant } = await supabaseAdmin
-      .from('exposants')
-      .select('id')
-      .eq('profile_id', id)
-      .maybeSingle();
+  // Determine final role for exposant logic
+  let finalRole = role;
+  if (!finalRole) {
+    const { data: currentUser } = await supabaseAdmin.from('profiles').select('role').eq('id', id).single();
+    finalRole = currentUser?.role as string | undefined;
+  }
 
-    if (!existingExposant) {
-      const exposantName = company || full_name || 'Nouvel Exposant';
-      await supabaseAdmin.from('exposants').insert({
-        profile_id: id,
-        nom: exposantName,
-        secteur: sector || null,
-        pays: country || null,
-        pavillon: pavillon || null,
-      });
+  // Handle exposant linking rule
+  if (exposant_id !== undefined && finalRole !== 'exposant') {
+    return NextResponse.json({ error: 'Seul un utilisateur de type exposant peut être lié à un profil exposant.' }, { status: 400 });
+  }
+
+  // Link to existing exposant or auto-create if role changed
+  if (finalRole === 'exposant') {
+    if (exposant_id !== undefined) {
+      // Unlink current
+      await supabaseAdmin.from('exposants').update({ profile_id: null }).eq('profile_id', id);
+      // Link new
+      if (exposant_id !== null && exposant_id !== '') {
+        await supabaseAdmin.from('exposants').update({ profile_id: id }).eq('id', exposant_id);
+      }
+    } else if (role === 'exposant') {
+      // Auto-create if role was just changed to exposant
+      const { data: existingExposant } = await supabaseAdmin
+        .from('exposants')
+        .select('id')
+        .eq('profile_id', id)
+        .maybeSingle();
+
+      if (!existingExposant) {
+        const exposantName = company || full_name || 'Nouvel Exposant';
+        await supabaseAdmin.from('exposants').insert({
+          profile_id: id,
+          nom: exposantName,
+          secteur: sector || null,
+          pays: country || null,
+          pavillon: pavillon || null,
+        });
+      }
     }
+  } else if (role === 'visiteur' || role === 'admin') {
+    // If role explicitly changed to non-exposant, unlink any linked exposant profiles
+    await supabaseAdmin.from('exposants').update({ profile_id: null }).eq('profile_id', id);
   }
 
   await supabaseAdmin.from('audit_logs').insert({
