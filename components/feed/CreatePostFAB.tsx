@@ -23,18 +23,26 @@ export function CreatePostFAB({ onSubmit, onUpload }: CreatePostFABProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 300) {
+    const scrollContainer = document.querySelector('main.overflow-y-auto') || window;
+    
+    const handleScroll = (e: Event | { target: any }) => {
+      const target = e.target as any;
+      const scrollY = target === document || target === window 
+        ? window.scrollY 
+        : target.scrollTop;
+        
+      if (scrollY > 300) {
         setVisible(true);
       } else {
         setVisible(false);
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initial check
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    // Initial check
+    handleScroll({ target: scrollContainer });
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => scrollContainer.removeEventListener('scroll', handleScroll);
   }, []);
 
   const handleOpenChange = (newOpen: boolean) => {
