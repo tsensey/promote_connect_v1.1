@@ -514,12 +514,11 @@ export const PostCard = memo(function PostCard({
                   </div>
                 </span>
               </AuthorLink>
-              {(displayAuthor as Record<string, unknown>).subscription_tier === 'paid' && Boolean((postAuthorExposants?.[0] as Record<string, unknown> | undefined)?.is_featured) && (
+              {((displayAuthor as Record<string, unknown>).subscription_tier === 'paid' && Boolean((postAuthorExposants?.[0] as Record<string, unknown> | undefined)?.is_featured)) ? (
                 <span className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary ring-1 ring-primary/20">
                   {t('feed.sponsored')}
                 </span>
-              )}
-              {displayAuthor.role === 'exposant' && (
+              ) : displayAuthor.role === 'exposant' && (
                 <span className="inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-600/20">
                   {t('feed.post.exposant')}
                 </span>
@@ -531,8 +530,8 @@ export const PostCard = memo(function PostCard({
               )}
             </div>
             <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
-              {authorCompanyName && <span>{authorCompanyName}</span>}
-              {authorCompanyName && <span>·</span>}
+              {authorCompanyName && authorCompanyName !== authorDisplayName && <span>{authorCompanyName}</span>}
+              {authorCompanyName && authorCompanyName !== authorDisplayName && <span>·</span>}
               <span>{timeAgo}</span>
             </div>
           </div>
