@@ -223,7 +223,7 @@ export async function mobileFetchFeed(mode: string, page: number, limit: number,
       *,
       author:profiles!posts_author_id_fkey(
         id, full_name, company, avatar_url, role, subscription_tier,
-        exposants!exposants_profile_id_fkey(id, nom, is_featured)
+        exposants!exposants_profile_id_fkey(id, nom, logo_url, is_featured)
       )
     `);
 

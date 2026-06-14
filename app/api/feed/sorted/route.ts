@@ -42,7 +42,7 @@ const POST_SELECT = `
   id, author_id, content, type, category, image_url, likes_count, comments_count, shares_count, reposts_count, created_at, repost_of_id,
   author:profiles!posts_author_id_fkey(
     id, full_name, company, avatar_url, role, subscription_tier, 
-    exposants!exposants_profile_id_fkey(id, nom, is_featured)
+    exposants!exposants_profile_id_fkey(id, nom, logo_url, is_featured)
   )
 ` as const;
 
