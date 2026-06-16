@@ -48,7 +48,7 @@ async function fetchRendezVous(): Promise<EnrichedRdv[]> {
       .select('id, full_name, company, avatar_url, role')
       .in('id', otherUserIds);
     for (const p of profiles ?? []) {
-      profileMap.set(p.id, p);
+      profileMap.set(p.id, p as unknown as Profile);
     }
   }
 
