@@ -129,7 +129,7 @@ export function useConversations() {
 
         const { data, error } = await supabaseClient
           .from('conversations')
-          .select('*, participant_a:participant_a(*), participant_b:participant_b(*)')
+          .select('*, participant_a:participant_a(id, full_name, avatar_url, role), participant_b:participant_b(id, full_name, avatar_url, role)')
           .or(`participant_a.eq.${myId},participant_b.eq.${myId}`)
           .order('last_message_at', { ascending: false });
 
