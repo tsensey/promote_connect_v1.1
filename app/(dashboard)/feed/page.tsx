@@ -395,7 +395,7 @@ export default function FeedPage() {
                       {t('feed.sponsored')}
                     </div>
                     <h4 className="font-semibold text-sm text-foreground line-clamp-1">{product.nom}</h4>
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{product.description || t('feed.discover_product')}</p>
+                    {/* <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{product.description || t('feed.discover_product')}</p> */}
 
                     {/* Exposant + CTA */}
                     <div className="mt-3 flex items-center gap-2 border-t border-border/40 pt-2.5">
