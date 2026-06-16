@@ -45,7 +45,7 @@ async function fetchRendezVous(): Promise<EnrichedRdv[]> {
   if (otherUserIds.length > 0) {
     const { data: profiles } = await supabaseClient
       .from('profiles')
-      .select('*')
+      .select('id, full_name, company, avatar_url, role')
       .in('id', otherUserIds);
     for (const p of profiles ?? []) {
       profileMap.set(p.id, p);

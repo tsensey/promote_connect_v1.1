@@ -49,7 +49,7 @@ export function useQuotaStatus(): QuotaStatus {
 
       const { data: pData } = await supabaseClient
         .from('profiles')
-        .select('subscription_tier, account_status, daily_exchange_count, quota_override_posts, quota_override_vitrine')
+        .select('subscription_tier, account_status, daily_exchange_count')
         .eq('id', profileId)
         .single();
 
@@ -60,6 +60,12 @@ export function useQuotaStatus(): QuotaStatus {
         quota_override_posts: number | null;
         quota_override_vitrine: number | null;
       } | null;
+      
+      if (profileRow) {
+        // Overrides are now managed backend-side via RLS/Grants. Default to null in UI.
+        profileRow.quota_override_posts = null;
+        profileRow.quota_override_vitrine = null;
+      }
 
       if (!profileRow) {
         setLoading(false);
