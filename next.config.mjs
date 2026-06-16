@@ -44,7 +44,7 @@ const securityHeaders = [
       scriptSrc,
       "frame-src 'self' https://js.stripe.com https://www.youtube.com https://player.vimeo.com",
       connectSrc,
-      "worker-src 'self'",
+      "worker-src 'self' blob:",
       "img-src 'self' data: blob: https://api.promote-connect.pro https://*.stripe.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
