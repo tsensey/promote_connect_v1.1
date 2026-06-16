@@ -1,5 +1,6 @@
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -232,8 +233,9 @@ function CommentItem({
 }
 
 function AuthorLink({ role, exposantId, children }: { role: string | null; exposantId: string | null; children: React.ReactNode }) {
+  const router = useRouter();
   if (role === 'exposant' && exposantId) {
-    return <Link href={`/annuaire/${exposantId}`} className="hover:opacity-80 transition-opacity">{children}</Link>;
+    return <div onClick={(e) => { e.stopPropagation(); router.push(`/annuaire/profil?id=${exposantId}`); }} className="cursor-pointer hover:opacity-80 transition-opacity">{children}</div>;
   }
   return <>{children}</>;
 }

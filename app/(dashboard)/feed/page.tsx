@@ -176,7 +176,7 @@ export default function FeedPage() {
       if (session?.session?.user) {
         const type = (product.type ?? 'produit') === 'service' ? 'service' : 'produit';
         
-        const productLink = `${window.location.origin}/vitrine/${product.exposants.profile_id}?product=${product.id}`;
+        const productLink = `${window.location.origin}/vitrine/profil?id=${product.exposants.profile_id}&product=${product.id}`;
         const messageContent = `${t('feed.contact_about', { type, product: product.nom })}\n\n<a href="${productLink}" target="_blank" rel="noopener noreferrer">🔗 ${t('common.view_product')}</a>`;
         
         const messageInsert = await supabaseClient.from('messages').insert({

@@ -48,7 +48,7 @@ export function NotificationDropdown() {
     } else if (n.data?.conversation_id) {
       router.push(`/chat?conv=${n.data.conversation_id}`);
     } else if (n.data?.ticket_id) {
-      router.push(isAdmin ? `/admin/tickets/${n.data.ticket_id}` : `/support/${n.data.ticket_id}`);
+      router.push(isAdmin ? `/admin/tickets/${n.data.ticket_id}` : `/support/ticket?id=${n.data.ticket_id}`);
     } else if (n.type?.startsWith('rdv_')) {
       router.push('/agenda');
     }

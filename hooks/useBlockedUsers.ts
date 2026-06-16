@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 
 export type BlockType = 'messages' | 'rdv' | 'complete';
 
@@ -18,12 +19,12 @@ const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
 };
 
 export function useBlockedUsers() {
+  const { user } = useAuth();
+  const myId = user?.id;
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [loading, setLoading] = useState(false);
 
   const loadBlockedUsers = useCallback(async () => {
-    const { data: session } = await supabaseClient.auth.getSession();
-    const myId = session?.session?.user?.id;
     if (!myId) return;
 
     setLoading(true);
@@ -43,11 +44,9 @@ export function useBlockedUsers() {
       })));
     }
     setLoading(false);
-  }, []);
+  }, [myId]);
 
   const blockUser = useCallback(async (blockedId: string, reason = 'harassment', blockType: BlockType = 'complete') => {
-    const { data: session } = await supabaseClient.auth.getSession();
-    const myId = session?.session?.user?.id;
     if (!myId) return { error: new Error('Not authenticated') };
 
     const { error } = await (supabaseClient.from('blocked_users').upsert as any)({
@@ -64,11 +63,9 @@ export function useBlockedUsers() {
       });
     }
     return { error };
-  }, []);
+  }, [myId]);
 
   const unblockUser = useCallback(async (blockedId: string) => {
-    const { data: session } = await supabaseClient.auth.getSession();
-    const myId = session?.session?.user?.id;
     if (!myId) return { error: new Error('Not authenticated') };
 
     const { error } = await supabaseClient
@@ -81,7 +78,7 @@ export function useBlockedUsers() {
       setBlockedUsers((prev) => prev.filter((b) => b.blocked_id !== blockedId));
     }
     return { error };
-  }, []);
+  }, [myId]);
 
   const isBlocked = useCallback(
     (userId: string) => {

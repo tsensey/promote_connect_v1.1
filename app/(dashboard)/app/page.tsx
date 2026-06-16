@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
@@ -85,6 +86,7 @@ export default function DashboardHome() {
   const identity = useIdentity();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const loadData = async () => {
@@ -339,10 +341,10 @@ export default function DashboardHome() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               {data.spotlightExposants.map((exposant) => (
-                <Link
+                <div
                   key={exposant.id}
-                  href={`/annuaire/${exposant.id}`}
-                  className="surface-subtle group flex flex-col gap-3 p-5 transition-all hover:border-primary/30 hover:bg-background dark:hover:bg-muted/80"
+                  onClick={() => router.push(`/annuaire/profil?id=${exposant.id}`)}
+                  className="cursor-pointer surface-subtle group flex flex-col gap-3 p-5 transition-all hover:border-primary/30 hover:bg-background dark:hover:bg-muted/80"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
@@ -383,7 +385,7 @@ export default function DashboardHome() {
                       {t('dashboard.home.view_profile')} &rarr;
                     </span>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           </CardContent>
@@ -424,7 +426,7 @@ export default function DashboardHome() {
                 data.recentConversations.map((conversation) => (
                   <Link
                     key={conversation.id}
-                    href={`/chat/${conversation.id}`}
+                    href={`/chat?conv=${conversation.id}`}
                     className="surface-subtle group flex items-center gap-4 p-4 transition-all hover:border-primary/25 hover:bg-background dark:hover:bg-muted/80"
                   >
                     <Avatar className="size-11 border-2 border-border/50">

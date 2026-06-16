@@ -83,6 +83,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // ── RSC Data payloads : réseau uniquement (jamais de cache) ──────────
+  if (url.origin === self.location.origin && url.pathname.startsWith('/_next/data/')) {
+    event.respondWith(fromNetworkOnly(request));
+    return;
+  }
+
   // ── Navigation (pages) : réseau avec fallback cache puis offline ───────
   if (request.mode === 'navigate') {
     event.respondWith(fromNetworkOrCache(request, DYNAMIC_CACHE));

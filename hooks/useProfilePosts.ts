@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import type { Database } from '@/types/database.types';
 
 type PostRow = Database['public']['Tables']['posts']['Row'];
@@ -35,17 +36,15 @@ export interface Comment extends PostCommentRow {
 }
 
 export function useProfilePosts(profileId: string | null | undefined) {
+  const { user } = useAuth();
   const [posts, setPosts] = useState<ProfilePost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const myUserId = user?.id || null;
+  const myId = user?.id;
 
   const fetchPosts = useCallback(async () => {
     if (!profileId) return;
     setLoading(true);
-
-    const { data: session } = await supabaseClient.auth.getSession();
-    const myId = session?.session?.user?.id;
-    setMyUserId(myId || null);
 
     const { data, error } = await supabaseClient
       .from('posts')
@@ -118,8 +117,6 @@ export function useProfilePosts(profileId: string | null | undefined) {
   }, [fetchPosts]);
 
   const toggleLike = useCallback(async (postId: string) => {
-    const { data: session } = await supabaseClient.auth.getSession();
-    const myId = session?.session?.user?.id;
     if (!myId) return;
 
     const post = posts.find((p) => p.id === postId);
@@ -163,8 +160,6 @@ export function useProfilePosts(profileId: string | null | undefined) {
   }, [posts]);
 
   const toggleReaction = useCallback(async (postId: string, reactionType: string) => {
-    const { data: session } = await supabaseClient.auth.getSession();
-    const myId = session?.session?.user?.id;
     if (!myId) return;
 
     const post = posts.find((p) => p.id === postId);
@@ -216,8 +211,6 @@ export function useProfilePosts(profileId: string | null | undefined) {
   }, [posts]);
 
   const sharePost = useCallback(async (postId: string) => {
-    const { data: session } = await supabaseClient.auth.getSession();
-    const myId = session?.session?.user?.id;
     if (!myId) return;
 
     const post = posts.find((p) => p.id === postId);
@@ -243,8 +236,6 @@ export function useProfilePosts(profileId: string | null | undefined) {
   }, [posts]);
 
   const toggleSave = useCallback(async (postId: string) => {
-    const { data: session } = await supabaseClient.auth.getSession();
-    const myId = session?.session?.user?.id;
     if (!myId) return;
 
     const post = posts.find((p) => p.id === postId);
@@ -265,8 +256,6 @@ export function useProfilePosts(profileId: string | null | undefined) {
   }, [posts]);
 
   const repostPost = useCallback(async (content: string, originalPostId: string) => {
-    const { data: session } = await supabaseClient.auth.getSession();
-    const myId = session?.session?.user?.id;
     if (!myId) return { error: new Error('Not authenticated') };
 
     const insertData = {
@@ -335,8 +324,6 @@ export function useProfilePosts(profileId: string | null | undefined) {
   }, []);
 
   const updatePost = useCallback(async (postId: string, content: string, type: string, category?: string, imageUrl?: string | null) => {
-    const { data: session } = await supabaseClient.auth.getSession();
-    const myId = session?.session?.user?.id;
     if (!myId) return { error: new Error('Not authenticated') };
 
     const updateData: Partial<PostInsert> = {
@@ -358,8 +345,6 @@ export function useProfilePosts(profileId: string | null | undefined) {
   }, []);
 
   const toggleFollow = useCallback(async (targetUserId: string) => {
-    const { data: session } = await supabaseClient.auth.getSession();
-    const myId = session?.session?.user?.id;
     if (!myId || myId === targetUserId) return;
 
     const post = posts.find((p) => p.author_id === targetUserId);
@@ -407,8 +392,6 @@ export function useProfilePosts(profileId: string | null | undefined) {
   }, []);
 
   const addComment = useCallback(async (postId: string, content: string, parentCommentId?: string) => {
-    const { data: session } = await supabaseClient.auth.getSession();
-    const myId = session?.session?.user?.id;
     if (!myId) return { error: new Error('Not authenticated'), data: null };
 
     const insertData: PostCommentInsert & { parent_comment_id?: string } = {
@@ -440,8 +423,6 @@ export function useProfilePosts(profileId: string | null | undefined) {
   }, [posts]);
 
   const createPost = useCallback(async (content: string, type = 'general', category?: string, imageUrls?: string[]) => {
-    const { data: session } = await supabaseClient.auth.getSession();
-    const myId = session?.session?.user?.id;
     if (!myId) return { error: new Error('Not authenticated') };
 
     const insertData: PostInsert = {

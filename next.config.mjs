@@ -2,6 +2,14 @@ import { withSentryConfig } from '@sentry/nextjs';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+// ── F016 Remediation ──────────────────────────────────────────────────────────
+// BEFORE: script-src included 'unsafe-inline' (still needed for Next.js inline styles/scripts)
+// BEFORE: connect-src used https://*.supabase.co which allowed exfiltration to attacker-owned Supabase projects
+// AFTER:  connect-src pinned to https://api.promote-connect.pro (the actual Supabase endpoint)
+// BEFORE: worker-src included blob: which allowed persistent ServiceWorker registration post-XSS
+// AFTER:  worker-src 'self' only (sw.js does not use blob: URLs)
+// ──────────────────────────────────────────────────────────────────────────────
+
 const scriptSrc = [
   "script-src 'self' 'unsafe-inline'",
   !isProduction ? "'unsafe-eval'" : null,
@@ -12,8 +20,6 @@ const scriptSrc = [
 
 const connectSrc = [
   "connect-src 'self'",
-  'https://*.supabase.co',
-  'wss://*.supabase.co',
   'https://api.promote-connect.pro',
   'wss://api.promote-connect.pro',
   'https://api.stripe.com',
@@ -38,8 +44,8 @@ const securityHeaders = [
       scriptSrc,
       "frame-src 'self' https://js.stripe.com https://www.youtube.com https://player.vimeo.com",
       connectSrc,
-      "worker-src 'self' blob:",
-      "img-src 'self' data: blob: https://*.supabase.co https://api.promote-connect.pro https://*.stripe.com",
+      "worker-src 'self'",
+      "img-src 'self' data: blob: https://api.promote-connect.pro https://*.stripe.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "object-src 'none'",
@@ -67,7 +73,6 @@ const nextConfig = {
   images: {
     unoptimized: isCapacitorBuild,
     remotePatterns: [
-      { protocol: 'https', hostname: '*.supabase.co' },
       { protocol: 'https', hostname: 'api.promote-connect.pro' },
       { protocol: 'https', hostname: '*.stripe.com' },
     ],
@@ -94,7 +99,7 @@ const nextConfig = {
         source: '/:path*.{png,jpg,jpeg,gif,webp,svg,ico}',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=604800, stale-while-revalidate=86400' },
-            ],
+        ],
       },
       // Polices — cache 1 an
       {

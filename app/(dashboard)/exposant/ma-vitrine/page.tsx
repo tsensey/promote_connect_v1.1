@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Loader2,
@@ -111,6 +112,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 export default function ManageVitrinePage() {
+  const router = useRouter();
   const { user, profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [savingShowcase, setSavingShowcase] = useState(false);
@@ -561,11 +563,9 @@ export default function ManageVitrinePage() {
     <div className="space-y-6 pb-28 lg:pb-8 max-w-6xl mx-auto">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         {exposant && (
-          <Link href={`/annuaire/${exposant.id}`}>
-            <Button variant="outline" className="rounded-xl bg-white/85">
+            <Button variant="outline" className="rounded-xl bg-white/85" onClick={() => router.push(`/annuaire/profil?id=${exposant.id}`)}>
               {t('dashboard.home.view_profile')}
             </Button>
-          </Link>
         )}
       </div>
 

@@ -173,7 +173,7 @@ export default function VitrinePage() {
           is_read: false,
         });
       }
-      router.push(`/chat/${data.id}`);
+      router.push(`/chat?conv=${data.id}`);
     } else {
       toast.error(t('vitrine.contact_error'));
     }
@@ -560,7 +560,7 @@ export default function VitrinePage() {
                         variant="outline"
                         size="sm"
                         className="rounded-xl h-9 w-9 p-0"
-                        onClick={() => router.push(`/annuaire/${produit.exposants!.id}`)}
+                        onClick={() => router.push(`/annuaire/profil?id=${produit.exposants!.id}`)}
                         title={t('vitrine.view_exposant_sheet')}
                       >
                         <Building2 className="size-3.5" />

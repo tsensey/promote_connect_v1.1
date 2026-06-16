@@ -11,3 +11,13 @@ export function createClient() {
 }
 
 export const supabaseClient = createClient()
+
+export async function getSessionWithTimeout(timeoutMs = 10000) {
+  const result = await Promise.race([
+    supabaseClient.auth.getSession(),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Session timeout')), timeoutMs)
+    ),
+  ]);
+  return result;
+}

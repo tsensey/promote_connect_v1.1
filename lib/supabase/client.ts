@@ -1,3 +1,3 @@
-import { supabaseClient } from '@/lib/client';
+import { supabaseClient, getSessionWithTimeout } from '@/lib/client';
 
-export { supabaseClient };
+export { supabaseClient, getSessionWithTimeout };

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth/context';
 import { createConversation } from '@/hooks/useChat';
@@ -76,10 +76,11 @@ const IconInstagram = ({ className }: { className?: string }) => (
 type Exposant = Database['public']['Tables']['exposants']['Row'];
 type Produit = Database['public']['Tables']['produits']['Row'];
 
-export default function ExposantDetailPage() {
+function ExposantDetailContent() {
   const { t, locale } = useTranslation();
-  const params = useParams();
-  const exposantId = params.exposantId as string;
+  const searchParams = useSearchParams();
+  const exposantId = searchParams.get('id');
+  const profileId = searchParams.get('profile_id');
   const perms = usePermissions();
   const { user } = useAuth();
 
@@ -105,18 +106,26 @@ export default function ExposantDetailPage() {
     let cancelled = false;
     const loadData = async () => {
       try {
-        const { data: exp } = await supabaseClient
-          .from('exposants')
-          .select('*')
-          .eq('id', exposantId)
-          .single();
+        if (!exposantId && !profileId) {
+          setLoading(false);
+          return;
+        }
+
+        let query = supabaseClient.from('exposants').select('*');
+        if (exposantId) {
+          query = query.eq('id', exposantId);
+        } else if (profileId) {
+          query = query.eq('profile_id', profileId);
+        }
+
+        const { data: exp } = await query.single();
 
         if (exp) {
           if (!cancelled) setExposant(exp);
           const viewerId = user?.id;
           try {
             await supabaseClient.from('exposant_views').insert({
-              exposant_id: exposantId,
+              exposant_id: exp.id,
               viewer_id: viewerId || null,
             });
           } catch {
@@ -124,13 +133,15 @@ export default function ExposantDetailPage() {
           }
         }
 
-        const { data: prods } = await supabaseClient
-          .from('produits')
-          .select('*')
-          .eq('exposant_id', exposantId)
-          .order('created_at', { ascending: false });
+        if (exp) {
+          const { data: prods } = await supabaseClient
+            .from('produits')
+            .select('*')
+            .eq('exposant_id', exp.id)
+            .order('created_at', { ascending: false });
 
-        if (prods && !cancelled) setProduits(prods);
+          if (prods && !cancelled) setProduits(prods);
+        }
       } catch (err) {
         console.error('Erreur chargement exposant:', err);
       } finally {
@@ -185,7 +196,7 @@ export default function ExposantDetailPage() {
             is_read: false,
           });
         }
-      router.push(`/chat/${data.id}`);
+      router.push(`/chat?conv=${data.id}`);
     } else {
       toast.error(t('annuaire.detail.contact_error'));
     }
@@ -763,5 +774,17 @@ export default function ExposantDetailPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ExposantDetailPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    }>
+      <ExposantDetailContent />
+    </Suspense>
   );
 }

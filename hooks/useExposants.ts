@@ -18,15 +18,14 @@ interface UseExposantsOptions {
   pays?: string;
   page?: number;
   pageSize?: number;
+  myId?: string | null;
 }
 
 const PAGE_SIZE = 20;
 
 // ─── Fetcher des options de filtres ──────────────────────────────────────────
-// Fusionné en 2 requêtes au lieu de 4 (secteur+pavillon+pays en une seule)
 async function fetchFilterOptions() {
   const [filtersRes, espData] = await Promise.all([
-    // Une seule requête pour tous les filtres textuels
     supabaseClient
       .from('exposants')
       .select('secteur, pavillon, pays')
@@ -57,22 +56,17 @@ async function fetchExposants(
   pays: string,
   page: number,
   pageSize: number,
+  myId: string | null | undefined,
 ) {
-  // Récupérer session + bloqués + suspendus en parallèle
-  const [sessionRes, inactiveRes] = await Promise.all([
-    supabaseClient.auth.getSession(),
-    supabaseClient
-      .from('profiles')
-      .select('id')
-      .in('account_status', ['suspended', 'blocked']),
-  ]);
+  const inactiveRes = await supabaseClient
+    .from('profiles')
+    .select('id')
+    .in('account_status', ['suspended', 'blocked']);
 
-  const myId = sessionRes.data?.session?.user?.id;
   const excludeIds = new Set<string>(
     (inactiveRes.data || []).map((p) => p.id),
   );
 
-  // Récupérer les blocages seulement si on est connecté
   if (myId) {
     const { data: blocks } = await supabaseClient
       .from('blocked_users')
@@ -119,20 +113,21 @@ export function useExposants(options: UseExposantsOptions = {}) {
     pays = '',
     page = 0,
     pageSize = PAGE_SIZE,
+    myId = undefined,
   } = options;
 
   const exposantsQuery = useQuery({
     queryKey: ['exposants', { search, secteur, pavillon, pays, page, pageSize }],
-    queryFn: () => fetchExposants(search, secteur, pavillon, pays, page, pageSize),
-    staleTime: 2 * 60 * 1000,      // 2 minutes de cache
-    gcTime: 10 * 60 * 1000,        // 10 minutes en mémoire
-    placeholderData: (prev) => prev, // Garde les données précédentes pendant le rechargement
+    queryFn: () => fetchExposants(search, secteur, pavillon, pays, page, pageSize, myId),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const filtersQuery = useQuery({
     queryKey: ['exposants-filters'],
     queryFn: fetchFilterOptions,
-    staleTime: 10 * 60 * 1000,     // 10 minutes — les filtres changent rarement
+    staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
 

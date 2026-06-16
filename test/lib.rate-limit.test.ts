@@ -20,7 +20,10 @@ vi.mock('@/lib/supabase/admin', () => ({
 
       entry.count++;
       return { data: { allowed: true, remaining: params.p_max_requests - entry.count, resetAt: entry.resetAt }, error: null };
-    })
+    }),
+    from: vi.fn(() => ({
+      insert: vi.fn().mockResolvedValue({ error: null })
+    }))
   }))
 }));
 

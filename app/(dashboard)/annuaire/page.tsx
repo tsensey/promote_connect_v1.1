@@ -97,7 +97,8 @@ export default function AnnuairePage() {
     if (pays) params.set('pays', pays);
     if (page > 0) params.set('page', page.toString());
 
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }, [deferredSearch, secteur, pavillon, pays, page, pathname, router]);
 
   const { exposants, loading, error, filterOptions, totalCount } = useExposants({
@@ -107,6 +108,7 @@ export default function AnnuairePage() {
     pays,
     page,
     pageSize,
+    myId: user?.id,
   });
 
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 0;
@@ -173,7 +175,7 @@ export default function AnnuairePage() {
         .single();
 
       if (convError) throw convError;
-      router.push(`/chat/${conv.id}`);
+      router.push(`/chat?conv=${conv.id}`);
     } catch {
       toast.error(t('annuaire.conversation_error'));
     } finally {
@@ -529,7 +531,7 @@ export default function AnnuairePage() {
                     <Button
                       size="sm"
                       className="flex-1 rounded-xl text-xs h-9"
-                      onClick={() => router.push(`/annuaire/${exposant.id}`)}
+                      onClick={() => router.push(`/annuaire/profil?id=${exposant.id}`)}
                     >
                       <Eye className="mr-1.5 size-3.5" />
                       {t('common.view_profile')}

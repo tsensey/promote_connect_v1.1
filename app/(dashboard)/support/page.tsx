@@ -86,7 +86,7 @@ export default function SupportPage() {
       setShowNewTicket(false);
       setTicketForm({ subject: '', description: '', priority: 'medium', category: 'general' });
       toast.success(t('support.tickets.created'));
-      router.push(`/support/${ticket.id}`);
+      router.push(`/support/ticket?id=${ticket.id}`);
     } catch {
       toast.error(t('support.tickets.create_error'));
     } finally {
@@ -354,7 +354,7 @@ export default function SupportPage() {
                 {tickets.map((ticket) => (
                   <Link
                     key={ticket.id}
-                    href={`/support/${ticket.id}`}
+                    href={`/support/ticket?id=${ticket.id}`}
                     className="group flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-5 transition-all hover:border-primary/20 hover:sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex-1">

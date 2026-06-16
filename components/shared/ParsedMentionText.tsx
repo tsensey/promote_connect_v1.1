@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Fragment, useEffect, useState } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
 
@@ -25,6 +26,7 @@ export function ParsedMentionText({
 }: ParsedMentionTextProps) {
   const [mentionMap, setMentionMap] = useState<Map<string, string | null>>(new Map());
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   if (!content) return null;
 
@@ -124,13 +126,13 @@ export function ParsedMentionText({
       
       if (exposantId) {
         parts.push(
-          <Link
+          <span
             key={`mention-${matchIndex}`}
-            href={`/annuaire/${exposantId}`}
-            className="font-semibold text-primary hover:underline transition-colors"
+            onClick={(e) => { e.stopPropagation(); router.push(`/annuaire/profil?id=${exposantId}`); }}
+            className="cursor-pointer font-semibold text-primary hover:underline transition-colors"
           >
             @{mentionName}
-          </Link>
+          </span>
         );
       } else {
         // Render as styled text without link

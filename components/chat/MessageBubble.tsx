@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { memo, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Check, CheckCheck, Reply, FileText, ExternalLink, X, Loader2, Trash2, Ban } from 'lucide-react';
@@ -84,13 +85,12 @@ function ProductCard({
   product: ProductAttachment;
   isMine: boolean;
 }) {
+  const router = useRouter();
   return (
-    <a
-      href={`/annuaire/${product.exposant_id}`}
-      target="_blank"
-      rel="noopener noreferrer"
+    <div
+      onClick={() => router.push(`/annuaire/profil?id=${product.exposant_id}`)}
       className={cn(
-        'mt-1.5 flex items-center gap-2.5 rounded-xl border p-2 transition-colors hover:opacity-80',
+        'cursor-pointer mt-1.5 flex items-center gap-2.5 rounded-xl border p-2 transition-colors hover:opacity-80',
         isMine
           ? 'border-white/20 bg-white/10'
           : 'border-amber-500/30 bg-amber-500/5'
@@ -123,7 +123,7 @@ function ProductCard({
         )}
       </div>
       <ExternalLink className={cn('size-3.5 shrink-0', isMine ? 'text-primary-foreground/50' : 'text-muted-foreground')} />
-    </a>
+    </div>
   );
 }
 
