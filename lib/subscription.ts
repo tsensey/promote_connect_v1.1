@@ -409,7 +409,7 @@ export async function checkPostQuota(
   };
 
   // Les PAID et admins n'ont pas de limite
-  if (profile.subscription_tier?.toLowerCase() === 'paid' || profile.role === 'admin') return { allowed: true };
+  if (profile.subscription_tier?.trim().toLowerCase() === 'paid' || profile.role === 'admin') return { allowed: true };
 
   const quotaConfig = await getQuotaConfig();
   const limit = profile.quota_override_posts ?? quotaConfig.maxPostsFreeTrial;
@@ -454,7 +454,7 @@ export async function checkVitrineQuota(
   };
 
   // Les PAID et admins n'ont pas de limite
-  if (profile.subscription_tier?.toLowerCase() === 'paid' || profile.role === 'admin') return { allowed: true };
+  if (profile.subscription_tier?.trim().toLowerCase() === 'paid' || profile.role === 'admin') return { allowed: true };
 
   const quotaConfig = await getQuotaConfig();
   const limit = profile.quota_override_vitrine ?? quotaConfig.maxVitrineOffersFreeTrial;

@@ -45,7 +45,7 @@ export async function mobileSendMessage(
     return { error: 'account_inactive' };
   }
 
-  if (profile.subscription_tier === 'paid') {
+  if (profile.subscription_tier?.trim().toLowerCase() === 'paid') {
     const { data: message, error: insertError } = await supabaseClient
       .from('messages')
       .insert({
@@ -193,7 +193,7 @@ export async function mobileCheckQuota(userId: string) {
     last_exchange_reset: string | null;
   };
 
-  if (profile.subscription_tier === 'paid') return { allowed: true };
+  if (profile.subscription_tier?.trim().toLowerCase() === 'paid') return { allowed: true };
 
   const dailyLimit = await getPlatformConfigValue('daily_message_limit', 10);
   const now = new Date();
@@ -241,7 +241,7 @@ export async function mobileFetchFeed(mode: string, page: number, limit: number,
     const normal: any[] = [];
 
     for (const post of validPosts) {
-      const isSponsored = (post as any).author.subscription_tier === 'paid' && (post as any).author.exposants?.[0]?.is_featured;
+      const isSponsored = (post as any).author.subscription_tier?.trim().toLowerCase() === 'paid' && (post as any).author.exposants?.[0]?.is_featured;
       if (isSponsored) sponsored.push(post);
       else normal.push(post);
     }
@@ -273,8 +273,8 @@ export async function mobileFetchFeed(mode: string, page: number, limit: number,
     }
     
     validPosts.sort((a: any, b: any) => {
-      const aSp = (a as any).author.subscription_tier === 'paid' && (a as any).author.exposants?.[0]?.is_featured;
-      const bSp = (b as any).author.subscription_tier === 'paid' && (b as any).author.exposants?.[0]?.is_featured;
+      const aSp = (a as any).author.subscription_tier?.trim().toLowerCase() === 'paid' && (a as any).author.exposants?.[0]?.is_featured;
+      const bSp = (b as any).author.subscription_tier?.trim().toLowerCase() === 'paid' && (b as any).author.exposants?.[0]?.is_featured;
       const aR = cyrb128(a.id + usedSeed)[0] / 4294967296;
       const bR = cyrb128(b.id + usedSeed)[0] / 4294967296;
       const sponsoredWeightRatio = 3;
@@ -307,7 +307,7 @@ export async function mobileCreatePost(content: string, userId: string, options?
     quota_override_posts: number | null;
   };
 
-  if (profile.subscription_tier === 'paid') {
+  if (profile.subscription_tier?.trim().toLowerCase() === 'paid') {
     // PAID — pas de limite, passer directement à l'insertion
   } else {
     const postLimit = profile.quota_override_posts ?? await getPlatformConfigValue('max_posts_free_trial', 2);
@@ -394,8 +394,8 @@ export async function mobileFetchVitrine() {
   const sorted = (produits || []).sort((a: any, b: any) => {
     const aTier = a.exposants?.profiles?.subscription_tier;
     const bTier = b.exposants?.profiles?.subscription_tier;
-    const aPaid = aTier === 'paid';
-    const bPaid = bTier === 'paid';
+    const aPaid = aTier?.trim().toLowerCase() === 'paid';
+    const bPaid = bTier?.trim().toLowerCase() === 'paid';
     const aScore = (aPaid && a.exposants?.is_featured ? 3 : 0) + (aPaid && !a.exposants?.is_featured ? 2 : 0) + (!aPaid ? 1 : 0);
     const bScore = (bPaid && b.exposants?.is_featured ? 3 : 0) + (bPaid && !b.exposants?.is_featured ? 2 : 0) + (!bPaid ? 1 : 0);
     if (aScore !== bScore) return bScore - aScore;
@@ -426,7 +426,7 @@ export async function mobileCreateOffer(
     quota_override_vitrine: number | null;
   } | null;
 
-  const isPaid = profile?.subscription_tier === 'paid';
+  const isPaid = profile?.subscription_tier?.trim().toLowerCase() === 'paid';
   if (!isPaid) {
     const limit = profile?.quota_override_vitrine ?? await getPlatformConfigValue('max_vitrine_offers_free_trial', 2);
     if (totalSent !== null && totalSent >= limit) {
