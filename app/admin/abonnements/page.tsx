@@ -121,7 +121,7 @@ export default function AdminAbonnementsPage() {
         .from('profiles')
         .select(`
           id, full_name, company, role, account_status, subscription_tier, 
-          trial_ends_at, created_at, quota_override_messages, quota_override_posts, quota_override_vitrine,
+          trial_ends_at, created_at,
           exposants!exposants_profile_id_fkey(is_featured)
         `)
         .neq('role', 'admin')
