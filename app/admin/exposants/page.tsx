@@ -307,7 +307,7 @@ export default function AdminExposantsPage() {
   const selectedEspace = espaces.find((e) => e.id === formData.espace_id);
 
   const pendingAccountsCount = exposants.filter(e => e.account_status === 'pending').length;
-  const failedAccountsCount = exposants.filter(e => e.account_status === 'failed').length;
+  const failedAccountsCount = exposants.filter(e => ['failed', 'no_email', 'auth_failed'].includes(e.account_status ?? '')).length;
 
   return (
     <div className="space-y-6">

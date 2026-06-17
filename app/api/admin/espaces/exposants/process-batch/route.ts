@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   const query = supabase
     .from('exposants')
     .select('id, nom, email1, email2, account_status')
-    .in('account_status', retryFailed ? ['pending', 'failed'] : ['pending'])
+    .in('account_status', retryFailed ? ['pending', 'failed', 'no_email', 'auth_failed'] : ['pending'])
     .order('created_at', { ascending: true })
     .limit(BATCH_SIZE);
 
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
   const { count: remainingCount, error: countError } = await supabase
     .from('exposants')
     .select('id', { count: 'exact', head: true })
-    .in('account_status', retryFailed ? ['pending', 'failed'] : ['pending']);
+    .in('account_status', retryFailed ? ['pending', 'failed', 'no_email', 'auth_failed'] : ['pending']);
 
   return NextResponse.json({
     success: true,

@@ -32,19 +32,19 @@ function normalizeKey(key: string): string {
   const s = key.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const lowered = s.toLowerCase().replace(/[\s_-]+/g, '_').replace(/[^a-z0-9_]/g, '');
 
-  if (/raison.*social|nom.*entreprise|company|name|entreprise/.test(lowered)) return 'nom';
+  if (/raison.*social|^nom$|nom.*entreprise|company|name|entreprise|societe|denomination/.test(lowered)) return 'nom';
   if (/secteur|sector|activite/.test(lowered)) return 'secteur';
   if (/pavillon|pavilion|espace/.test(lowered)) return 'pavillon';
   if (/stand/.test(lowered)) return 'stand';
   if (/pays|country/.test(lowered)) return 'pays';
   if (/description|desc/.test(lowered)) return 'description';
   if (/adresse|address/.test(lowered)) return 'adresse';
-  if (/telephone1|tel1|phone1|telephone|phone/.test(lowered) && !lowered.includes('2')) return 'tel1';
+  if (/telephone1|tel1|phone1|telephone|phone|^tel$/.test(lowered) && !lowered.includes('2')) return 'tel1';
   if (/telephone2|tel2|phone2/.test(lowered)) return 'tel2';
   if (/mail1|email1/.test(lowered)) return 'mail1';
   if (/mail2|email2/.test(lowered)) return 'mail2';
   if (/mail|email/.test(lowered) && !lowered.includes('2')) return 'mail1';
-  if (/site.*web1|site1|website1|site_web/.test(lowered) && !lowered.includes('2')) return 'site1';
+  if (/site.*web1|site1|website1|site_web|^site$|site.*internet/.test(lowered) && !lowered.includes('2')) return 'site1';
   if (/site.*web2|site2|website2/.test(lowered)) return 'site2';
   if (/reseaux|social|linkedin|facebook|twitter/.test(lowered)) return 'reseaux';
   if (/logo/.test(lowered)) return 'logo';
