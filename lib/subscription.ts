@@ -257,7 +257,7 @@ export async function checkMessageQuota(
   // 1. Vérifier le tier de l'expéditeur
   const { data: rawSenderProfile } = await supabase
     .from('profiles')
-    .select('subscription_tier, account_status, daily_exchange_count, last_exchange_reset, quota_override_messages, subscription_ends_at')
+    .select('role, subscription_tier, account_status, daily_exchange_count, last_exchange_reset, quota_override_messages, subscription_ends_at')
     .eq('id', senderId)
     .single();
 
@@ -266,6 +266,7 @@ export async function checkMessageQuota(
   }
 
   const senderProfile = rawSenderProfile as unknown as {
+    role: string | null;
     subscription_tier: string | null;
     account_status: string | null;
     daily_exchange_count: number | null;
@@ -279,8 +280,8 @@ export async function checkMessageQuota(
     return { allowed: false, reason: 'account_inactive' };
   }
 
-  // Les PAID peuvent toujours envoyer — mais vérifier que l'abonnement est valide
-  if (senderProfile.subscription_tier === 'paid') {
+  // Les PAID et admins peuvent toujours envoyer — mais vérifier que l'abonnement est valide pour les PAID
+  if (senderProfile.subscription_tier?.toLowerCase() === 'paid' || senderProfile.role === 'admin') {
     if (senderProfile.subscription_ends_at && new Date(senderProfile.subscription_ends_at) < new Date()) {
       // La date de fin est dépassée → traiter comme free_trial
       // (ne pas return early, laisser le code continuer vers la logique free_trial)
@@ -395,19 +396,20 @@ export async function checkPostQuota(
 
   const { data: rawProfile } = await supabase
     .from('profiles')
-    .select('subscription_tier, quota_override_posts')
+    .select('role, subscription_tier, quota_override_posts')
     .eq('id', userId)
     .single();
 
   if (!rawProfile) return { allowed: false };
 
   const profile = rawProfile as unknown as {
+    role: string | null;
     subscription_tier: string | null;
     quota_override_posts: number | null;
   };
 
-  // Les PAID n'ont pas de limite
-  if (profile.subscription_tier === 'paid') return { allowed: true };
+  // Les PAID et admins n'ont pas de limite
+  if (profile.subscription_tier?.toLowerCase() === 'paid' || profile.role === 'admin') return { allowed: true };
 
   const quotaConfig = await getQuotaConfig();
   const limit = profile.quota_override_posts ?? quotaConfig.maxPostsFreeTrial;
@@ -439,19 +441,20 @@ export async function checkVitrineQuota(
 
   const { data: rawProfile } = await supabase
     .from('profiles')
-    .select('subscription_tier, quota_override_vitrine')
+    .select('role, subscription_tier, quota_override_vitrine')
     .eq('id', userId)
     .single();
 
   if (!rawProfile) return { allowed: false };
 
   const profile = rawProfile as unknown as {
+    role: string | null;
     subscription_tier: string | null;
     quota_override_vitrine: number | null;
   };
 
-  // Les PAID n'ont pas de limite
-  if (profile.subscription_tier === 'paid') return { allowed: true };
+  // Les PAID et admins n'ont pas de limite
+  if (profile.subscription_tier?.toLowerCase() === 'paid' || profile.role === 'admin') return { allowed: true };
 
   const quotaConfig = await getQuotaConfig();
   const limit = profile.quota_override_vitrine ?? quotaConfig.maxVitrineOffersFreeTrial;
