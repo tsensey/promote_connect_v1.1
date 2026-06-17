@@ -38,15 +38,8 @@ export async function POST(request: NextRequest) {
 
   const quotaResult = await checkPostQuota(user.id);
   if (!quotaResult.allowed) {
-    // Add debug info for diagnostics
-    const supabaseDebug = await createClient();
-    const { data: rawProfile, error: profileError } = await supabaseDebug.from('profiles').select('role, subscription_tier, quota_override_posts').eq('id', user.id).single();
-    
     return NextResponse.json({
       allowed: false,
-      debugProfile: rawProfile,
-      debugError: profileError,
-      debugUserId: user.id,
       ...quotaErrorResponse('post_quota_exceeded', {
         currentCount: quotaResult.currentCount,
         limit: quotaResult.limit,

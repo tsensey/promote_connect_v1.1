@@ -7,6 +7,7 @@
  */
 
 import { createClient } from '@/lib/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -252,10 +253,12 @@ export async function checkMessageQuota(
   isSameDay?: boolean;
   lastExchangeReset?: string | null;
 }> {
+  // Utiliser le client admin pour contourner les restrictions RLS sur profiles
+  const adminClient = createAdminClient();
   const supabase = await createClient();
 
   // 1. Vérifier le tier de l'expéditeur
-  const { data: rawSenderProfile } = await supabase
+  const { data: rawSenderProfile } = await adminClient
     .from('profiles')
     .select('role, subscription_tier, account_status, daily_exchange_count, last_exchange_reset, quota_override_messages, subscription_ends_at')
     .eq('id', senderId)
@@ -392,9 +395,11 @@ export async function incrementMessageCount(
 export async function checkPostQuota(
   userId: string
 ): Promise<{ allowed: boolean; currentCount?: number; limit?: number }> {
+  // Utiliser le client admin pour contourner les restrictions RLS sur profiles
+  const adminClient = createAdminClient();
   const supabase = await createClient();
 
-  const { data: rawProfile } = await supabase
+  const { data: rawProfile } = await adminClient
     .from('profiles')
     .select('role, subscription_tier, quota_override_posts')
     .eq('id', userId)
@@ -437,9 +442,11 @@ export async function checkVitrineQuota(
   exposantId: string,
   userId: string
 ): Promise<{ allowed: boolean; currentCount?: number; limit?: number }> {
+  // Utiliser le client admin pour contourner les restrictions RLS sur profiles
+  const adminClient = createAdminClient();
   const supabase = await createClient();
 
-  const { data: rawProfile } = await supabase
+  const { data: rawProfile } = await adminClient
     .from('profiles')
     .select('role, subscription_tier, quota_override_vitrine')
     .eq('id', userId)
