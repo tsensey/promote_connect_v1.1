@@ -138,6 +138,10 @@ export default function FeedPage() {
       toast.error(t('annuaire.cannot_contact'));
       return;
     }
+    if (product.exposants.profile_id === myUserId) {
+      toast.error(t('feed.cannot_contact_self') || 'Vous ne pouvez pas vous contacter vous-même.');
+      return;
+    }
     setContactingProd(product.id);
     const { data } = await createConversation(product.exposants.profile_id);
     if (data) {
@@ -412,20 +416,22 @@ export default function FeedPage() {
                         {product.exposants?.nom || t('common.exposant')}
                       </span>
                       {perms.canContactExposant ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 rounded-lg text-[10px] px-2.5 gap-1 shrink-0"
-                          disabled={contactingProd === product.id}
-                          onClick={() => handleContactProduct(product)}
-                        >
-                          {contactingProd === product.id ? (
-                            <Loader2 className="size-3 animate-spin" />
-                          ) : (
-                            <Send className="size-3" />
-                          )}
-                          {t('feed.contact')}
-                        </Button>
+                        product.exposants?.profile_id !== myUserId ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 rounded-lg text-[10px] px-2.5 gap-1 shrink-0"
+                            disabled={contactingProd === product.id}
+                            onClick={() => handleContactProduct(product)}
+                          >
+                            {contactingProd === product.id ? (
+                              <Loader2 className="size-3 animate-spin" />
+                            ) : (
+                              <Send className="size-3" />
+                            )}
+                            {t('feed.contact')}
+                          </Button>
+                        ) : null
                       ) : (
                         <span className="text-[10px] text-muted-foreground italic">
                           {t('feed.contact_upgrade') || 'Abonnez-vous pour contacter'}
