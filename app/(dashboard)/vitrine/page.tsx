@@ -560,7 +560,7 @@ export default function VitrinePage() {
                         variant="outline"
                         size="sm"
                         className="rounded-xl h-9 w-9 p-0"
-                        onClick={() => router.push(`/annuaire/profil?id=${produit.exposants!.id}`)}
+                        onClick={() => router.push(`/annuaire/${produit.exposants!.id}`)}
                         title={t('vitrine.view_exposant_sheet')}
                       >
                         <Building2 className="size-3.5" />

@@ -1,8 +1,8 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth/context';
 import { createConversation } from '@/hooks/useChat';
@@ -76,22 +76,30 @@ type Exposant = Database['public']['Tables']['exposants']['Row'];
 type Produit = Database['public']['Tables']['produits']['Row'];
 
 function VitrineExposantContent() {
-  const searchParams = useSearchParams();
-  const exposantId = searchParams.get('id');
-  const profileId = searchParams.get('profile_id');
+  const { t } = useTranslation();
+  const perms = usePermissions();
+  const { user } = useAuth();
+  const router = useRouter();
 
+  const [exposantId, setExposantId] = useState<string | null>(null);
+  const [profileId, setProfileId] = useState<string | null>(null);
   const [exposant, setExposant] = useState<Exposant | null>(null);
   const [produits, setProduits] = useState<Produit[]>([]);
   const [loading, setLoading] = useState(true);
   const [suspended, setSuspended] = useState(false);
-  const { t } = useTranslation();
-  const perms = usePermissions();
-  const { user } = useAuth();
   const [contacting, setContacting] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
-    if (!exposantId) {
+    const params = new URLSearchParams(window.location.search);
+    setExposantId(params.get('id'));
+    setProfileId(params.get('profile_id'));
+  }, []);
+
+  useEffect(() => {
+    if (exposantId === null && profileId === null) {
+      return;
+    }
+    if (!exposantId && !profileId) {
       setLoading(false);
       return;
     }
@@ -654,14 +662,4 @@ function VitrineExposantContent() {
   );
 }
 
-export default function VitrineExposantPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    }>
-      <VitrineExposantContent />
-    </Suspense>
-  );
-}
+export default VitrineExposantContent

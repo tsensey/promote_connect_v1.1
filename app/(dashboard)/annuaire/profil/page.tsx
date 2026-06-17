@@ -1,8 +1,8 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth/context';
 import { createConversation } from '@/hooks/useChat';
@@ -78,19 +78,24 @@ type Produit = Database['public']['Tables']['produits']['Row'];
 
 function ExposantDetailContent() {
   const { t, locale } = useTranslation();
-  const searchParams = useSearchParams();
-  const exposantId = searchParams.get('id');
-  const profileId = searchParams.get('profile_id');
+  const router = useRouter();
   const perms = usePermissions();
   const { user } = useAuth();
 
+  const [exposantId, setExposantId] = useState<string | null>(null);
+  const [profileId, setProfileId] = useState<string | null>(null);
   const [exposant, setExposant] = useState<Exposant | null>(null);
   const [produits, setProduits] = useState<Produit[]>([]);
   const [loading, setLoading] = useState(true);
   const [contacting, setContacting] = useState(false);
   const [blocking, setBlocking] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const router = useRouter();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setExposantId(params.get('id'));
+    setProfileId(params.get('profile_id'));
+  }, []);
 
   const { blockUser, unblockUser, isBlocked, loadBlockedUsers } = useBlockedUsers();
 
@@ -106,6 +111,9 @@ function ExposantDetailContent() {
     let cancelled = false;
     const loadData = async () => {
       try {
+        if (exposantId === null && profileId === null) {
+          return;
+        }
         if (!exposantId && !profileId) {
           setLoading(false);
           return;
@@ -777,14 +785,4 @@ function ExposantDetailContent() {
   );
 }
 
-export default function ExposantDetailPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    }>
-      <ExposantDetailContent />
-    </Suspense>
-  );
-}
+export default ExposantDetailContent
