@@ -90,6 +90,7 @@ export default function VitrineExposantPage() {
   const router = useRouter();
 
   useEffect(() => {
+    setLoading(true);
     let cancelled = false;
     const loadData = async () => {
       try {
@@ -237,7 +238,7 @@ export default function VitrineExposantPage() {
   const hasStats = exposant.annee_creation || exposant.nombre_employes || exposant.chiffre_affaires;
 
   return (
-    <div className="space-y-6 pb-8 max-w-6xl mx-auto">
+    <div className="space-y-6 pb-8 max-w-6xl mx-auto animate-in fade-in duration-300">
       {/* Back nav */}
       <div className="flex items-center justify-between">
         <Link

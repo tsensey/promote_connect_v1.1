@@ -102,6 +102,7 @@ export default function ExposantDetailPage() {
   }, [loadBlockedUsers]);
 
   useEffect(() => {
+    setLoading(true);
     let cancelled = false;
     const loadData = async () => {
       try {
@@ -289,7 +290,7 @@ export default function ExposantDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 pb-8">
+    <div className="mx-auto max-w-6xl space-y-6 pb-8 animate-in fade-in duration-300">
       {/* Lightbox */}
       {lightboxIndex !== null && exposant.gallery_urls && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setLightboxIndex(null)}>

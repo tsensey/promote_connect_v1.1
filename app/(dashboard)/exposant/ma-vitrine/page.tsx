@@ -563,7 +563,7 @@ export default function ManageVitrinePage() {
     <div className="space-y-6 pb-28 lg:pb-8 max-w-6xl mx-auto">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         {exposant && (
-            <Button variant="outline" className="rounded-xl bg-white/85" onClick={() => router.push(`/annuaire/profil?id=${exposant.id}`)}>
+            <Button variant="outline" className="rounded-xl bg-white/85" onClick={() => router.push(`/annuaire/${exposant.id}`)}>
               {t('dashboard.home.view_profile')}
             </Button>
         )}
