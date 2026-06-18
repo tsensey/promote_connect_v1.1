@@ -103,7 +103,7 @@ export default function EventDetailPage() {
   const speakers: Speaker[] = parseSpeakers(event.speakers);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 pb-8">
+    <div className="mx-auto container space-y-6 pb-8">
       {/* Back button */}
       <Button
         variant="ghost"
