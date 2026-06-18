@@ -332,7 +332,7 @@ export function useMessages(conversationId: string) {
         let other: Profile | null = null;
         const { data: convData } = await supabaseClient
           .from('conversations')
-          .select('*, participant_a:participant_a(*), participant_b:participant_b(*)')
+          .select('*, participant_a:participant_a(id, full_name, avatar_url, role, company), participant_b:participant_b(id, full_name, avatar_url, role, company)')
           .eq('id', conversationId)
           .single();
 
