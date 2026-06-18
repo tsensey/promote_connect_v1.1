@@ -56,7 +56,7 @@ export function CreatePostFAB({ onSubmit, onUpload }: CreatePostFABProps) {
         onClick={() => setOpen(true)}
         size="lg"
         className={cn(
-          "fixed md:hidden bottom-20 right-6 z-40 rounded-full hover:transition-all duration-300 h-14 w-14 sm:h-auto sm:w-auto sm:px-4",
+          "fixed md:hidden bottom-32 right-6 z-40 rounded-full hover:transition-all duration-300 h-14 w-14 sm:h-auto sm:w-auto sm:px-4",
           visible ? "translate-y-0 opacity-100 scale-100" : "translate-y-20 opacity-0 scale-90 pointer-events-none"
         )}
       >
