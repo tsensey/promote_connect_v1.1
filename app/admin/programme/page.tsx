@@ -24,6 +24,7 @@ import {
 } from "@/components/agenda/ProgrammeFormDialog";
 import { AdminPagination } from "@/components/shared/AdminPagination";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { toast } from "sonner";
 
 
 type Evenement = Database["public"]["Tables"]["evenements"]["Row"];
@@ -129,14 +130,18 @@ export default function AdminProgrammePage() {
     const { error } = editingId
       ? await table.update(payload as never).eq("id", editingId)
       : await table.insert(payload as never);
-    if (error && retry && (error.message?.includes("column") || error.code === "42703")) {
-      const safe: Record<string, unknown> = {};
-      for (const key of Object.keys(payload)) {
-        if (key !== "description_html" && key !== "document_url") {
-          safe[key] = payload[key];
+    if (error) {
+      if (retry && (error.message?.includes("column") || error.code === "42703")) {
+        toast.warning("Les colonnes description_html et document_url n'existent pas encore en base. Appliquez la migration 090. Les champs riches ont été ignorés pour cette sauvegarde.");
+        const safe: Record<string, unknown> = {};
+        for (const key of Object.keys(payload)) {
+          if (key !== "description_html" && key !== "document_url") {
+            safe[key] = payload[key];
+          }
         }
+        return submitPayload(safe, false);
       }
-      return submitPayload(safe, false);
+      toast.error(`Erreur lors de la sauvegarde : ${error.message}`);
     }
     return !error;
   };

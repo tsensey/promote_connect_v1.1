@@ -77,8 +77,11 @@ export function RichTextEditor({
     },
     editorProps: {
       attributes: {
-        class:
-          "prose prose-sm dark:prose-invert max-w-none min-h-[200px] px-3 py-2 focus:outline-none",
+        class: [
+          "prose prose-sm dark:prose-invert max-w-none",
+          "min-h-[200px] px-3 py-2 focus:outline-none",
+          "ProseMirror-custom",
+        ].join(" "),
       },
     },
   });
@@ -145,7 +148,6 @@ export function RichTextEditor({
           <Quote className="size-4" />
         </ToolButton>
         <span className="mx-1 h-5 w-px bg-border/60" />
-        <span className="mx-1 h-5 w-px bg-border/60" />
         <ToolButton
           active={editor.isActive("table")}
           onClick={() =>
@@ -169,6 +171,52 @@ export function RichTextEditor({
         </ToolButton>
       </div>
       <EditorContent editor={editor} />
+      <style jsx global>{`
+        .ProseMirror-custom {
+          outline: none !important;
+        }
+        .ProseMirror-custom ul {
+          list-style-type: disc !important;
+          padding-left: 1.5em !important;
+        }
+        .ProseMirror-custom ol {
+          list-style-type: decimal !important;
+          padding-left: 1.5em !important;
+        }
+        .ProseMirror-custom li {
+          display: list-item !important;
+        }
+        .ProseMirror-custom table {
+          width: 100%;
+          border-collapse: collapse;
+          border: 1px solid hsl(var(--border));
+        }
+        .ProseMirror-custom th,
+        .ProseMirror-custom td {
+          border: 1px solid hsl(var(--border));
+          padding: 8px 12px;
+          min-width: 80px;
+          vertical-align: top;
+        }
+        .ProseMirror-custom th {
+          background: hsl(var(--muted) / 0.5);
+          font-weight: 600;
+          text-align: left;
+        }
+        .ProseMirror-custom blockquote {
+          border-left: 3px solid hsl(var(--border));
+          padding-left: 1em;
+          margin: 0.5em 0;
+          color: hsl(var(--muted-foreground));
+        }
+        .ProseMirror-custom p.is-editor-empty:first-child::before {
+          color: hsl(var(--muted-foreground));
+          content: attr(data-placeholder);
+          float: left;
+          height: 0;
+          pointer-events: none;
+        }
+      `}</style>
     </div>
   );
 }

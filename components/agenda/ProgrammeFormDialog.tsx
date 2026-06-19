@@ -15,6 +15,7 @@ import { useTranslation } from "@/lib/i18n";
 import { RichTextEditor } from "@/components/agenda/RichTextEditor";
 import { supabaseClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export interface ProgrammeFormData {
   titre: string;
@@ -84,7 +85,12 @@ export function ProgrammeFormDialog({
       const data = await res.json();
       if (res.ok) {
         onChange({ ...formData, document_url: data.url });
+        toast.success("PDF ajouté avec succès");
+      } else {
+        toast.error(data.error || "Erreur lors de l'upload du PDF");
       }
+    } catch {
+      toast.error("Erreur lors de l'upload du PDF");
     } finally {
       setUploading(false);
       e.target.value = "";
