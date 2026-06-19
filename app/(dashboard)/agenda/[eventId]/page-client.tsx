@@ -171,7 +171,7 @@ export default function EventDetailPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Description */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-4">
           <Card className="border-border/50">
             <CardHeader>
               <CardTitle className="text-lg">{t("agenda.event_description")}</CardTitle>
