@@ -13,6 +13,7 @@ import {
   Users,
   Loader2,
   Mic, Wrench, Handshake, Star, MessageSquare,
+  FileText,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ import { useTranslation } from "@/lib/i18n";
 import { getEventTypeConfig, formatDate, parseSpeakers } from "@/lib/agenda/utils";
 import type { Speaker } from "@/lib/agenda/utils";
 import type { Database } from "@/types/database.types";
+import { EventDescriptionRenderer } from "@/components/agenda/EventDescriptionRenderer";
 
 type Evenement = Database["public"]["Tables"]["evenements"]["Row"];
 
@@ -103,7 +105,7 @@ export default function EventDetailPage() {
   const speakers: Speaker[] = parseSpeakers(event.speakers);
 
   return (
-    <div className="mx-auto container space-y-6 pb-8">
+    <div className="mx-auto max-w-6xl space-y-6 pb-8">
       {/* Back button */}
       <Button
         variant="ghost"
@@ -174,9 +176,10 @@ export default function EventDetailPage() {
               <CardTitle className="text-lg">{t("agenda.event_description")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground/80">
-                {event.description || t("agenda.no_description")}
-              </p>
+              <EventDescriptionRenderer
+                html={event.description_html}
+                fallback={event.description || t("agenda.no_description")}
+              />
             </CardContent>
           </Card>
         </div>
@@ -211,6 +214,32 @@ export default function EventDetailPage() {
               <p>{t("agenda.event_end")} {endTime}</p>
             </CardContent>
           </Card>
+
+          {/* Document PDF */}
+          {event.document_url && (
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                  <FileText className="size-4 text-muted-foreground" />
+                  Document
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <a
+                  href={event.document_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/30 px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted/50"
+                >
+                  <FileText className="size-5 shrink-0 text-primary" />
+                  <span className="flex-1 truncate">
+                    {event.document_url.split("/").pop()?.replace(/^\d+-/, "") || "Document"}
+                  </span>
+                  <span className="shrink-0 text-xs text-muted-foreground">PDF</span>
+                </a>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Contact pour RDV */}
           {user && (

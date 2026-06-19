@@ -85,9 +85,11 @@ export function EvenementCard({ evenement: evt }: EvenementCardProps) {
               </div>
             </div>
 
-            {evt.description && (
+            {(evt.description || evt.description_html) && (
               <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground/80 line-clamp-2">
-                {evt.description}
+                {evt.description_html
+                  ? evt.description_html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+                  : evt.description}
               </p>
             )}
 

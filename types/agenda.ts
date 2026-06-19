@@ -2,6 +2,8 @@ export interface Evenement {
   id: string;
   titre: string;
   description: string | null;
+  description_html: string | null;
+  document_url: string | null;
   pavillon: string | null;
   salle: string | null;
   starts_at: string;

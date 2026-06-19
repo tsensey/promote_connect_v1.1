@@ -38,6 +38,8 @@ const typeStyles: Record<string, string> = {
 const INITIAL_FORM: ProgrammeFormData = {
   titre: "",
   description: "",
+  description_html: "",
+  document_url: "",
   pavillon: "",
   salle: "",
   starts_at: "",
@@ -93,6 +95,8 @@ export default function AdminProgrammePage() {
     setFormData({
       titre: evt.titre || "",
       description: evt.description || "",
+      description_html: (evt as Record<string, unknown>).description_html as string || "",
+      document_url: (evt as Record<string, unknown>).document_url as string || "",
       pavillon: evt.pavillon || "",
       salle: evt.salle || "",
       starts_at: evt.starts_at
