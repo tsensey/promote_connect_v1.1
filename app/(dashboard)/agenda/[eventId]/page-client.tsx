@@ -32,6 +32,7 @@ import { getEventTypeConfig, formatDate, parseSpeakers } from "@/lib/agenda/util
 import type { Speaker } from "@/lib/agenda/utils";
 import type { Database } from "@/types/database.types";
 import { EventDescriptionRenderer } from "@/components/agenda/EventDescriptionRenderer";
+import { PdfPreview } from "@/components/agenda/PdfPreview";
 
 type Evenement = Database["public"]["Tables"]["evenements"]["Row"];
 
@@ -193,13 +194,8 @@ export default function EventDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0 sm:p-0">
-                <div className="relative aspect-[3/4] w-full overflow-hidden rounded-b-xl sm:rounded-b-xl sm:rounded-t-none border-t border-border/50">
-                  <embed
-                    src={event.document_url}
-                    type="application/pdf"
-                    className="h-full w-full"
-                    title="Aperçu du document"
-                  />
+                <div className="w-full overflow-hidden rounded-b-xl sm:rounded-b-xl sm:rounded-t-none border-t border-border/50 bg-muted/20">
+                  <PdfPreview url={event.document_url} />
                 </div>
               </CardContent>
             </Card>
