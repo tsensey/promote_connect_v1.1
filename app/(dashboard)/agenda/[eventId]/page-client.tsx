@@ -13,7 +13,7 @@ import {
   Users,
   Loader2,
   Mic, Wrench, Handshake, Star, MessageSquare,
-  FileText,
+  FileText, Download,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -182,6 +182,28 @@ export default function EventDetailPage() {
               />
             </CardContent>
           </Card>
+
+          {/* Aperçu PDF */}
+          {event.document_url && (
+            <Card className="border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <FileText className="size-5 text-muted-foreground" />
+                  Aperçu du document
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 sm:p-0">
+                <div className="relative aspect-[3/4] w-full overflow-hidden rounded-b-xl sm:rounded-b-xl sm:rounded-t-none border-t border-border/50">
+                  <embed
+                    src={event.document_url}
+                    type="application/pdf"
+                    className="h-full w-full"
+                    title="Aperçu du document"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Infos sidebar */}
@@ -215,7 +237,7 @@ export default function EventDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Document PDF */}
+          {/* Document PDF — téléchargement */}
           {event.document_url && (
             <Card className="border-border/50">
               <CardHeader className="pb-3">
@@ -224,7 +246,7 @@ export default function EventDetailPage() {
                   Document
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent className="space-y-3 pt-0">
                 <a
                   href={event.document_url}
                   target="_blank"
@@ -236,6 +258,14 @@ export default function EventDetailPage() {
                     {event.document_url.split("/").pop()?.replace(/^\d+-/, "") || "Document"}
                   </span>
                   <span className="shrink-0 text-xs text-muted-foreground">PDF</span>
+                </a>
+                <a
+                  href={event.document_url}
+                  download
+                  className="flex items-center justify-center gap-2 rounded-xl border border-border/60 px-4 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/30"
+                >
+                  <Download className="size-3.5" />
+                  Télécharger
                 </a>
               </CardContent>
             </Card>
