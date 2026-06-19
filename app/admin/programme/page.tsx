@@ -95,8 +95,8 @@ export default function AdminProgrammePage() {
     setFormData({
       titre: evt.titre || "",
       description: evt.description || "",
-      description_html: (evt as Record<string, unknown>).description_html as string || "",
-      document_url: (evt as Record<string, unknown>).document_url as string || "",
+      description_html: evt.description_html || "",
+      document_url: evt.document_url || "",
       pavillon: evt.pavillon || "",
       salle: evt.salle || "",
       starts_at: evt.starts_at

@@ -68,7 +68,6 @@ export function RichTextEditor({
     <Toggle
       pressed={active}
       onPressedChange={onClick}
-      size="sm"
       className="h-8 w-8"
     >
       {children}
