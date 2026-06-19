@@ -23,6 +23,7 @@ import {
   type ProgrammeFormData,
 } from "@/components/agenda/ProgrammeFormDialog";
 import { AdminPagination } from "@/components/shared/AdminPagination";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 
 type Evenement = Database["public"]["Tables"]["evenements"]["Row"];
@@ -63,6 +64,8 @@ export default function AdminProgrammePage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchEvenements = useCallback(async () => {
     setLoading(true);
@@ -92,10 +95,16 @@ export default function AdminProgrammePage() {
         .filter(Boolean)
         .join(", ");
     }
+
+    let descriptionHtml = evt.description_html || "";
+    if (!descriptionHtml && evt.description) {
+      descriptionHtml = `<p>${evt.description.replace(/\n/g, "<br>")}</p>`;
+    }
+
     setFormData({
       titre: evt.titre || "",
       description: evt.description || "",
-      description_html: evt.description_html || "",
+      description_html: descriptionHtml,
       document_url: evt.document_url || "",
       pavillon: evt.pavillon || "",
       salle: evt.salle || "",
@@ -112,11 +121,36 @@ export default function AdminProgrammePage() {
     setShowForm(true);
   };
 
+  const submitPayload = async (
+    payload: Record<string, unknown>,
+    retry = true,
+  ): Promise<boolean> => {
+    const table = supabaseClient.from("evenements");
+    const { error } = editingId
+      ? await table.update(payload as never).eq("id", editingId)
+      : await table.insert(payload as never);
+    if (error && retry && (error.message?.includes("column") || error.code === "42703")) {
+      const safe: Record<string, unknown> = {};
+      for (const key of Object.keys(payload)) {
+        if (key !== "description_html" && key !== "document_url") {
+          safe[key] = payload[key];
+        }
+      }
+      return submitPayload(safe, false);
+    }
+    return !error;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormLoading(true);
-    const payload = {
-      ...formData,
+
+    const payload: Record<string, unknown> = {
+      titre: formData.titre,
+      description: formData.description,
+      pavillon: formData.pavillon,
+      salle: formData.salle,
+      type: formData.type,
       speakers: formData.speakers
         ? formData.speakers
             .split(",")
@@ -127,31 +161,27 @@ export default function AdminProgrammePage() {
       starts_at: new Date(formData.starts_at).toISOString(),
       ends_at: new Date(formData.ends_at).toISOString(),
     };
+    if (formData.description_html) payload.description_html = formData.description_html;
+    if (formData.document_url) payload.document_url = formData.document_url;
 
-    if (editingId) {
-      const { error } = await supabaseClient
-        .from("evenements")
-        .update(payload)
-        .eq("id", editingId);
-      if (!error) {
-        setShowForm(false);
-        setEditingId(null);
-        fetchEvenements();
-      }
-    } else {
-      const { error } = await supabaseClient.from("evenements").insert(payload);
-      if (!error) {
-        setShowForm(false);
-        fetchEvenements();
-      }
+    const ok = await submitPayload(payload);
+    if (ok) {
+      setShowForm(false);
+      setEditingId(null);
+      fetchEvenements();
     }
     setFormLoading(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(t("admin.programme.delete_confirm"))) return;
-    await supabaseClient.from("evenements").delete().eq("id", id);
-    fetchEvenements();
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    const { error } = await supabaseClient.from("evenements").delete().eq("id", deleteTarget);
+    setDeleteLoading(false);
+    if (!error) {
+      setDeleteTarget(null);
+      fetchEvenements();
+    }
   };
 
   const handleBulkDelete = async () => {
@@ -282,11 +312,11 @@ export default function AdminProgrammePage() {
                     <TableCell>
                       <div>
                         <div className="font-medium text-foreground">{evt.titre}</div>
-                        {evt.description && (
+                        {/* {evt.description && (
                           <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
                             {evt.description}
                           </p>
-                        )}
+                        )} */}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -340,7 +370,7 @@ export default function AdminProgrammePage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete(evt.id)}
+                          onClick={() => setDeleteTarget(evt.id)}
                           className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
                         >
                           <Trash2 className="size-4" />
@@ -382,29 +412,29 @@ export default function AdminProgrammePage() {
         editingId={editingId}
       />
 
-      {showBulkDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-xl bg-background p-6 shadow-lg border border-border">
-            <h2 className="text-lg font-semibold text-foreground">Confirmer la suppression</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Êtes-vous sûr de vouloir supprimer les {selectedIds.length} événements sélectionnés ? Cette action est irréversible.
-            </p>
-            <div className="mt-6 flex justify-end gap-3">
-              <Button variant="outline" className="rounded-xl" onClick={() => setShowBulkDeleteConfirm(false)}>
-                {t("common.cancel")}
-              </Button>
-              <Button
-                variant="destructive"
-                className="rounded-xl"
-                disabled={bulkDeleteLoading}
-                onClick={handleBulkDelete}
-              >
-                {bulkDeleteLoading ? "Suppression..." : "Supprimer définitivement"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Confirmer la suppression"
+        description={`Êtes-vous sûr de vouloir supprimer cet événement ? Cette action est irréversible.`}
+        confirmLabel={deleteLoading ? "Suppression..." : "Supprimer"}
+        cancelLabel={t("common.cancel")}
+        onConfirm={handleDelete}
+        loading={deleteLoading}
+        destructive
+      />
+
+      <ConfirmDialog
+        open={showBulkDeleteConfirm}
+        onOpenChange={setShowBulkDeleteConfirm}
+        title="Confirmer la suppression"
+        description={`Êtes-vous sûr de vouloir supprimer les ${selectedIds.length} événements sélectionnés ? Cette action est irréversible.`}
+        confirmLabel={bulkDeleteLoading ? "Suppression..." : "Supprimer définitivement"}
+        cancelLabel={t("common.cancel")}
+        onConfirm={handleBulkDelete}
+        loading={bulkDeleteLoading}
+        destructive
+      />
     </div>
   );
 }

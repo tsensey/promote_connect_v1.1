@@ -1,8 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
+import { Table } from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableCell from "@tiptap/extension-table-cell";
+import TableHeader from "@tiptap/extension-table-header";
 import {
   Bold,
   Italic,
@@ -13,9 +18,27 @@ import {
   Redo,
   Heading1,
   Heading2,
+  Table as TableIcon,
+  Delete,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { cn } from "@/lib/utils";
+
+function ToolButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Toggle pressed={active} onPressedChange={onClick} className="h-8 w-8">
+      {children}
+    </Toggle>
+  );
+}
 
 interface RichTextEditorProps {
   value: string;
@@ -40,6 +63,12 @@ export function RichTextEditor({
       Placeholder.configure({
         placeholder: placeholder || "Saisissez la description...",
       }),
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableCell,
+      TableHeader,
     ],
     content: value || "",
     onUpdate: ({ editor }) => {
@@ -54,25 +83,13 @@ export function RichTextEditor({
     },
   });
 
-  if (!editor) return null;
+  useEffect(() => {
+    if (editor && value && editor.getHTML() !== value) {
+      editor.commands.setContent(value || "");
+    }
+  }, [editor, value]);
 
-  const ToolButton = ({
-    active,
-    onClick,
-    children,
-  }: {
-    active: boolean;
-    onClick: () => void;
-    children: React.ReactNode;
-  }) => (
-    <Toggle
-      pressed={active}
-      onPressedChange={onClick}
-      className="h-8 w-8"
-    >
-      {children}
-    </Toggle>
-  );
+  if (!editor) return null;
 
   return (
     <div
@@ -126,6 +143,22 @@ export function RichTextEditor({
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
         >
           <Quote className="size-4" />
+        </ToolButton>
+        <span className="mx-1 h-5 w-px bg-border/60" />
+        <span className="mx-1 h-5 w-px bg-border/60" />
+        <ToolButton
+          active={editor.isActive("table")}
+          onClick={() =>
+            editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+          }
+        >
+          <TableIcon className="size-4" />
+        </ToolButton>
+        <ToolButton
+          active={false}
+          onClick={() => editor.chain().focus().deleteTable().run()}
+        >
+          <Delete className="size-4" />
         </ToolButton>
         <span className="mx-1 h-5 w-px bg-border/60" />
         <ToolButton active={false} onClick={() => editor.chain().focus().undo().run()}>
